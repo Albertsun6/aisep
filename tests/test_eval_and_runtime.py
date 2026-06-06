@@ -16,9 +16,10 @@ class TestEval(unittest.TestCase):
         report = run_eval(dataset_path=path)
         m = report.metrics
         self.assertEqual(m.n, 8)
-        # 确定性预期：仅 F001/F002/F008 既过 CI 又无需人改
-        self.assertAlmostEqual(m.task_completion_rate, 3 / 8, places=4)
-        # F007 引入回归
+        # 修 C3 后：tests_ok 由 verifier 真实运行驱动（非 dataset）。StubCodeLLM 的 trivial 代码
+        # 其自带测试真跑通过，故 F001/F002/F007/F008 过 CI；F005 覆盖率不足、F003/F004/F006 高风险转人审。
+        # （F007 的 dataset tests_ok=False 已不再生效；introduced_regression 仍由外部信号标记。）
+        self.assertAlmostEqual(m.task_completion_rate, 4 / 8, places=4)
         self.assertAlmostEqual(m.regression_introduction_rate, 1 / 8, places=4)
         self.assertGreater(m.avg_blast_radius_on_failure, 0)
 

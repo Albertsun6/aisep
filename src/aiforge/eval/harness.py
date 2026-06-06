@@ -33,8 +33,14 @@ def _run_one(task: EvalTask, config: GovernanceConfig) -> TaskOutcome:
     state = PipelineState(feature_id=task.id, request=task.request, task_type=task.task_type)
     state = supervisor.invoke(state)
 
+    # 修 C3：tests_ok 用 verifier 的**真实运行**结果覆盖数据集手喂值（指标不再是 fixture 的函数）。
+    # 诚实边界：coverage/sast/lint/regression 仍为外部证据（系统尚未真跑覆盖率/SAST/既有回归套件）。
+    evidence = dict(task.evidence)
+    if state.verification is not None:
+        evidence["tests_ok"] = bool(state.verification.get("tests_ok"))
+
     gates = build_default_gates(config)
-    gate_results = gates.run(state, dict(task.evidence))
+    gate_results = gates.run(state, evidence)
     cicd = next((g for g in gate_results if g.layer == "cicd"), None)
     passed_ci = bool(cicd and cicd.passed)
     all_gates_passed = all(g.passed for g in gate_results) and len(gate_results) == len(gates.gates)
