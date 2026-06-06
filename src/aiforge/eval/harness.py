@@ -10,11 +10,12 @@ from typing import Dict, List, Optional
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
 from aiforge.eval.dataset import EvalTask, load_dataset
-from aiforge.llm import StubCodeLLM
+from aiforge.llm import StubCodeLLM, StubReviewerLLM
 from aiforge.orchestration.agents import AgentContext
 from aiforge.orchestration.graph import build_default_pipeline
-from aiforge.orchestration.state import PipelineState, Status
+from aiforge.orchestration.state import ArtifactKind, PipelineState, Status
 from aiforge.quality.gates import build_default_gates
+from aiforge.quality.judge import AgentAsJudge
 from aiforge.quality.metrics import Metrics, TaskOutcome, compute_metrics
 
 
@@ -33,13 +34,16 @@ def _run_one(task: EvalTask, config: GovernanceConfig) -> TaskOutcome:
     state = PipelineState(feature_id=task.id, request=task.request, task_type=task.task_type)
     state = supervisor.invoke(state)
 
-    # 修 C3：tests_ok 用 verifier 的**真实运行**结果覆盖数据集手喂值（指标不再是 fixture 的函数）。
-    # 诚实边界：coverage/sast/lint/regression 仍为外部证据（系统尚未真跑覆盖率/SAST/既有回归套件）。
+    # 落地评审修正：撤销"verifier 自测覆盖 dataset.tests_ok"——自生成测试(与代码同源)会掩盖 dataset
+    # 的回归信号(如 F007)，属循环自证。dataset oracle 仍权威；verifier 真实结果已在 state.verification
+    # 供 PipelineHealthGate 用(不得 HALTED/verifier 未过)。给 judge 喂**真实生成代码**而非 request 文本。
     evidence = dict(task.evidence)
-    if state.verification is not None:
-        evidence["tests_ok"] = bool(state.verification.get("tests_ok"))
+    code_art = state.latest(ArtifactKind.CODE)
+    evidence["diff_summary"] = ctx.file_contents.get(code_art.content, "") if code_art else ""
 
-    gates = build_default_gates(config)
+    # ⚠️ eval 是**合成门禁路由自测**(显式注入 StubReviewerLLM 可信评审替身 + 合成 evidence)，
+    # **不是生产能力指标**——真实能力需真实 LLM + 独立 oracle 测试。
+    gates = build_default_gates(config, judge=AgentAsJudge(llm=StubReviewerLLM()))
     gate_results = gates.run(state, evidence)
     cicd = next((g for g in gate_results if g.layer == "cicd"), None)
     passed_ci = bool(cicd and cicd.passed)

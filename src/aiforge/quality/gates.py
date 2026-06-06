@@ -15,7 +15,6 @@ from dataclasses import dataclass, field
 from typing import Dict, FrozenSet, List, Optional
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
-from aiforge.llm import StubReviewerLLM
 from aiforge.orchestration.state import ArtifactKind, PipelineState, Status
 from aiforge.quality.judge import AgentAsJudge
 
@@ -52,8 +51,27 @@ def _spec_has_acceptance(text: str) -> bool:
     t = (text or "").lower()
     gherkin = ("given" in t and "when" in t and "then" in t) or ("给定" in t and "当" in t and ("那么" in t or "则" in t))
     ears = "shall" in t and any(w in t for w in ("when", "if", "while", "where"))
-    story = ("as a" in t or "作为" in t) and ("i want" in t or "我希望" in t or "想要" in t)
+    # 收紧（采纳评审）：User Story 不能单独放行，必须**外加**验收标记
+    has_ac = any(m in t for m in ("验收", "acceptance", "given", "shall", "ac1", "ac:"))
+    story = (("as a" in t or "作为" in t) and ("i want" in t or "我希望" in t or "想要" in t)) and has_ac
     return (gherkin or ears or story) and len((text or "").strip()) >= 40
+
+
+class PipelineHealthGate(Gate):
+    """落地评审补：流水线已停机/阻断、或缺 CODE/TEST 产物 → 拒绝（HALTED 不得过门禁）。"""
+    name = "pipeline-health"
+    layer = "pre"
+    bypassable = False
+
+    def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
+        if state.status in (Status.HALTED, Status.BLOCKED):
+            return GateResult(self.name, self.layer, False, f"流水线 {state.status.value}，拒绝放行", bypassable=False)
+        if state.latest(ArtifactKind.CODE) is None or state.latest(ArtifactKind.TEST) is None:
+            return GateResult(self.name, self.layer, False, "缺 CODE/TEST 产物，拒绝放行", bypassable=False)
+        # 若有 verifier 结果，必须真过
+        if state.verification is not None and not state.verification.get("tests_ok"):
+            return GateResult(self.name, self.layer, False, f"verifier 未过: {state.verification.get('reason')}", bypassable=False)
+        return GateResult(self.name, self.layer, True, bypassable=False)
 
 
 class SpecGate(Gate):
@@ -89,8 +107,9 @@ class PRGate(Gate):
 
     def __init__(self, config: GovernanceConfig = DEFAULT_GOVERNANCE, judge: Optional[AgentAsJudge] = None) -> None:
         self.config = config
-        # 离线默认用 StubReviewerLLM(可信评审替身)；生产应注入真实 LLM 的 judge。
-        self.judge = judge or AgentAsJudge(llm=StubReviewerLLM())
+        # 落地评审修正：默认**保守**(MockLLM→无可信评审→转人审)；
+        # 离线 demo/eval/测试需**显式**注入 AgentAsJudge(llm=StubReviewerLLM())，不让假评审进生产默认路径。
+        self.judge = judge or AgentAsJudge()
 
     def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
         if "coverage" not in evidence:
@@ -101,8 +120,10 @@ class PRGate(Gate):
             return GateResult(self.name, self.layer, False, "P3: 缺 sast 证据，fails-closed")
         if not evidence["sast_ok"]:
             return GateResult(self.name, self.layer, False, "SAST 安全扫描未通过")
-        verdict = self.judge.review(diff_summary=evidence.get("diff_summary", state.request),
-                                    risk_keywords=[state.task_type])
+        # 落地评审修正：judge 必须审**真实代码 diff**，不退回 request 文本（否则危险代码绕过内容判定）
+        if "diff_summary" not in evidence:
+            return GateResult(self.name, self.layer, False, "缺真实代码 diff 证据，fails-closed（judge 不审 request 文本）")
+        verdict = self.judge.review(diff_summary=str(evidence["diff_summary"]), risk_keywords=[state.task_type])
         if not verdict.approved:
             return GateResult(self.name, self.layer, False, "Agent-as-Judge 未通过（转人审）")
         return GateResult(self.name, self.layer, True)
@@ -176,8 +197,8 @@ class QualityGateChain:
 
 
 def build_default_gates(config: GovernanceConfig = DEFAULT_GOVERNANCE, judge: Optional[AgentAsJudge] = None) -> QualityGateChain:
-    """硬化门禁链（修 C6）：spec → pre-commit → PR → traceability → CI/CD → canary。"""
+    """硬化门禁链（修 C6 + 落地评审）：health → spec → pre-commit → PR → traceability → CI/CD → canary。"""
     return QualityGateChain(gates=[
-        SpecGate(), PreCommitGate(), PRGate(config, judge),
+        PipelineHealthGate(), SpecGate(), PreCommitGate(), PRGate(config, judge),
         TraceabilityGate(), CICDGate(), CanaryGate(),
     ])

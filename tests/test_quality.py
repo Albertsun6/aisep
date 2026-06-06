@@ -1,42 +1,64 @@
 import unittest
 
+from aiforge.llm import StubReviewerLLM
 from aiforge.orchestration.state import Artifact, ArtifactKind, PipelineState, Status
-from aiforge.quality.gates import CICDGate, SpecGate, build_default_gates
+from aiforge.quality.gates import CICDGate, PipelineHealthGate, SpecGate, build_default_gates
 from aiforge.quality.judge import AgentAsJudge
 from aiforge.quality.metrics import TaskOutcome, compute_metrics
 
 _STRUCTURED_SPEC = "User Story: As a user I want X, so that Y. 验收标准 Given a When b Then c."
+_FULL_EV = {"lint_ok": True, "coverage": 0.9, "sast_ok": True, "tests_ok": True,
+            "build_ok": True, "diff_summary": "def solution():\n    return 42"}
+
+
+def _trusted_chain():
+    # eval/测试需**显式**注入可信评审替身(默认门禁是保守的，不带 stub)
+    return build_default_gates(judge=AgentAsJudge(llm=StubReviewerLLM()))
 
 
 class TestGates(unittest.TestCase):
-    def _state(self, task_type="feature", with_spec=True):
+    def _state(self, task_type="feature", with_spec=True, with_code=True):
         s = PipelineState(feature_id="G", request="r", task_type=task_type)
         if with_spec:
             s.add_artifact(Artifact(ArtifactKind.SPEC, _STRUCTURED_SPEC, "analyst", refs=["G"]))
+            s.add_artifact(Artifact(ArtifactKind.PLAN, "plan", "architect", refs=["spec"]))
+            s.add_artifact(Artifact(ArtifactKind.TASKS, "tasks", "architect", refs=["plan"]))
+        if with_code:
+            s.add_artifact(Artifact(ArtifactKind.CODE, "solution.py", "developer", refs=["tasks"]))
+            s.add_artifact(Artifact(ArtifactKind.TEST, "test.py", "tester", refs=["code"]))
         return s
 
     def test_all_gates_pass(self):
-        chain = build_default_gates()  # 修 C6 后为硬化 6 门链
-        ev = {"lint_ok": True, "coverage": 0.9, "sast_ok": True, "tests_ok": True, "build_ok": True}
-        results = chain.run(self._state(), ev)
-        self.assertEqual(len(results), 6)
+        results = _trusted_chain().run(self._state(), dict(_FULL_EV))
+        self.assertEqual(len(results), 7)   # health+spec+precommit+pr+trace+cicd+canary
         self.assertTrue(all(r.passed for r in results), [(r.name, r.reason) for r in results])
 
-    def test_no_spec_blocked_first(self):
-        """C6 P1：无 spec 即便证据齐全也被 SpecGate 拦在最前。"""
-        results = build_default_gates().run(self._state(with_spec=False),
-                                            {"lint_ok": True, "coverage": 0.9, "sast_ok": True, "tests_ok": True, "build_ok": True})
+    def test_default_pr_is_conservative(self):
+        """落地评审修正：默认门禁不带 stub 评审 → 干净变更也不自动放行(转人审)。"""
+        results = build_default_gates().run(self._state(), dict(_FULL_EV))
+        self.assertFalse(all(r.passed for r in results))
+        self.assertTrue(any(r.layer == "pr" and not r.passed for r in results))
+
+    def test_halted_pipeline_blocked(self):
+        """落地评审 #4：HALTED/无产物不得过门禁(PipelineHealthGate)。"""
+        s = self._state(with_code=False)            # 无 CODE/TEST
+        s.status = Status.HALTED
+        results = _trusted_chain().run(s, dict(_FULL_EV))
         self.assertFalse(results[-1].passed)
-        self.assertEqual(results[-1].layer, "spec")
+        self.assertEqual(results[0].layer, "pre")   # 健康门在最前拦下
+
+    def test_no_spec_blocked(self):
+        results = _trusted_chain().run(self._state(with_spec=False), dict(_FULL_EV))
+        self.assertFalse(all(r.passed for r in results))
 
     def test_fails_closed_empty_evidence(self):
-        """C6 P3：有 spec 但零证据 → 在 PreCommit fails-closed 拦下。"""
-        results = build_default_gates().run(self._state(), {})
+        results = _trusted_chain().run(self._state(), {})
         self.assertFalse(all(r.passed for r in results))
 
     def test_low_coverage_blocks_at_pr(self):
         state = self._state()
-        results = build_default_gates().run(state, {"lint_ok": True, "coverage": 0.5, "sast_ok": True})
+        results = _trusted_chain().run(state, {"lint_ok": True, "coverage": 0.5, "sast_ok": True,
+                                               "diff_summary": "x"})
         self.assertFalse(results[-1].passed)
         self.assertEqual(results[-1].layer, "pr")
         self.assertEqual(state.status, Status.BLOCKED)
