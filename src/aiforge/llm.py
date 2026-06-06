@@ -68,6 +68,11 @@ class StubCodeLLM:
 
     def complete(self, system: str, user: str) -> str:
         low = system.lower()
+        if "analyst" in low:
+            # 产出带验收结构的 spec(过 SpecGate/C6)
+            req = user.strip().splitlines()[0][:40] if user.strip() else "该功能"
+            return (f"User Story: As a user, I want {req}, so that 目标达成。\n"
+                    "验收标准: Given 已满足前置条件 When 触发该功能 Then 返回预期结果并记录。")
         if "developer" in low:
             return "```python\ndef solution():\n    return 42\n```"
         if "tester" in low:

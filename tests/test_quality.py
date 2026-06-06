@@ -1,26 +1,42 @@
 import unittest
 
-from aiforge.orchestration.state import PipelineState, Status
-from aiforge.quality.gates import CICDGate, build_default_gates
+from aiforge.orchestration.state import Artifact, ArtifactKind, PipelineState, Status
+from aiforge.quality.gates import CICDGate, SpecGate, build_default_gates
 from aiforge.quality.judge import AgentAsJudge
 from aiforge.quality.metrics import TaskOutcome, compute_metrics
 
+_STRUCTURED_SPEC = "User Story: As a user I want X, so that Y. 验收标准 Given a When b Then c."
+
 
 class TestGates(unittest.TestCase):
-    def _state(self, task_type="feature"):
-        return PipelineState(feature_id="G", request="r", task_type=task_type)
+    def _state(self, task_type="feature", with_spec=True):
+        s = PipelineState(feature_id="G", request="r", task_type=task_type)
+        if with_spec:
+            s.add_artifact(Artifact(ArtifactKind.SPEC, _STRUCTURED_SPEC, "analyst", refs=["G"]))
+        return s
 
     def test_all_gates_pass(self):
-        chain = build_default_gates()
+        chain = build_default_gates()  # 修 C6 后为硬化 6 门链
         ev = {"lint_ok": True, "coverage": 0.9, "sast_ok": True, "tests_ok": True, "build_ok": True}
         results = chain.run(self._state(), ev)
-        self.assertEqual(len(results), 4)
-        self.assertTrue(all(r.passed for r in results))
+        self.assertEqual(len(results), 6)
+        self.assertTrue(all(r.passed for r in results), [(r.name, r.reason) for r in results])
+
+    def test_no_spec_blocked_first(self):
+        """C6 P1：无 spec 即便证据齐全也被 SpecGate 拦在最前。"""
+        results = build_default_gates().run(self._state(with_spec=False),
+                                            {"lint_ok": True, "coverage": 0.9, "sast_ok": True, "tests_ok": True, "build_ok": True})
+        self.assertFalse(results[-1].passed)
+        self.assertEqual(results[-1].layer, "spec")
+
+    def test_fails_closed_empty_evidence(self):
+        """C6 P3：有 spec 但零证据 → 在 PreCommit fails-closed 拦下。"""
+        results = build_default_gates().run(self._state(), {})
+        self.assertFalse(all(r.passed for r in results))
 
     def test_low_coverage_blocks_at_pr(self):
-        chain = build_default_gates()
         state = self._state()
-        results = chain.run(state, {"lint_ok": True, "coverage": 0.5, "sast_ok": True})
+        results = build_default_gates().run(state, {"lint_ok": True, "coverage": 0.5, "sast_ok": True})
         self.assertFalse(results[-1].passed)
         self.assertEqual(results[-1].layer, "pr")
         self.assertEqual(state.status, Status.BLOCKED)
