@@ -81,14 +81,27 @@ def planner_tasks(state: PipelineState, ctx: AgentContext) -> PipelineState:
     return state
 
 
+def _dev_prompt(state: PipelineState) -> str:
+    spec = state.latest(ArtifactKind.SPEC)
+    return (f"需求：{state.request}\n规格：{spec.content if spec else state.request}\n"
+            "只输出实现该需求的 Python，定义顶层 `solution`（可用 ```python 围栏）。不要解释。")
+
+
 def developer_node(state: PipelineState, ctx: AgentContext) -> PipelineState:
-    """实现：经 runtime 沙箱落盘（强制权限 + blast radius + 安全停机）。"""
+    """实现（修 C1）：用 LLM 产出**成为真代码**（非注释），非法/无 solution → 安全停机（不造假 stub）；
+    经 runtime 沙箱落盘（强制权限 + blast radius + 安全停机，保留 P4/P5）。"""
+    from aiforge.orchestration.codegen import defines_solution, extract_code  # 延迟导入避免既有循环
     state.current_node = "developer"
-    out = ctx.llm.complete("You are the Developer.", state.request)
-    code_path = f"src/feature_{state.feature_id}.py"
-    body = f'"""Generated for {state.feature_id}."""\n\n# {out}\n\n\ndef run():\n    return "{state.feature_id}"\n'
-    ctx.file_contents[code_path] = body
-    change = FileChange(path=code_path, added_lines=body.count("\n") + 1)
+    code = extract_code(ctx.llm.complete("You are the Developer. 只输出代码。", _dev_prompt(state)), defines_solution)
+    if not code:
+        state.status = Status.HALTED
+        state.needs_human_reason = "developer 未产出合法且定义 solution 的代码（无真实 codegen 时安全停机，不造假 stub）"
+        _emit(ctx, "developer", "halt", "code", reason=state.needs_human_reason)
+        state.log("developer", "safe_halt", reason=state.needs_human_reason)
+        return state
+    code_path = f"solution_{state.feature_id}.py"
+    ctx.file_contents[code_path] = code
+    change = FileChange(path=code_path, added_lines=code.count("\n") + 1)
     state.file_changes.append(change)
     state.add_artifact(Artifact(ArtifactKind.CODE, code_path, "developer", refs=["tasks"]))
 
@@ -123,15 +136,50 @@ def reviewer_node(state: PipelineState, ctx: AgentContext) -> PipelineState:
 
 
 def tester_node(state: PipelineState, ctx: AgentContext) -> PipelineState:
-    """生成测试（产出 TEST，引用 CODE）。"""
+    """生成**真实测试**（修 C1，不再 assert True）；非法/不引用 solution → 安全停机。"""
+    from aiforge.orchestration.codegen import extract_code, is_test_module
     state.current_node = "tester"
-    out = ctx.llm.complete("You are the Tester.", state.request)
-    test_path = f"tests/test_feature_{state.feature_id}.py"
-    body = f"def test_{state.feature_id}():\n    # {out}\n    assert True\n"
-    ctx.file_contents[test_path] = body
-    state.file_changes.append(FileChange(path=test_path, added_lines=body.count("\n") + 1))
+    test_prompt = f"为需求写 unittest：import solution 并断言其行为，类继承 unittest.TestCase。需求：{state.request}"
+    test_src = extract_code(ctx.llm.complete("You are the Tester. 只输出测试代码。", test_prompt), is_test_module)
+    if not test_src:
+        state.status = Status.HALTED
+        state.needs_human_reason = "tester 未产出合法且引用 solution 的测试（无真实 codegen 时安全停机）"
+        state.log("tester", "safe_halt", reason=state.needs_human_reason)
+        return state
+    test_path = f"test_solution_{state.feature_id}.py"
+    ctx.file_contents[test_path] = test_src
+    state.file_changes.append(FileChange(path=test_path, added_lines=test_src.count("\n") + 1))
     state.add_artifact(Artifact(ArtifactKind.TEST, test_path, "tester", refs=["code"]))
     state.log("tester", "produced_tests", path=test_path)
+    return state
+
+
+def verifier_node(state: PipelineState, ctx: AgentContext) -> PipelineState:
+    """在 C4 隔离 runtime 里**真跑**生成的测试，记录真实 tests_ok（修 C1/缓解 C3）。
+
+    无可用真隔离 → fail-closed（BLOCKED，不在无隔离下执行不可信代码）。"""
+    from aiforge.orchestration.codegen import run_generated, select_isolated_or_none
+    state.current_node = "verifier"
+    code = state.latest(ArtifactKind.CODE)
+    test = state.latest(ArtifactKind.TEST)
+    if code is None or test is None:
+        return state  # 上游已停机/无产物
+    code_src = ctx.file_contents.get(code.content, "")
+    test_src = ctx.file_contents.get(test.content, "")
+    sandbox = select_isolated_or_none()
+    if sandbox is None:
+        state.status = Status.BLOCKED
+        state.needs_human_reason = "无可用真隔离 runtime（C4），拒绝执行生成代码做验证"
+        state.verification = {"tests_ok": False, "reason": "no-isolation"}
+        state.log("verifier", "blocked", reason=state.needs_human_reason)
+        return state
+    vr = run_generated(code_src, test_src, isolated_runtime=sandbox)
+    state.verification = {"tests_ok": vr.tests_ok, "reason": vr.reason, "tests_run": vr.tests_run}
+    state.log("verifier", "verified", tests_ok=vr.tests_ok, reason=vr.reason)
+    if not vr.tests_ok:
+        state.status = Status.BLOCKED
+        state.needs_human_reason = f"验证未过: {vr.reason}"
+        _emit(ctx, "verifier", "decision", "blocked", reason=vr.reason)
     return state
 
 
@@ -142,4 +190,5 @@ ROLE_NODES = {
     "developer": developer_node,
     "reviewer": reviewer_node,
     "tester": tester_node,
+    "verifier": verifier_node,
 }

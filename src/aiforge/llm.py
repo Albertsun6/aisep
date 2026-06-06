@@ -56,3 +56,23 @@ class MockLLM:
             "judge": f"裁决: 通过(无明显风险)，基于: {snippet}",
         }
         return bodies.get(role, f"已处理: {snippet}")
+
+
+class StubCodeLLM:
+    """离线确定性"代码生成"替身（修 C1 后供 demo/eval/测试端到端跑**真验证**）。
+
+    与 ``MockLLM`` 的区别：MockLLM 只产指纹串（无法成为代码，改进后的 developer 会对它安全停机）；
+    ``StubCodeLLM`` 产出**合法、可执行、可被测试验证**的代码——虽然 trivial，但是真代码（会被沙箱真跑、
+    被变异校验）。**不是真 LLM**：真实接入实现 ``LLMClient`` 协议替换即可。
+    """
+
+    def complete(self, system: str, user: str) -> str:
+        low = system.lower()
+        if "developer" in low:
+            return "```python\ndef solution():\n    return 42\n```"
+        if "tester" in low:
+            return ("```python\nimport unittest\nfrom solution import solution\n"
+                    "class TestSolution(unittest.TestCase):\n"
+                    "    def test_value(self):\n        self.assertEqual(solution(), 42)\n```")
+        snippet = user.strip().splitlines()[0][:80] if user.strip() else ""
+        return f"[stub] 已处理: {snippet}"

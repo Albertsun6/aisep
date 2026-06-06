@@ -12,6 +12,7 @@ from aiforge.eval.harness import run_eval
 from aiforge.governance.audit import AuditTrail
 from aiforge.governance.permissions import PermissionBroker
 from aiforge.governance.review import review_after_session
+from aiforge.llm import StubCodeLLM
 from aiforge.orchestration.agents import AgentContext
 from aiforge.orchestration.graph import build_default_pipeline
 from aiforge.orchestration.state import PipelineState, Status
@@ -23,7 +24,7 @@ def _cmd_demo(args: argparse.Namespace) -> int:
     perms = PermissionBroker(audit=audit)
     perms.grant("developer", "write", reason="demo")
     runtime = LocalSandbox(perms, audit=audit)
-    ctx = AgentContext(runtime=runtime, permissions=perms, audit=audit)
+    ctx = AgentContext(runtime=runtime, permissions=perms, audit=audit, llm=StubCodeLLM())
 
     supervisor = build_default_pipeline(ctx)
     state = PipelineState(feature_id=args.feature, request=args.request, task_type=args.task_type)

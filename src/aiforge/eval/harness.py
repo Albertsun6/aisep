@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
 from aiforge.eval.dataset import EvalTask, load_dataset
+from aiforge.llm import StubCodeLLM
 from aiforge.orchestration.agents import AgentContext
 from aiforge.orchestration.graph import build_default_pipeline
 from aiforge.orchestration.state import PipelineState, Status
@@ -25,7 +26,9 @@ class EvalReport:
 
 
 def _run_one(task: EvalTask, config: GovernanceConfig) -> TaskOutcome:
-    ctx = AgentContext(config=config)
+    # 用产代码的 StubCodeLLM，使 developer 真产出代码（MockLLM 会安全停机）。
+    # 注：门禁仍按 dataset.evidence 判定（C3：tests_ok 等仍是合成证据，未接 verifier 真结果）。
+    ctx = AgentContext(config=config, llm=StubCodeLLM())
     supervisor = build_default_pipeline(ctx)
     state = PipelineState(feature_id=task.id, request=task.request, task_type=task.task_type)
     state = supervisor.invoke(state)

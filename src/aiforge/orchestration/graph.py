@@ -89,7 +89,7 @@ class Supervisor:
         return self.invoke(state, start_index=self._next_index(state))
 
 
-DEFAULT_PIPELINE = ["analyst", "architect", "tasks", "developer", "reviewer", "tester"]
+DEFAULT_PIPELINE = ["analyst", "architect", "tasks", "developer", "reviewer", "tester", "verifier"]
 
 
 def build_default_pipeline(ctx: Optional[AgentContext] = None) -> Supervisor:

@@ -3,6 +3,7 @@ import unittest
 from aiforge.config import GovernanceConfig
 from aiforge.governance.audit import AuditTrail
 from aiforge.governance.permissions import PermissionBroker
+from aiforge.llm import StubCodeLLM
 from aiforge.orchestration.agents import AgentContext
 from aiforge.orchestration.graph import build_default_pipeline
 from aiforge.orchestration.state import ArtifactKind, PipelineState, Status
@@ -13,7 +14,8 @@ def _ctx(config=None):
     audit = AuditTrail(path=None)
     perms = PermissionBroker(audit=audit)
     rt = LocalSandbox(perms, config=config) if config else LocalSandbox(perms)
-    kwargs = {"runtime": rt, "permissions": perms, "audit": audit}
+    # StubCodeLLM：产出真代码/真测试，使流水线端到端跑通真验证（MockLLM 会安全停机）
+    kwargs = {"runtime": rt, "permissions": perms, "audit": audit, "llm": StubCodeLLM()}
     if config:
         kwargs["config"] = config
     return AgentContext(**kwargs), audit

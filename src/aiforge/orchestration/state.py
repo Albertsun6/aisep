@@ -76,6 +76,7 @@ class PipelineState:
     messages: List[dict] = field(default_factory=list)
     consecutive_failures: int = 0
     needs_human_reason: Optional[str] = None
+    verification: Optional[dict] = None   # verifier_node 写入真实 tests_ok（修 C1/缓解 C3）
 
     # ---- helpers ----
     def add_artifact(self, artifact: Artifact) -> Artifact:
