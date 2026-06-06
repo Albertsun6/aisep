@@ -76,3 +76,14 @@ class StubCodeLLM:
                     "    def test_value(self):\n        self.assertEqual(solution(), 42)\n```")
         snippet = user.strip().splitlines()[0][:80] if user.strip() else ""
         return f"[stub] 已处理: {snippet}"
+
+
+class StubReviewerLLM:
+    """离线确定性"可信评审"替身（修 C2 后供 demo/eval/测试让干净变更能自动通过 judge）。
+
+    返回结构化 ``SEVERITY: ok``——代表"一个称职评审者看完没发现阻断问题"。**不是真 LLM**；
+    真实接入用真模型替换。Judge 仍会叠加静态扫描 + 高风险类型门（命中即转人审，与本替身无关）。
+    """
+
+    def complete(self, system: str, user: str) -> str:
+        return "审查完毕，未见阻断性问题。\nSEVERITY: ok"

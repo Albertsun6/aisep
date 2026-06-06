@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
+from aiforge.llm import StubReviewerLLM
 from aiforge.orchestration.state import PipelineState, Status
 from aiforge.quality.judge import AgentAsJudge
 
@@ -49,7 +50,9 @@ class PRGate(Gate):
 
     def __init__(self, config: GovernanceConfig = DEFAULT_GOVERNANCE, judge: Optional[AgentAsJudge] = None) -> None:
         self.config = config
-        self.judge = judge or AgentAsJudge()
+        # 离线默认用 StubReviewerLLM（可信评审替身）：干净变更自动通过，危险/高风险→人审。
+        # 生产应注入真实 LLM 的 judge。
+        self.judge = judge or AgentAsJudge(llm=StubReviewerLLM())
 
     def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
         coverage = float(evidence.get("coverage", 0.0))

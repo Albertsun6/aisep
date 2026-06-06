@@ -32,13 +32,18 @@ class TestGates(unittest.TestCase):
         self.assertFalse(res.passed)
         self.assertFalse(res.bypassable)
 
-    def test_judge_blocks_high_risk(self):
-        verdict = AgentAsJudge().review("改了支付逻辑", risk_keywords=["payment"])
-        self.assertFalse(verdict.approved)
-        verdict2 = AgentAsJudge().review("加了个工具函数", risk_keywords=["feature"])
-        self.assertTrue(verdict2.approved)
-        # 三个对抗 persona 都给了意见
-        self.assertGreaterEqual(len(verdict2.findings), 3)
+    def test_judge_conservative_and_content_aware(self):
+        """修 C2 后：无可信 LLM 一律转人审；危险内容即便 feature 也不自动放行；高风险类型转人审。"""
+        from aiforge.llm import StubReviewerLLM
+        # 无可信 LLM(MockLLM) → 保守转人审，连干净变更也不自动放行
+        self.assertFalse(AgentAsJudge().review("加个工具函数", task_type="feature").approved)
+        # 可信评审 + 干净 + 非高风险 → 自动通过
+        self.assertTrue(AgentAsJudge(llm=StubReviewerLLM()).review("加个纯函数", task_type="feature").approved)
+        # 危险内容(SQL 注入)即便 task_type=feature 也不自动通过（静态扫描升级人审）
+        danger = 'q = f"SELECT * FROM u WHERE n={x}"'
+        self.assertFalse(AgentAsJudge(llm=StubReviewerLLM()).review(danger, task_type="feature").approved)
+        # 高风险类型 → 转人审
+        self.assertFalse(AgentAsJudge(llm=StubReviewerLLM()).review("改支付", task_type="payment").approved)
 
 
 class TestMetrics(unittest.TestCase):
