@@ -2,7 +2,9 @@ import unittest
 
 from aiforge.config import DEFAULT_GOVERNANCE
 from aiforge.governance.audit import AuditTrail
-from aiforge.governance.permissions import PermissionBroker, PermissionError_
+from aiforge.governance.permissions import (
+    ApprovalAuthority, HumanApprovalTicket, PermissionBroker, PermissionError_,
+)
 from aiforge.governance.review import review_after_session
 from aiforge.orchestration.state import FileChange
 
@@ -14,14 +16,29 @@ class TestPermissions(unittest.TestCase):
         with self.assertRaises(PermissionError_):
             perms.check("dev", "write")
 
-    def test_grant_records_audit_and_marks_sensitive(self):
+    def test_sensitive_not_self_granted(self):
+        """修 C5：敏感能力 grant() 默认拒绝且**不授予**（原版 bug 会授予）。"""
         audit = AuditTrail(path=None)
         perms = PermissionBroker(audit=audit)
-        ok = perms.grant("dev", "write", reason="impl")
-        self.assertTrue(ok)
-        auto = perms.grant("dev", "delete", reason="cleanup")
-        self.assertFalse(auto)  # 敏感能力不自动通过
-        self.assertEqual(len(audit.filter(action="grant")), 2)
+        self.assertTrue(perms.grant("dev", "write", reason="impl"))
+        self.assertFalse(perms.grant("dev", "delete", reason="cleanup"))
+        self.assertFalse(perms.has("delete"))           # 关键：未被授予
+        self.assertEqual(len(audit.filter(action="grant")), 1)          # 只有 write 真授予
+        self.assertEqual(len(audit.filter(action="grant_denied")), 1)   # delete 被拒并记审计
+
+    def test_sensitive_requires_signed_human_ticket(self):
+        auth = ApprovalAuthority()
+        perms = auth.broker()
+        self.assertFalse(perms.grant("dev", "delete", reason="x"))      # agent 自授被拒
+        perms.approve(auth.issue("delete"))                              # 人审签发 ticket → 授予
+        self.assertTrue(perms.has("delete"))
+        # 伪造票被验签拒绝；同票重放被拒
+        with self.assertRaises(PermissionError_):
+            PermissionBroker().approve(HumanApprovalTicket("delete", "n", 9e9, "bad"))
+        t = auth.issue("infra")
+        perms.approve(t)
+        with self.assertRaises(PermissionError_):
+            perms.approve(t)                                             # 防重放
 
 
 class TestReview(unittest.TestCase):
