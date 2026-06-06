@@ -57,20 +57,33 @@ def _spec_has_acceptance(text: str) -> bool:
     return (gherkin or ears or story) and len((text or "").strip()) >= 40
 
 
-class PipelineHealthGate(Gate):
-    """落地评审补：流水线已停机/阻断、或缺 CODE/TEST 产物 → 拒绝（HALTED 不得过门禁）。"""
-    name = "pipeline-health"
-    layer = "pre"
+class StatusGate(Gate):
+    """链首：**白名单**——只有流水线跑到 DONE 才可进入后续门禁（拦 HALTED/BLOCKED/NEEDS_HUMAN/中间态）。"""
+    name = "status"
+    layer = "status"
     bypassable = False
 
     def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
-        if state.status in (Status.HALTED, Status.BLOCKED):
-            return GateResult(self.name, self.layer, False, f"流水线 {state.status.value}，拒绝放行", bypassable=False)
+        ok = state.status == Status.DONE
+        return GateResult(self.name, self.layer, ok, "" if ok else f"流水线状态 {state.status.value}≠DONE，未就绪", bypassable=False)
+
+
+class CompletenessGate(Gate):
+    """产物/验证完整性：必须有 CODE+TEST，且 verifier **存在且真过**（不是"有才查"）。
+
+    诚实边界：当前按"代码类任务"统一要求 CODE+TEST+verifier；aiforge 现有 task_type 皆为代码任务。
+    若将来支持纯文档/配置任务，应按 task_type 定义产物矩阵（本次不投机实现）。
+    """
+    name = "completeness"
+    layer = "complete"
+    bypassable = False
+
+    def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
         if state.latest(ArtifactKind.CODE) is None or state.latest(ArtifactKind.TEST) is None:
-            return GateResult(self.name, self.layer, False, "缺 CODE/TEST 产物，拒绝放行", bypassable=False)
-        # 若有 verifier 结果，必须真过
-        if state.verification is not None and not state.verification.get("tests_ok"):
-            return GateResult(self.name, self.layer, False, f"verifier 未过: {state.verification.get('reason')}", bypassable=False)
+            return GateResult(self.name, self.layer, False, "缺 CODE/TEST 产物", bypassable=False)
+        if not state.verification or not state.verification.get("tests_ok"):
+            why = "未运行 verifier" if not state.verification else f"verifier 未过: {state.verification.get('reason')}"
+            return GateResult(self.name, self.layer, False, f"验证缺失/未过（{why}）", bypassable=False)
         return GateResult(self.name, self.layer, True, bypassable=False)
 
 
@@ -120,10 +133,11 @@ class PRGate(Gate):
             return GateResult(self.name, self.layer, False, "P3: 缺 sast 证据，fails-closed")
         if not evidence["sast_ok"]:
             return GateResult(self.name, self.layer, False, "SAST 安全扫描未通过")
-        # 落地评审修正：judge 必须审**真实代码 diff**，不退回 request 文本（否则危险代码绕过内容判定）
-        if "diff_summary" not in evidence:
-            return GateResult(self.name, self.layer, False, "缺真实代码 diff 证据，fails-closed（judge 不审 request 文本）")
-        verdict = self.judge.review(diff_summary=str(evidence["diff_summary"]), risk_keywords=[state.task_type])
+        # 落地评审修正：judge 必须审**真实代码快照**，不退回 request 文本，且拒绝空/缺失（否则绕过内容判定）
+        code_snapshot = str(evidence.get("diff_summary", "")).strip()
+        if not code_snapshot:
+            return GateResult(self.name, self.layer, False, "缺非空的真实代码证据，fails-closed（judge 不审 request 文本/空内容）")
+        verdict = self.judge.review(diff_summary=code_snapshot, risk_keywords=[state.task_type])
         if not verdict.approved:
             return GateResult(self.name, self.layer, False, "Agent-as-Judge 未通过（转人审）")
         return GateResult(self.name, self.layer, True)
@@ -197,8 +211,8 @@ class QualityGateChain:
 
 
 def build_default_gates(config: GovernanceConfig = DEFAULT_GOVERNANCE, judge: Optional[AgentAsJudge] = None) -> QualityGateChain:
-    """硬化门禁链（修 C6 + 落地评审）：health → spec → pre-commit → PR → traceability → CI/CD → canary。"""
+    """硬化门禁链：status → spec → pre-commit → PR → traceability → completeness → CI/CD → canary。"""
     return QualityGateChain(gates=[
-        PipelineHealthGate(), SpecGate(), PreCommitGate(), PRGate(config, judge),
-        TraceabilityGate(), CICDGate(), CanaryGate(),
+        StatusGate(), SpecGate(), PreCommitGate(), PRGate(config, judge),
+        TraceabilityGate(), CompletenessGate(), CICDGate(), CanaryGate(),
     ])

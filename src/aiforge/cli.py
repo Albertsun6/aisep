@@ -52,7 +52,10 @@ def _cmd_demo(args: argparse.Namespace) -> int:
 
 def _cmd_eval(args: argparse.Namespace) -> int:
     report = run_eval(dataset_path=args.dataset)
-    print(json.dumps(report.metrics.as_dict(), ensure_ascii=False, indent=2))
+    if report.not_production_metric:
+        print("⚠️  合成门禁路由自测（StubReviewer + 合成 evidence）——**非生产能力指标**。"
+              "真实能力需真实 LLM + 独立 oracle 测试 + 真覆盖率/SAST 工具。")
+    print(json.dumps({"kind": report.kind, **report.metrics.as_dict()}, ensure_ascii=False, indent=2))
     if args.dashboard:
         path = write_dashboard(report, args.dashboard)
         print(f"看板已生成: {path}")

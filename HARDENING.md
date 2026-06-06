@@ -16,19 +16,21 @@
 | `fix(C1)` | developer 写死 `return "<id>"`、tester 恒 `assert True` | `codegen.py`：LLM 输出**成为真代码**；`verifier` 节点在 C4 隔离里**真跑** unittest（变异反作弊）；无真 LLM **诚实停机** | developer→`return 42`、verifier `tests_ok=True`、`MockLLM`→halt |
 | `fix(C2)` | Agent-as-Judge 只看 task_type 关键词，persona 意见被丢弃 | 内容感知（静态扫描 + 结构化 LLM 面板）；无可信 LLM/命中/高风险→**转人审**，绝不自动放行 | 危险 feature→PR `passed=False`（原 True），干净→True 不误杀 |
 | `fix(C5)` / `fix(C5)+` | `grant()` 无条件授予敏感能力，可自授 delete | 敏感能力默认拒绝；只能凭 **HMAC 签名人审 ticket** 授予；**per-actor** + actor 绑定 + 防重放 | agent 自授 delete→`has=False`；developer 的 delete≠reviewer；伪造/重放票被拒 |
-| `fix(C6)` | 无 spec 照样过门禁、refs 不校验、PreCommit fails-open | `SpecGate`(P1)+`TraceabilityGate`(P2)+`PipelineHealthGate`+全门 **fails-closed**，真接进 `build_default_gates`；风险表单一来源 | 无 spec→拦于 SpecGate；零证据→fails-closed；HALTED→拦；默认门禁**不带 stub 评审**(转人审) |
+| `fix(C6)` | 无 spec 照样过门禁、refs 不校验、PreCommit fails-open | `SpecGate`(P1)+`TraceabilityGate`(P2)+`StatusGate`(白名单 DONE)+`CompletenessGate`(CODE/TEST+verifier 真过)+全门 **fails-closed**；风险表单一来源 | 无 spec→拦于 SpecGate；零证据→fails-closed；非 DONE/缺验证→拦；默认门禁**不带 stub 评审**(转人审) |
 | `fix(C3)` → **已撤销** | eval 指标由 `dataset.evidence` 手喂（量的是 fixture） | 曾改用 verifier 真实结果驱动，但**异构落地评审指出那是循环自证**(同一 stub 既产码又产测试，会掩盖 dataset 的回归信号)，故**撤销**；dataset oracle 仍权威 | eval 现明确标注为**合成门禁路由自测**(非生产指标)；真 C3 需真实 LLM + 独立 oracle 测试 |
 
 ## 验证
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests -q   # 31 测试全过
+PYTHONPATH=src python3 -m unittest discover -s tests -q   # 33 测试全过
 PYTHONPATH=src python3 -m aiforge.cli demo                # 端到端 → DONE
 PYTHONPATH=src python3 -m aiforge.cli eval               # 合成门禁路由自测(非生产指标)
 ```
 
-> 注：本次落地的 **diff 本身也经了一轮异构评审**（cursor-agent，判"否"），据此修了 4 个落地引入的洞：
-> 默认门禁误用 stub 评审、judge 审 request 而非真代码、C3 eval 循环自证、HALTED 仍可能过门禁。
+> 注：落地的 **diff 本身也经了多轮异构评审**（cursor-agent）。第 1 轮判"否"，修了 4 个洞（默认门禁误用 stub
+> 评审、judge 审 request 而非真代码、C3 eval 循环自证、HALTED 仍可能过门禁）；第 2 轮判"部分"，进一步把
+> 健康门拆成 StatusGate(白名单 DONE)+CompletenessGate(verifier 必须存在且真过)、PRGate 拒空 diff、eval
+> 输出加合成标记。收敛。
 
 ## 诚实的边界 / 刻意的保守默认（不是 bug）
 

@@ -2,7 +2,7 @@ import unittest
 
 from aiforge.llm import StubReviewerLLM
 from aiforge.orchestration.state import Artifact, ArtifactKind, PipelineState, Status
-from aiforge.quality.gates import CICDGate, PipelineHealthGate, SpecGate, build_default_gates
+from aiforge.quality.gates import CICDGate, SpecGate, build_default_gates
 from aiforge.quality.judge import AgentAsJudge
 from aiforge.quality.metrics import TaskOutcome, compute_metrics
 
@@ -17,8 +17,12 @@ def _trusted_chain():
 
 
 class TestGates(unittest.TestCase):
-    def _state(self, task_type="feature", with_spec=True, with_code=True):
+    def _state(self, task_type="feature", with_spec=True, with_code=True,
+               status=Status.DONE, verified=True):
         s = PipelineState(feature_id="G", request="r", task_type=task_type)
+        s.status = status
+        if verified:
+            s.verification = {"tests_ok": True, "reason": "", "tests_run": 1}
         if with_spec:
             s.add_artifact(Artifact(ArtifactKind.SPEC, _STRUCTURED_SPEC, "analyst", refs=["G"]))
             s.add_artifact(Artifact(ArtifactKind.PLAN, "plan", "architect", refs=["spec"]))
@@ -30,29 +34,39 @@ class TestGates(unittest.TestCase):
 
     def test_all_gates_pass(self):
         results = _trusted_chain().run(self._state(), dict(_FULL_EV))
-        self.assertEqual(len(results), 7)   # health+spec+precommit+pr+trace+cicd+canary
+        self.assertEqual(len(results), 8)   # status+spec+precommit+pr+trace+completeness+cicd+canary
         self.assertTrue(all(r.passed for r in results), [(r.name, r.reason) for r in results])
 
     def test_default_pr_is_conservative(self):
-        """落地评审修正：默认门禁不带 stub 评审 → 干净变更也不自动放行(转人审)。"""
+        """默认门禁不带 stub 评审 → 干净变更也不自动放行(转人审)。"""
         results = build_default_gates().run(self._state(), dict(_FULL_EV))
-        self.assertFalse(all(r.passed for r in results))
         self.assertTrue(any(r.layer == "pr" and not r.passed for r in results))
 
-    def test_halted_pipeline_blocked(self):
-        """落地评审 #4：HALTED/无产物不得过门禁(PipelineHealthGate)。"""
-        s = self._state(with_code=False)            # 无 CODE/TEST
-        s.status = Status.HALTED
-        results = _trusted_chain().run(s, dict(_FULL_EV))
-        self.assertFalse(results[-1].passed)
-        self.assertEqual(results[0].layer, "pre")   # 健康门在最前拦下
+    def test_non_done_status_blocked_first(self):
+        """StatusGate 白名单：非 DONE(HALTED/NEEDS_HUMAN) 在链首被拦。"""
+        for st in (Status.HALTED, Status.NEEDS_HUMAN, Status.BLOCKED):
+            results = _trusted_chain().run(self._state(status=st), dict(_FULL_EV))
+            self.assertEqual(results[0].layer, "status")
+            self.assertFalse(results[0].passed)
 
-    def test_no_spec_blocked(self):
-        results = _trusted_chain().run(self._state(with_spec=False), dict(_FULL_EV))
+    def test_missing_verification_blocked(self):
+        """CompletenessGate：DONE 但 verifier 从没跑(verification=None) → 拒绝(不再"有才查")。"""
+        results = _trusted_chain().run(self._state(verified=False), dict(_FULL_EV))
         self.assertFalse(all(r.passed for r in results))
+        self.assertTrue(any(r.layer == "complete" and not r.passed for r in results))
+
+    def test_empty_diff_blocked_at_pr(self):
+        """PRGate：空 diff_summary 不得绕过(judge 不审空内容)。"""
+        ev = dict(_FULL_EV); ev["diff_summary"] = "   "
+        results = _trusted_chain().run(self._state(), ev)
+        self.assertTrue(any(r.layer == "pr" and not r.passed for r in results))
+
+    def test_no_spec_blocked_at_spec(self):
+        results = _trusted_chain().run(self._state(with_spec=False), dict(_FULL_EV))
+        self.assertTrue(any(r.layer == "spec" and not r.passed for r in results))
 
     def test_fails_closed_empty_evidence(self):
-        results = _trusted_chain().run(self._state(), {})
+        results = _trusted_chain().run(self._state(), {"diff_summary": "x"})
         self.assertFalse(all(r.passed for r in results))
 
     def test_low_coverage_blocks_at_pr(self):

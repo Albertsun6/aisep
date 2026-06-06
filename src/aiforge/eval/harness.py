@@ -24,6 +24,10 @@ class EvalReport:
     metrics: Metrics
     outcomes: List[TaskOutcome] = field(default_factory=list)
     per_task: List[dict] = field(default_factory=list)
+    # 落地评审修正：在输出层(而非仅注释)标明这是合成自测，防止把指标误读为生产能力。
+    kind: str = "synthetic_gate_routing"
+    uses_stub_reviewer: bool = True
+    not_production_metric: bool = True
 
 
 def _run_one(task: EvalTask, config: GovernanceConfig) -> TaskOutcome:
