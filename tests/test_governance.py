@@ -12,7 +12,7 @@ from aiforge.orchestration.state import FileChange
 class TestPermissions(unittest.TestCase):
     def test_least_privilege_default_deny(self):
         perms = PermissionBroker()
-        self.assertTrue(perms.has("read"))
+        self.assertTrue(perms.has("dev", "read"))        # 每个 actor 默认有 read
         with self.assertRaises(PermissionError_):
             perms.check("dev", "write")
 
@@ -22,7 +22,7 @@ class TestPermissions(unittest.TestCase):
         perms = PermissionBroker(audit=audit)
         self.assertTrue(perms.grant("dev", "write", reason="impl"))
         self.assertFalse(perms.grant("dev", "delete", reason="cleanup"))
-        self.assertFalse(perms.has("delete"))           # 关键：未被授予
+        self.assertFalse(perms.has("dev", "delete"))           # 关键：未被授予
         self.assertEqual(len(audit.filter(action="grant")), 1)          # 只有 write 真授予
         self.assertEqual(len(audit.filter(action="grant_denied")), 1)   # delete 被拒并记审计
 
@@ -30,15 +30,26 @@ class TestPermissions(unittest.TestCase):
         auth = ApprovalAuthority()
         perms = auth.broker()
         self.assertFalse(perms.grant("dev", "delete", reason="x"))      # agent 自授被拒
-        perms.approve(auth.issue("delete"))                              # 人审签发 ticket → 授予
-        self.assertTrue(perms.has("delete"))
-        # 伪造票被验签拒绝；同票重放被拒
+        perms.approve(auth.issue("dev", "delete"))                      # 人审签发 ticket → 授予
+        self.assertTrue(perms.has("dev", "delete"))
+        # 伪造票被验签拒绝
         with self.assertRaises(PermissionError_):
-            PermissionBroker().approve(HumanApprovalTicket("delete", "n", 9e9, "bad"))
-        t = auth.issue("infra")
+            PermissionBroker().approve(HumanApprovalTicket("dev", "delete", "n", 9e9, "bad"))
+        # 防重放
+        t = auth.issue("dev", "infra")
         perms.approve(t)
         with self.assertRaises(PermissionError_):
-            perms.approve(t)                                             # 防重放
+            perms.approve(t)
+
+    def test_per_actor_isolation(self):
+        """强化：批准 developer 的 delete，不等于 reviewer 也有（按 actor 隔离）。"""
+        auth = ApprovalAuthority()
+        perms = auth.broker()
+        perms.approve(auth.issue("developer", "delete"))
+        self.assertTrue(perms.has("developer", "delete"))
+        self.assertFalse(perms.has("reviewer", "delete"))
+        with self.assertRaises(PermissionError_):
+            perms.check("reviewer", "delete")
 
 
 class TestReview(unittest.TestCase):
