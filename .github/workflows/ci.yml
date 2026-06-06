@@ -1,0 +1,23 @@
+# CI/CD —— 质量门禁的权威层（宪法 P3，不可绕过）。与本地 make 共用同一脚本，避免漂移。
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dev deps (optional lint)
+        run: pip install -r requirements-dev.txt
+      - name: Lint (pre-commit gate)
+        run: make lint
+      - name: Tests (CI/CD authoritative gate)
+        run: make test
+      - name: Eval four production metrics
+        run: make eval

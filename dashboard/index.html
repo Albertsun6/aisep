@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh">
+<head><meta charset="utf-8"><title>AIForge 四指标看板</title>
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#0f1115;color:#e6e6e6}
+header{padding:24px 32px;border-bottom:1px solid #222}
+h1{margin:0;font-size:20px} .sub{color:#8a8f98;font-size:13px;margin-top:4px}
+.cards{display:flex;flex-wrap:wrap;gap:16px;padding:24px 32px}
+.card{flex:1;min-width:200px;background:#171a21;border:1px solid #262b34;border-radius:12px;padding:18px}
+.card .k{color:#8a8f98;font-size:13px} .card .v{font-size:30px;font-weight:700;margin-top:8px}
+.good{color:#3fb950} .warn{color:#d29922} .bad{color:#f85149}
+table{width:calc(100% - 64px);margin:8px 32px 32px;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #262b34} th{color:#8a8f98}
+</style></head>
+<body>
+<header><h1>AIForge · 四个生产指标看板</h1>
+<div class="sub">生成于 2026-06-06 18:10 · 样本数 N=8</div></header>
+<div class="cards">
+  <div class="card"><div class="k">任务完成率 (过CI且无需人改)</div><div class="v bad">38%</div></div>
+  <div class="card"><div class="k">回归引入率</div><div class="v warn">12%</div></div>
+  <div class="card"><div class="k">平均 review 轮次</div><div class="v warn">1.75</div></div>
+  <div class="card"><div class="k">失败时平均 blast radius (文件)</div><div class="v good">1.40</div></div>
+</div>
+<table><thead><tr><th>任务</th><th>过CI</th><th>需人改</th><th>回归</th><th>review轮次</th><th>改动文件</th><th>成功</th></tr></thead>
+<tbody><tr><td>F001</td><td>✓</td><td>—</td><td>—</td><td>1</td><td>2</td><td>✓</td></tr>
+<tr><td>F002</td><td>✓</td><td>—</td><td>—</td><td>1</td><td>2</td><td>✓</td></tr>
+<tr><td>B003</td><td>✗</td><td>✓</td><td>—</td><td>2</td><td>1</td><td>✗</td></tr>
+<tr><td>M004</td><td>✗</td><td>✓</td><td>—</td><td>2</td><td>1</td><td>✗</td></tr>
+<tr><td>F005</td><td>✗</td><td>✓</td><td>—</td><td>2</td><td>2</td><td>✗</td></tr>
+<tr><td>F006</td><td>✗</td><td>✓</td><td>—</td><td>2</td><td>1</td><td>✗</td></tr>
+<tr><td>F007</td><td>✗</td><td>✓</td><td>✗</td><td>3</td><td>2</td><td>✗</td></tr>
+<tr><td>F008</td><td>✓</td><td>—</td><td>—</td><td>1</td><td>2</td><td>✓</td></tr></tbody></table>
+</body></html>

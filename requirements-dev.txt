@@ -1,0 +1,7 @@
+# 可选开发/接入依赖（核心引擎与测试不需要它们）
+ruff>=0.5.0            # lint / format
+# 真实编排接入（可选）：
+# langgraph>=0.2.0
+# langchain-core>=0.3.0
+# 真实执行 runtime（可选）：
+# openhands-ai

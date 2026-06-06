@@ -1,0 +1,9 @@
+# AIForge eval 集：真实工程任务样本。evidence 模拟 CI/扫描结果以确定性驱动门禁。
+{"id": "F001", "request": "新增用户头像上传接口", "task_type": "feature", "evidence": {"lint_ok": true, "coverage": 0.86, "sast_ok": true, "tests_ok": true, "build_ok": true, "review_loops": 1}}
+{"id": "F002", "request": "为订单列表加分页与缓存", "task_type": "feature", "evidence": {"lint_ok": true, "coverage": 0.82, "sast_ok": true, "tests_ok": true, "build_ok": true, "review_loops": 1}}
+{"id": "B003", "request": "修复支付回调重复入账", "task_type": "payment", "evidence": {"lint_ok": true, "coverage": 0.9, "sast_ok": true, "tests_ok": true, "build_ok": true}, "expected_human_review": true}
+{"id": "M004", "request": "数据库订单表加索引并迁移", "task_type": "migration", "evidence": {"lint_ok": true, "coverage": 0.78, "sast_ok": true, "tests_ok": true, "build_ok": true}, "expected_human_review": true}
+{"id": "F005", "request": "导出报表为 CSV", "task_type": "feature", "evidence": {"lint_ok": true, "coverage": 0.6, "sast_ok": true, "tests_ok": true, "build_ok": true, "review_loops": 2}}
+{"id": "F006", "request": "接入第三方登录(OAuth)", "task_type": "auth", "evidence": {"lint_ok": true, "coverage": 0.88, "sast_ok": true, "tests_ok": true, "build_ok": true}, "expected_human_review": true}
+{"id": "F007", "request": "优化首页查询 N+1", "task_type": "feature", "evidence": {"lint_ok": true, "coverage": 0.84, "sast_ok": true, "tests_ok": false, "build_ok": true, "introduced_regression": true, "review_loops": 3}}
+{"id": "F008", "request": "增加健康检查端点", "task_type": "feature", "evidence": {"lint_ok": true, "coverage": 0.95, "sast_ok": true, "tests_ok": true, "build_ok": true, "review_loops": 1}}
