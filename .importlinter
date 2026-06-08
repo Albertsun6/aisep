@@ -1,0 +1,34 @@
+# import-linter 架构 fitness function —— 把 AGENTS.md 声明的分层固化成可执行回归门禁。
+# 运行：lint-imports  （或 make arch）
+#
+# 设计：用 forbidden 契约锁住"低层不得反向依赖高层"。这些契约**当前全过**，作用是
+# 防止新的越界 import（尤其防止 base↔governance 既有循环 import 恶化成真双向环）。
+# 不用严格 layers 契约，是因为 orchestration 包同时含 state(数据底层) 与 graph/agents(高层)，
+# 严格分层会把已知遗留循环误报为硬失败；这里只锁“反向边”，存量已知债见 HARDENING.md:44。
+
+[importlinter]
+root_package = aiforge
+
+[importlinter:contract:foundation-no-upward]
+name = 基础层(config / orchestration.state)不得依赖上层
+type = forbidden
+source_modules =
+    aiforge.config
+    aiforge.orchestration.state
+forbidden_modules =
+    aiforge.governance
+    aiforge.runtime
+    aiforge.quality
+    aiforge.eval
+    aiforge.context
+
+[importlinter:contract:governance-below-runtime]
+name = governance 是低层：不得反向 import runtime / quality / orchestration.graph（防 base↔governance 环恶化）
+type = forbidden
+source_modules =
+    aiforge.governance
+forbidden_modules =
+    aiforge.runtime
+    aiforge.quality
+    aiforge.orchestration.graph
+    aiforge.orchestration.agents

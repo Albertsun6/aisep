@@ -16,6 +16,7 @@ AIForge 是一套"用 AI 工程化方式开发大型企业软件"的参考系统
 - 端到端 demo：`make demo`
 - 跑 eval 四指标：`make eval`
 - lint：`make lint`（需 ruff）
+- 架构契约：`make arch`（import-linter，对照 `.importlinter` 锁分层边界，防 base↔governance 环恶化）
 
 ## 代码结构约定
 - 业务逻辑放 `src/aiforge/<层>/`，每层职责单一，对应七层架构。

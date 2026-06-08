@@ -47,14 +47,28 @@ class Gate(abc.ABC):
         ...
 
 
-def _spec_has_acceptance(text: str) -> bool:
-    t = (text or "").lower()
-    gherkin = ("given" in t and "when" in t and "then" in t) or ("给定" in t and "当" in t and ("那么" in t or "则" in t))
-    ears = "shall" in t and any(w in t for w in ("when", "if", "while", "where"))
+def _has_gherkin(t: str) -> bool:
+    en = "given" in t and "when" in t and "then" in t
+    zh = "给定" in t and "当" in t and ("那么" in t or "则" in t)
+    return en or zh
+
+
+def _has_ears(t: str) -> bool:
+    return "shall" in t and any(w in t for w in ("when", "if", "while", "where"))
+
+
+def _has_user_story(t: str) -> bool:
+    role = "as a" in t or "作为" in t
+    want = "i want" in t or "我希望" in t or "想要" in t
     # 收紧（采纳评审）：User Story 不能单独放行，必须**外加**验收标记
     has_ac = any(m in t for m in ("验收", "acceptance", "given", "shall", "ac1", "ac:"))
-    story = (("as a" in t or "作为" in t) and ("i want" in t or "我希望" in t or "想要" in t)) and has_ac
-    return (gherkin or ears or story) and len((text or "").strip()) >= 40
+    return role and want and has_ac
+
+
+def _spec_has_acceptance(text: str) -> bool:
+    t = (text or "").lower()
+    has_structure = _has_gherkin(t) or _has_ears(t) or _has_user_story(t)
+    return has_structure and len((text or "").strip()) >= 40
 
 
 class StatusGate(Gate):

@@ -16,3 +16,9 @@ env/
 *.log
 .aiforge/audit/*.jsonl
 !.aiforge/audit/.gitkeep
+.claude/
+
+# 调研/实验文件夹：不属于核心仓库，且会污染健康度探针基线（死代码/重复/复杂度噪声）
+AI工程化开发企业软件系统方案-调研/
+# /project-health 探针默认输出（若指定 --out 落到仓库内）
+.project-health/

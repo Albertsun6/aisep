@@ -1,5 +1,6 @@
 # 可选开发/接入依赖（核心引擎与测试不需要它们）
 ruff>=0.5.0            # lint / format
+import-linter>=2.0     # 架构 fitness function（make arch，对照 .importlinter 锁分层边界）
 # 真实编排接入（可选）：
 # langgraph>=0.2.0
 # langchain-core>=0.3.0

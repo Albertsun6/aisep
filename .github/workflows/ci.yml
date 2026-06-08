@@ -17,6 +17,8 @@ jobs:
         run: pip install -r requirements-dev.txt
       - name: Lint (pre-commit gate)
         run: make lint
+      - name: Architecture fitness (import-linter contracts)
+        run: make arch
       - name: Tests (CI/CD authoritative gate)
         run: make test
       - name: Eval four production metrics
