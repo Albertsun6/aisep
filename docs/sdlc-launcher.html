@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SDLC 需求启动台 · AISEP × Claude Code</title>
+<style>
+  :root{
+    --bg:#fafaf9; --card:#ffffff; --ink:#1c1917; --muted:#78716c;
+    --line:#e7e5e4; --accent:#047857; --accent-soft:#ecfdf5;
+    --code-bg:#1c1917; --code-ink:#e7e5e4; --warn:#b45309; --warn-soft:#fffbeb;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    line-height:1.7; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:32px 20px 80px}
+  header h1{font-size:1.7rem; margin:0 0 6px}
+  header .lead{color:var(--muted); margin:0 0 22px; font-size:.96rem}
+
+  /* loop banner */
+  .loop{
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+    background:var(--accent-soft); border:1px solid #a7f3d0; border-radius:10px;
+    padding:12px 14px; margin:0 0 22px; font-size:.9rem;
+  }
+  .loop b{color:var(--accent)}
+  .loop .arr{color:var(--muted)}
+
+  /* control box */
+  .control{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:18px; margin:0 0 24px; box-shadow:0 1px 2px rgba(0,0,0,.03);
+  }
+  .control h2{font-size:.85rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin:0 0 12px}
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:12px}
+  .field:last-child{margin-bottom:0}
+  .field label{font-size:.9rem; font-weight:600}
+  .field .hint{font-size:.8rem; color:var(--muted); font-weight:400}
+  .field input{
+    font:inherit; padding:9px 12px; border:1px solid var(--line); border-radius:8px;
+    background:#fff; color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--accent); outline-offset:-1px; border-color:var(--accent)}
+
+  /* stage card */
+  .stage{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:18px 18px 16px; margin:0 0 18px; box-shadow:0 1px 2px rgba(0,0,0,.03);
+  }
+  .stage-head{display:flex; align-items:baseline; gap:10px; margin-bottom:4px}
+  .stage-num{
+    flex:0 0 auto; width:26px; height:26px; border-radius:50%;
+    background:var(--accent); color:#fff; font-size:.85rem; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .stage-name{font-size:1.12rem; font-weight:700; margin:0}
+  .stage-sub{color:var(--muted); font-size:.82rem; font-family:ui-monospace,"JetBrains Mono",monospace; margin-left:auto}
+  .stage-what{color:var(--muted); font-size:.9rem; margin:6px 0 12px}
+
+  .prompt-bar{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px}
+  .prompt-bar span{font-size:.78rem; color:var(--muted); letter-spacing:.03em; text-transform:uppercase}
+  .copy{
+    font:inherit; font-size:.84rem; font-weight:600; cursor:pointer;
+    background:var(--accent); color:#fff; border:none; border-radius:7px; padding:6px 14px;
+    transition:background .15s;
+  }
+  .copy:hover{background:#065f46}
+  .copy.done{background:#0f766e}
+  pre.prompt{
+    background:var(--code-bg); color:var(--code-ink); border-radius:9px;
+    padding:14px 16px; margin:0; overflow-x:auto; white-space:pre-wrap; word-break:break-word;
+    font-family:ui-monospace,"JetBrains Mono","SF Mono",monospace; font-size:.86rem; line-height:1.6;
+  }
+  .gate{
+    margin-top:10px; font-size:.82rem; color:var(--warn);
+    background:var(--warn-soft); border-left:3px solid var(--warn); border-radius:0 6px 6px 0;
+    padding:7px 11px;
+  }
+  .gate code{font-family:ui-monospace,monospace; background:rgba(180,83,9,.1); padding:1px 5px; border-radius:4px}
+  .gate.none{color:var(--muted); background:#f5f5f4; border-left-color:var(--line)}
+
+  /* 阶段产物区(spec: feat-launcher-outputs)——首次展开才填充 */
+  #datainfo{font-size:.8rem; color:var(--muted); margin:-12px 0 20px}
+  details.artifacts{margin-top:10px; border:1px solid var(--line); border-radius:9px; background:#fcfcfb}
+  details.artifacts > summary{cursor:pointer; padding:8px 12px; font-size:.84rem; font-weight:600; color:var(--muted)}
+  details.artifacts[open] > summary{border-bottom:1px solid var(--line); color:var(--ink)}
+  .art-body{padding:10px 12px; display:flex; flex-direction:column; gap:10px}
+  .art-meta{font-size:.78rem; color:var(--muted)}
+  .receipt-line{font-size:.82rem; font-family:ui-monospace,monospace; color:var(--accent)}
+  .receipt-line.missing{color:var(--muted)}
+  pre.artifact{
+    background:#f5f5f4; color:var(--ink); border:1px solid var(--line); border-radius:8px;
+    padding:10px 12px; margin:0; white-space:pre-wrap; word-break:break-word; overflow:auto;
+    max-height:420px; font-family:ui-monospace,"JetBrains Mono",monospace; font-size:.78rem; line-height:1.55;
+  }
+  details.subfile{border:1px solid var(--line); border-radius:8px}
+  details.subfile > summary{cursor:pointer; padding:6px 10px; font-size:.8rem; font-family:ui-monospace,monospace}
+  details.subfile .inner{padding:8px}
+
+  footer{margin-top:30px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:.82rem}
+  footer a{color:var(--accent)}
+  footer .ro{display:inline-block; background:#f5f5f4; border:1px solid var(--line); border-radius:6px; padding:2px 8px; font-size:.78rem; margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>SDLC 需求启动台</h1>
+    <p class="lead">有头模式操作台 · 每个阶段给你一段可复制的提示词,贴进 Claude Code 窗口即可推进。</p>
+  </header>
+
+  <div class="loop">
+    <b>前端给提示词</b><span class="arr">→</span>
+    <span>你粘进 Claude Code</span><span class="arr">→</span>
+    <span>Claude 干活</span><span class="arr">→</span>
+    <span>你看结果 / 跑门禁</span><span class="arr">→</span>
+    <b>下一阶段</b>
+  </div>
+
+  <div class="control">
+    <h2>① 先填这两项（所有提示词会自动套进去）</h2>
+    <div class="field">
+      <label for="fid">特性 id <span class="hint">小写短横线，例如 feat-search、user-export</span></label>
+      <input id="fid" type="text" placeholder="feat-xxx" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="goal">一句话目标 <span class="hint">这个特性要解决什么</span></label>
+      <input id="goal" type="text" placeholder="例如：让用户能按标签筛选订单并导出 CSV" autocomplete="off">
+    </div>
+  </div>
+
+  <div id="datainfo"></div>
+
+  <div id="stages"></div>
+
+  <footer>
+    <span class="ro">只读</span><span class="ro">无后端</span><span class="ro">不调模型</span>
+    这个页面只生成提示词，不会替你执行任何 gate 或调用模型——驱动权始终在你和 Claude Code 手里（契约 04 / 有头模式）。<br>
+    管线纪律见 <a href="../CLAUDE.md">CLAUDE.md</a> 与 <a href="../specs/contracts/">specs/contracts/</a>。重跑总览：<code>PYTHONPATH=src python3 -m aiforge project-dashboard</code>
+  </footer>
+
+</div>
+
+<!-- 阶段产物数据(aiforge launcher-data 生成,不入库;404 容忍 → 降级) -->
+<script src="launcher-data.js"></script>
+<script>
+// 阶段定义：${id} / ${goal} 由上方输入实时替换。提示词以 textContent 写入，天然防注入。
+const STAGES = [
+  {
+    n: 1, name: "需求", sub: "requirements → gate-spec",
+    what: "起草并冻结规格。这一步是人审点——我写完先给你逐块确认，再冻结。",
+    prompt: (id, goal) =>
+`我要开发新特性，id = ${id}，目标：${goal}。
+按 SDLC 纪律走【需求阶段】：在 specs/${id}/spec.md 起草规格——目标 / 范围 / 明确"不做" / Gherkin 验收标准 / 非功能与安全约束。
+写完先把全文给我逐块确认，先别跑 gate。我确认后再跑：
+PYTHONPATH=src python3 -m aiforge gate-spec specs/${id}/spec.md
+把退出码贴回（0=过并冻结 / 1=拒 / 3=infra）。`,
+    gate: (id) => `本阶段门禁：<code>gate-spec specs/${id}/spec.md</code> — 冻结规格，0=过 / 1=拒 / 3=infra`
+  },
+  {
+    n: 2, name: "架构", sub: "architecture → gate-trace",
+    what: "把规格落成实现方案，每个设计点回溯到某条验收。",
+    prompt: (id, goal) =>
+`特性 ${id} 的 spec 已冻结。进入【架构阶段】：在 specs/${id}/plan.md 写实现方案——模块划分 / 数据流 / 与现有七层的边界 / 关键取舍，每个设计点标注它回溯 spec 的哪条验收。
+写完给我看，我确认后跑：
+PYTHONPATH=src python3 -m aiforge gate-trace specs/${id}/
+验可追溯链并把结果贴回。`,
+    gate: (id) => `本阶段门禁：<code>gate-trace specs/${id}/</code> — 验 spec→plan 追溯链，0=过 / 1=拒 / 3=infra`
+  },
+  {
+    n: 3, name: "拆解", sub: "decompose",
+    what: "把方案拆成可验证的任务，控制单次改动的影响面。",
+    prompt: (id, goal) =>
+`特性 ${id} 的 plan 已过 gate-trace。进入【拆解阶段】：在 specs/${id}/tasks.md 把方案拆成任务清单，每个任务标注——满足哪条验收 / 影响哪些文件 / 用什么可执行命令验证。注意 blast radius（单次改动文件数有硬上限，超限自动降人审）。
+写完给我逐条确认，再开始实现。`,
+    gate: () => `本阶段无独立门禁 — 拆解的产物喂给下一阶段的实现循环`,
+    gateNone: true
+  },
+  {
+    n: 4, name: "实现循环", sub: "developer / reviewer / tester",
+    what: "逐个任务实现：只改该改的、写测试跑绿、关键结论上异构评审。",
+    prompt: (id, goal) =>
+`按 specs/${id}/tasks.md 逐个实现【实现循环】。每个任务：
+1) 只改必须改的文件，沿用现有代码风格，不顺手重构无关代码；
+2) 写 unittest，本地 make test 跑绿；
+3) 关键 / 安全 / 正确性结论必须经异构评审（cursor-agent 独立 lens），把评审给的反例也加进测试，别只测 happy path。
+每完成一个任务，把 diff 和测试结果贴回让我 review。`,
+    gate: () => `本阶段无门禁命令 — 每个任务靠 make test + 异构评审硬化，完成后进判定`,
+    gateNone: true
+  },
+  {
+    n: 5, name: "判定 + 提交", sub: "gate-judge / gate-commit",
+    what: "异构判定 + 聚合提交门禁。缺真异构会转人审，不许自审自过。",
+    prompt: (id, goal) =>
+`特性 ${id} 实现完成。跑【判定与提交门禁】，把每个退出码贴回：
+PYTHONPATH=src python3 -m aiforge gate-judge --feature ${id}
+PYTHONPATH=src python3 -m aiforge gate-commit --feature ${id}
+退出码：0=过 / 1=拒 / 2=转人审（停下等我裁决） / 3=infra。
+判定缺真异构会转人审——不许作者模型自审自过。`,
+    gate: (id) => `本阶段门禁：<code>gate-judge --feature ${id}</code> + <code>gate-commit --feature ${id}</code> — 0=过 / 1=拒 / 2=转人审 / 3=infra`
+  },
+  {
+    n: 6, name: "集成", sub: "integrate",
+    what: "整理成单一逻辑 commit 合回 main；开 PR 则由 CI 重跑权威门禁。",
+    prompt: (id, goal) =>
+`门禁全过。做【集成】：把 ${id} 的改动整理成单一逻辑 commit（祈使句信息 + 声明 feature ${id}），先给我看 commit 计划再提交。
+本机无 origin → 走本地 merge 回 main；若开 PR，则由 CI 重跑权威门禁（契约 01：CI 才是唯一真强制）。
+集成后刷新总览：
+PYTHONPATH=src python3 -m aiforge project-dashboard`,
+    gate: () => `集成后：<code>project-dashboard</code> 刷新总览；PR 路径由 CI 权威门禁把关`,
+    gateNone: true
+  },
+];
+
+const PLACEHOLDER_ID = "feat-xxx";
+const PLACEHOLDER_GOAL = "（在上方填写一句话目标）";
+
+const fid = document.getElementById("fid");
+const goal = document.getElementById("goal");
+const host = document.getElementById("stages");
+
+// ---------- 阶段产物数据(spec: feat-launcher-outputs) ----------
+var EXPORT_CMD = "PYTHONPATH=src python3 -m aiforge launcher-data";
+function launcherData() {
+  // 防御校验:数据文件可缺席/被改坏,非对象一律视为无数据(验收 7)
+  var d = window.AIFORGE_LAUNCHER;
+  if (!d || typeof d !== "object" || !d.features || typeof d.features !== "object") return null;
+  return d;
+}
+(function showDataInfo() {
+  var el = document.getElementById("datainfo");
+  var d = launcherData();
+  el.textContent = d
+    ? "产物数据生成于 " + String(d.generated_at) + "（重跑 " + EXPORT_CMD + " 即最新）"
+    : "暂无产物数据——要在阶段卡片里看真实产物,先跑: " + EXPORT_CMD;
+})();
+
+function artMeta(body, text) {
+  var m = document.createElement("div"); m.className = "art-meta"; m.textContent = text; body.append(m);
+}
+function artPre(body, label, text) {
+  artMeta(body, label);
+  var pre = document.createElement("pre"); pre.className = "artifact";
+  pre.textContent = text;                      // 产物全文只走 textContent(验收 9)
+  body.append(pre);
+}
+function artReceipt(body, f, g) {
+  var line = document.createElement("div");
+  var rec = f.gates && typeof f.gates === "object" ? f.gates[g] : null;
+  if (rec && typeof rec === "object") {
+    line.className = "receipt-line";
+    line.textContent = g + " → " + String(rec.decision) + " · " + String(rec.created_at);
+  } else {
+    line.className = "receipt-line missing";
+    line.textContent = g + ":暂无 receipt";
+  }
+  body.append(line);
+}
+function buildArtifacts(n, id, body) {
+  var d = launcherData();
+  if (!d) { artMeta(body, "暂无产物数据——先跑: " + EXPORT_CMD); return; }
+  var f = d.features[id];
+  if (!f || typeof f !== "object") { artMeta(body, "暂无产物:特性 " + id + " 不在数据中(检查 id 或重跑导出)"); return; }
+  var textOr = function (label, v) { if (typeof v === "string") artPre(body, label, v); else artMeta(body, label + ":暂无"); };
+  if (n === 1) { textOr("spec.md", f.spec); artReceipt(body, f, "gate-spec"); }
+  else if (n === 2) { textOr("plan.md", f.plan); artReceipt(body, f, "gate-trace"); }
+  else if (n === 3) { textOr("tasks.md", f.tasks); }
+  else if (n === 4) {
+    var names = f.outputs && typeof f.outputs === "object" ? Object.keys(f.outputs) : [];
+    if (!names.length) { artMeta(body, "outputs/:暂无验收/执行记录"); return; }
+    names.forEach(function (name) {
+      var det = document.createElement("details"); det.className = "subfile";
+      var sum = document.createElement("summary"); sum.textContent = name;  // 文件名也是攻击面(验收 9)
+      var inner = document.createElement("div"); inner.className = "inner";
+      var pre = document.createElement("pre"); pre.className = "artifact";
+      pre.textContent = String(f.outputs[name]);
+      inner.append(pre); det.append(sum, inner); body.append(det);
+    });
+  }
+  else if (n === 5) { textOr("REVIEW-debate.md", f.debate); artReceipt(body, f, "gate-judge"); artReceipt(body, f, "gate-commit"); }
+  else { artMeta(body, "集成产物 = merge commit 与 CI 运行,不在页面展示。"); }
+}
+
+// ---------- 卡片骨架(构建一次,之后只更新文本) ----------
+const cards = STAGES.map(s => {
+  const card = document.createElement("div");
+  card.className = "stage";
+
+  const head = document.createElement("div");
+  head.className = "stage-head";
+  const num = document.createElement("div"); num.className = "stage-num"; num.textContent = s.n;
+  const nm = document.createElement("h3"); nm.className = "stage-name"; nm.textContent = s.name;
+  const sub = document.createElement("div"); sub.className = "stage-sub"; sub.textContent = s.sub;
+  head.append(num, nm, sub);
+
+  const what = document.createElement("p"); what.className = "stage-what"; what.textContent = s.what;
+
+  const bar = document.createElement("div"); bar.className = "prompt-bar";
+  const lbl = document.createElement("span"); lbl.textContent = "复制这段，粘进 Claude Code";
+  const btn = document.createElement("button"); btn.className = "copy"; btn.textContent = "复制";
+  bar.append(lbl, btn);
+
+  const pre = document.createElement("pre"); pre.className = "prompt";
+
+  const gate = document.createElement("div");
+  gate.className = "gate" + (s.gateNone ? " none" : "");
+
+  // 产物区:首次展开才填充(P6 性能);改 id 后失效重填
+  const art = document.createElement("details"); art.className = "artifacts";
+  const artSum = document.createElement("summary"); artSum.textContent = "本阶段产物";
+  const artBody = document.createElement("div"); artBody.className = "art-body";
+  art.append(artSum, artBody);
+  let filledFor = null;
+  const fillArt = () => {
+    const id = fid.value.trim() || PLACEHOLDER_ID;
+    if (filledFor === id) return;
+    filledFor = id;
+    while (artBody.firstChild) artBody.removeChild(artBody.firstChild);
+    buildArtifacts(s.n, id, artBody);
+  };
+  art.addEventListener("toggle", () => { if (art.open) fillArt(); });
+
+  btn.addEventListener("click", () => {
+    navigator.clipboard.writeText(pre.textContent).then(() => {
+      btn.textContent = "已复制 ✓"; btn.classList.add("done");
+      setTimeout(() => { btn.textContent = "复制"; btn.classList.remove("done"); }, 1500);
+    });
+  });
+
+  card.append(head, what, bar, pre, gate, art);
+  host.append(card);
+  return { s, pre, gate, art, invalidateArt: () => { filledFor = null; if (art.open) fillArt(); } };
+});
+
+// gate 提示行:DOM 构建(text 与 code 节点交替),不使用任何 HTML 注入式 API(验收 5)。
+// s.gate() 文案不动——其字符串里的 code 标记在此解析为真实 <code> 元素。
+function renderGate(el, text) {
+  while (el.firstChild) el.removeChild(el.firstChild);
+  const parts = String(text).split(/<\/?code>/);
+  parts.forEach((seg, i) => {
+    if (i % 2 === 1) { const c = document.createElement("code"); c.textContent = seg; el.append(c); }
+    else if (seg) el.append(document.createTextNode(seg));
+  });
+}
+function render() {
+  const id = fid.value.trim() || PLACEHOLDER_ID;
+  const g = goal.value.trim() || PLACEHOLDER_GOAL;
+  for (const c of cards) {
+    c.pre.textContent = c.s.prompt(id, g);    // 安全：textContent 不执行注入
+    renderGate(c.gate, c.s.gate(id));
+    c.invalidateArt();
+  }
+}
+
+fid.addEventListener("input", render);
+goal.addEventListener("input", render);
+render();
+</script>
+</body>
+</html>

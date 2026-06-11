@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "run_id": "66c81e62-1f66-48ed-ba97-b92b76ad286a",
+  "gate": "gate-trace",
+  "feature_id": "feat-launcher-outputs",
+  "inputs": [
+    {
+      "path": "specs/feat-launcher-outputs/spec.md",
+      "sha256": "a88bdc99eb12016f2d237c10cfe783769e3c3041fb6724f08e4487cf918f8f5f"
+    },
+    {
+      "path": "specs/feat-launcher-outputs/plan.md",
+      "sha256": "b33288376566b8be58a86813b523ecddd0d621a3cf76d499e67ab47a9e305e76"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "cdd424fb5350a09048656cd5275be5dde0a0055a",
+  "git_dirty": true,
+  "created_at": "2026-06-12T02:55:58.173123+08:00",
+  "tool": "aiforge gate-trace",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-trace",
+    "specs/feat-launcher-outputs/"
+  ],
+  "ack": null,
+  "reviewer": null
+}

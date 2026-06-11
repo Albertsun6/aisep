@@ -34,3 +34,5 @@ specs/*/gates/gate-commit.json
 docs/project-dashboard.html
 # bpmn-status 生成物(重跑 aiforge bpmn-status 即最新;备援源 sdlc-pipeline.js 入库)
 docs/flows/sdlc-status.js
+# launcher-data 生成物(重跑 aiforge launcher-data 即最新;不入库防数据文件被当注入面)
+docs/launcher-data.js
