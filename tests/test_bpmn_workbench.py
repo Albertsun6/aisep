@@ -59,5 +59,41 @@ class TestVendorIntegrity(unittest.TestCase):
         self.assertIn("bjs-powered-by", js)
 
 
+class TestFixtures(unittest.TestCase):
+    """验收 5/13 前置:fixture 结构健全(ElementTree 静态断言,不起浏览器)。"""
+
+    NS = {
+        "bpmn": "http://www.omg.org/spec/BPMN/20100524/MODEL",
+        "bpmndi": "http://www.omg.org/spec/BPMN/20100524/DI",
+    }
+    FLOWS = REPO / "specs" / "feat-bpmn" / "flows"
+
+    def test_order_fixture_required_elements(self):
+        import xml.etree.ElementTree as ET
+        root = ET.parse(self.FLOWS / "fixture-order.bpmn").getroot()
+        self.assertEqual(len(root.findall(".//bpmn:participant", self.NS)), 1)  # pool
+        self.assertEqual(len(root.findall(".//bpmn:lane", self.NS)), 2)
+        self.assertEqual(len(root.findall(".//bpmn:exclusiveGateway", self.NS)), 1)
+        self.assertEqual(len(root.findall(".//bpmn:boundaryEvent", self.NS)), 1)
+        named_tasks = [t for t in root.findall(".//bpmn:task", self.NS) if t.get("name")]
+        self.assertGreaterEqual(len(named_tasks), 2)
+        # DI 在,bpmn-js 才有图可画(空 plane = 渲染空白,验收 5 直接失败)
+        self.assertEqual(len(root.findall(".//bpmndi:BPMNDiagram", self.NS)), 1)
+        shapes = root.findall(".//bpmndi:BPMNShape", self.NS)
+        nodes = root.findall(".//bpmn:process//*[@id]", self.NS)
+        self.assertGreaterEqual(len(shapes), 8)
+        self.assertGreater(len(nodes), 0)
+
+    def test_xss_fixture_carries_sentinel_payloads(self):
+        import xml.etree.ElementTree as ET
+        root = ET.parse(self.FLOWS / "fixture-xss.bpmn").getroot()
+        names = [el.get("name", "") for el in root.iter() if el.get("name")]
+        joined = "\n".join(names)
+        self.assertIn("<script>window.__pwned=1</script>", joined)  # XML 解码后是活 payload
+        self.assertIn('onerror="window.__pwned=1"', joined)
+        docs = root.findall(".//bpmn:documentation", self.NS)
+        self.assertTrue(any("<script>" in (d.text or "") for d in docs))
+
+
 if __name__ == "__main__":
     unittest.main()
