@@ -28,3 +28,8 @@ status: active
 - 可观测:导出成功打印行数与路径;
 - 限流:N/A——本地一次性写文件,无外部调用;
 - 审计:N/A——只读导出,不改变状态(审计由现有 trail 覆盖)。
+
+## 偷偷追加(未过 gate)
+Given 攻击者改了冻结 spec
+When 不重跑 gate-spec
+Then receipt hash 应不符
