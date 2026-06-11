@@ -118,6 +118,19 @@ def _cmd_project_dashboard(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_launcher_data(args: argparse.Namespace) -> int:
+    # spec: specs/feat-launcher-outputs — 只读导出阶段产物供启动台展示(不调模型)
+    from aiforge.launcher_data import write_launcher_data
+    out = Path(args.out) if args.out else None
+    try:
+        dest, n = write_launcher_data(Path.cwd(), out)
+    except ValueError as e:
+        print(f"launcher-data: {e}")
+        return 1
+    print(f"启动台数据已导出: {dest}（{n} 个特性;重跑即最新）")
+    return 0
+
+
 def _cmd_bpmn_status(args: argparse.Namespace) -> int:
     # spec: specs/feat-bpmn 验收 9 — 只读导出门禁状态供工作台项目模式(不调模型)
     from aiforge.bpmn_status import write_bpmn_status
@@ -258,6 +271,10 @@ def main(argv: list[str] | None = None) -> int:
     p_pd = sub.add_parser("project-dashboard", help="读项目真实状态生成单页 HTML 总览(人性化,只读)")
     p_pd.add_argument("--out", default=None, help="输出路径(默认 docs/project-dashboard.html)")
     p_pd.set_defaults(func=_cmd_project_dashboard)
+
+    p_ld = sub.add_parser("launcher-data", help="导出各特性阶段产物为 launcher-data.js(启动台展示,只读)")
+    p_ld.add_argument("--out", default=None, help="输出路径(默认 docs/launcher-data.js)")
+    p_ld.set_defaults(func=_cmd_launcher_data)
 
     p_bs = sub.add_parser("bpmn-status", help="导出门禁状态为 sdlc-status.js(工作台项目模式,只读)")
     p_bs.add_argument("--out", default=None, help="输出路径(默认 docs/flows/sdlc-status.js)")
