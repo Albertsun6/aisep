@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "run_id": "169eb835-5b7b-4fb9-becf-7ad3e38ce9cb",
+  "gate": "gate-spec",
+  "feature_id": "toy-csv-export",
+  "inputs": [
+    {
+      "path": "specs/toy-csv-export/spec.md",
+      "sha256": "f95d358db06d35b25fbfbd63ee2c7a8f1c721f36b0827ea76786762840c5287b"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "2fe70406e5403029d99708d3aab0718c1fff60ca",
+  "git_dirty": true,
+  "created_at": "2026-06-11T16:02:33.436277+08:00",
+  "tool": "aiforge gate-spec",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-spec",
+    "specs/toy-csv-export/spec.md"
+  ],
+  "ack": null,
+  "reviewer": null
+}

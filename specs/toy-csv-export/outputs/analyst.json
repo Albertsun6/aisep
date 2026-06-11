@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "role": "analyst",
+  "feature_id": "toy-csv-export",
+  "spec_path": "specs/toy-csv-export/spec.md",
+  "open_questions": [],
+  "verdict": "ready_for_gate",
+  "note": "M2 验收用玩具需求;requirements 阶段闭环演练,未排期实现"
+}
