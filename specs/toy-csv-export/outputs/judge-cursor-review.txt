@@ -1,0 +1,24 @@
+模型身份：GPT-5.5。
+
+Steelman：这个 diff 很小，主路径基本符合 spec：新增 `demo --csv <path>`，用标准库 `csv.writer` 写 UTF-8，表头和行数据清楚；父目录不存在时显式报错并返回非 0；不传 `--csv` 时主流程没有额外写文件。测试也覆盖了 3 条验收的核心路径。
+
+## 评审意见
+
+- `[中 / src/aiforge/cli.py::_export_artifacts_csv / 路径不可写、目标是目录、权限错误等 open 失败会抛异常 / 建议捕获 OSError，打印可读错误到 stderr，并返回非 0]`  
+  spec 的非功能清单明确写了“路径不可写/父目录缺失 → 非 0 + 诊断”。现在只处理了父目录缺失，其他写入失败会变成 Python traceback。命令层面虽然也是非 0，但不是“可读诊断”，也不利于测试稳定。
+
+- `[中 / tests/test_demo_csv.py::test_missing_parent_dir_fails_loudly / 测试没有断言 stderr / 建议用 contextlib.redirect_stderr 捕获并断言包含“目录不存在”或目标路径]`  
+  现在测试只能证明返回非 0 和文件没生成，不能证明“不静默吞错”。这条正好是验收 2 的关键。
+
+- `[低 / src/aiforge/cli.py::_export_artifacts_csv / created_at 使用 datetime.fromtimestamp 生成本地时区的 naive 时间 / 建议明确使用本地时间还是 UTC；如果要存档可复现，建议 UTC ISO 格式，例如带 Z 或 +00:00]`  
+  spec 只说“创建时间”，没要求时区，所以不是阻塞项。但 CSV 用于存档时，naive 时间以后跨机器看会有歧义。
+
+- `[低 / src/aiforge/cli.py::_export_artifacts_csv / refs 用空格 join 会丢失结构 / 建议确认 refs 是否可能包含空格；若可能，考虑 JSON 字符串或分号分隔]`  
+  CSV writer 会正确转义整个字段，但 `" ".join(a.refs)` 本身会把多个 ref 的边界变模糊。spec 没规定 refs 格式，所以这是可维护性问题，不是明确违约。
+
+- `[低 / tests/test_demo_csv.py::test_no_flag_no_file / “行为与现状完全一致”测试较弱 / 建议至少捕获 stdout，对比关键输出不出现 CSV 导出提示]`  
+  当前只检查 cwd 下没有新增 `*.csv`，但如果无 flag 时 stdout 被改了，这个测试发现不了。不过从 diff 看实际无 flag 路径没有明显行为变化。
+
+## Verdict
+
+需修后合入。核心功能方向对，但 `路径不可写/目标不可写` 这类异常没有按 spec 转成“非 0 + 可读错误”，属于验收相关缺口。补一个 `except OSError as exc`，加 stderr 断言测试后，我认为可以合入。

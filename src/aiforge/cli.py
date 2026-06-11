@@ -52,7 +52,37 @@ def _cmd_demo(args: argparse.Namespace) -> int:
             state = supervisor.resume(state.feature_id, approve=True)
             print(f"== 恢复后: status={state.status.value} ==")
 
+    if args.csv:
+        rc = _export_artifacts_csv(state, args.csv)
+        if rc != 0:
+            return rc
+
     print(f"审计事件数: {len(audit)}")
+    return 0
+
+
+def _export_artifacts_csv(state, dest: str) -> int:
+    """spec: specs/toy-csv-export — 产物清单导出 CSV(父目录缺失 → stderr + 非 0)。"""
+    import csv
+    from datetime import datetime
+
+    out = Path(dest)
+    if not out.parent.exists():
+        print(f"[error] CSV 目标目录不存在: {out.parent}(不自动创建,请先建目录)", file=sys.stderr)
+        return 1
+    try:
+        with out.open("w", newline="", encoding="utf-8") as fh:
+            writer = csv.writer(fh)
+            writer.writerow(["kind", "produced_by", "refs", "created_at"])
+            for a in state.artifacts:
+                writer.writerow([
+                    a.kind.value, a.produced_by, " ".join(a.refs),
+                    datetime.fromtimestamp(a.created_at).astimezone().isoformat(),
+                ])
+    except OSError as exc:  # 路径不可写/是目录/权限——spec 非功能:非 0 + 可读诊断
+        print(f"[error] CSV 写入失败: {out} — {exc}", file=sys.stderr)
+        return 1
+    print(f"已导出 {len(state.artifacts)} 行 → {out}")
     return 0
 
 
@@ -186,6 +216,7 @@ def main(argv: list[str] | None = None) -> int:
     p_demo.add_argument("--request", default="新增一个示例功能")
     p_demo.add_argument("--task-type", dest="task_type", default="feature")
     p_demo.add_argument("--approve", action="store_true", help="HITL 中断时自动批准并恢复")
+    p_demo.add_argument("--csv", default=None, help="把产物清单导出为 CSV(spec: specs/toy-csv-export)")
     p_demo.set_defaults(func=_cmd_demo)
 
     p_eval = sub.add_parser("eval", help="跑 eval 集，输出四个生产指标")

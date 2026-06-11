@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "run_id": "36f3d79f-8c92-46d5-8a9f-b8940f105146",
+  "gate": "gate-commit",
+  "feature_id": "toy-csv-export",
+  "inputs": [
+    {
+      "path": "<staged-diff>",
+      "sha256": "f24d8c55cd1eef826dc186709fb3a618c6424222a7400eee36227fa0827c38e4"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "a6c6fcc31004af85ddbaee33fd5ed69ddda803f2",
+  "git_dirty": true,
+  "created_at": "2026-06-11T16:15:35.298602+08:00",
+  "tool": "aiforge gate-commit",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-commit",
+    "--feature",
+    "toy-csv-export"
+  ],
+  "ack": null,
+  "reviewer": null
+}
