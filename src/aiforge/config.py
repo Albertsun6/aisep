@@ -46,3 +46,5 @@ class GovernanceConfig:
 
 
 DEFAULT_GOVERNANCE = GovernanceConfig()
+
+PROBE_1 = True  # attack probe: src change with no spec
