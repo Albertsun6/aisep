@@ -113,7 +113,7 @@ status: active
 17. **门禁扫描器的 vendor 哈希验证豁免(fail-closed)** [unittest](2026-06-12 修订新增:minified bundle 含 `eval(`/`exec(` 字样,静态扫描 needs_human 且 CI 不消费本地 ack → CI 永红;经用户裁决改扫描器)
     - Given gate-judge 的 diff 扫描遇到 `docs/vendor/**` 下的文件块
     - Then **仅当**该文件当前内容的 sha256 与同 vendor 目录 `SHA256SUMS` 中的条目完全一致才跳过扫描;以下情形一律照扫:哈希不符 / SHA256SUMS 缺失或无该条目 / 文件是 SHA256SUMS 本身 / 路径不在 docs/vendor/ 下 / 块带可执行 bit / 未提供 repo 根(纯文本调用)。
-    - **诚实边界**:哈希只证"与入库清单自洽",不证来源——来源信任锚 = P5 超限人审 + plan 供应链核对记录 + PR approval;本地工作区与 staged 内容可分叉,但本地本就是可旁路的反馈层(契约 01),权威 = CI 干净 checkout(磁盘内容即 diff 后像,无分叉)。
+    - **诚实边界与来源锚(2026-06-12 异构评审修订)**:哈希只证"与入库清单自洽",不证来源。来源的**机器锚** = CI `vendor-provenance` 步:vendor 路径有变更时,将每个 `docs/vendor/<name>@<version>/` 包与 npm registry 官方 tarball 逐字节对账(先验 tarball sha512 integrity,再要求每个 vendored 文件的 sha256 出现在官方 tarball 文件集中),不符 → CI 红(fail-closed,含网络不可达)。人审锚 = P5 超限人审 + plan 供应链记录 + PR approval。豁免判定的内容源 = git index(与磁盘分叉即拒);路径组件硬校验拒 `..`/绝对路径。
 
 ## 非功能清单(P6)
 - **License 合规(硬约束)**:bpmn.io license 要求 "Powered by bpmn.io" 水印**不得移除、不得遮挡**(不分商用/内部);UI 布局必须为水印保留不被覆盖的位置(验收 15);properties panel 未来若引入,注意其为 MIT(license 与本体不同)。

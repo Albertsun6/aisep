@@ -64,3 +64,8 @@ jobs:
       - name: gate-judge(PR 范围 diff;needs_human=2 即红——CI 不消费本地 ack,契约 07)
         run: |
           PYTHONPATH=src python3 -m aiforge gate-judge --base "${{ steps.base.outputs.sha }}"
+      - name: vendor-provenance(spec feat-bpmn 验收 17:vendor 变更时对 npm registry 重验来源)
+        run: |
+          # SHA256SUMS 只证自洽不证来源;此步把 vendor 内容与官方 tarball 逐字节对账,
+          # 关死"恶意文件 + 配套清单"通道(2026-06-12 异构评审 High 的机器修法)。
+          python3 scripts/verify_vendor_provenance.py --base "${{ steps.base.outputs.sha }}"

@@ -92,6 +92,35 @@ class TestVendorExempt(unittest.TestCase):
         decision, _ = judge_diff(_diff_block(rel, f"x={RISKY};"))
         self.assertEqual(decision, NEEDS_HUMAN)
 
+    def test_path_traversal_not_exempt(self):
+        """⑨评审反例(2026-06-12 Med):路径含 .. 组件 → 拒(即使 SUMS 能"对上")。"""
+        content = f"x={RISKY};"
+        outside = self.root / "evil.js"
+        outside.write_text(content, encoding="utf-8")
+        (self.pkg / "SHA256SUMS").write_text(
+            f"{hashlib.sha256(content.encode()).hexdigest()}  ../../../evil.js\n", encoding="utf-8")
+        path = "docs/vendor/lib@1.0.0/../../../evil.js"
+        decision, _ = judge_diff(_diff_block(path, content), self.root)
+        self.assertEqual(decision, NEEDS_HUMAN)
+
+    def test_staged_disk_divergence_not_exempt(self):
+        """⑩评审反例(2026-06-12 Med):index 与磁盘分叉 → 拒(staged 篡改不能靠磁盘洗白)。"""
+        import subprocess
+        for a in (["init", "-q"], ["config", "user.email", "t@t"], ["config", "user.name", "t"]):
+            subprocess.run(["git", *a], cwd=str(self.root), check=True, capture_output=True)
+        clean = "var ok = 1;"
+        rel = self._put("bundle.min.js", clean)        # SUMS 记干净内容
+        subprocess.run(["git", "add", "-f", "docs/vendor/lib@1.0.0"],
+                       cwd=str(self.root), check=True, capture_output=True)
+        # 磁盘保持干净(SUMS 对得上),但 index 里换成带危险 token 的版本 → 分叉
+        evil = self.pkg / "bundle.min.js"
+        evil.write_text(f"x={RISKY};", encoding="utf-8")
+        subprocess.run(["git", "add", "-f", "docs/vendor/lib@1.0.0/bundle.min.js"],
+                       cwd=str(self.root), check=True, capture_output=True)
+        evil.write_text(clean, encoding="utf-8")       # 磁盘洗回干净
+        decision, _ = judge_diff(_diff_block(rel, f"x={RISKY};"), self.root)
+        self.assertEqual(decision, NEEDS_HUMAN)
+
     def test_symlinked_target_not_exempt(self):
         """⑧symlink 目标不豁免(契约 09)。"""
         real = self.root / "outside.js"

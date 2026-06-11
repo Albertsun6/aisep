@@ -381,36 +381,71 @@ _MODE_RE = re.compile(r"^(?:new file mode|new mode) (\d{6})\s*$")
 _VENDOR_PREFIX = "docs/vendor/"
 
 
+def _clean_vendor_rel(rel: str) -> bool:
+    """vendor 相对路径组件硬校验:拒绝绝对路径、`.`/`..`/空段(评审 2026-06-12 Med)。"""
+    if rel.startswith("/") or rel.startswith("\\"):
+        return False
+    parts = rel.split("/")
+    return all(p not in ("", ".", "..") for p in parts)
+
+
+def _vendor_content(repo_root: Path, rel_posix: str) -> bytes | None:
+    """豁免判定的内容源:优先 git index(= 将被提交的版本);index 与磁盘**分叉即拒**
+    (评审 2026-06-12 Med:staged 篡改不能靠磁盘洗白);都不存在 → None。"""
+    idx = index_blob(repo_root, rel_posix)
+    p = repo_root / rel_posix
+    dsk = None
+    try:
+        if p.is_symlink():  # 契约 09
+            return None
+        if p.is_file():
+            dsk = p.read_bytes()
+    except OSError:
+        return None
+    if idx is not None and dsk is not None:
+        return idx if idx == dsk else None
+    return idx if idx is not None else dsk
+
+
 def _vendor_hash_verified(path: str, repo_root: Path) -> bool:
-    """spec feat-bpmn 验收 17:`docs/vendor/<pkg>/` 内文件,当前内容 sha256 与同包
+    """spec feat-bpmn 验收 17:`docs/vendor/<pkg>/` 内文件,内容 sha256 与同包
     SHA256SUMS 条目一致才豁免扫描;其余一律 False(fail-closed)。
 
-    哈希只证"与入库清单自洽",不证来源——来源信任锚 = P5 超限人审 + plan 供应链
-    记录 + PR approval。本地 worktree 与 staged 可分叉,但本地本就是可旁路的反馈层
-    (契约 01);权威 = CI 干净 checkout,那里磁盘内容即 diff 后像。
+    哈希只证"与入库清单自洽",不证来源——来源的**机器**信任锚 = CI vendor-provenance
+    作业(对 npm registry 重验,见 scripts/verify_vendor_provenance.py);人审锚 =
+    P5 超限人审 + plan 供应链记录 + PR approval。
     """
     if not path.startswith(_VENDOR_PREFIX):
         return False
-    parts = path[len(_VENDOR_PREFIX):].split("/", 1)
+    rel = path[len(_VENDOR_PREFIX):]
+    if not _clean_vendor_rel(rel):
+        return False
+    parts = rel.split("/", 1)
     if len(parts) != 2:  # docs/vendor/ 直下的散文件不豁免
         return False
     pkg, inner = parts
     if PurePosixPath(inner).name == "SHA256SUMS":
         return False  # 清单本身永远照扫
-    sums_p = repo_root / _VENDOR_PREFIX / pkg / "SHA256SUMS"
-    target = repo_root / path
+    sums_rel = f"{_VENDOR_PREFIX}{pkg}/SHA256SUMS"
     try:
-        if sums_p.is_symlink() or target.is_symlink():  # 契约 09
+        sums_bytes = _vendor_content(repo_root, sums_rel)
+        if sums_bytes is None:
             return False
         expected = None
-        for line in sums_p.read_text(encoding="utf-8").splitlines():
-            digest, _, rel = line.partition("  ")
-            if rel.strip() == inner:
+        for line in sums_bytes.decode("utf-8").splitlines():
+            digest, _, entry = line.partition("  ")
+            entry = entry.strip()
+            if not _clean_vendor_rel(entry):
+                continue  # 清单里的脏路径条目不参与豁免
+            if entry == inner:
                 expected = digest.strip()
                 break
         if expected is None:
             return False
-        return hashlib.sha256(target.read_bytes()).hexdigest() == expected
+        content = _vendor_content(repo_root, path)
+        if content is None:
+            return False
+        return hashlib.sha256(content).hexdigest() == expected
     except (OSError, UnicodeError):
         return False
 

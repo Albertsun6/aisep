@@ -53,7 +53,7 @@
 ## 与现有七层的边界
 - workbench 是 `docs/` 交付物,**不进 src/ 七层**;浏览器侧依赖(bpmn-js)是 vendored JS,**Python 零第三方依赖不变**(AGENTS.md 约束仍守)。
 - `bpmn_status.py` 归可观测/审计**读取侧**(与 project_dashboard 平级同性质);不 import orchestration/runtime/governance,`.importlinter` 分层不变;不调模型(契约 04,CLI 走 lazy import 同 project-dashboard 模式)。
-- 不动 harness/gates/quality;门禁链零改动。
+- 门禁链改动仅限设计点 11(harness.py 的 vendor 哈希豁免,验收 17)与 CI 的 vendor-provenance 步(scripts/verify_vendor_provenance.py,2026-06-12 异构评审修订);quality/governance/runtime 不动。
 
 ## 关键取舍
 1. **vendor vs CDN** → vendor:离线可用/防 CDN 投毒/license 允许;代价 repo +<1MB → 验收 1/2/16。
