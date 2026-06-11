@@ -94,6 +94,11 @@
 - **决策**:`sdlc_driver.py`(Agent SDK)做确定性外层——按阶段定序、decompose 并行、resume;**每个角色/阶段 = 一次独立无头 `query()`(调法 A)**;阶段内部可用原生 Task 子代理(调法 B)。
 - **理由**:复刻 `graph.py` 的确定性 index 路由 + 每角色最小工具集 + 阶段间跑门禁;A 由代码定序(确定),B 由模型定序(不确定)。
 - **取舍**:全程无头 → 6-15 后计入 Agent SDK 额度(见 ADR-009);CC 会话 append-only,不能真回滚(只能拒绝推进/重跑)。
+- **修订(2026-06-11,STEP 0 v2 §5;经对抗证伪裁决)**:
+  - 升级阶梯改**四级**:人肉定序 → repo 脚本/CI → 会话内 Workflow 编排 → SDK driver(进程外)。
+  - 触发条件改写——**硬触发**(任一命中或 Agent SDK 1.0 发布即重评):需要进程外强制 / 无人值守运行(定时、失败重试与幂等、队列)/ 跨会话权威状态 / 多操作者纪律 / secret 隔离 / 成本预算熔断 / 可重放执行;**软信号**(预警,不单独触发):decompose 经常拆出 ≥3 特性并行。
+  - **driver 是有条件推迟,不是取消**:会话内编排是"被约束方自己执行的约束",崩溃恢复是对转录的 best-effort 再解读而非幂等重放,无人值守按定义在会话外——范畴差异,功能补不上(证伪记录见 v2 §9)。
+  - 推迟的经济前提(有头≈零边际成本)在计费节点(6-15 等)后**须复核**;升级到无头前必须有 M4 成本实数(经济性判断用,**不得**压过安全/治理类硬触发)。
 
 ### ADR-004 🔷 复用 aiforge 纯 Python 方法论核(不重写)
 - **决策**:`gates` 逻辑 / EARS 校验 / 依赖图 / judge 投票 / 四指标等**原样复用**为库,被 skills/hooks/driver 调用。
@@ -122,10 +127,21 @@
 ### ADR-009 📌 成本模型(外部约束)
 - **记录**:6-15 起无头/Agent SDK 走单独额度($20/$100/$200,API 价,不滚存);交互走订阅;cursor/codex 另算。
 - **影响**:自动化 harness 全程无头 = 全计入 Agent SDK 额度;预算与"白嫖"假设须重算。
+- **修订(2026-06-11,Fable 5 价签;来源:官方 API 参考,验证日期 2026-06-11)**:Fable 5 API 价 **$10/$50 每 MTok = Opus 4.8($5/$25)的 2 倍** → 无头额度燃烧速度翻倍,**有头先行的经济理由加码**。控本手段备查:effort 档(low~max)、task budgets(beta)、Batch 五折、cache 读 ~0.1x。**第三方流传的 credit 细节(具体额度拆分/滚存/订阅窗口日期)未经官方核验,不入硬阈值,预算承诺前必须官方二次确认**(契约 10 第 4 条登记处)。
 
 ### ADR-010 🔷 模型策略:重角色 Opus,廉价/并行子任务 Haiku
 - **决策**:architect/developer/judge 等用强模型(如 Opus);搜索/格式化/并行子任务路由到 Haiku 控本。
 - **理由**:官方子代理支持按角色路由更便宜模型。
+- **修订(2026-06-11)**:阶梯更新为 **Fable 5(最强,长程 agentic 主打)> Opus 4.8(半价)> Haiku(廉价 fan-out)**;同模型内**先调 effort 档再降模型**(粒度更细)。但 judge/architect 等角色最终用哪一档**由 M4 任务集实测决定**,不按"越强越好"线性排——更强模型也可能更会合理化错误。角色级精调矩阵显式推迟(v2 §2.2)。API 硬注意见契约 10 登记处(Fable 5 仅 adaptive thinking 等)。
+
+### ADR-011 ✅ STEP 0 有头先行(本方案,2026-06-11)
+- **决策**:supervisor 由人担任(有头交互模式);功能版组件(M1 薄 CLI / M2 agents+skills / M3 会话护栏 / M4 进程外强制+成本测量)全部落地;driver 按 ADR-003 修订后的四级阶梯与触发条件升级。
+- **状态存储** = `specs/<id>/` 文件契约 + gate receipt 链(契约 06/08),将来 driver 原样继承,无沉没成本。
+- **完整方案**:`AISEP-ClaudeCode有头先行实施方案-v2.md`(v1 已被取代,保留为历史)。
+
+### ADR-012 📌 driver 防御占位(随 driver 生效;**随推迟保留,不得随"取消"废除**)
+- **决策**:将来任何 driver 不依赖 `-p` 自动发现(防 `--bare` 成为默认后语义翻转)——所有加载项(CLAUDE.md/skills/hooks/MCP)显式传参 + 钉死 CLI/SDK 版本。
+- **连带**:会话内编排骑在自动更新的客户端上、无法钉版本——这正是它不能当权威层的理由之一(契约 01)。
 
 ### ADR-013 ✅ STEP 0 就地实施(不新开 repo)+ 基线 tag(2026-06-11)
 - **决策**:STEP 0 在本 repo 就地清理后实施,不 clone/不新建仓;基线 = tag `archive/pre-harness`(D0 合并 `chore/health-improvements` 后打)。需要"新项目门面"时把本 repo push 到新建 GitHub 远端。
@@ -134,11 +150,16 @@
 - **验收命令**:`make test`(34 绿)+ `make arch`(2 契约 kept)。
 - **唯一例外场景(备查)**:将来把 harness 抽成给其他项目用的模板/发行物时才新开 repo,性质是"抽取发布"非"迁移"。
 
+### ADR-014 ✅ 权威层级声明(2026-06-11;全文见 `specs/contracts/01-authority-layers.md`)
+- **决策**:唯一强制层 = GitHub CI + branch protection + CODEOWNERS;pre-commit = 反馈层(可旁路,明文承认);hooks/`permissions.deny` = 会话护栏;CLAUDE.md = 建议层;**会话内的一切编排(Workflow / Agent 工具 / 长程会话)永远不是强制**,任何 ADR 不得以会话内构件作为权威层论据。
+- **理由**:会话内约束是"被约束方自己执行的约束";纯 hook 防护已被实测定性为剧场(用户真 hook 全旁路)。
+
 ### 待决 ❓
-- 编排落点:纯 Agent SDK driver vs lead-skill 驱动(倾向 SDK driver,见 ADR-003)。
-- decompose 并行的具体实现(SDK 并行 vs background agents vs agent teams)。
-- 看板复用骨架 `console.py` 自省式方案还是新建。
+- ~~编排落点:纯 Agent SDK driver vs lead-skill 驱动~~ → **已裁决**(ADR-003 修订 + ADR-011):四级阶梯,STEP 0 = 人肉定序,Workflow 为会话内观察项(不承重)。
+- decompose 并行的具体实现 → 选项收敛:Agent 工具(per-agent worktree 隔离 + 后台运行)为最自然实现;待第一轮试运行后定。
+- 看板复用骨架 `console.py` 自省式方案还是新建(开工前不裁决,v2 §2.2 推迟清单)。
 - 强制版是否、何时启动(取决于是否要对外/受监管交付)。
+- (新)敏感库是否默认路由 Opus 4.8 而非 Fable 5(数据保留政策差异待核验)——一行待决,STEP 0 不建设。
 
 ---
 
