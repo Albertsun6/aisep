@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- spec: specs/feat-bpmn 验收 10 — SDLC 六阶段管线;元素 id 与 spec 映射表冻结一致,
+     工作台项目模式按 id 叠门禁状态徽章。改 id = 破坏机器对账,测试会拒。 -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="defs_sdlc" targetNamespace="http://aiforge.example/bpmn">
+  <bpmn:process id="proc_sdlc" isExecutable="false">
+    <bpmn:startEvent id="start_sdlc" name="需求提出"/>
+    <bpmn:task id="stage-requirements" name="需求 requirements"/>
+    <bpmn:task id="stage-architecture" name="架构 architecture"/>
+    <bpmn:task id="stage-decompose" name="拆解 decompose"/>
+    <bpmn:task id="stage-implement" name="实现循环 implement"/>
+    <bpmn:task id="stage-judge-commit" name="判定+提交 judge/commit"/>
+    <bpmn:task id="stage-integrate" name="集成 integrate"/>
+    <bpmn:endEvent id="end_sdlc" name="交付"/>
+    <bpmn:sequenceFlow id="sf0" sourceRef="start_sdlc" targetRef="stage-requirements"/>
+    <bpmn:sequenceFlow id="sf1" sourceRef="stage-requirements" targetRef="stage-architecture"/>
+    <bpmn:sequenceFlow id="sf2" sourceRef="stage-architecture" targetRef="stage-decompose"/>
+    <bpmn:sequenceFlow id="sf3" sourceRef="stage-decompose" targetRef="stage-implement"/>
+    <bpmn:sequenceFlow id="sf4" sourceRef="stage-implement" targetRef="stage-judge-commit"/>
+    <bpmn:sequenceFlow id="sf5" sourceRef="stage-judge-commit" targetRef="stage-integrate"/>
+    <bpmn:sequenceFlow id="sf6" sourceRef="stage-integrate" targetRef="end_sdlc"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="dia_sdlc">
+    <bpmndi:BPMNPlane id="plane_sdlc" bpmnElement="proc_sdlc">
+      <bpmndi:BPMNShape id="s_start" bpmnElement="start_sdlc">
+        <dc:Bounds x="160" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_req" bpmnElement="stage-requirements">
+        <dc:Bounds x="250" y="160" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_arch" bpmnElement="stage-architecture">
+        <dc:Bounds x="420" y="160" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_dec" bpmnElement="stage-decompose">
+        <dc:Bounds x="590" y="160" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_impl" bpmnElement="stage-implement">
+        <dc:Bounds x="760" y="160" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_judge" bpmnElement="stage-judge-commit">
+        <dc:Bounds x="930" y="160" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_int" bpmnElement="stage-integrate">
+        <dc:Bounds x="1100" y="160" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_end" bpmnElement="end_sdlc">
+        <dc:Bounds x="1270" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="e_sf0" bpmnElement="sf0">
+        <di:waypoint x="196" y="200"/><di:waypoint x="250" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_sf1" bpmnElement="sf1">
+        <di:waypoint x="370" y="200"/><di:waypoint x="420" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_sf2" bpmnElement="sf2">
+        <di:waypoint x="540" y="200"/><di:waypoint x="590" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_sf3" bpmnElement="sf3">
+        <di:waypoint x="710" y="200"/><di:waypoint x="760" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_sf4" bpmnElement="sf4">
+        <di:waypoint x="880" y="200"/><di:waypoint x="930" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_sf5" bpmnElement="sf5">
+        <di:waypoint x="1050" y="200"/><di:waypoint x="1100" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_sf6" bpmnElement="sf6">
+        <di:waypoint x="1220" y="200"/><di:waypoint x="1270" y="200"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
