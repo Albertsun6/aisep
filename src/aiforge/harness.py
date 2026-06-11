@@ -328,9 +328,53 @@ def gate_trace(feature_dir: Path, repo_root: Path, argv: list[str]) -> tuple[str
     return decision, msgs
 
 
+# **极窄**白名单:只跳过确定不会被执行的纯文档/图片(spec: scanner-skip-docs)。
+# 经异构评审(2026-06-11,GPT-5.5)收窄:**不**豁免 .html/.svg(含 <script>)、.yml/.yaml
+# (CI 可执行面)、.json/.toml/.cfg(影响执行链)——这些一律仍扫。fail-closed:其余(代码/
+# 配置/未知/无后缀/可执行 bit)全扫。
+_SKIP_SUFFIXES = frozenset({
+    ".md", ".markdown", ".rst", ".txt",
+    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".pdf", ".m4a",
+})
+_DIFF_GIT_RE = re.compile(r"^diff --git a/(.+?) b/(.+?)\s*$")
+# 块内 mode 行:`new file mode 100755` / `new mode 100755`——owner/group/other 任一 x 位即可执行
+_MODE_RE = re.compile(r"^(?:new file mode|new mode) (\d{6})\s*$")
+
+
+def code_only_diff(diff_text: str) -> str:
+    """从 git diff 文本里剔除"确定纯文档"块,其余(含可执行面)全留(spec: scanner-skip-docs)。
+
+    按 `diff --git a/<p> b/<p>` 分块;两侧后缀都在 _SKIP_SUFFIXES → tentatively 跳过;
+    但块内若出现 executable bit(mode 100755 等)→ **强制保留**(覆盖后缀豁免);
+    解析不出文件名/mode → 保守保留(当代码扫,fail-closed)。
+    """
+    lines = diff_text.splitlines(keepends=True)
+    out: list[str] = []
+    keep = True  # 进入第一个 diff --git 之前的内容(罕见)保守保留
+    for line in lines:
+        stripped = line.rstrip("\n")
+        m = _DIFF_GIT_RE.match(stripped)
+        if m:
+            sa = PurePosixPath(m.group(1)).suffix.lower()
+            sb = PurePosixPath(m.group(2)).suffix.lower()
+            # 仅当**两侧**都是已知纯文档后缀才(暂)跳过(改名/类型变化时保守扫)
+            keep = not (sa in _SKIP_SUFFIXES and sb in _SKIP_SUFFIXES)
+        else:
+            mode_m = _MODE_RE.match(stripped)
+            if mode_m and (int(mode_m.group(1), 8) & 0o111):
+                keep = True  # executable bit → 强制扫本块(覆盖后缀豁免)
+        if keep:
+            out.append(line)
+    return "".join(out)
+
+
 def judge_diff(diff_text: str) -> tuple[str, list[dict]]:
-    """纯静态三态(契约 04):扫描命中只升级人审,不硬拒、不放行。"""
-    findings = StaticRiskScanner().scan(diff_text)
+    """纯静态三态(契约 04):扫描命中只升级人审,不硬拒、不放行。
+
+    只扫可执行代码(剔除纯文档/数据文件,spec: scanner-skip-docs)——文档里引用
+    eval/os.system 是教学/记录,不构成 RCE。fail-closed:未知后缀仍扫。
+    """
+    findings = StaticRiskScanner().scan(code_only_diff(diff_text))
     return (NEEDS_HUMAN if findings else APPROVED), findings
 
 

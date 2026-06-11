@@ -1,0 +1,25 @@
+模型身份：GPT-5.5。
+
+Steelman：这个方向本身合理。`_SKIP_SUFFIXES` 用白名单，大小写 `.lower()`，未知后缀/无后缀默认保留，rename 两侧都必须是跳过后缀才跳过，解析失败也保留，整体是朝 fail-closed 设计的。
+
+但我结论是：需修，不能按当前 diff 合入。
+
+[blocker / `src/aiforge/harness.py` / `.yml`、`.yaml` 被列为纯数据会漏扫 CI 可执行面 / 建议]
+`.github/workflows/*.yml` 是会执行的代码配置，不是纯文档。攻击者可以在 workflow 里加 `run: python -c 'eval(...)'`、`curl | sh`、泄露 secret 等，当前实现会整块跳过。至少应把 `.yml/.yaml` 从全局跳过列表移除，或者按路径分类：`.github/workflows/**`、`action.yml` 永远扫描。
+
+[blocker / `src/aiforge/harness.py` / `.html`、`.svg` 实际可执行 / 建议]
+本仓库里的 `docs/GETTING-STARTED.html`、`docs/USER-GUIDE.html` 已经包含 `<script>` 和外部 CDN。HTML/SVG 不是“不会执行”，只是不会被 Python 解释器执行。当前扫描器虽粗糙，但 `eval(` 这种 token 在 JS/HTML 里同样可能代表真实风险。建议不要全局跳过 `.html/.htm/.svg`，或只跳过生成产物目录且另有生成源校验时才跳过。
+
+[major / `src/aiforge/harness.py` / 后缀判断忽略 executable bit / 建议]
+一个新文件 `payload.md` 可以带 shebang 并设置 `100755`，然后被 Makefile、hook、CI 或人工命令执行。当前只看 suffix，两侧 `.md` 就跳过整个 diff，包括 `new file mode 100755` 和内容。建议解析块内 `new file mode`、`old mode/new mode`，发现 executable bit 时强制扫描。
+
+[major / `src/aiforge/harness.py` / `.json/.toml/.ini/.cfg/.lock` 过宽 / 建议]
+这些不都是纯数据：`package.json` scripts、`pyproject.toml` build backend/tool 配置、`tox.ini` commands、某些 `.cfg` 都可能影响执行链。当前目标是减少文档误报，跳过范围不应扩到配置文件。建议首版只跳 `.md/.markdown/.rst/.txt` 和确定的二进制图片，其他配置类保留扫描。
+
+[major / `src/aiforge/harness.py` / diff parser 对 Git 路径格式覆盖不足但大多 fail-closed / 建议]
+`_DIFF_GIT_RE` 不处理 C-style quoted 路径、非常规路径、`diff --cc`。好消息是匹配失败会保留，通常是误报不是漏报。路径含空格一般可匹配；路径含 ` b/` 可能解析错，但多数情况下也会变成保守保留。建议补专门测试：rename、new file、delete、quoted path、path with space、binary、submodule，证明不会漏扫。
+
+[minor / `tests/test_harness.py` / `_EV/_SYS` 拼接技巧可以接受，但测试覆盖不足 / 建议]
+拼接危险 token 是合理的测试卫生，不是在产品路径绕门禁。它确实暴露了一个现有限制：扫描器扫整段 diff，测试文件自身新增危险字面会自触发。建议保留，但新增攻击测试覆盖 workflow YAML、可执行 `.md`、HTML `<script>eval(...)`，否则容易把“验收样例过了”误认为“安全边界过了”。
+
+Verdict：需修。核心问题不是 `code_only_diff` 分块思路，而是“纯文档/数据后缀”的集合过宽，已经包含真实可执行面，尤其 `.yml/.yaml`、`.html`、`.svg` 和 executable-bit 文件。当前改动会降低 `gate-judge` 的安全保证。

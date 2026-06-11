@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "run_id": "8fdba1ed-045f-48e3-a996-859d7612bb19",
+  "gate": "gate-spec",
+  "feature_id": "scanner-skip-docs",
+  "inputs": [
+    {
+      "path": "specs/scanner-skip-docs/spec.md",
+      "sha256": "bfac2b3ecfb1b8ec5ed400f7a23f24f32ed2f8fb5fe07eef7aa51ded2b02559d"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "0808d82ece0a1f166084252e11980defc439705e",
+  "git_dirty": true,
+  "created_at": "2026-06-11T20:02:05.079564+08:00",
+  "tool": "aiforge gate-spec",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-spec",
+    "specs/scanner-skip-docs/spec.md"
+  ],
+  "ack": null,
+  "reviewer": null
+}

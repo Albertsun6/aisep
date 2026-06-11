@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "run_id": "69460b67-e1a0-4bb1-8e0b-9d194ec191a6",
+  "gate": "gate-trace",
+  "feature_id": "scanner-skip-docs",
+  "inputs": [
+    {
+      "path": "specs/scanner-skip-docs/spec.md",
+      "sha256": "951e9ac5e1323b13721e54af121800d1377e8d26d41407ec07794619e33ad6c3"
+    },
+    {
+      "path": "specs/scanner-skip-docs/plan.md",
+      "sha256": "e48ce3180790c25b7d34edcc6665d70f8b57a1a41907f559ee82010286f58b91"
+    },
+    {
+      "path": "specs/scanner-skip-docs/tasks.md",
+      "sha256": "d6a4f744f356e8f507a68124fe39e8460e414ecb0f261c66c061954065e4087c"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "0808d82ece0a1f166084252e11980defc439705e",
+  "git_dirty": true,
+  "created_at": "2026-06-11T19:48:59.505020+08:00",
+  "tool": "aiforge gate-trace",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-trace",
+    "specs/scanner-skip-docs"
+  ],
+  "ack": null,
+  "reviewer": null
+}

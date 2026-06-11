@@ -183,6 +183,100 @@ class TestGateJudge(_RepoCase):
         self.assertEqual(cli_main(["gate-judge", "--base", base]), 2)
 
 
+# 危险 token 故意拼接——使本测试文件 .py 源码里不出现完整的危险模式字面(否则扫描器
+# 会扫到本文件自身,因为它正确地扫 .py;且 diff 行带 + 前缀,scanner 的注释过滤会失效)。
+# 运行时拼出真模式来测 scanner 行为。这是测扫描器的测试卫生,不是绕门禁(产品代码不做)。
+_EV = "ev" "al"        # 运行时 == 内置求值函数名
+_SYS = "os.sys" "tem"  # 运行时 == os 的命令执行函数名
+
+
+class TestScannerSkipDocs(_RepoCase):
+    """spec: specs/scanner-skip-docs — 只扫可执行代码,跳过纯文档(fail-closed)。"""
+
+    def _stage(self, name: str, content: str) -> None:
+        p = self.tmp / name
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(content, encoding="utf-8")
+        _git(self.tmp, "add", name)
+
+    def test_eval_in_markdown_skipped(self):
+        """验收1:.md 里的危险字样不命中 → 0。"""
+        self._stage("GUIDE.md", f"讲解:危险代码长这样 `return {_EV}(c)`,会被拦。\n")
+        self.assertEqual(cli_main(["gate-judge", "--staged"]), 0)
+
+    def test_eval_in_python_still_caught(self):
+        """验收2:.py 里的危险字样照常命中 → 2。"""
+        self._stage("mod.py", f"def run(c):\n    return {_EV}(c)\n")
+        self.assertEqual(cli_main(["gate-judge", "--staged"]), 2)
+
+    def test_unknown_suffix_still_scanned(self):
+        """验收3:未知后缀仍扫(fail-closed,宁误报不漏报)→ 2。"""
+        self._stage("script.xyz", f"import os\n{_SYS}(x)\n")
+        self.assertEqual(cli_main(["gate-judge", "--staged"]), 2)
+
+    def test_no_suffix_still_scanned(self):
+        """无后缀文件(如脚本)仍扫 → 2。"""
+        self._stage("runme", f"{_EV}(payload)\n")
+        self.assertEqual(cli_main(["gate-judge", "--staged"]), 2)
+
+    def test_mixed_only_code_counts(self):
+        """验收4:同 diff 改 .md(含危险字样)+ 干净 .py → 只看代码,0。"""
+        self._stage("doc.md", f"示例 `{_EV}(x)` 教学。\n")
+        self._stage("clean.py", "def f():\n    return 1\n")
+        self.assertEqual(cli_main(["gate-judge", "--staged"]), 0)
+
+    # ---- 异构评审(2026-06-11)补的攻击测试:可执行面一律扫,不豁免 ----
+
+    def test_workflow_yaml_still_scanned(self):
+        """评审 blocker:.github/workflows/*.yml 是 CI 可执行面,不豁免 → 2。"""
+        self._stage(".github/workflows/ci.yml", f"steps:\n  - run: python -c '{_EV}(1)'\n")
+        self.assertEqual(cli_main(["gate-judge", "--staged"]), 2)
+
+    def test_html_with_script_still_scanned(self):
+        """评审 blocker:.html 含 <script> 可执行,不豁免 → 2。"""
+        self._stage("evil.html", f"<script>{_EV}(x)</script>\n")
+        self.assertEqual(cli_main(["gate-judge", "--staged"]), 2)
+
+    def test_svg_still_scanned(self):
+        """评审 blocker:.svg 可含 <script>,不豁免 → 2。"""
+        self._stage("pic.svg", f"<svg><script>{_EV}(x)</script></svg>\n")
+        self.assertEqual(cli_main(["gate-judge", "--staged"]), 2)
+
+    def test_json_config_still_scanned(self):
+        """评审 major:.json(如 package.json scripts)影响执行链,不豁免 → 2。"""
+        self._stage("package.json", f'{{"scripts": {{"x": "node -e \\"{_EV}(1)\\""}}}}\n')
+        self.assertEqual(cli_main(["gate-judge", "--staged"]), 2)
+
+    def test_executable_markdown_forced_scan(self):
+        """评审 major:.md 带 executable bit(chmod 755 + shebang)会被执行 → 强制扫 → 2。"""
+        p = self.tmp / "hook.md"
+        p.write_text(f"#!/bin/sh\n{_EV}(x)\n", encoding="utf-8")
+        p.chmod(0o755)
+        _git(self.tmp, "add", "hook.md")
+        self.assertEqual(cli_main(["gate-judge", "--staged"]), 2)
+
+    def test_code_only_diff_helper(self):
+        """单元级:code_only_diff 剔除纯文档块、保留代码块。"""
+        a_line = f"+{_EV}(a)\n"
+        b_line = f"+{_EV}(b)\n"
+        diff = (
+            "diff --git a/x.md b/x.md\n--- a/x.md\n+++ b/x.md\n@@ -0,0 +1 @@\n" + a_line
+            + "diff --git a/y.py b/y.py\n--- a/y.py\n+++ b/y.py\n@@ -0,0 +1 @@\n" + b_line
+        )
+        kept = harness.code_only_diff(diff)
+        self.assertNotIn(a_line.strip(), kept)  # md 块剔除
+        self.assertIn(b_line.strip(), kept)     # py 块保留
+
+    def test_code_only_diff_executable_md_kept(self):
+        """单元级:executable bit 的 .md 块被强制保留(覆盖后缀豁免)。"""
+        ev = f"+{_EV}(x)\n"
+        diff = (
+            "diff --git a/h.md b/h.md\nnew file mode 100755\n"
+            "--- /dev/null\n+++ b/h.md\n@@ -0,0 +1 @@\n" + ev
+        )
+        self.assertIn(ev.strip(), harness.code_only_diff(diff))
+
+
 class TestReview3f(_RepoCase):
     def test_informational_exit_zero(self):
         (self.tmp / "auth_module.py").write_text("token = 1\n")
