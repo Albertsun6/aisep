@@ -79,10 +79,14 @@ def collect_launcher(repo_root: Path) -> dict:
                             outputs[f.name] = text
             feat["outputs"] = outputs
             gates: dict = {}
-            for g in _GATE_FILES:
-                r = _read_receipt(d / "gates" / f"{g}.json", specs_root)
-                if r is not None:
-                    gates[g] = r
+            gdir = d / "gates"
+            # 父目录软链也拒(评审 2026-06-12 Med:specs/feat-a/gates -> ../feat-b/gates
+            # 会让 feat-a 展示 feat-b 的 receipt,破坏 receipt↔feature 绑定)
+            if gdir.is_dir() and not gdir.is_symlink():
+                for g in _GATE_FILES:
+                    r = _read_receipt(gdir / f"{g}.json", specs_root)
+                    if r is not None:
+                        gates[g] = r
             feat["gates"] = gates
             features[d.name] = feat
     return {

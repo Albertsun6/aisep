@@ -72,6 +72,20 @@ class TestExportContract(_Repo):
         data = self._payload()
         self.assertNotIn("evil.md", data["features"]["feat-a"]["outputs"])
 
+    def test_gates_parent_symlink_blocked(self):
+        """验收 2 评审反例(2026-06-12 Med):gates 父目录软链不得让 A 串读 B 的 receipt。"""
+        victim = self.root / "specs" / "feat-victim"
+        (victim / "gates").mkdir(parents=True)
+        (victim / "spec.md").write_text("# 受害\n", encoding="utf-8")
+        (victim / "gates" / "gate-judge.json").write_text(
+            '{"decision":"approved","created_at":"2026-06-12"}', encoding="utf-8")
+        attacker = self.root / "specs" / "feat-attacker"
+        attacker.mkdir()
+        (attacker / "spec.md").write_text("# 攻击者\n", encoding="utf-8")
+        (attacker / "gates").symlink_to(victim / "gates")  # 父目录软链借别人的 receipt
+        data = self._payload()
+        self.assertEqual(data["features"]["feat-attacker"]["gates"], {})  # 串读被拒
+
     def test_missing_and_corrupt_degrade(self):
         """验收 3:孤 spec 特性 + 坏 UTF-8 → 降级不崩。"""
         bare = self.root / "specs" / "feat-bare"
