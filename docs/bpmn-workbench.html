@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BPMN 业务流程工作台 · AISEP</title>
+<!-- spec: specs/feat-bpmn — 零构建/零外呼:只引 vendor/、flows/ 相对路径(验收 2) -->
+<link rel="stylesheet" href="vendor/bpmn-js@18.18.0/assets/diagram-js.css">
+<link rel="stylesheet" href="vendor/bpmn-js@18.18.0/assets/bpmn-js.css">
+<link rel="stylesheet" href="vendor/bpmn-js@18.18.0/assets/bpmn-font/css/bpmn.css">
+<style>
+  :root{
+    --bg:#fafaf9; --ink:#1c1917; --muted:#78716c; --line:#e7e5e4;
+    --accent:#047857; --warn:#b45309; --err:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%; margin:0}
+  body{
+    display:flex; flex-direction:column; background:var(--bg); color:var(--ink);
+    font-family:"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+  }
+  /* 顶栏:工具按钮 + 状态。面板/工具一律停靠上方与右侧兄弟列,
+     画布容器右下角是 bpmn.io 水印锚点(license 硬约束),不得有覆盖层(验收 15)。 */
+  header{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding:8px 12px; border-bottom:1px solid var(--line); background:#fff;
+  }
+  header h1{font-size:1rem; margin:0 10px 0 0}
+  button{
+    font:inherit; font-size:.85rem; padding:6px 12px; cursor:pointer;
+    border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink);
+  }
+  button:hover{border-color:var(--accent); color:var(--accent)}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+  button.primary:hover{background:#065f46}
+  #filename{font-size:.82rem; color:var(--muted); margin-left:auto; max-width:32ch;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  #mode{font-size:.75rem; color:var(--muted); border:1px solid var(--line);
+    border-radius:6px; padding:2px 8px}
+
+  main{flex:1; display:flex; min-height:0}
+  #canvas{flex:1; min-width:0; background:#fff}
+  /* XML 面板:flex 兄弟列(非 overlay),收起时 0 宽——不会遮画布内的水印 */
+  #xmlpanel{
+    width:430px; display:flex; flex-direction:column; border-left:1px solid var(--line);
+    background:#fff;
+  }
+  #xmlpanel.hidden{display:none}
+  #xmlpanel .bar{display:flex; gap:8px; align-items:center; padding:6px 10px;
+    border-bottom:1px solid var(--line); font-size:.8rem; color:var(--muted)}
+  #xmltext{
+    flex:1; width:100%; border:none; resize:none; padding:10px;
+    font-family:ui-monospace,"JetBrains Mono",monospace; font-size:.78rem; line-height:1.5;
+    color:var(--ink); outline:none;
+  }
+  footer{
+    display:flex; gap:14px; align-items:center; padding:6px 12px;
+    border-top:1px solid var(--line); background:#fff; font-size:.8rem; min-height:32px;
+  }
+  #status{color:var(--muted)}
+  #errbar{color:var(--err); white-space:pre-wrap; word-break:break-all}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>BPMN 工作台</h1>
+  <button id="btn-new">新建</button>
+  <button id="btn-open">打开</button>
+  <button id="btn-save" class="primary">保存</button>
+  <button id="btn-saveas">另存为</button>
+  <button id="btn-xml">XML 视图</button>
+  <span id="mode"></span>
+  <span id="filename"></span>
+</header>
+
+<main>
+  <div id="canvas"></div>
+  <aside id="xmlpanel" class="hidden">
+    <div class="bar">
+      <span>BPMN XML(可编辑,改完点应用)</span>
+      <button id="btn-apply" style="margin-left:auto">应用到画布</button>
+    </div>
+    <textarea id="xmltext" spellcheck="false"></textarea>
+  </aside>
+</main>
+
+<footer>
+  <span id="status"></span>
+  <span id="errbar"></span>
+</footer>
+
+<script src="vendor/bpmn-js@18.18.0/bpmn-modeler.production.min.js"></script>
+<script>
+"use strict";
+/* spec: specs/feat-bpmn M1。安全纪律(验收 13):一切动态内容只经 textContent/value 进 DOM,
+   禁用任何 HTML 字符串注入式 API(静态探针强制);XML 只交给 importXML 解析。 */
+
+// ---------- Editor 壳(验收 1) ----------
+var EMPTY_DIAGRAM =
+  '<?xml version="1.0" encoding="UTF-8"?>\n' +
+  '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" ' +
+  'xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" ' +
+  'xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" ' +
+  'id="defs_new" targetNamespace="http://aiforge.example/bpmn">' +
+  '<bpmn:process id="proc_new" isExecutable="false">' +
+  '<bpmn:startEvent id="start_new"/></bpmn:process>' +
+  '<bpmndi:BPMNDiagram id="dia_new"><bpmndi:BPMNPlane id="plane_new" bpmnElement="proc_new">' +
+  '<bpmndi:BPMNShape id="shape_start_new" bpmnElement="start_new">' +
+  '<dc:Bounds x="200" y="160" width="36" height="36"/>' +
+  '</bpmndi:BPMNShape></bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>';
+
+var modeler = new BpmnJS({ container: "#canvas", keyboard: { bindTo: document } });
+
+// ---------- 状态与可观测(P6 可观测) ----------
+var statusEl = document.getElementById("status");
+var errEl = document.getElementById("errbar");
+var fileEl = document.getElementById("filename");
+var modeEl = document.getElementById("mode");
+function setStatus(msg) { statusEl.textContent = msg; errEl.textContent = ""; }
+function setError(msg) { errEl.textContent = msg; }
+function setFilename(name) {
+  currentName = name || "diagram.bpmn";
+  fileEl.textContent = "目标: " + currentName + (fileHandle ? "(直写)" : "");
+}
+
+// ---------- FileIO(验收 3/4) ----------
+var CAN_WRITE = "showSaveFilePicker" in window;      // 特性检测,非 UA 嗅探
+var CAN_PICK = "showOpenFilePicker" in window;
+var fileHandle = null;          // fail-closed:任何替换画布动作置 null(验收 4)
+var currentName = "diagram.bpmn";
+var dirty = false;
+var BPMN_TYPE = [{ description: "BPMN 流程图", accept: { "application/xml": [".bpmn"] } }];
+
+modeEl.textContent = CAN_WRITE ? "直写模式" : "下载降级模式(本浏览器无文件直写 API)";
+document.getElementById("btn-save").textContent = CAN_WRITE ? "保存" : "下载保存";
+
+// PerfGuard(P6 性能):>5MB 或 bpmn 标签计数 >2000 先确认
+function perfConfirm(text) {
+  var tags = (text.match(/<bpmn:/g) || []).length;
+  if (text.length > 5 * 1024 * 1024 || tags > 2000) {
+    return window.confirm("文件较大(" + Math.round(text.length / 1024) + "KB / " +
+      tags + " 元素),渲染可能较慢,继续打开?");
+  }
+  return true;
+}
+
+// DirtyGuard(验收 8):替换画布前确认
+function confirmDiscard() {
+  if (!dirty) return true;
+  return window.confirm("当前图有未保存更改,确定丢弃并继续?");
+}
+window.addEventListener("beforeunload", function (e) {
+  if (dirty) { e.preventDefault(); e.returnValue = ""; }
+});
+
+var lastGoodXml = EMPTY_DIAGRAM;   // importXML 失败回滚快照(验收 7)
+
+function importToCanvas(xml, label, keepHandle) {
+  if (!perfConfirm(xml)) return Promise.resolve(false);
+  return modeler.importXML(xml).then(function () {
+    lastGoodXml = xml;
+    dirty = false;
+    if (!keepHandle) fileHandle = null;     // 替换画布 → 弃句柄,绝不"打开 B 存回 A"
+    setFilename(label);
+    setStatus("已加载: " + (label || "新图"));
+    refreshXmlPanel();
+    return true;
+  }).catch(function (err) {
+    setError("加载失败(画布保持原图): " + String(err && err.message || err));
+    return modeler.importXML(lastGoodXml).then(function () { return false; });
+  });
+}
+
+function newDiagram() {
+  if (!confirmDiscard()) return;
+  fileHandle = null;
+  importToCanvas(EMPTY_DIAGRAM, "diagram.bpmn", false);
+}
+
+function openViaInput() {
+  var input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".bpmn,.xml";
+  input.addEventListener("change", function () {
+    if (input.files && input.files[0]) readFileObject(input.files[0]);
+  });
+  input.click();
+}
+
+function readFileObject(file) {
+  file.text().then(function (text) {
+    fileHandle = null;                       // File 对象无句柄 → 降级路径
+    importToCanvas(text, file.name, false);
+  }).catch(function (err) {
+    setError("文件读取失败(画布保持原图): " + String(err && err.message || err));
+  });
+}
+
+function openDiagram() {
+  if (!confirmDiscard()) return;
+  if (CAN_PICK) {
+    window.showOpenFilePicker({ types: BPMN_TYPE, multiple: false }).then(function (handles) {
+      var h = handles[0];
+      return h.getFile().then(function (file) {
+        return file.text().then(function (text) {
+          return importToCanvas(text, file.name, false).then(function (ok) {
+            if (ok) { fileHandle = h; setFilename(file.name); } // picker 打开 → 持句柄直写
+          });
+        });
+      });
+    }).catch(function (err) {
+      if (err && err.name === "AbortError") return;  // 用户取消不是错误
+      setError("打开失败(画布保持原图): " + String(err && err.message || err));
+    });
+  } else {
+    openViaInput();
+  }
+}
+
+// 拖放打开(降级路径:无句柄)
+document.getElementById("canvas").addEventListener("dragover", function (e) { e.preventDefault(); });
+document.getElementById("canvas").addEventListener("drop", function (e) {
+  e.preventDefault();
+  if (!confirmDiscard()) return;
+  var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) readFileObject(f);
+});
+
+function exportXml() { return modeler.saveXML({ format: true }); }
+
+function downloadAs(name, xml) {
+  var blob = new Blob([xml], { type: "application/xml" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  dirty = false;
+  setStatus("已下载: " + name + "(请手动放回目标目录)");
+}
+
+function writeToHandle(handle, xml) {
+  return handle.createWritable().then(function (w) {
+    return w.write(xml).then(function () { return w.close(); });
+  }).then(function () {
+    dirty = false;
+    fileHandle = handle;
+    return handle.getFile ? handle.name : currentName;
+  });
+}
+
+function saveDiagram(forcePicker) {
+  exportXml().then(function (r) {
+    var xml = r.xml;
+    if (!CAN_WRITE) { downloadAs(currentName, xml); return; }
+    if (fileHandle && !forcePicker) {
+      writeToHandle(fileHandle, xml).then(function () {
+        setFilename(fileHandle.name);
+        setStatus("已保存到: " + fileHandle.name);
+      }).catch(function (err) {
+        setError("保存失败: " + String(err && err.message || err));
+      });
+      return;
+    }
+    window.showSaveFilePicker({ types: BPMN_TYPE, suggestedName: currentName })
+      .then(function (h) {
+        return writeToHandle(h, xml).then(function () {
+          setFilename(h.name);
+          setStatus("已保存到: " + h.name);
+        });
+      }).catch(function (err) {
+        if (err && err.name === "AbortError") return;
+        setError("保存失败: " + String(err && err.message || err));
+      });
+  }).catch(function (err) {
+    setError("导出 XML 失败: " + String(err && err.message || err));
+  });
+}
+
+// ---------- XmlPanel(验收 6/7) ----------
+var xmlPanel = document.getElementById("xmlpanel");
+var xmlText = document.getElementById("xmltext");
+var seq = 0;                                   // 竞态防护:过期 saveXML 结果丢弃
+function refreshXmlPanel() {
+  if (xmlPanel.classList.contains("hidden")) return;
+  var my = ++seq;
+  exportXml().then(function (r) {
+    if (my === seq) xmlText.value = r.xml;     // textarea.value:不解析 HTML,安全
+  }).catch(function () { /* 导出失败由保存路径报错,面板保持旧值 */ });
+}
+var debounceTimer = null;
+modeler.on("commandStack.changed", function () {
+  dirty = true;
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(refreshXmlPanel, 300);   // ≤500ms(验收 6)
+});
+
+document.getElementById("btn-apply").addEventListener("click", function () {
+  if (!confirmDiscard()) return;
+  var xml = xmlText.value;
+  fileHandle = null;                            // 应用粘贴 XML = 替换画布 → 弃句柄
+  importToCanvas(xml, currentName, false).then(function (ok) {
+    if (ok) setStatus("已应用 XML 到画布");
+  });
+});
+
+document.getElementById("btn-xml").addEventListener("click", function () {
+  xmlPanel.classList.toggle("hidden");
+  if (!xmlPanel.classList.contains("hidden")) refreshXmlPanel();
+});
+
+// ---------- 按钮接线 ----------
+document.getElementById("btn-new").addEventListener("click", newDiagram);
+document.getElementById("btn-open").addEventListener("click", openDiagram);
+document.getElementById("btn-save").addEventListener("click", function () { saveDiagram(false); });
+document.getElementById("btn-saveas").addEventListener("click", function () { saveDiagram(true); });
+
+// ---------- 启动 ----------
+importToCanvas(EMPTY_DIAGRAM, "diagram.bpmn", false).then(function () {
+  setStatus(CAN_WRITE ? "就绪(直写模式)" : "就绪(下载降级:保存=下载文件)");
+});
+</script>
+</body>
+</html>

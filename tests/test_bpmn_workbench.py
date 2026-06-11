@@ -95,5 +95,48 @@ class TestFixtures(unittest.TestCase):
         self.assertTrue(any("<script>" in (d.text or "") for d in docs))
 
 
+class TestZeroEgress(unittest.TestCase):
+    """验收 2:工作台零外呼——资源引用只许 vendor/、flows/ 相对路径;无网络 API 调用面。"""
+
+    PAGE = REPO / "docs" / "bpmn-workbench.html"
+
+    def _attrs(self):
+        from html.parser import HTMLParser
+
+        found = []
+
+        class P(HTMLParser):
+            def handle_starttag(self, tag, attrs):
+                for k, v in attrs:
+                    if k in ("src", "href") and v:
+                        found.append((tag, v))
+
+        P().feed(self.PAGE.read_text(encoding="utf-8"))
+        return found
+
+    def test_all_refs_relative_to_vendor_or_flows(self):
+        for tag, url in self._attrs():
+            self.assertFalse(url.startswith(("http:", "https:", "//")), f"{tag} 外呼: {url}")
+            self.assertTrue(url.startswith(("vendor/", "flows/")), f"{tag} 引用面外路径: {url}")
+
+    def test_no_network_api_calls(self):
+        """无 fetch/XHR/sendBeacon/动态 import——零网络 API 面(比"只许相对 URL"更强)。"""
+        text = self.PAGE.read_text(encoding="utf-8")
+        for token in ("fetch(", "XMLHttpRequest", "sendBeacon", "import("):
+            self.assertNotIn(token, text, f"页面不应含网络调用 {token}")
+
+    def test_absolute_urls_only_in_xml_namespaces(self):
+        """http(s):// 字样只允许出现在 BPMN XML 命名空间声明行(标识符,非请求)。"""
+        for n, line in enumerate(self.PAGE.read_text(encoding="utf-8").splitlines(), 1):
+            if "http://" in line or "https://" in line:
+                self.assertTrue(
+                    "xmlns" in line or "targetNamespace" in line,
+                    f"第 {n} 行出现非命名空间的绝对 URL: {line.strip()[:80]}")
+
+    def test_no_dynamic_innerhtml(self):
+        """验收 13 静态半边:本页不得用 innerHTML(动态内容只走 textContent/value)。"""
+        self.assertNotIn("innerHTML", self.PAGE.read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()
