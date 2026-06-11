@@ -153,6 +153,7 @@
 ### ADR-014 ✅ 权威层级声明(2026-06-11;全文见 `specs/contracts/01-authority-layers.md`)
 - **决策**:唯一强制层 = GitHub CI + branch protection + CODEOWNERS;pre-commit = 反馈层(可旁路,明文承认);hooks/`permissions.deny` = 会话护栏;CLAUDE.md = 建议层;**会话内的一切编排(Workflow / Agent 工具 / 长程会话)永远不是强制**,任何 ADR 不得以会话内构件作为权威层论据。
 - **理由**:会话内约束是"被约束方自己执行的约束";纯 hook 防护已被实测定性为剧场(用户真 hook 全旁路)。
+- **修订注(2026-06-11,用户裁决的已知偏差)**:branch protection **不开** "Do not allow bypassing"(admin 可 bypass)——单人仓库日常代价考量。后果:强制层对 repo admin(用户本人)不生效,只对其余主体生效;探针验收标准同步弱化为"merge 被 blocked(非 admin 视角)"。强制版或多操作者时(ADR-003 硬触发"多操作者纪律")须重开此项。仓库形态 = public(branch protection 免费生效);用户级 bypassPermissions 保持现状(本仓库项目级已覆盖,真锁为强制版 managed-settings 事项,ADR-008)。
 
 ### 待决 ❓
 - ~~编排落点:纯 Agent SDK driver vs lead-skill 驱动~~ → **已裁决**(ADR-003 修订 + ADR-011):四级阶梯,STEP 0 = 人肉定序,Workflow 为会话内观察项(不承重)。
