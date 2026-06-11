@@ -1,0 +1,168 @@
+我是 GPT-5.5，非 Claude 视角。
+
+整体结论：**需修订后再生效**。方向是对的，尤其是“唯一强制层在 GitHub 远端”“CLI 不调模型”“receipt 链 fail-closed”这几条很有价值。但现在有几类硬问题：有些“强制”依赖未写死的 GitHub 配置；有些退出码承诺超出 Python 进程能控制的范围；receipt / ack / hash 的接口还缺少可实现细节；另有几处把供应商计费、模型行为、未来日期事实写进了契约或准契约文本，证据边界不够清楚。
+
+## 逐条评审
+
+### 01 权威层级
+
+**Steelman：** 这条最重要。它把“真正能挡住合并的东西”和“只是提醒模型别乱来”分开，避免把 hooks、prompt、Workflow 这些可被同一会话改写的东西误当强制治理。
+
+**挑刺：**
+
+- “GitHub CI + branch protection + CODEOWNERS 不可绕过”表达过满。repo admin 既能改保护规则，也可能直接 bypass，除非 branch protection 明确启用“include administrators / do not allow bypassing”。  
+- CODEOWNERS 本身不强制，只有在 branch protection 里启用“Require review from Code Owners”才强制。
+- “三个攻击探针 PR 全被拦”还不够，需要钉死具体 required status check 名称、workflow 触发方式、是否使用 base branch workflow。否则“同 PR 改空 gates.yml”这个探针可能在 GitHub 语义里天然无效，不能证明保护完整。
+- “会话内一切永远不是强制”是正确的原则，但“hooks”一词有歧义：Git hooks 是本地反馈层；GitHub webhook / GitHub App check 可能是远端强制链的一部分。建议限定为“本地 hooks / 会话 hooks”。
+
+**判定：修改建议。** 原则接受，但必须把 GitHub branch protection 的必要配置写成机器可验证清单。
+
+### 02 基线与受保护路径
+
+**Steelman：** 明确基线、就地实施、受保护路径和契约变更流程，能避免项目启动后出现“到底从哪一版算 harness 起点”的争议。
+
+**挑刺：**
+
+- tag `archive/pre-harness` 如果只是普通 tag，是可移动的。基线应同时记录 immutable commit SHA，最好要求 signed / protected tag。
+- “任何时点回到基线 make test + make arch 必须绿”不完全可执行。依赖、Python 版本、import-linter 版本、系统环境都会漂移。需要锁定运行环境，或把它改成“在记录的环境矩阵下必须绿”。
+- “受保护路径 M4 起强制，之前为约定”合理，但 README 又说契约包冻结，存在时间语义混乱：冻结是现在生效，还是 M4 后才有远端强制？
+- “契约变更重跑异构(cursor-agent)评审”过窄，和契约 05 的“跨厂商 cursor-agent / codex”不完全一致。若 cursor-agent 不可用，应该明确转人审还是允许 codex 替代。
+- “涉及 specs/<id>/ 或其代码”中的“其代码”没有映射规则。代码如何归属 feature-id？靠路径、任务清单、trace receipt，还是 commit message？
+
+**判定：修改建议。** 需要固定 tag SHA、环境矩阵、feature 与代码的归属规则。
+
+### 03 gate 退出码
+
+**Steelman：** 0/1/2/3 四态很清晰，尤其把 `needs_human` 和 `infra_error` 分开，能防止“需要人审”被误当普通失败或成功。
+
+**挑刺：**
+
+- “`aiforge` 包自身 import 失败也必须由入口最外层兜住 → 3”实现上很难。如果 `python -m aiforge` 在加载 package 时就失败，入口代码可能根本没机会运行。需要一个极薄 `__main__.py`，且不能在顶层 import 复杂模块。
+- “所有消费方只认这四个值”过强。进程被 SIGINT、SIGKILL、OOM、timeout 时会出现 130、137、124 等外部退出码。契约应说“aiforge 正常控制路径只产生 0/1/2/3；消费方遇到其他非零一律按 infra_error 处理”。
+- `infra_error` 用 3 可以，但 receipt 解析失败也用 3，会阻断修复路径。需要规定是否打印可读诊断，避免用户不知道该删 receipt 还是修 receipt。
+- “每个子命令对四种结果各有一条断言”对某些 gate 可能不自然。测试应基于统一 result mapper，而不是强迫每个命令伪造全部语义。
+
+**判定：修改建议。** 退出码模型可接受，但要承认外部进程退出码，并细化入口实现边界。
+
+### 04 计费边界
+
+**Steelman：** CLI 高频跑在 pre-commit / CI 里，禁止模型调用是必要的。否则成本、稳定性、隐私、确定性都会失控。
+
+**挑刺：**
+
+- “任何子命令任何代码路径不 import 任何真实 LLM client”需要定义真实 LLM client 清单，否则静态 grep 很容易漏掉间接依赖、动态 import、HTTP 调用。
+- grep 禁 `codex` / `cursor-agent` 可能误伤文档字符串、测试 fixture、契约文本；白名单“注释与本契约引用”不够机器可判定。
+- 行为断言“无网络无 API key 下 5 个子命令全部正常完成”只能证明常见路径，不证明任何路径。
+- “2026-06-15 起计费”是外部事实，不应成为契约本体的硬理由。可以放 ADR，契约只保留“CLI 不调模型”的原则。
+
+**判定：修改建议。** 原则强烈接受；钉死方式要从 grep 升级为 import 边界测试、网络禁用测试、依赖审计。
+
+### 05 异构评审 fail-closed
+
+**Steelman：** 这条解决了“Claude 自己写、Claude 自己审、Claude 自己放行”的系统盲区。要求缺异构就转人审，是合理的 fail-closed。
+
+**挑刺：**
+
+- “跨厂商模型: cursor-agent / codex”不够精确。cursor-agent 可能底层也可选 Claude，codex 也可能不可观测。真正契约应该是“评审模型提供商 / 模型族与被审作者不同，且可留痕”。
+- “评审者自报模型身份”不能作为强证据，只能作为声明。工具可观测字段优先，自报只能做辅助。
+- “本人 fix 连续 3 次被 cursor 抓出洞”是经验，不应作为规则理由里的核心证据。可以保留为 ADR 轶事，契约应基于同质评审风险。
+- judge skill 文案 fail-closed 不是强制，只是提示词。你们自己在 01 里说会话内构件不是强制，这里却用 skill 文案做钉死方式，逻辑偏弱。
+
+**判定：修改建议。** 方向接受，但必须把“异构”的可验证定义写清楚，并避免把 prompt 文案当钉死机制。
+
+### 06 gate receipt
+
+**Steelman：** receipt 链是这个 harness 的核心。它把“模型说我跑过”变成“CLI 写出的机器证据”，能防静默跳阶段。
+
+**挑刺：**
+
+- schema 里 `actor` 同时承载 human ack 和异构 reviewer 信息，语义混杂。建议拆成 `actor`、`reviewer`、`override` 或 `ack`。
+- `tool: "aiforge gate-spec"`缺少版本。应记录 `aiforge_version`、命令参数、工作目录、Python 版本，至少记录工具版本，否则 receipt 可比性不足。
+- `git_head` 在 dirty worktree 下不够。应记录 `git_dirty` 或输入文件 hash 已经覆盖主要判断，但 commit 阶段仍需知道 receipt 是否来自未提交状态。
+- “同 gate 重跑覆盖，git 历史即演化记录”在本地 pre-commit 阶段不成立：覆盖后未提交、amend、rebase 都会改历史。若需要审计，应考虑 append-only log 或 receipt 内 `run_id`。
+- “待提交变更涉及 specs/<id>/ 或其代码”仍缺归属规则。
+- “receipt 文件本身解析失败 → 3”合理，但被恶意破坏 receipt 会从 rejected 变 infra_error。CI 都不放行，但诊断含义不同。可以接受，但需要说明“3 同样阻断”。
+
+**判定：修改建议。** 必须修 schema，特别是 actor/reviewer/ack 分离、版本字段、dirty 状态、feature-code 映射。
+
+### 07 `--ack-human`
+
+**Steelman：** 双层语义很好：本地 ack 只是审计，真正放行靠 GitHub 人类账号 approval。这样能避免模型在本地“自我批准”。
+
+**挑刺：**
+
+- “stdin isatty 防脚本/模型自动 ack”只能提高摩擦，不能证明是人。脚本可以分配伪 TTY，模型也可能通过终端工具操作。契约中应说这是审计信号，不是身份认证。
+- `USER` 不可靠，CI、本地 shell、sudo 都可能污染。应记录 `user`、`uid`、`hostname`、`tty`、时间，并明确这不是强身份。
+- 非 tty `--ack-human` 返回 3 是否合适有争议。非 tty 是使用方式不合规，可能更像 rejected=1；如果定为 3，就要说明这是“审计环境不可满足”。
+- “CI 永远重跑 gate，不消费本地 ack”非常对，但需要定义 CI 模式检测，不应只靠 env 标记。否则本地设置同名 env 就能改变语义。CI 应由 workflow 显式传 `--ci` 或由 GitHub 环境识别，仅用于更严格，不用于放宽。
+- `permissions.deny` 禁止 `--ack-human` 是会话护栏，不应放在硬规则里当安全依据。
+
+**判定：修改建议。** 双层语义接受；TTY 和 `$USER` 只能作为审计，不要包装成人类证明。
+
+### 08 specs 布局与 agent 双宿主
+
+**Steelman：** 统一 `specs/<id>/` 作为状态存储，能让有头模式和未来 driver 共享同一套状态，不把状态藏进会话记忆。
+
+**挑刺：**
+
+- “任何工具不得把管线状态存到此约定之外”过强。CI artifacts、PR comments、logs、cache 都可能保存辅助状态。建议改成“权威状态不得存到之外”。
+- `<feature-id>` 稳定不改名，但没有处理拆分、合并、废弃、重命名场景。需要 `status` 或 tombstone 语义。
+- agent 输出“一段结构化 JSON”没有规定写到哪里、是否也要 receipt、schema 如何版本化。
+- “工具白名单按 v1 方案 §M2 表执行”引用外部方案，契约自洽性不足。冻结契约不应依赖一个可能变动的方案章节。
+- “提示词措辞不冻，但违反 1~4 不得合入”合理，但没有远端检查机制。应有 lint 检测 `.claude/agents/*.md` frontmatter/schema/禁语。
+
+**判定：修改建议。** 接受目录思想；要补 lifecycle、权威状态边界、agent JSON 落盘路径和可检查规则。
+
+### 09 数据与安全
+
+**Steelman：** 这是跨所有持久化数据的底层规则，尤其 `schema_version`、原始字节 hash、secret redaction、最小权限、break-glass 都是必须有的治理面。
+
+**挑刺：**
+
+- `schema_version` “新增字段向后兼容则不升版”需要要求消费者忽略未知字段，否则新增字段也可能炸。
+- “高于自己认识版本 → 3”合理，但如果只是 patch version 或兼容字段，不应一刀切。当前只有整数版本，演进空间偏粗。
+- 原始字节 hash 是好选择，但要规定路径规范：相对 repo root？是否跟随 symlink？文件不存在？大小写文件系统？子模块？这些会影响跨平台复算。
+- secret/PII redaction 原则正确，但“个人敏感信息”范围太大。receipt 里又要求记录 `$USER`，这本身可能是个人信息。需要定义允许记录的最小身份字段。
+- “已脱敏 + 指纹前 8 位”对 secret 可能仍有风险，尤其低熵 token / 邮箱 / 电话。建议 secret 不存指纹，或用 HMAC with repo-local salt。
+- break-glass “24 小时内补 ADR”是流程愿望，不是机器强制。可以接受为治理契约，但不要说钉死。
+
+**判定：修改建议。** 原则接受；hash 路径、symlink、PII 与 fingerprint 规则要补。
+
+### 10 模型配置
+
+**Steelman：** 显式 model/effort、被拒参数 fail-closed、记录实际模型，这些能避免“供应商默认值变了，系统行为偷偷变了”。
+
+**挑刺：**
+
+- `.claude/settings.json` 和 `.claude/agents/*.md` 是 Claude 生态路径，但契约包同时强调异构和非 Claude。应把原则抽象成“各宿主配置文件”，Claude 只是一个实现。
+- “API 拒绝参数时调用方报错退出”合理，但对交互会话不一定有统一退出码；需要限定在 CLI/driver/自动化调用中。
+- “实际应答模型”的可观测来源不一定可信，尤其工具自报。应区分 `requested_model`、`reported_model`、`observed_source`、`confidence`。
+- Fable 5 价格、adaptive thinking、API surface 这些是外部事实，虽然文本说“不当契约”，但它仍在契约文件里，容易被后续实现误当规则。建议移到 ADR 或 `vendor-facts.md`，契约只保留“供应商事实必须带验证日期和复验方式”。
+
+**判定：修改建议。** 原则接受；供应商事实应从冻结接口中剥离或明确标为非规范附录。
+
+## 重点接口能否经得起实现
+
+`退出码`：基本经得起，但要修成“受控路径只返回 0/1/2/3；外部异常退出由消费方映射为 infra_error”。不要承诺能捕获所有 import failure、kill、timeout。
+
+`receipt schema`：目前不够。最大问题是 `actor` 过载、缺工具版本、缺命令参数、缺 dirty 状态、缺 reviewer/ack 分离、缺 feature-code 映射。建议 v1 现在就补齐，否则一实现就会兼容包袱。
+
+`--ack-human`：双层语义正确，但 TTY 不是人类证明，只是反自动化摩擦。应把本地 ack 定义为“本地审计记录”，权威身份只来自 GitHub approval。
+
+`hash 规范化`：原始字节 hash 是最少歧义的方案，接受。但还要补路径基准、symlink、文件缺失、大小写、子模块、目录不 hash 等边界。
+
+## 未核验事实风险
+
+最明显的是这些：
+
+- `2026-06-15` 无头/Agent SDK 计费变化。
+- Fable 5 价格、thinking 参数行为、API surface。
+- “cursor-agent / codex”是否一定代表真异构。
+- GitHub branch protection 的具体能力是否按文本默认开启。
+- “本人 fix 连续 3 次被 cursor 抓出洞”只能作经验，不能作契约依据。
+
+这些可以放 ADR 作为背景，但冻结契约里只能保留可验证原则和验证命令。
+
+## Final Verdict
+
+**需修订。** 这包契约的治理方向值得保留，但现在不宜直接冻结为后续 driver / CI / skills 的接口基础。最低修订门槛是：补 GitHub 强制配置清单、修退出码外部异常边界、升级 receipt schema、重写 `--ack-human` 为审计语义、补 hash 文件边界、把供应商事实移出规范正文或降为非规范附录。

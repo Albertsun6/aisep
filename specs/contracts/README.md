@@ -17,4 +17,6 @@
 | 09 | [data-safety](09-data-safety.md) | schema_version / hash 规范化 / redaction / CI 最小权限 / break-glass |
 | 10 | [model-config](10-model-config.md) | model/effort 显式配置;被拒参数 fail-closed;记实际模型 |
 
-留痕:本包整体经 cursor-agent 异构评审后生效(评审记录见各文件尾注或 ADR)。
+附录(非规范):[vendor-facts.md](vendor-facts.md) —— 厂商行为/价格/日期事实登记处(带验证日期与复验方式)。
+
+**生效状态**:本包经 cursor-agent 异构评审(verdict:需修订)→ 逐条辩论裁决(接受 24 / 部分 7 / 反驳 2,见 [REVIEW-2026-06-11.md](REVIEW-2026-06-11.md))→ 落改后于 **2026-06-11 在约定层生效**;远端强制自 M4 配置清单(契约 01)生效起。

@@ -1,11 +1,8 @@
 # 契约 10 · 模型配置原则
 
-> 冻结的是**原则**,不是厂商默认值——供应商行为(默认 effort、参数兼容性)是版本相关事实,进 ADR 附验证命令与日期,不当契约。
+> 冻结的是**原则**。供应商行为/价格/日期类事实一律登记在 `vendor-facts.md`(非规范附录,带验证日期与复验方式),**不在本契约正文**,过期不影响契约效力。
 
-1. **显式配置**:会话默认 model/effort 在 `.claude/settings.json` 显式声明;每个 `.claude/agents/*.md` 的 `model` 字段显式填写,不依赖"继承当时默认"。
-2. **被拒参数 fail-closed**:任何配置参数被 API 拒绝(如向仅支持 adaptive thinking 的模型发送关闭 thinking 的参数 → 400)时,调用方**报错退出**,不静默降级/不静默改参重试。
-3. **记录实际模型**:成本台账与异构评审留痕记录**实际应答模型**(可观测来源:API 响应的 model 字段 / `/cost` 输出 / 工具自报);不可观测时记"请求模型 + 来源不可观测",不编造。
-4. **厂商行为登记处**:当前已验证条目(验证日期 2026-06-11,来源:官方 API 参考)——
-   - Fable 5(`claude-fable-5`):仅 adaptive thinking,显式 `thinking:{type:"disabled"}` 返回 400(应整体省略该参数);API 价 $10/$50 每 MTok;API surface 同 Opus 4.7/4.8。
-   - 复验方式:见官方 models/migration 文档或 `client.models.retrieve("claude-fable-5")`。
-   - 此清单过期不影响契约 1~3 的效力。
+1. **显式配置**:每个宿主的配置文件显式声明模型与算力档——当前实现:会话默认 model/effort 在 `.claude/settings.json`;每个 `.claude/agents/*.md` 的 `model` 字段显式填写。不依赖"继承当时默认"。
+2. **被拒参数 fail-closed**(限定 CLI/driver/自动化调用):配置参数被 API 拒绝时报错退出,不静默降级/不静默改参重试。交互会话中由人处置,不在此限。
+3. **记录实际模型**:成本台账与评审留痕区分三个字段——`requested_model`(请求什么)、`reported_model`(对方报什么)、`observed_source`(报告来源:API 响应字段 / 工具自报 / 不可观测)。不可观测时如实记录,不编造。
+4. **供应商事实纪律**:任何实现依赖的厂商行为必须先登记进 `vendor-facts.md`(验证日期 + 来源 + 复验方式),引用时引登记条目而非口头事实。
