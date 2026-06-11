@@ -59,6 +59,24 @@
   }
   #status{color:var(--muted)}
   #errbar{color:var(--err); white-space:pre-wrap; word-break:break-all}
+
+  /* M2 项目模式:徽章 + 详情面板(停靠左上,不进画布右下水印区) */
+  main{position:relative}
+  #detail{
+    position:absolute; top:10px; left:60px; z-index:20; max-width:340px;
+    background:#fff; border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08); padding:10px 14px; font-size:.82rem;
+  }
+  #detail.hidden{display:none}
+  #detail h3{margin:0 0 6px; font-size:.9rem}
+  #detail div{white-space:pre-wrap; word-break:break-all; color:var(--muted)}
+  .stage-badge{
+    display:inline-block; font-size:.7rem; line-height:1.4; padding:1px 8px;
+    border-radius:9px; color:#fff; background:#a8a29e; white-space:nowrap;
+  }
+  .stage-badge.approved{background:var(--accent)}
+  .stage-badge.rejected{background:var(--err)}
+  .stage-badge.needs_human{background:var(--warn)}
 </style>
 </head>
 <body>
@@ -70,12 +88,15 @@
   <button id="btn-save" class="primary">保存</button>
   <button id="btn-saveas">另存为</button>
   <button id="btn-xml">XML 视图</button>
+  <button id="btn-project">项目模式</button>
   <span id="mode"></span>
   <span id="filename"></span>
 </header>
 
 <main>
   <div id="canvas"></div>
+  <!-- 详情面板停靠左上(验收 15:远离画布右下角水印锚点) -->
+  <div id="detail" class="hidden"></div>
   <aside id="xmlpanel" class="hidden">
     <div class="bar">
       <span>BPMN XML(可编辑,改完点应用)</span>
@@ -91,6 +112,10 @@
 </footer>
 
 <script src="vendor/bpmn-js@18.18.0/bpmn-modeler.production.min.js"></script>
+<!-- 项目模式数据(验收 11/12):状态为生成物可缺席(404 只触发 error 事件,页面继续);
+     管线备援源入库,状态缺损时图照常渲染 -->
+<script src="flows/sdlc-status.js"></script>
+<script src="flows/sdlc-pipeline.js"></script>
 <script>
 "use strict";
 /* spec: specs/feat-bpmn M1。安全纪律(验收 13):一切动态内容只经 textContent/value 进 DOM,
@@ -310,6 +335,129 @@ document.getElementById("btn-xml").addEventListener("click", function () {
   if (!xmlPanel.classList.contains("hidden")) refreshXmlPanel();
 });
 
+// ---------- 项目模式(验收 11/12/14,M2) ----------
+// spec 映射表(冻结):BPMN stage id ↔ 数据源 gate;改这里 = 破坏对账,unittest 会拒
+var STAGE_GATES = {
+  "stage-requirements": ["gate-spec"],
+  "stage-architecture": ["gate-trace"],
+  "stage-decompose": [],
+  "stage-implement": [],
+  "stage-judge-commit": ["gate-judge", "gate-commit"],
+  "stage-integrate": [],
+};
+var detailEl = document.getElementById("detail");
+var projectMode = false;
+
+function statusData() {
+  // 防御校验(验收 12 三种缺损同路径):非对象/缺字段一律视为"无状态数据"
+  var s = window.AIFORGE_STATUS;
+  if (!s || typeof s !== "object" || !s.stages || typeof s.stages !== "object") return null;
+  return s;
+}
+function pipelineXml() {
+  var s = window.AIFORGE_STATUS;
+  if (s && typeof s === "object" && typeof s.pipeline_xml === "string" && s.pipeline_xml) {
+    return s.pipeline_xml;
+  }
+  if (typeof window.AIFORGE_PIPELINE_XML === "string" && window.AIFORGE_PIPELINE_XML) {
+    return window.AIFORGE_PIPELINE_XML;   // 备援源:状态缺损时图照常渲染(验收 12)
+  }
+  return null;
+}
+
+function badgeFor(gate, rec) {
+  // 只造 DOM 节点 + textContent,不拼 HTML 字符串(验收 14)
+  var span = document.createElement("span");
+  var decision = rec && typeof rec === "object" ? String(rec.decision || "") : "";
+  span.className = "stage-badge" +
+    ({ approved: " approved", rejected: " rejected", needs_human: " needs_human" }[decision] || "");
+  span.textContent = gate + ": " + (decision || "暂无数据");
+  return span;
+}
+
+function addStageOverlays() {
+  var overlays = modeler.get("overlays");
+  var registry = modeler.get("elementRegistry");
+  var s = statusData();
+  Object.keys(STAGE_GATES).forEach(function (stageId) {
+    if (!registry.get(stageId)) return;
+    var box = document.createElement("div");
+    var gates = STAGE_GATES[stageId];
+    if (!gates.length) {
+      var n = document.createElement("span");
+      n.className = "stage-badge";
+      n.textContent = "无门禁";
+      box.appendChild(n);
+    } else {
+      gates.forEach(function (g) {
+        box.appendChild(badgeFor(g, s ? s.stages[g] : null));
+        box.appendChild(document.createElement("br"));
+      });
+    }
+    overlays.add(stageId, { position: { bottom: -6, left: 0 }, html: box });
+  });
+}
+
+function showStageDetail(stageId, name) {
+  var s = statusData();
+  while (detailEl.firstChild) detailEl.removeChild(detailEl.firstChild);
+  var h = document.createElement("h3");
+  h.textContent = name || stageId;                       // 全 textContent(验收 14)
+  detailEl.appendChild(h);
+  var gates = STAGE_GATES[stageId] || [];
+  if (!gates.length) {
+    var d0 = document.createElement("div");
+    d0.textContent = "本阶段无机器门禁(集成阶段权威 = CI)。";
+    detailEl.appendChild(d0);
+  }
+  gates.forEach(function (g) {
+    var rec = s && s.stages[g];
+    var d = document.createElement("div");
+    d.textContent = rec && typeof rec === "object"
+      ? g + " → " + String(rec.decision || "?") + "\n  时间: " + String(rec.created_at || "?") +
+        "\n  feature: " + String(rec.feature_id || "-")
+      : g + " → 暂无数据";
+    detailEl.appendChild(d);
+  });
+  detailEl.classList.remove("hidden");
+}
+
+modeler.on("element.click", function (e) {
+  if (!projectMode || !e.element) return;
+  var id = e.element.id;
+  if (Object.prototype.hasOwnProperty.call(STAGE_GATES, id)) {
+    showStageDetail(id, e.element.businessObject && e.element.businessObject.name);
+  } else {
+    detailEl.classList.add("hidden");
+  }
+});
+
+function enterProjectMode() {
+  if (!confirmDiscard()) return;
+  var xml = pipelineXml();
+  if (!xml) {
+    setError("项目模式不可用:无管线图数据(先跑 PYTHONPATH=src python3 -m aiforge bpmn-status --emit-pipeline)");
+    return;
+  }
+  fileHandle = null;
+  importToCanvas(xml, "sdlc-pipeline.bpmn(项目模式,只读视图)", false).then(function (ok) {
+    if (!ok) return;
+    projectMode = true;
+    addStageOverlays();
+    setStatus(statusData()
+      ? "项目模式:节点徽章 = 各门禁最近 decision;点节点看详情"
+      : "项目模式:状态数据缺失 → 徽章降级为暂无数据(图来自入库备援源)");
+  });
+}
+document.getElementById("btn-project").addEventListener("click", enterProjectMode);
+// 离开项目模式:任何替换画布的动作(新建/打开/应用 XML)
+["btn-new", "btn-open", "btn-apply"].forEach(function (id) {
+  document.getElementById(id).addEventListener("click", function () {
+    projectMode = false;
+    detailEl.classList.add("hidden");
+  });
+});
+
 // ---------- 按钮接线 ----------
 document.getElementById("btn-new").addEventListener("click", newDiagram);
 document.getElementById("btn-open").addEventListener("click", openDiagram);
@@ -319,6 +467,7 @@ document.getElementById("btn-saveas").addEventListener("click", function () { sa
 // ---------- 启动 ----------
 importToCanvas(EMPTY_DIAGRAM, "diagram.bpmn", false).then(function () {
   setStatus(CAN_WRITE ? "就绪(直写模式)" : "就绪(下载降级:保存=下载文件)");
+  if (location.hash === "#project") enterProjectMode();   // 可书签的项目视图入口
 });
 </script>
 </body>
