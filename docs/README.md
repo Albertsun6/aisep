@@ -1,7 +1,19 @@
-# docs/ — 决策与方案文档导航
+# docs/ — 文档导航
 
-本目录收纳 AISEP × Claude Code 工程 harness 的**决策日志、实施方案、前期调研、架构图**。
+本目录收纳 AISEP × Claude Code 工程 harness 的**使用手册、决策日志、实施方案、前期调研、架构图**。
 代码与运行态资产不在这里:契约见 [`../specs/contracts/`](../specs/contracts/),门禁 CLI 见 [`../src/aiforge/harness.py`](../src/aiforge/harness.py),项目总览见 [`../README.md`](../README.md)。
+
+## 📖 先看这两份(怎么用)
+
+| 文档 | 给谁 | 何时看 |
+|---|---|---|
+| [GETTING-STARTED.md](GETTING-STARTED.md) | **第一次用的人** | 手把手照着敲,15 分钟从零跑通一个特性(所有输出真机捕获) |
+| [USER-GUIDE.md](USER-GUIDE.md) | 已上手、要查命令的人 | 按主题组织的完整参考(CLI / 三层权威 / 10 契约 / 故障排查) |
+
+> **交互增强版**:每份都有同名 `.html`(粘性目录 + Mermaid 流程图),在 `docs/` 下**双击即开**。
+> 注:`GETTING-STARTED.html` 含 `eval`/`os.system` **代码示例**(教"危险代码长什么样"),按
+> 收窄后的 scanner 策略(specs/scanner-skip-docs:HTML 含可执行脚本不豁免)入库会触发 gate-judge
+> 人审——它作为**本地产物**双击使用,不强制入库。这恰是手册"拦截案例 C"教的东西的自指演示。
 
 > 衍生渲染(`.html`)与音频(`.m4a`)版本已归档至 repo 外 `../AISEP6-6-archive/`(ADR-013),不入库。
 

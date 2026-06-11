@@ -4,6 +4,8 @@
 
 本仓库是 [`ai工程化开发系统方案`](.cursor/plans/) 调研方案的可运行落地骨架。核心引擎**零第三方依赖**（纯 Python 标准库，3.9+），开箱即测；真实 LangGraph / OpenHands / LLM 通过适配层接入。
 
+> 🚀 **第一次用?** 看手把手教程 [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)（15 分钟从零跑通一个特性）。要查命令看参考手册 [docs/USER-GUIDE.md](docs/USER-GUIDE.md)。
+
 ## 七层架构
 
 ```
