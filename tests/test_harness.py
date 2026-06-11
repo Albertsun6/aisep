@@ -137,6 +137,15 @@ class TestGateJudge(_RepoCase):
         _git(self.tmp, "add", "clean.py")
         self.assertEqual(cli_main(["gate-judge", "--staged"]), 0)
 
+    def test_base_range_diff(self):
+        """CI 路径(gates.yml):gate-judge --base 审 base...HEAD 范围 diff。"""
+        base = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(self.tmp),
+                              capture_output=True, text=True, check=True).stdout.strip()
+        (self.tmp / "danger.py").write_text("x = eval(user_input)\n")
+        _git(self.tmp, "add", "danger.py")
+        _git(self.tmp, "commit", "-qm", "danger")
+        self.assertEqual(cli_main(["gate-judge", "--base", base]), 2)
+
 
 class TestReview3f(_RepoCase):
     def test_informational_exit_zero(self):

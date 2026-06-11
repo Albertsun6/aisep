@@ -1,0 +1,5 @@
+#!/bin/sh
+# 本地 pre-commit = 反馈层(契约 01:可被 --no-verify / 改 hooksPath 旁路,明文承认;
+# 权威 = GitHub CI 'gates' required check)。安装:make hooks
+# src/tests 改动需声明 feature:AIFORGE_FEATURE=<id> git commit ...(契约 02)
+PYTHONPATH=src exec python3 -m aiforge gate-commit

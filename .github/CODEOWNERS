@@ -1,0 +1,7 @@
+# 契约 02/09:受保护路径 owner = 人类账号。
+# ⚠️ 占位:@OWNER 须在建立 GitHub 远端时替换为真实用户名,并在 branch protection
+# 开启 "Require review from Code Owners"(契约 01 配置清单第 2 条),否则本文件不生效。
+/.github/           @OWNER
+/specs/contracts/   @OWNER
+/constitution.md    @OWNER
+/.githooks/         @OWNER

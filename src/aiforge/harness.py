@@ -118,6 +118,11 @@ def staged_paths(repo_root: Path) -> list[str]:
     return [p for p in out.split("\0") if p]
 
 
+def range_diff(repo_root: Path, base: str) -> str:
+    """CI 用:base...HEAD 的合并基 diff(契约 01 探针/gates.yml)。"""
+    return _git(repo_root, *_DIFF_GUARDS, f"{base}...HEAD")
+
+
 def index_blob(repo_root: Path, rel_posix: str) -> bytes | None:
     """读 git index 中的文件内容(= 本次将被提交的版本);不在 index → None。"""
     try:

@@ -1,0 +1,64 @@
+# 唯一强制层的执行体(specs/contracts/01):required status check 名 = 'gates'(钉死)。
+# 与 ci.yml 的关系:ci.yml = 基础质量套件(历史保留);本 workflow = STEP 0 门禁链权威,
+# branch protection 只把 'gates' 设为 required check。
+# 契约 09-4:GITHUB_TOKEN 最小权限(contents: read),不用 PAT。
+name: gates
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # receipt 链/范围 diff 需要完整历史
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dev deps
+        run: pip install -r requirements-dev.txt
+      - name: Lint(权威重跑,契约 06-4)
+        run: make lint
+      - name: Architecture fitness
+        run: make arch
+      - name: Tests
+        run: make test
+      - name: Resolve diff base
+        id: base
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "sha=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=$(git rev-parse HEAD~1 2>/dev/null || git hash-object -t tree /dev/null)" >> "$GITHUB_OUTPUT"
+          fi
+      - name: 探针①语义——src/tests 改动必须携带 feature spec(契约 02)
+        run: |
+          BASE="${{ steps.base.outputs.sha }}"
+          CHANGED=$(git diff --no-ext-diff --name-only "$BASE"...HEAD)
+          CODE=$(echo "$CHANGED" | grep -E '^(src|tests)/' || true)
+          SPEC=$(echo "$CHANGED" | grep -E '^specs/[^/]+/' | grep -v '^specs/contracts/' || true)
+          if [ -n "$CODE" ] && [ -z "$SPEC" ]; then
+            echo "::error::无 spec 的代码改动(契约 02:src/tests 须随附 specs/<id>/ 产物或走 break-glass)"
+            exit 1
+          fi
+      - name: 权威重跑 gate-spec / gate-trace(对 PR 涉及的 specs,契约 06-4)
+        run: |
+          BASE="${{ steps.base.outputs.sha }}"
+          set -e
+          for spec in $(git diff --no-ext-diff --name-only "$BASE"...HEAD -- 'specs/*/spec.md' | grep -v '^specs/contracts/' || true); do
+            [ -f "$spec" ] || continue  # 删除的 spec 不重跑
+            echo "== re-run gate-spec $spec =="
+            PYTHONPATH=src python3 -m aiforge gate-spec "$spec"
+            dir=$(dirname "$spec")
+            echo "== re-run gate-trace $dir =="
+            PYTHONPATH=src python3 -m aiforge gate-trace "$dir"
+          done
+      - name: gate-judge(PR 范围 diff;needs_human=2 即红——CI 不消费本地 ack,契约 07)
+        run: |
+          PYTHONPATH=src python3 -m aiforge gate-judge --base "${{ steps.base.outputs.sha }}"

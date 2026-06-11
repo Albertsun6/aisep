@@ -2,7 +2,7 @@
 PY ?= python3
 export PYTHONPATH := src
 
-.PHONY: help test lint arch fmt demo eval clean install-dev
+.PHONY: help test lint arch fmt demo eval clean install-dev hooks gate-commit gate-feature
 
 help:
 	@echo "make test       跑全部测试（标准库 unittest，无需安装）"
@@ -12,6 +12,9 @@ help:
 	@echo "make arch       import-linter 架构契约（对照 .importlinter 锁分层边界）"
 	@echo "make fmt        ruff 自动格式化"
 	@echo "make install-dev 安装可选开发依赖"
+	@echo "make hooks      安装 repo 内 git hooks（core.hooksPath=.githooks，反馈层）"
+	@echo "make gate-commit  本地聚合门禁（pre-commit 同款；0/1/2/3 见 specs/contracts/03）"
+	@echo "make gate-feature 门禁链全量（CI 'gates' check 同款）"
 
 test:
 	$(PY) -m unittest discover -s tests -p "test_*.py" -v
@@ -23,7 +26,7 @@ eval:
 	$(PY) -m aiforge.cli eval --dataset eval/dataset.jsonl
 
 lint:
-	ruff check src tests
+	$(PY) -m ruff check src tests
 
 arch:
 	lint-imports
@@ -34,6 +37,17 @@ fmt:
 
 install-dev:
 	$(PY) -m pip install -r requirements-dev.txt
+
+hooks:
+	git config core.hooksPath .githooks
+	@echo "已启用 .githooks/(反馈层;权威在 CI——specs/contracts/01)"
+
+gate-commit:
+	$(PY) -m aiforge gate-commit
+
+# CI 'gates' required check 的聚合链(契约 01);本地也可全量自检
+gate-feature: lint arch test
+	$(PY) -m aiforge gate-commit --ci
 
 clean:
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +

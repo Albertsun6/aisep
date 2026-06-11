@@ -131,16 +131,22 @@ def _cmd_gate_judge(args: argparse.Namespace) -> int:
 
     from aiforge import harness
     root = harness.find_repo_root(Path.cwd())
-    diff = harness.staged_diff(root, staged=args.staged)
+    if args.base:
+        diff = harness.range_diff(root, args.base)
+    else:
+        diff = harness.staged_diff(root, staged=args.staged)
     decision, findings = harness.judge_diff(diff)
     msgs = [f"[{f['severity']}] {f['issue']}(静态扫描只升级人审,不裁决)" for f in findings]
     if decision == harness.NEEDS_HUMAN:
         msgs.append("人审清单:确认上述命中是误报或已有补偿控制,放行走契约 07 通道")
     argv = ["gate-judge"] + (["--staged"] if args.staged else []) \
+        + (["--base", args.base] if args.base else []) \
         + (["--feature", args.feature] if args.feature else [])
+    diff_label = f"<range-diff:{args.base}...HEAD>" if args.base else (
+        "<staged-diff>" if args.staged else "<worktree-diff>")
     receipt = harness.build_receipt(
         gate="gate-judge", feature_id=args.feature or harness.WORKSPACE_FEATURE,
-        inputs=[{"path": "<staged-diff>" if args.staged else "<worktree-diff>",
+        inputs=[{"path": diff_label,
                  "sha256": hashlib.sha256(diff.encode("utf-8")).hexdigest()}],
         decision=decision, repo_root=root, argv=argv,
     )
@@ -203,6 +209,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p_gj = sub.add_parser("gate-judge", help="静态风险三态:0=过 2=转人审(永不调模型)")
     p_gj.add_argument("--staged", action="store_true", help="审 git diff --cached(默认审 HEAD 起的全部改动)")
+    p_gj.add_argument("--base", default=None, help="CI 用:审 <base>...HEAD 范围 diff")
     p_gj.add_argument("--feature", default=None)
     p_gj.set_defaults(func=_cmd_gate_judge)
 
