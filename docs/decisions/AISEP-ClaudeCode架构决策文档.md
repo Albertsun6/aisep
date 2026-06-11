@@ -5,7 +5,7 @@
 | **日期** | 2026-06-10 |
 | **状态** | 讨论沉淀;功能版优先,强制版后续 |
 | **范围** | 把 AISEP/aiforge 重平台到 Claude Code 的架构决策、关键事实、取舍与待办 |
-| **关联交付物(同目录)** | 可行性报告 `AISEP移植ClaudeCode作为企业工程harness-可行性与实施设计-完整报告.md`(+`.html`/`.m4a`)、完整实施方案 `AISEP移植ClaudeCode作为企业工程harness-完整实施方案.md`(+`.html`/`.m4a`)、功能版架构图 `AISEP-ClaudeCode功能版架构图.html` |
+| **关联交付物** | 现行实施方案 `../plans/AISEP-ClaudeCode有头先行实施方案-v2.md`、可行性报告 `../research/AISEP移植ClaudeCode作为企业工程harness-可行性与实施设计-完整报告.md`、完整实施方案 `../research/AISEP移植ClaudeCode作为企业工程harness-完整实施方案.md`、功能版架构图 `../diagrams/AISEP-ClaudeCode功能版架构图.html`(衍生 `.html`/`.m4a` 渲染/音频已归档至 repo 外 `../AISEP6-6-archive/`,见 ADR-013);全部文档导航见 `../README.md` |
 
 > 本文是**决策日志**,不是教程。事实条目均标注官方来源;凡**我们自造的简写**(非行业标准词)显式标 ⚠️。
 

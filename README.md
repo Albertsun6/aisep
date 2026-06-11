@@ -38,7 +38,10 @@ make lint
 |---|---|
 | `constitution.md` | 项目宪法：不可逾越的工程原则（规格驱动四阶段第 0 步） |
 | `AGENTS.md` | 跨工具单一事实源（根级 + 关键目录嵌套，就近生效） |
-| `specs/` | 规格驱动产物：模板 + 示例 feature（spec/plan/tasks） |
+| `docs/` | **决策与方案文档**（ADR / STEP 0 方案 / 调研 / 架构图）——见 [`docs/README.md`](docs/README.md) 导航 |
+| `specs/` | 规格驱动产物：模板 + 示例 feature（spec/plan/tasks）+ `specs/contracts/`（10 条冻结接口契约） |
+| `.claude/` `.githooks/` `.github/` | STEP 0 harness：角色 agent / 阶段 skill / 会话护栏；本地 pre-commit；CI 强制层（required check `gates`） |
+| `src/aiforge/harness.py` | 门禁 CLI 适配层（`python -m aiforge gate-*`，永不调模型，退出码 0/1/2/3） |
 | `src/aiforge/orchestration/` | 编排引擎：state / graph(supervisor) / 角色 agent |
 | `src/aiforge/context/` | 上下文工程：AGENTS.md 加载、Skills、记忆管理 |
 | `src/aiforge/quality/` | 质量门禁：四层 gate、Agent-as-Judge、四指标 |

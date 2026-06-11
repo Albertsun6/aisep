@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **日期** | 2026-06-10 |
-| **状态** | **已被 v2 取代**(2026-06-11,经 cursor 异构评审 + 对抗证伪修订)→ 见 `AISEP-ClaudeCode有头先行实施方案-v2.md`;本文保留为历史记录 |
-| **前置** | `AISEP-ClaudeCode架构决策文档.md`(ADR-001~010)+ 本轮两次评审结论 |
+| **状态** | **已被 v2 取代**(2026-06-11,经 cursor 异构评审 + 对抗证伪修订)→ 见同目录 `AISEP-ClaudeCode有头先行实施方案-v2.md`;本文保留为历史记录 |
+| **前置** | `../decisions/AISEP-ClaudeCode架构决策文档.md`(ADR-001~010)+ 本轮两次评审结论 |
 | **一句话** | 功能版组件(agents/skills/hooks/CLAUDE.md/复用核)全部落地,但 **supervisor 由人担任(有头交互模式)**;Agent SDK driver(ADR-003)推迟到明确触发条件出现;**真·代码强制层放在 git hook + CI,不依赖 CC**。 |
 
 ---
