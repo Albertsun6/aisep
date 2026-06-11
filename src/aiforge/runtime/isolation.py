@@ -29,8 +29,8 @@ import signal
 import subprocess
 import sys
 import tempfile
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List, Optional, Sequence
 
 # 复用 runtime 包既有的 SafeHaltError（避免两个同名异类）
 from aiforge.runtime.base import SafeHaltError
@@ -226,7 +226,7 @@ class ContainerSandbox(Sandbox):
 
 
 def select_sandbox(require_untrusted_safe: bool = True, prefer_container: bool = True,
-                   _force: Optional[List[str]] = None) -> Sandbox:
+                   _force: list[str] | None = None) -> Sandbox:
     """选最强可用且**自检通过**的隔离。fail-closed：要求不可信安全但无 verify 通过的后端 → SafeHalt。"""
     allowed = set(_force) if _force is not None else {CONTAINER, OS_SANDBOX, NONE}
     candidates = []

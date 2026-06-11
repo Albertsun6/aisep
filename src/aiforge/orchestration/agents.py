@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
 from aiforge.context.skills import SkillRegistry
@@ -29,13 +28,13 @@ from aiforge.runtime.base import Runtime, SafeHaltError
 @dataclass
 class AgentContext:
     llm: LLMClient = field(default_factory=MockLLM)
-    runtime: Optional[Runtime] = None
-    permissions: Optional[PermissionBroker] = None
-    audit: Optional[AuditTrail] = None
+    runtime: Runtime | None = None
+    permissions: PermissionBroker | None = None
+    audit: AuditTrail | None = None
     skills: SkillRegistry = field(default_factory=SkillRegistry)
     config: GovernanceConfig = DEFAULT_GOVERNANCE
     # 由 Developer 落盘的文件内容缓存：path -> text
-    file_contents: Dict[str, str] = field(default_factory=dict)
+    file_contents: dict[str, str] = field(default_factory=dict)
 
 
 def _emit(ctx: AgentContext, actor: str, action: str, target: str, **detail: object) -> None:

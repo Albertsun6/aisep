@@ -5,7 +5,6 @@ from __future__ import annotations
 import datetime as _dt
 import html
 import os
-from typing import Optional
 
 from aiforge.eval.harness import EvalReport
 

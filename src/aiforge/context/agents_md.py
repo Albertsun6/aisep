@@ -7,17 +7,16 @@
 from __future__ import annotations
 
 import os
-from typing import List, Optional
 
 
-def find_agents_md_chain(start_path: str, repo_root: str) -> List[str]:
+def find_agents_md_chain(start_path: str, repo_root: str) -> list[str]:
     """返回从 repo_root 到 start_path 目录链上所有 AGENTS.md 的绝对路径（根在前）。"""
     start_path = os.path.abspath(start_path)
     repo_root = os.path.abspath(repo_root)
     if os.path.isfile(start_path):
         start_path = os.path.dirname(start_path)
 
-    chain: List[str] = []
+    chain: list[str] = []
     current = start_path
     while True:
         candidate = os.path.join(current, "AGENTS.md")
@@ -35,7 +34,7 @@ def find_agents_md_chain(start_path: str, repo_root: str) -> List[str]:
 
 def load_nearest_agents_md(
     target_path: str, repo_root: str, separator: str = "\n\n---\n\n"
-) -> Optional[str]:
+) -> str | None:
     """加载链上所有 AGENTS.md 并拼接（最近者在末尾，覆盖语义靠提示词中"后者优先"约定）。"""
     chain = find_agents_md_chain(target_path, repo_root)
     if not chain:

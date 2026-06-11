@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import List, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
@@ -27,7 +27,7 @@ class MockLLM:
 
     def __init__(self, seed: str = "aiforge") -> None:
         self.seed = seed
-        self.calls: List[dict] = []
+        self.calls: list[dict] = []
 
     def _fingerprint(self, *parts: str) -> str:
         h = hashlib.sha256((self.seed + "::" + "::".join(parts)).encode()).hexdigest()

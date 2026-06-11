@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 import os
-from typing import List, Optional
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
 from aiforge.governance.audit import AuditTrail
@@ -27,9 +26,9 @@ class OpenHandsRuntime(Runtime):
         self,
         permissions: PermissionBroker,
         config: GovernanceConfig = DEFAULT_GOVERNANCE,
-        audit: Optional[AuditTrail] = None,
-        endpoint: Optional[str] = None,
-        api_key: Optional[str] = None,
+        audit: AuditTrail | None = None,
+        endpoint: str | None = None,
+        api_key: str | None = None,
         max_parallel_agents: int = 4,
     ) -> None:
         super().__init__(permissions, config, audit)
@@ -48,7 +47,7 @@ class OpenHandsRuntime(Runtime):
                 "不静默执行 state-mutating 操作（见 deploy/openhands/README.md）"
             )
 
-    def _apply_impl(self, changes: List[FileChange], contents: dict) -> ExecResult:
+    def _apply_impl(self, changes: list[FileChange], contents: dict) -> ExecResult:
         self._require_configured()
         # 真实实现：调用 OpenHands API 在隔离 sandbox 内应用 patch。
         raise NotImplementedError("接通 OpenHands API 后在此实现 patch 应用")
@@ -58,7 +57,7 @@ class OpenHandsRuntime(Runtime):
         self._require_configured()
         raise NotImplementedError("接通 OpenHands API 后在此实现命令执行")
 
-    def plan_parallel_batches(self, tasks: List[str], dependencies: dict) -> List[List[str]]:
+    def plan_parallel_batches(self, tasks: list[str], dependencies: dict) -> list[list[str]]:
         """Large Codebase SDK 语义占位：按依赖把任务分批，批内可并行、批间按序。
 
         这是一个零依赖的拓扑分层实现，便于本地推演并行调度，不依赖真实 OpenHands。
@@ -66,7 +65,7 @@ class OpenHandsRuntime(Runtime):
         """
         remaining = set(tasks)
         done: set = set()
-        batches: List[List[str]] = []
+        batches: list[list[str]] = []
         guard = 0
         while remaining and guard <= len(tasks):
             ready = sorted(

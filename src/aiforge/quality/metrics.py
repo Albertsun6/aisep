@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List
 
 
 @dataclass
@@ -23,7 +22,7 @@ class TaskOutcome:
     succeeded: bool                 # 最终是否成功（过 CI 且无需人改）
 
     @classmethod
-    def make(cls, task_id: str, **kw: object) -> "TaskOutcome":
+    def make(cls, task_id: str, **kw: object) -> TaskOutcome:
         passed_ci = bool(kw.get("passed_ci", False))
         needed_human_edit = bool(kw.get("needed_human_edit", False))
         succeeded = passed_ci and not needed_human_edit
@@ -45,7 +44,7 @@ class Metrics:
     regression_introduction_rate: float = 0.0
     avg_review_loop_count: float = 0.0
     avg_blast_radius_on_failure: float = 0.0
-    details: List[dict] = field(default_factory=list)
+    details: list[dict] = field(default_factory=list)
 
     def as_dict(self) -> dict:
         return {
@@ -57,7 +56,7 @@ class Metrics:
         }
 
 
-def compute_metrics(outcomes: List[TaskOutcome]) -> Metrics:
+def compute_metrics(outcomes: list[TaskOutcome]) -> Metrics:
     n = len(outcomes)
     if n == 0:
         return Metrics()

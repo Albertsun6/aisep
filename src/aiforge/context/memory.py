@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 
 def _approx_tokens(text: str) -> int:
@@ -19,8 +18,8 @@ def _approx_tokens(text: str) -> int:
 
 @dataclass
 class ContextWindow:
-    messages: List[dict] = field(default_factory=list)
-    memory: Dict[str, str] = field(default_factory=dict)  # 跨会话 /memories
+    messages: list[dict] = field(default_factory=list)
+    memory: dict[str, str] = field(default_factory=dict)  # 跨会话 /memories
     compact_trigger_tokens: int = 50_000  # 与 Anthropic compact 最小阈值一致
     _compactions: int = 0
 
@@ -60,5 +59,5 @@ class ContextWindow:
     def remember(self, key: str, value: str) -> None:
         self.memory[key] = value
 
-    def recall(self, key: str) -> Optional[str]:
+    def recall(self, key: str) -> str | None:
         return self.memory.get(key)

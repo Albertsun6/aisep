@@ -21,7 +21,6 @@ import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from typing import Dict, List, Optional, Tuple
 
 import aiforge
 from aiforge.governance.review import review_after_session
@@ -32,7 +31,7 @@ from aiforge.quality.judge import StaticRiskScanner
 RECEIPT_SCHEMA_VERSION = 1
 APPROVED, REJECTED, NEEDS_HUMAN, INFRA = "approved", "rejected", "needs_human", "infra_error"
 # 契约 03:result mapper 单点——受控路径只经由这里产生退出码
-EXIT: Dict[str, int] = {APPROVED: 0, REJECTED: 1, NEEDS_HUMAN: 2, INFRA: 3}
+EXIT: dict[str, int] = {APPROVED: 0, REJECTED: 1, NEEDS_HUMAN: 2, INFRA: 3}
 
 WORKSPACE_FEATURE = "_workspace"
 _CODE_PREFIXES = ("src/", "tests/")
@@ -71,7 +70,7 @@ def find_repo_root(start: Path) -> Path:
     raise InfraError(f"{start} 不在 git 仓库内(receipt 需要 repo root 与 HEAD)")
 
 
-def _git_state(repo_root: Path) -> Tuple[Optional[str], Optional[bool]]:
+def _git_state(repo_root: Path) -> tuple[str | None, bool | None]:
     try:
         head = _git(repo_root, "rev-parse", "HEAD").strip() or None
     except InfraError:
@@ -92,7 +91,7 @@ def staged_numstat(repo_root: Path, staged: bool = True) -> str:
     return _git(repo_root, *args)
 
 
-def staged_paths(repo_root: Path) -> List[str]:
+def staged_paths(repo_root: Path) -> list[str]:
     return [p for p in _git(repo_root, "diff", "--cached", "--name-only").splitlines() if p]
 
 
@@ -113,12 +112,12 @@ def build_receipt(
     *,
     gate: str,
     feature_id: str,
-    inputs: List[Dict[str, str]],
+    inputs: list[dict[str, str]],
     decision: str,
     repo_root: Path,
-    argv: List[str],
-    ack: Optional[dict] = None,
-    reviewer: Optional[dict] = None,
+    argv: list[str],
+    ack: dict | None = None,
+    reviewer: dict | None = None,
 ) -> dict:
     head, dirty = _git_state(repo_root)
     return {
@@ -164,7 +163,7 @@ def load_receipt(path: Path) -> dict:
 
 # --------------------------------------------------------------------- gates
 
-def derive_feature_id(spec_path: Path, repo_root: Path, declared: Optional[str]) -> str:
+def derive_feature_id(spec_path: Path, repo_root: Path, declared: str | None) -> str:
     if declared:
         return declared
     try:
@@ -176,9 +175,9 @@ def derive_feature_id(spec_path: Path, repo_root: Path, declared: Optional[str])
     return WORKSPACE_FEATURE
 
 
-def gate_spec(spec_path: Path, repo_root: Path, feature_id: str, argv: List[str]) -> Tuple[str, List[str]]:
-    msgs: List[str] = []
-    inputs: List[Dict[str, str]] = []
+def gate_spec(spec_path: Path, repo_root: Path, feature_id: str, argv: list[str]) -> tuple[str, list[str]]:
+    msgs: list[str] = []
+    inputs: list[dict[str, str]] = []
     if spec_path.is_symlink():
         raise InfraError(f"{spec_path} 是 symlink(契约 09)")
     if not spec_path.exists() or not spec_path.read_text(encoding="utf-8").strip():
@@ -200,9 +199,9 @@ def gate_spec(spec_path: Path, repo_root: Path, feature_id: str, argv: List[str]
 _CHAIN = (("plan.md", "spec.md"), ("tasks.md", "plan.md"))
 
 
-def gate_trace(feature_dir: Path, repo_root: Path, argv: List[str]) -> Tuple[str, List[str]]:
+def gate_trace(feature_dir: Path, repo_root: Path, argv: list[str]) -> tuple[str, list[str]]:
     """P2 语义(文档链):每个存在的下游必须声明 refs 且解析到存在的上游。"""
-    msgs: List[str] = []
+    msgs: list[str] = []
     spec = feature_dir / "spec.md"
     if not spec.exists() or not spec.read_text(encoding="utf-8").strip():
         decision = REJECTED
@@ -234,14 +233,14 @@ def gate_trace(feature_dir: Path, repo_root: Path, argv: List[str]) -> Tuple[str
     return decision, msgs
 
 
-def judge_diff(diff_text: str) -> Tuple[str, List[dict]]:
+def judge_diff(diff_text: str) -> tuple[str, list[dict]]:
     """纯静态三态(契约 04):扫描命中只升级人审,不硬拒、不放行。"""
     findings = StaticRiskScanner().scan(diff_text)
     return (NEEDS_HUMAN if findings else APPROVED), findings
 
 
-def review_items(numstat_text: str) -> List[str]:
-    changes: List[FileChange] = []
+def review_items(numstat_text: str) -> list[str]:
+    changes: list[FileChange] = []
     for line in numstat_text.splitlines():
         parts = line.split("\t")
         if len(parts) != 3 or parts[0] == "-" or parts[1] == "-":
@@ -256,7 +255,7 @@ def review_items(numstat_text: str) -> List[str]:
 
 # ----------------------------------------------------------------- gate-commit
 
-def check_receipt_chain(repo_root: Path, feature_id: str) -> Optional[str]:
+def check_receipt_chain(repo_root: Path, feature_id: str) -> str | None:
     """契约 06 链校验:问题返回描述(→1);receipt 坏/版本不识别抛 InfraError(→3)。"""
     spec = repo_root / "specs" / feature_id / "spec.md"
     if not spec.exists():
@@ -289,7 +288,7 @@ def _ack_info() -> dict:
     }
 
 
-def _run_lint(repo_root: Path) -> Tuple[str, List[str]]:
+def _run_lint(repo_root: Path) -> tuple[str, list[str]]:
     """PreCommitGate 语义(fails-closed):lint 证据必须真实产生;工具缺失=infra。"""
     targets = [d for d in ("src", "tests") if (repo_root / d).is_dir()]
     if not targets:
@@ -310,12 +309,12 @@ def _run_lint(repo_root: Path) -> Tuple[str, List[str]]:
 def gate_commit(
     repo_root: Path,
     *,
-    feature: Optional[str],
+    feature: str | None,
     ack_human: bool,
     ci: bool,
-    argv: List[str],
-) -> Tuple[str, List[str]]:
-    msgs: List[str] = []
+    argv: list[str],
+) -> tuple[str, list[str]]:
+    msgs: list[str] = []
     ci_mode = ci or bool(os.environ.get("CI"))  # 契约 07:CI 标记只收紧,不放宽
     declared = feature or os.environ.get("AIFORGE_FEATURE") or None
 

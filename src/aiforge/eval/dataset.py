@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Dict, List
 
 
 @dataclass
@@ -16,11 +15,11 @@ class EvalTask:
     id: str
     request: str
     task_type: str = "feature"
-    evidence: Dict[str, object] = field(default_factory=dict)
+    evidence: dict[str, object] = field(default_factory=dict)
     expected_human_review: bool = False
 
     @classmethod
-    def from_dict(cls, d: dict) -> "EvalTask":
+    def from_dict(cls, d: dict) -> EvalTask:
         return cls(
             id=d["id"],
             request=d["request"],
@@ -30,8 +29,8 @@ class EvalTask:
         )
 
 
-def load_dataset(path: str) -> List[EvalTask]:
-    tasks: List[EvalTask] = []
+def load_dataset(path: str) -> list[EvalTask]:
+    tasks: list[EvalTask] = []
     with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()

@@ -10,7 +10,6 @@ import json
 import os
 import time
 from dataclasses import asdict, dataclass, field
-from typing import List, Optional
 
 
 @dataclass
@@ -23,9 +22,9 @@ class AuditEvent:
 
 
 class AuditTrail:
-    def __init__(self, path: Optional[str] = ".aiforge/audit/trail.jsonl") -> None:
+    def __init__(self, path: str | None = ".aiforge/audit/trail.jsonl") -> None:
         self.path = path
-        self.events: List[AuditEvent] = []
+        self.events: list[AuditEvent] = []
         if self.path:
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
 
@@ -37,7 +36,7 @@ class AuditTrail:
                 f.write(json.dumps(asdict(ev), ensure_ascii=False) + "\n")
         return ev
 
-    def filter(self, action: Optional[str] = None, actor: Optional[str] = None) -> List[AuditEvent]:
+    def filter(self, action: str | None = None, actor: str | None = None) -> list[AuditEvent]:
         out = self.events
         if action is not None:
             out = [e for e in out if e.action == action]

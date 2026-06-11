@@ -9,7 +9,6 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional
 
 
 class ArtifactKind(str, Enum):
@@ -35,7 +34,7 @@ class Artifact:
     kind: ArtifactKind
     content: str
     produced_by: str
-    refs: List[str] = field(default_factory=list)  # 可追溯：指向上游 artifact / 需求条目
+    refs: list[str] = field(default_factory=list)  # 可追溯：指向上游 artifact / 需求条目
     created_at: float = field(default_factory=time.time)
 
 
@@ -44,8 +43,8 @@ class Task:
     id: str
     title: str
     task_type: str = "feature"          # feature / migration / security / ...
-    acceptance: List[str] = field(default_factory=list)
-    refs: List[str] = field(default_factory=list)  # 满足哪条需求（P2 可追溯）
+    acceptance: list[str] = field(default_factory=list)
+    refs: list[str] = field(default_factory=list)  # 满足哪条需求（P2 可追溯）
     done: bool = False
 
 
@@ -66,24 +65,24 @@ class PipelineState:
     request: str
     task_type: str = "feature"
     status: Status = Status.PENDING
-    current_node: Optional[str] = None
+    current_node: str | None = None
 
-    artifacts: List[Artifact] = field(default_factory=list)
-    tasks: List[Task] = field(default_factory=list)
-    file_changes: List[FileChange] = field(default_factory=list)
+    artifacts: list[Artifact] = field(default_factory=list)
+    tasks: list[Task] = field(default_factory=list)
+    file_changes: list[FileChange] = field(default_factory=list)
 
-    gate_results: List[dict] = field(default_factory=list)
-    messages: List[dict] = field(default_factory=list)
+    gate_results: list[dict] = field(default_factory=list)
+    messages: list[dict] = field(default_factory=list)
     consecutive_failures: int = 0
-    needs_human_reason: Optional[str] = None
-    verification: Optional[dict] = None   # verifier_node 写入真实 tests_ok（修 C1/缓解 C3）
+    needs_human_reason: str | None = None
+    verification: dict | None = None   # verifier_node 写入真实 tests_ok（修 C1/缓解 C3）
 
     # ---- helpers ----
     def add_artifact(self, artifact: Artifact) -> Artifact:
         self.artifacts.append(artifact)
         return artifact
 
-    def latest(self, kind: ArtifactKind) -> Optional[Artifact]:
+    def latest(self, kind: ArtifactKind) -> Artifact | None:
         for a in reversed(self.artifacts):
             if a.kind == kind:
                 return a

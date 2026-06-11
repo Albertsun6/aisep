@@ -15,12 +15,11 @@ import hmac
 import os
 import time
 from dataclasses import dataclass
-from typing import Dict, Optional, Set
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
 from aiforge.governance.audit import AuditTrail
 
-SENSITIVE_CAPS: Set[str] = {"delete", "infra", "network"}
+SENSITIVE_CAPS: set[str] = {"delete", "infra", "network"}
 
 
 class PermissionError_(Exception):
@@ -42,7 +41,7 @@ class HumanApprovalTicket:
 class ApprovalAuthority:
     """人审 / HITL 服务：持签发密钥。**orchestrator 持有，不交给 agent。**"""
 
-    def __init__(self, secret: Optional[bytes] = None) -> None:
+    def __init__(self, secret: bytes | None = None) -> None:
         self._secret = secret or os.urandom(32)
 
     def issue(self, actor: str, capability: str, ttl: float = 300.0) -> HumanApprovalTicket:
@@ -53,20 +52,20 @@ class ApprovalAuthority:
         return HumanApprovalTicket(actor, capability, nonce, exp, sig)
 
     def broker(self, config: GovernanceConfig = DEFAULT_GOVERNANCE,
-               audit: Optional[AuditTrail] = None) -> "PermissionBroker":
+               audit: AuditTrail | None = None) -> PermissionBroker:
         return PermissionBroker(config, audit, secret=self._secret)
 
 
 class PermissionBroker:
     def __init__(self, config: GovernanceConfig = DEFAULT_GOVERNANCE,
-                 audit: Optional[AuditTrail] = None, secret: Optional[bytes] = None) -> None:
+                 audit: AuditTrail | None = None, secret: bytes | None = None) -> None:
         self.config = config
         self.audit = audit
         self._secret = secret
-        self._granted: Dict[str, Set[str]] = {}      # actor -> caps（按 actor 隔离）
-        self._used_nonces: Set[str] = set()
+        self._granted: dict[str, set[str]] = {}      # actor -> caps（按 actor 隔离）
+        self._used_nonces: set[str] = set()
 
-    def _caps(self, actor: str) -> Set[str]:
+    def _caps(self, actor: str) -> set[str]:
         return self._granted.setdefault(actor, set(self.config.default_capabilities))
 
     def _audit(self, actor, action, cap, reason):

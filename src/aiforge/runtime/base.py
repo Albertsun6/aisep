@@ -8,12 +8,13 @@ from __future__ import annotations
 
 import abc
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
 from aiforge.governance.audit import AuditTrail
 from aiforge.governance.permissions import PermissionBroker
-from aiforge.orchestration.state import FileChange   # 运行期可解析(get_type_hints 不炸)；循环已由 orchestration/__init__ 延迟 graph 破除
+from aiforge.orchestration.state import (
+    FileChange,  # 运行期可解析(get_type_hints 不炸)；循环已由 orchestration/__init__ 延迟 graph 破除
+)
 
 
 class SafeHaltError(Exception):
@@ -25,7 +26,7 @@ class ExecResult:
     ok: bool
     stdout: str = ""
     stderr: str = ""
-    changes: List[FileChange] = field(default_factory=list)
+    changes: list[FileChange] = field(default_factory=list)
 
 
 class Runtime(abc.ABC):
@@ -35,14 +36,14 @@ class Runtime(abc.ABC):
         self,
         permissions: PermissionBroker,
         config: GovernanceConfig = DEFAULT_GOVERNANCE,
-        audit: Optional[AuditTrail] = None,
+        audit: AuditTrail | None = None,
     ) -> None:
         self.permissions = permissions
         self.config = config
         self.audit = audit
         self._failures = 0
 
-    def _enforce_blast_radius(self, changes: List[FileChange]) -> None:
+    def _enforce_blast_radius(self, changes: list[FileChange]) -> None:
         files = len({c.path for c in changes})
         lines = sum(c.total_lines for c in changes)
         if files > self.config.max_files_per_change or lines > self.config.max_lines_per_change:
@@ -62,7 +63,7 @@ class Runtime(abc.ABC):
                 f"连续失败 {self._failures} 次达到安全停机阈值，停机上报"
             )
 
-    def apply(self, actor: str, changes: List[FileChange], contents: dict) -> ExecResult:
+    def apply(self, actor: str, changes: list[FileChange], contents: dict) -> ExecResult:
         """应用文件变更。``contents`` 为 path->文本。"""
         self.permissions.check(actor, "write")
         self._enforce_blast_radius(changes)
@@ -71,7 +72,7 @@ class Runtime(abc.ABC):
         return self._apply_impl(changes, contents)
 
     @abc.abstractmethod
-    def _apply_impl(self, changes: List[FileChange], contents: dict) -> ExecResult:
+    def _apply_impl(self, changes: list[FileChange], contents: dict) -> ExecResult:
         ...
 
     @abc.abstractmethod

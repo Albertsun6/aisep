@@ -10,7 +10,7 @@ import functools
 import json
 import sys
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable
 
 from aiforge.dashboard import write_dashboard
 from aiforge.eval.harness import run_eval
@@ -92,7 +92,7 @@ def _infra_guard(fn: Callable[[argparse.Namespace], int]) -> Callable[[argparse.
     return wrapper
 
 
-def _emit(gate: str, decision: str, msgs: List[str]) -> int:
+def _emit(gate: str, decision: str, msgs: list[str]) -> int:
     from aiforge.harness import exit_code
     for m in msgs:
         print(m)
@@ -163,7 +163,7 @@ def _cmd_gate_commit(args: argparse.Namespace) -> int:
     return _emit("gate-commit", decision, msgs)
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="aiforge", description="AI 工程化开发系统")
     sub = parser.add_subparsers(dest="cmd", required=True)
 

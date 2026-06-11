@@ -3,7 +3,10 @@ import unittest
 from aiforge.config import DEFAULT_GOVERNANCE
 from aiforge.governance.audit import AuditTrail
 from aiforge.governance.permissions import (
-    ApprovalAuthority, HumanApprovalTicket, PermissionBroker, PermissionError_,
+    ApprovalAuthority,
+    HumanApprovalTicket,
+    PermissionBroker,
+    PermissionError_,
 )
 from aiforge.governance.review import review_after_session
 from aiforge.orchestration.state import FileChange

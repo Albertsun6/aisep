@@ -8,7 +8,6 @@ from __future__ import annotations
 import os
 import subprocess
 import tempfile
-from typing import List, Optional
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
 from aiforge.governance.audit import AuditTrail
@@ -24,13 +23,13 @@ class LocalSandbox(Runtime):
         self,
         permissions: PermissionBroker,
         config: GovernanceConfig = DEFAULT_GOVERNANCE,
-        audit: Optional[AuditTrail] = None,
-        workdir: Optional[str] = None,
+        audit: AuditTrail | None = None,
+        workdir: str | None = None,
     ) -> None:
         super().__init__(permissions, config, audit)
         self.workdir = workdir or tempfile.mkdtemp(prefix="aiforge-sandbox-")
 
-    def _apply_impl(self, changes: List[FileChange], contents: dict) -> ExecResult:
+    def _apply_impl(self, changes: list[FileChange], contents: dict) -> ExecResult:
         written = []
         for change in changes:
             abspath = os.path.join(self.workdir, change.path)

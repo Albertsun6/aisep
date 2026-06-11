@@ -2,7 +2,7 @@ import unittest
 
 from aiforge.llm import StubReviewerLLM
 from aiforge.orchestration.state import Artifact, ArtifactKind, PipelineState, Status
-from aiforge.quality.gates import CICDGate, SpecGate, build_default_gates
+from aiforge.quality.gates import CICDGate, build_default_gates
 from aiforge.quality.judge import AgentAsJudge
 from aiforge.quality.metrics import TaskOutcome, compute_metrics
 
@@ -57,7 +57,8 @@ class TestGates(unittest.TestCase):
 
     def test_empty_diff_blocked_at_pr(self):
         """PRGate：空 diff_summary 不得绕过(judge 不审空内容)。"""
-        ev = dict(_FULL_EV); ev["diff_summary"] = "   "
+        ev = dict(_FULL_EV)
+        ev["diff_summary"] = "   "
         results = _trusted_chain().run(self._state(), ev)
         self.assertTrue(any(r.layer == "pr" and not r.passed for r in results))
 

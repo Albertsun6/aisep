@@ -5,7 +5,6 @@
 """
 
 from aiforge.runtime.base import ExecResult, Runtime, SafeHaltError
-from aiforge.runtime.local import LocalSandbox
 from aiforge.runtime.isolation import (
     ContainerSandbox,
     MacSandboxExec,
@@ -14,6 +13,7 @@ from aiforge.runtime.isolation import (
     run_untrusted_python,
     select_sandbox,
 )
+from aiforge.runtime.local import LocalSandbox
 
 __all__ = [
     "Runtime", "ExecResult", "SafeHaltError", "LocalSandbox",

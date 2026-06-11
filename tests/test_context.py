@@ -46,7 +46,7 @@ class TestSkills(unittest.TestCase):
 class TestMemory(unittest.TestCase):
     def test_compaction_and_clearing(self):
         cw = ContextWindow(compact_trigger_tokens=50)
-        for i in range(5):
+        for _i in range(5):
             cw.add("user", "x" * 100, kind="tool_result")
         # 触发过 compaction（消息被压缩成更少条）
         self.assertTrue(any(m["kind"] == "compaction" for m in cw.messages))

@@ -11,7 +11,7 @@ import json
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Sequence, Tuple
+from typing import Callable
 
 _FENCE = re.compile(r"(?:```|~~~)[ \t]*(?:python|py)?[ \t]*\r?\n(.*?)(?:```|~~~)", re.S | re.I)
 FORBIDDEN_IMPORTS = {"os", "subprocess", "socket", "shutil", "sys", "pathlib", "ctypes",
@@ -63,7 +63,7 @@ def extract_code(llm_text: str, contract: Callable[[str], bool]) -> str:
     return ""
 
 
-def scan_forbidden(src: str) -> List[str]:
+def scan_forbidden(src: str) -> list[str]:
     hits: set = set()
     try:
         tree = ast.parse(src)
@@ -102,7 +102,7 @@ _RUNNER = (
 _MUTANT = "def solution(*a, **k):\n    return None\n"
 
 
-def _run_once(code_src: str, test_src: str, timeout: float, runner) -> Tuple[bool, int, int, str]:
+def _run_once(code_src: str, test_src: str, timeout: float, runner) -> tuple[bool, int, int, str]:
     with tempfile.TemporaryDirectory(prefix="aiforge-verify-") as d:
         import os
         for name, src in (("solution.py", code_src), ("test_solution.py", test_src), ("_runner.py", _RUNNER)):
@@ -112,7 +112,7 @@ def _run_once(code_src: str, test_src: str, timeout: float, runner) -> Tuple[boo
         if getattr(res, "timed_out", False):
             return False, 0, 0, "TIMEOUT"
         out = (res.stdout or "") + (res.stderr or "")
-        line = next((l for l in out.splitlines() if l.startswith("RUNNER_JSON:")), None)
+        line = next((ln for ln in out.splitlines() if ln.startswith("RUNNER_JSON:")), None)
         if not line:
             return False, 0, 0, out[-300:]
         j = json.loads(line[len("RUNNER_JSON:"):])
@@ -136,7 +136,8 @@ def run_generated(code_src: str, test_src: str, isolated_runtime=None,
     else:
         return VerifyResult(False, "", halted=True,
                             reason="拒绝在无隔离 runtime 下执行 LLM 生成代码（C4）。传入隔离 runtime 或 allow_unsafe。")
-    runner = lambda d, t: sandbox.run_python(d, ["_runner.py"], t)
+    def runner(d, t):
+        return sandbox.run_python(d, ["_runner.py"], t)
     ok_real, run_real, meaningful_real, out_real = _run_once(code_src, test_src, timeout, runner)
     if run_real == 0 or meaningful_real == 0:
         return VerifyResult(False, out_real, reason="测试 0 用例/全 skip，判无效")

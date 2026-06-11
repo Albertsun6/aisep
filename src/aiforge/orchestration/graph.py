@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional
+from typing import Callable
 
 from aiforge.orchestration.agents import ROLE_NODES, AgentContext
 from aiforge.orchestration.state import PipelineState, Status
@@ -28,24 +28,24 @@ class InMemoryCheckpointer:
     """按 feature_id 保存每步快照，支持取最新恢复。"""
 
     def __init__(self) -> None:
-        self._store: Dict[str, List[PipelineState]] = {}
+        self._store: dict[str, list[PipelineState]] = {}
 
     def save(self, state: PipelineState) -> None:
         self._store.setdefault(state.feature_id, []).append(copy.deepcopy(state))
 
-    def latest(self, feature_id: str) -> Optional[PipelineState]:
+    def latest(self, feature_id: str) -> PipelineState | None:
         snaps = self._store.get(feature_id)
         return copy.deepcopy(snaps[-1]) if snaps else None
 
-    def history(self, feature_id: str) -> List[PipelineState]:
+    def history(self, feature_id: str) -> list[PipelineState]:
         return list(self._store.get(feature_id, []))
 
 
 @dataclass
 class Supervisor:
-    nodes: List[str]
+    nodes: list[str]
     ctx: AgentContext
-    node_impls: Dict[str, NodeFn] = field(default_factory=lambda: dict(ROLE_NODES))
+    node_impls: dict[str, NodeFn] = field(default_factory=lambda: dict(ROLE_NODES))
     checkpointer: InMemoryCheckpointer = field(default_factory=InMemoryCheckpointer)
 
     def _next_index(self, state: PipelineState) -> int:
@@ -92,5 +92,5 @@ class Supervisor:
 DEFAULT_PIPELINE = ["analyst", "architect", "tasks", "developer", "reviewer", "tester", "verifier"]
 
 
-def build_default_pipeline(ctx: Optional[AgentContext] = None) -> Supervisor:
+def build_default_pipeline(ctx: AgentContext | None = None) -> Supervisor:
     return Supervisor(nodes=list(DEFAULT_PIPELINE), ctx=ctx or AgentContext())

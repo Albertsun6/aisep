@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
 from aiforge.llm import LLMClient, MockLLM
@@ -41,8 +40,8 @@ class StaticRiskScanner:
     def __init__(self):
         self._c = [(re.compile(p), sev, msg) for p, sev, msg in self.PATTERNS]
 
-    def scan(self, text: str) -> List[dict]:
-        code = "\n".join(l for l in (text or "").splitlines() if not l.lstrip().startswith("#"))
+    def scan(self, text: str) -> list[dict]:
+        code = "\n".join(ln for ln in (text or "").splitlines() if not ln.lstrip().startswith("#"))
         return [{"source": "static", "severity": sev, "issue": msg} for rx, sev, msg in self._c if rx.search(code)]
 
 
@@ -57,7 +56,7 @@ _SEV = re.compile(r"SEVERITY:\s*(blocker|major|minor|ok)", re.IGNORECASE)
 @dataclass
 class JudgeVerdict:
     decision: str
-    findings: List[dict] = field(default_factory=list)
+    findings: list[dict] = field(default_factory=list)
     rationale: str = ""
 
     @property
@@ -73,8 +72,8 @@ class JudgeVerdict:
 
 
 class AgentAsJudge:
-    def __init__(self, llm: Optional[LLMClient] = None, config: GovernanceConfig = DEFAULT_GOVERNANCE,
-                 trust_llm: Optional[bool] = None) -> None:
+    def __init__(self, llm: LLMClient | None = None, config: GovernanceConfig = DEFAULT_GOVERNANCE,
+                 trust_llm: bool | None = None) -> None:
         self.llm = llm or MockLLM()
         self.config = config
         self.scanner = StaticRiskScanner()
@@ -82,8 +81,8 @@ class AgentAsJudge:
         # MockLLM 无真实判断力,即便显式 trust_llm=True 也不信(只会更保守,fail-closed)。
         self.trust_llm = (trust_llm is True) and not isinstance(self.llm, MockLLM)
 
-    def review(self, diff_summary: str, task_type: Optional[str] = None,
-               risk_keywords: Optional[List[str]] = None) -> JudgeVerdict:
+    def review(self, diff_summary: str, task_type: str | None = None,
+               risk_keywords: list[str] | None = None) -> JudgeVerdict:
         findings = list(self.scanner.scan(diff_summary))
         scan_hit = bool(findings)
 

@@ -9,7 +9,6 @@ from __future__ import annotations
 import ast
 import os
 from dataclasses import dataclass, field
-from typing import Dict, List, Set
 
 
 @dataclass
@@ -22,14 +21,14 @@ class Symbol:
 
 @dataclass
 class CodeIndex:
-    symbols: List[Symbol] = field(default_factory=list)
-    imports: Dict[str, Set[str]] = field(default_factory=dict)  # module -> 依赖模块集合
+    symbols: list[Symbol] = field(default_factory=list)
+    imports: dict[str, set[str]] = field(default_factory=dict)  # module -> 依赖模块集合
 
-    def search(self, query: str) -> List[Symbol]:
+    def search(self, query: str) -> list[Symbol]:
         q = query.lower()
         return [s for s in self.symbols if q in s.name.lower()]
 
-    def dependents_of(self, module: str) -> List[str]:
+    def dependents_of(self, module: str) -> list[str]:
         """谁依赖了 module（反向依赖，用于评估改动 blast radius）。"""
         return sorted(m for m, deps in self.imports.items() if module in deps)
 
@@ -53,7 +52,7 @@ def build_index(root: str) -> CodeIndex:
                     tree = ast.parse(f.read(), filename=path)
             except (SyntaxError, UnicodeDecodeError):
                 continue
-            deps: Set[str] = set()
+            deps: set[str] = set()
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef):
                     index.symbols.append(Symbol(node.name, "function", module, node.lineno))

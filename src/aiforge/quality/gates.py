@@ -10,16 +10,14 @@
 from __future__ import annotations
 
 import abc
-import re
 from dataclasses import dataclass, field
-from typing import Dict, FrozenSet, List, Optional
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
 from aiforge.orchestration.state import ArtifactKind, PipelineState, Status
 from aiforge.quality.judge import AgentAsJudge
 
 
-def unified_high_risk(config: GovernanceConfig = DEFAULT_GOVERNANCE) -> FrozenSet[str]:
+def unified_high_risk(config: GovernanceConfig = DEFAULT_GOVERNANCE) -> frozenset[str]:
     """风险表单一来源——judge 与 reviewer 都用它（消除两套不一致的表）。"""
     return config.high_risk_task_types
 
@@ -43,7 +41,7 @@ class Gate(abc.ABC):
     bypassable = True
 
     @abc.abstractmethod
-    def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
+    def check(self, state: PipelineState, evidence: dict[str, object]) -> GateResult:
         ...
 
 
@@ -77,7 +75,7 @@ class StatusGate(Gate):
     layer = "status"
     bypassable = False
 
-    def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
+    def check(self, state: PipelineState, evidence: dict[str, object]) -> GateResult:
         ok = state.status == Status.DONE
         return GateResult(self.name, self.layer, ok, "" if ok else f"流水线状态 {state.status.value}≠DONE，未就绪", bypassable=False)
 
@@ -92,7 +90,7 @@ class CompletenessGate(Gate):
     layer = "complete"
     bypassable = False
 
-    def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
+    def check(self, state: PipelineState, evidence: dict[str, object]) -> GateResult:
         if state.latest(ArtifactKind.CODE) is None or state.latest(ArtifactKind.TEST) is None:
             return GateResult(self.name, self.layer, False, "缺 CODE/TEST 产物", bypassable=False)
         if not state.verification or not state.verification.get("tests_ok"):
@@ -107,7 +105,7 @@ class SpecGate(Gate):
     layer = "spec"
     bypassable = False
 
-    def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
+    def check(self, state: PipelineState, evidence: dict[str, object]) -> GateResult:
         spec = state.latest(ArtifactKind.SPEC)
         if spec is None or not (spec.content or "").strip():
             return GateResult(self.name, self.layer, False, "P1: 无冻结 spec，拒绝实现", bypassable=False)
@@ -121,7 +119,7 @@ class PreCommitGate(Gate):
     name = "pre-commit"
     layer = "ide"
 
-    def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
+    def check(self, state: PipelineState, evidence: dict[str, object]) -> GateResult:
         if "lint_ok" not in evidence:
             return GateResult(self.name, self.layer, False, "P3: 缺 lint 证据，fails-closed")
         return GateResult(self.name, self.layer, bool(evidence["lint_ok"]), "" if evidence["lint_ok"] else "lint 未通过")
@@ -132,13 +130,13 @@ class PRGate(Gate):
     name = "pull-request"
     layer = "pr"
 
-    def __init__(self, config: GovernanceConfig = DEFAULT_GOVERNANCE, judge: Optional[AgentAsJudge] = None) -> None:
+    def __init__(self, config: GovernanceConfig = DEFAULT_GOVERNANCE, judge: AgentAsJudge | None = None) -> None:
         self.config = config
         # 落地评审修正：默认**保守**(MockLLM→无可信评审→转人审)；
         # 离线 demo/eval/测试需**显式**注入 AgentAsJudge(llm=StubReviewerLLM())，不让假评审进生产默认路径。
         self.judge = judge or AgentAsJudge()
 
-    def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
+    def check(self, state: PipelineState, evidence: dict[str, object]) -> GateResult:
         if "coverage" not in evidence:
             return GateResult(self.name, self.layer, False, "P3: 缺 coverage 证据，fails-closed")
         if float(evidence["coverage"]) < self.config.min_coverage:
@@ -165,7 +163,7 @@ class TraceabilityGate(Gate):
     _UP_CODE = {"spec", "plan", "tasks"}
     _UP_TEST = {"code", "spec"}
 
-    def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
+    def check(self, state: PipelineState, evidence: dict[str, object]) -> GateResult:
         present = {a.kind.value for a in state.artifacts}
         code = state.latest(ArtifactKind.CODE)
         test = state.latest(ArtifactKind.TEST)
@@ -186,7 +184,7 @@ class CICDGate(Gate):
     layer = "cicd"
     bypassable = False
 
-    def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
+    def check(self, state: PipelineState, evidence: dict[str, object]) -> GateResult:
         for k in ("tests_ok", "build_ok"):
             if k not in evidence:
                 return GateResult(self.name, self.layer, False, f"P3: 缺 {k} 证据，fails-closed", bypassable=False)
@@ -201,7 +199,7 @@ class CanaryGate(Gate):
     def __init__(self, max_error_rate: float = 0.02) -> None:
         self.max_error_rate = max_error_rate
 
-    def check(self, state: PipelineState, evidence: Dict[str, object]) -> GateResult:
+    def check(self, state: PipelineState, evidence: dict[str, object]) -> GateResult:
         error_rate = float(evidence.get("canary_error_rate", 0.0))
         ok = error_rate <= self.max_error_rate
         return GateResult(self.name, self.layer, ok, "" if ok else f"canary 错误率 {error_rate:.2%} 超阈值，自动回滚")
@@ -209,10 +207,10 @@ class CanaryGate(Gate):
 
 @dataclass
 class QualityGateChain:
-    gates: List[Gate] = field(default_factory=list)
+    gates: list[Gate] = field(default_factory=list)
 
-    def run(self, state: PipelineState, evidence: Dict[str, object]) -> List[GateResult]:
-        results: List[GateResult] = []
+    def run(self, state: PipelineState, evidence: dict[str, object]) -> list[GateResult]:
+        results: list[GateResult] = []
         for gate in self.gates:
             res = gate.check(state, evidence)
             results.append(res)
@@ -224,7 +222,7 @@ class QualityGateChain:
         return results
 
 
-def build_default_gates(config: GovernanceConfig = DEFAULT_GOVERNANCE, judge: Optional[AgentAsJudge] = None) -> QualityGateChain:
+def build_default_gates(config: GovernanceConfig = DEFAULT_GOVERNANCE, judge: AgentAsJudge | None = None) -> QualityGateChain:
     """硬化门禁链：status → spec → pre-commit → PR → traceability → completeness → CI/CD → canary。"""
     return QualityGateChain(gates=[
         StatusGate(), SpecGate(), PreCommitGate(), PRGate(config, judge),
