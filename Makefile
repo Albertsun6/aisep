@@ -29,6 +29,9 @@ test:
 demo:
 	$(PY) -m aiforge.cli demo
 
+dashboard-project:
+	$(PY) -m aiforge project-dashboard
+
 eval:
 	$(PY) -m aiforge.cli eval --dataset eval/dataset.jsonl
 

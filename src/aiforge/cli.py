@@ -109,6 +109,15 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_project_dashboard(args: argparse.Namespace) -> int:
+    # spec: specs/project-dashboard — 读项目真实状态生成单页 HTML 总览(只读,不调模型)
+    from aiforge.project_dashboard import write_project_dashboard
+    out = Path(args.out) if args.out else None
+    dest = write_project_dashboard(Path.cwd(), out)
+    print(f"项目总览已生成: {dest}（双击打开;重跑即最新）")
+    return 0
+
+
 # ---------------------------------------------------------- STEP 0 门禁子命令
 
 def _infra_guard(fn: Callable[[argparse.Namespace], int]) -> Callable[[argparse.Namespace], int]:
@@ -232,6 +241,10 @@ def main(argv: list[str] | None = None) -> int:
     p_dash.add_argument("--dataset", default="eval/dataset.jsonl")
     p_dash.add_argument("--out", default="dashboard/index.html")
     p_dash.set_defaults(func=_cmd_dashboard)
+
+    p_pd = sub.add_parser("project-dashboard", help="读项目真实状态生成单页 HTML 总览(人性化,只读)")
+    p_pd.add_argument("--out", default=None, help="输出路径(默认 docs/project-dashboard.html)")
+    p_pd.set_defaults(func=_cmd_project_dashboard)
 
     p_gs = sub.add_parser("gate-spec", help="P1: 校验 spec.md 验收结构(0/1/3)")
     p_gs.add_argument("spec", help="spec.md 路径")

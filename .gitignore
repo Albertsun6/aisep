@@ -30,3 +30,5 @@ specs/_workspace/
 # gate-commit receipt 是"记录本次提交"的产物,无法进它自己那个 commit;本地反馈层产物,
 # 权威 = CI 重跑(契约 01)。gate-spec/gate-trace receipt 仍入库(冻结链需要)。
 specs/*/gates/gate-commit.json
+# project-dashboard 生成的 HTML 产物(make dashboard-project 随时重生成;GitHub 不渲染 HTML)
+docs/project-dashboard.html

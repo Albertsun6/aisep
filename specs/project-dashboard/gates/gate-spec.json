@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "run_id": "58e0f532-3323-4454-b5cc-6fc9bfe8885f",
+  "gate": "gate-spec",
+  "feature_id": "project-dashboard",
+  "inputs": [
+    {
+      "path": "specs/project-dashboard/spec.md",
+      "sha256": "c78cb84a9fec456a42a7d5e3ad53fa8a00204573bcfb09a294db092e3da0e817"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "54d07d3cd7af0fb572aabe21be83b71edced6689",
+  "git_dirty": true,
+  "created_at": "2026-06-11T23:09:35.253569+08:00",
+  "tool": "aiforge gate-spec",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-spec",
+    "specs/project-dashboard/spec.md"
+  ],
+  "ack": null,
+  "reviewer": null
+}

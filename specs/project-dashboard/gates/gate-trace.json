@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "run_id": "401de0d6-65e9-47af-a649-83195d497f25",
+  "gate": "gate-trace",
+  "feature_id": "project-dashboard",
+  "inputs": [
+    {
+      "path": "specs/project-dashboard/spec.md",
+      "sha256": "c78cb84a9fec456a42a7d5e3ad53fa8a00204573bcfb09a294db092e3da0e817"
+    },
+    {
+      "path": "specs/project-dashboard/plan.md",
+      "sha256": "a46da11ffd3661eb7b7156137ad406d967260f94e5a22421e8446ee8642ef144"
+    },
+    {
+      "path": "specs/project-dashboard/tasks.md",
+      "sha256": "d3f469e695be049334dcfc47c2f5e23a795c87a6aeb323dbe3b59c70fe327f55"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "54d07d3cd7af0fb572aabe21be83b71edced6689",
+  "git_dirty": true,
+  "created_at": "2026-06-11T23:09:58.589047+08:00",
+  "tool": "aiforge gate-trace",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-trace",
+    "specs/project-dashboard"
+  ],
+  "ack": null,
+  "reviewer": null
+}
