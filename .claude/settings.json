@@ -1,5 +1,33 @@
 {
+  "model": "claude-fable-5",
+  "effortLevel": "xhigh",
   "permissions": {
-    "defaultMode": "acceptEdits"
+    "defaultMode": "acceptEdits",
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(rm -rf /*)",
+      "Read(.env*)",
+      "Write(.env*)",
+      "Edit(.env*)",
+      "Write(constitution.md)",
+      "Edit(constitution.md)",
+      "Bash(git commit*--no-verify*)",
+      "Bash(git config core.hooksPath*)",
+      "Bash(git -c core.hooksPath*)",
+      "Bash(* --ack-human*)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[P7] session 收尾提示: PYTHONPATH=src python3 -m aiforge review-3f --staged' >&2"
+          }
+        ]
+      }
+    ]
   }
 }
