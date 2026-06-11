@@ -1,11 +1,16 @@
-"""AIForge CLI：``demo`` 端到端编排、``eval`` 跑四指标、``dashboard`` 生成看板。"""
+"""AIForge CLI：``demo``/``eval``/``dashboard`` + STEP 0 门禁子命令(gate-* / review-3f)。
+
+门禁子命令永不调模型(契约 04);退出码 0/1/2/3 见契约 03。
+"""
 
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import sys
-from typing import List, Optional
+from pathlib import Path
+from typing import Callable, List, Optional
 
 from aiforge.dashboard import write_dashboard
 from aiforge.eval.harness import run_eval
@@ -69,6 +74,95 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------- STEP 0 门禁子命令
+
+def _infra_guard(fn: Callable[[argparse.Namespace], int]) -> Callable[[argparse.Namespace], int]:
+    """契约 03:受控路径内未预期异常 → 3 + 可读诊断,绝不含混退出。"""
+    @functools.wraps(fn)
+    def wrapper(args: argparse.Namespace) -> int:
+        from aiforge.harness import InfraError
+        try:
+            return fn(args)
+        except InfraError as exc:
+            print(f"[infra] {exc}", file=sys.stderr)
+            return 3
+        except Exception as exc:  # noqa: BLE001 — fail-closed 兜底
+            print(f"[infra] 未预期异常({type(exc).__name__}): {exc}", file=sys.stderr)
+            return 3
+    return wrapper
+
+
+def _emit(gate: str, decision: str, msgs: List[str]) -> int:
+    from aiforge.harness import exit_code
+    for m in msgs:
+        print(m)
+    code = exit_code(decision)
+    print(f"{gate}: {decision} (exit {code})")
+    return code
+
+
+@_infra_guard
+def _cmd_gate_spec(args: argparse.Namespace) -> int:
+    from aiforge import harness
+    spec = Path(args.spec)
+    root = harness.find_repo_root(spec if spec.exists() else Path.cwd())
+    fid = harness.derive_feature_id(spec, root, args.feature)
+    decision, msgs = harness.gate_spec(spec, root, fid, argv=["gate-spec", args.spec])
+    return _emit("gate-spec", decision, msgs)
+
+
+@_infra_guard
+def _cmd_gate_trace(args: argparse.Namespace) -> int:
+    from aiforge import harness
+    d = Path(args.dir)
+    root = harness.find_repo_root(d if d.exists() else Path.cwd())
+    decision, msgs = harness.gate_trace(d, root, argv=["gate-trace", args.dir])
+    return _emit("gate-trace", decision, msgs)
+
+
+@_infra_guard
+def _cmd_gate_judge(args: argparse.Namespace) -> int:
+    import hashlib
+
+    from aiforge import harness
+    root = harness.find_repo_root(Path.cwd())
+    diff = harness.staged_diff(root, staged=args.staged)
+    decision, findings = harness.judge_diff(diff)
+    msgs = [f"[{f['severity']}] {f['issue']}(静态扫描只升级人审,不裁决)" for f in findings]
+    if decision == harness.NEEDS_HUMAN:
+        msgs.append("人审清单:确认上述命中是误报或已有补偿控制,放行走契约 07 通道")
+    receipt = harness.build_receipt(
+        gate="gate-judge", feature_id=args.feature or harness.WORKSPACE_FEATURE,
+        inputs=[{"path": "<staged-diff>" if args.staged else "<worktree-diff>",
+                 "sha256": hashlib.sha256(diff.encode("utf-8")).hexdigest()}],
+        decision=decision, repo_root=root, argv=["gate-judge"] + (["--staged"] if args.staged else []),
+    )
+    harness.write_receipt(receipt, root)
+    return _emit("gate-judge", decision, msgs)
+
+
+@_infra_guard
+def _cmd_review_3f(args: argparse.Namespace) -> int:
+    from aiforge import harness
+    root = harness.find_repo_root(Path.cwd())
+    items = harness.review_items(harness.staged_numstat(root, staged=args.staged))
+    print("三文件 review 清单:" if items else "无改动,无需 review。")
+    for line in items:
+        print(f"  - {line}")
+    return 0
+
+
+@_infra_guard
+def _cmd_gate_commit(args: argparse.Namespace) -> int:
+    from aiforge import harness
+    root = harness.find_repo_root(Path.cwd())
+    decision, msgs = harness.gate_commit(
+        root, feature=args.feature, ack_human=args.ack_human, ci=args.ci,
+        argv=["gate-commit"] + (["--ci"] if args.ci else []) + (["--ack-human"] if args.ack_human else []),
+    )
+    return _emit("gate-commit", decision, msgs)
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(prog="aiforge", description="AI 工程化开发系统")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -89,6 +183,31 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_dash.add_argument("--dataset", default="eval/dataset.jsonl")
     p_dash.add_argument("--out", default="dashboard/index.html")
     p_dash.set_defaults(func=_cmd_dashboard)
+
+    p_gs = sub.add_parser("gate-spec", help="P1: 校验 spec.md 验收结构(0/1/3)")
+    p_gs.add_argument("spec", help="spec.md 路径")
+    p_gs.add_argument("--feature", default=None, help="feature id(默认从 specs/<id>/ 推导)")
+    p_gs.set_defaults(func=_cmd_gate_spec)
+
+    p_gt = sub.add_parser("gate-trace", help="P2: 校验 specs/<id>/ 文档追溯链(0/1/3)")
+    p_gt.add_argument("dir", help="specs/<id>/ 目录")
+    p_gt.set_defaults(func=_cmd_gate_trace)
+
+    p_gj = sub.add_parser("gate-judge", help="静态风险三态:0=过 2=转人审(永不调模型)")
+    p_gj.add_argument("--staged", action="store_true", help="审 git diff --cached(默认审 HEAD 起的全部改动)")
+    p_gj.add_argument("--feature", default=None)
+    p_gj.set_defaults(func=_cmd_gate_judge)
+
+    p_r3 = sub.add_parser("review-3f", help="P7: 三文件 review 必读清单(信息性,exit 0)")
+    p_r3.add_argument("--staged", action="store_true")
+    p_r3.set_defaults(func=_cmd_review_3f)
+
+    p_gc = sub.add_parser("gate-commit", help="聚合门禁:feature 声明+receipt 链+lint+judge(0/1/2/3)")
+    p_gc.add_argument("--feature", default=None, help="本次改动所属 feature(或 env AIFORGE_FEATURE)")
+    p_gc.add_argument("--ack-human", action="store_true", dest="ack_human",
+                      help="本地人审 ack(仅审计;需 tty;CI 不消费)")
+    p_gc.add_argument("--ci", action="store_true", help="CI 模式:忽略本地 ack(只收紧)")
+    p_gc.set_defaults(func=_cmd_gate_commit)
 
     args = parser.parse_args(argv)
     return args.func(args)
