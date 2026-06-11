@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "run_id": "5aae01dd-c544-410d-8e9f-8282070368e5",
+  "gate": "gate-trace",
+  "feature_id": "feat-bpmn",
+  "inputs": [
+    {
+      "path": "specs/feat-bpmn/spec.md",
+      "sha256": "0b3daf2ab84a53987c57f34b974a60842ad84476da2486da1a253dfa64a342c6"
+    },
+    {
+      "path": "specs/feat-bpmn/plan.md",
+      "sha256": "3c25680a2d3f5a67b90727abb63f16b28656768175a71186f1399354b58ede76"
+    },
+    {
+      "path": "specs/feat-bpmn/tasks.md",
+      "sha256": "bc6366c80ee44c11c9494725237e283fb417d25bf2c465e22da65d89f43129d1"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "6aa6a0f9ca2446a18df7f4d912a0f7f546b2c310",
+  "git_dirty": true,
+  "created_at": "2026-06-12T01:16:57.907385+08:00",
+  "tool": "aiforge gate-trace",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-trace",
+    "specs/feat-bpmn/"
+  ],
+  "ack": null,
+  "reviewer": null
+}

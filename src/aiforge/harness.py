@@ -377,14 +377,51 @@ _SKIP_SUFFIXES = frozenset({
 _DIFF_GIT_RE = re.compile(r"^diff --git a/(.+?) b/(.+?)\s*$")
 # 块内 mode 行:`new file mode 100755` / `new mode 100755`——owner/group/other 任一 x 位即可执行
 _MODE_RE = re.compile(r"^(?:new file mode|new mode) (\d{6})\s*$")
+# spec feat-bpmn 验收 17:哈希验证的 vendored 第三方资产豁免,仅限此前缀
+_VENDOR_PREFIX = "docs/vendor/"
 
 
-def code_only_diff(diff_text: str) -> str:
+def _vendor_hash_verified(path: str, repo_root: Path) -> bool:
+    """spec feat-bpmn 验收 17:`docs/vendor/<pkg>/` 内文件,当前内容 sha256 与同包
+    SHA256SUMS 条目一致才豁免扫描;其余一律 False(fail-closed)。
+
+    哈希只证"与入库清单自洽",不证来源——来源信任锚 = P5 超限人审 + plan 供应链
+    记录 + PR approval。本地 worktree 与 staged 可分叉,但本地本就是可旁路的反馈层
+    (契约 01);权威 = CI 干净 checkout,那里磁盘内容即 diff 后像。
+    """
+    if not path.startswith(_VENDOR_PREFIX):
+        return False
+    parts = path[len(_VENDOR_PREFIX):].split("/", 1)
+    if len(parts) != 2:  # docs/vendor/ 直下的散文件不豁免
+        return False
+    pkg, inner = parts
+    if PurePosixPath(inner).name == "SHA256SUMS":
+        return False  # 清单本身永远照扫
+    sums_p = repo_root / _VENDOR_PREFIX / pkg / "SHA256SUMS"
+    target = repo_root / path
+    try:
+        if sums_p.is_symlink() or target.is_symlink():  # 契约 09
+            return False
+        expected = None
+        for line in sums_p.read_text(encoding="utf-8").splitlines():
+            digest, _, rel = line.partition("  ")
+            if rel.strip() == inner:
+                expected = digest.strip()
+                break
+        if expected is None:
+            return False
+        return hashlib.sha256(target.read_bytes()).hexdigest() == expected
+    except (OSError, UnicodeError):
+        return False
+
+
+def code_only_diff(diff_text: str, repo_root: Path | None = None) -> str:
     """从 git diff 文本里剔除"确定纯文档"块,其余(含可执行面)全留(spec: scanner-skip-docs)。
 
     按 `diff --git a/<p> b/<p>` 分块;两侧后缀都在 _SKIP_SUFFIXES → tentatively 跳过;
-    但块内若出现 executable bit(mode 100755 等)→ **强制保留**(覆盖后缀豁免);
+    但块内若出现 executable bit(mode 100755 等)→ **强制保留**(覆盖一切豁免);
     解析不出文件名/mode → 保守保留(当代码扫,fail-closed)。
+    传入 repo_root 时额外启用 vendor 哈希验证豁免(验收 17);默认 None = 零豁免。
     """
     lines = diff_text.splitlines(keepends=True)
     out: list[str] = []
@@ -393,26 +430,31 @@ def code_only_diff(diff_text: str) -> str:
         stripped = line.rstrip("\n")
         m = _DIFF_GIT_RE.match(stripped)
         if m:
-            sa = PurePosixPath(m.group(1)).suffix.lower()
-            sb = PurePosixPath(m.group(2)).suffix.lower()
+            pa, pb = m.group(1), m.group(2)
+            sa = PurePosixPath(pa).suffix.lower()
+            sb = PurePosixPath(pb).suffix.lower()
             # 仅当**两侧**都是已知纯文档后缀才(暂)跳过(改名/类型变化时保守扫)
             keep = not (sa in _SKIP_SUFFIXES and sb in _SKIP_SUFFIXES)
+            if keep and repo_root is not None and pa == pb \
+                    and _vendor_hash_verified(pa, repo_root):
+                keep = False  # vendor 哈希验证豁免;后续 exec-bit 行仍会强制翻回
         else:
             mode_m = _MODE_RE.match(stripped)
             if mode_m and (int(mode_m.group(1), 8) & 0o111):
-                keep = True  # executable bit → 强制扫本块(覆盖后缀豁免)
+                keep = True  # executable bit → 强制扫本块(覆盖一切豁免)
         if keep:
             out.append(line)
     return "".join(out)
 
 
-def judge_diff(diff_text: str) -> tuple[str, list[dict]]:
+def judge_diff(diff_text: str, repo_root: Path | None = None) -> tuple[str, list[dict]]:
     """纯静态三态(契约 04):扫描命中只升级人审,不硬拒、不放行。
 
     只扫可执行代码(剔除纯文档/数据文件,spec: scanner-skip-docs)——文档里引用
     eval/os.system 是教学/记录,不构成 RCE。fail-closed:未知后缀仍扫。
+    repo_root 透传给 code_only_diff 以启用 vendor 哈希验证豁免(验收 17)。
     """
-    findings = StaticRiskScanner().scan(code_only_diff(diff_text))
+    findings = StaticRiskScanner().scan(code_only_diff(diff_text, repo_root))
     return (NEEDS_HUMAN if findings else APPROVED), findings
 
 
@@ -552,7 +594,7 @@ def gate_commit(
     if lint_dec != APPROVED:
         return lint_dec, lint_msgs
     # ④ judge(静态三态)+ ack 通道(契约 07)
-    decision, findings = judge_diff(staged_diff(repo_root))
+    decision, findings = judge_diff(staged_diff(repo_root), repo_root)
     msgs.extend(f"[{f['severity']}] {f['issue']}" for f in findings)
     ack = None
     if decision == NEEDS_HUMAN and ack_human:

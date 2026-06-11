@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "run_id": "07e3f39c-2897-4ada-8c4c-da3d3ffb7d6b",
+  "gate": "gate-spec",
+  "feature_id": "feat-bpmn",
+  "inputs": [
+    {
+      "path": "specs/feat-bpmn/spec.md",
+      "sha256": "0b3daf2ab84a53987c57f34b974a60842ad84476da2486da1a253dfa64a342c6"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "6aa6a0f9ca2446a18df7f4d912a0f7f546b2c310",
+  "git_dirty": true,
+  "created_at": "2026-06-12T01:16:57.837212+08:00",
+  "tool": "aiforge gate-spec",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-spec",
+    "specs/feat-bpmn/spec.md"
+  ],
+  "ack": null,
+  "reviewer": null
+}

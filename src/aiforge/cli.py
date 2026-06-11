@@ -178,7 +178,7 @@ def _cmd_gate_judge(args: argparse.Namespace) -> int:
         diff = harness.range_diff(root, args.base)
     else:
         diff = harness.staged_diff(root, staged=args.staged)
-    decision, findings = harness.judge_diff(diff)
+    decision, findings = harness.judge_diff(diff, root)
     msgs = [f"[{f['severity']}] {f['issue']}(静态扫描只升级人审,不裁决)" for f in findings]
     if decision == harness.NEEDS_HUMAN:
         msgs.append("人审清单:确认上述命中是误报或已有补偿控制,放行走契约 07 通道")
