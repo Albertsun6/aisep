@@ -199,19 +199,39 @@ def write_receipt(receipt: dict, repo_root: Path) -> Path:
     return dest
 
 
-# receipt 同 gate 重跑会覆盖;审计是 append-only 本地时间线,补"何时跑过哪些 gate"(spec: gate-audit-log)。
-# **诚实定位**:本地流水,非防篡改(可删改;真防篡改=HMAC 链+外部 sink,契约 06 强制版推迟)。
+# receipt 同 gate 重跑会覆盖;审计是 **writer append-only** 本地追加流水,补"何时跑过哪些 gate"
+# (spec: gate-audit-log)。**诚实定位**:可删改、非防篡改(真防篡改=HMAC 链+外部 sink,契约 06 强制版
+# 推迟);且**非放行依据**——fail-open 仅成立于旁路观测,未来若做强审计须另加 --strict-audit/CI fail-closed。
+# 字段为 receipt 子集的**硬 allowlist**(无 argv/ack/reviewer/inputs/文件内容;新增字段须显式加这里)。
 _AUDIT_FIELDS = ("created_at", "gate", "feature_id", "decision", "exit_code", "git_head", "run_id")
 
 
 def _append_audit(receipt: dict, repo_root: Path) -> None:
-    """fail-open(supervisor 拍板):写失败只 stderr 警告,绝不改 gate 判定/退出码。"""
+    """fail-open(supervisor 拍板):写失败只 stderr 警告,绝不改 gate 判定/退出码。
+
+    评审落改(2026-06-11):① 契约 09 风格 symlink 防护——路径组件是 symlink 则拒绝跟随
+    (防审计被导出 repo 外);② O_APPEND + 单次 os.write(bytes),多进程一行不交错更硬。
+    """
     try:
+        probe = repo_root
+        for part in (".aiforge", "audit"):
+            probe = probe / part
+            if probe.is_symlink():
+                print(f"[audit] {probe} 是 symlink,拒绝跟随写(旁路,审计未追加)", file=sys.stderr)
+                return
         audit_dir = repo_root / ".aiforge" / "audit"
         audit_dir.mkdir(parents=True, exist_ok=True)
-        row = {k: receipt.get(k) for k in _AUDIT_FIELDS}  # 子集字段,无文件内容/secret
-        with (audit_dir / "gates.jsonl").open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+        path = audit_dir / "gates.jsonl"
+        if path.is_symlink():
+            print(f"[audit] {path} 是 symlink,拒绝跟随写(旁路)", file=sys.stderr)
+            return
+        row = {k: receipt.get(k) for k in _AUDIT_FIELDS}  # 硬 allowlist:无 argv/ack/reviewer/inputs/文件内容
+        data = (json.dumps(row, ensure_ascii=False) + "\n").encode("utf-8")
+        fd = os.open(str(path), os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o644)
+        try:
+            os.write(fd, data)  # 单次 write,O_APPEND 原子追加(best-effort 本地时间线)
+        finally:
+            os.close(fd)
     except OSError as exc:
         print(f"[audit] 审计追加失败(旁路,不影响门禁): {exc}", file=sys.stderr)
 

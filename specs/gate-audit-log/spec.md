@@ -21,9 +21,12 @@ status: active
 - Given 审计写入失败(如目录不可写)
   When 跑 gate
   Then **gate 本身的 decision/退出码不受影响**(审计是旁路观测,fail-open),仅向 stderr 打印一行警告。
+- Given 审计路径(`.aiforge`/`.aiforge/audit`/`gates.jsonl`)上有 symlink(评审落改)
+  When 跑 gate
+  Then **拒绝跟随 symlink 写**(防审计被导出 repo 外,契约 09 风格),fail-open + stderr 警告,gate 退出码不变。
 
 ## 非功能清单(P6)
-- 安全(**诚实定位**):这是**本地 append-only 流水,不是防篡改保证**——本地文件可被删/改;真防篡改 = HMAC 哈希链 + 外部不可写 sink,属强制版(契约 06 推迟)。审计行**不含 secret**(只记 gate 元数据,与 receipt 同字段集,无文件内容)。
-- 错误处理:审计写失败 **fail-open**(旁路,不阻断门禁)——取舍理由:审计是观测增强,不该让"写日志失败"把通过的门禁变成不通过;但失败必须 stderr 可见,不静默。**(此取舍请 supervisor 确认)**
+- 安全(**诚实定位**):这是 **writer append-only 本地追加流水,不是防篡改保证**——本地文件可被删/改;真防篡改 = HMAC 哈希链 + 外部不可写 sink,属强制版(契约 06 推迟)。且 **非放行依据**:fail-open 仅成立于旁路观测,未来若当强审计须另加 `--strict-audit`/CI fail-closed。审计行字段为 receipt 子集的**硬 allowlist**(只 created_at/gate/feature_id/decision/exit_code/git_head/run_id;**不含** argv/ack/reviewer/inputs/文件内容/secret);写入做 symlink 防护(不跟随)+ O_APPEND 单次 os.write(best-effort 不交错)。
+- 错误处理:审计写失败 **fail-open**(旁路,不阻断门禁)——取舍理由:审计是观测增强,不该让"写日志失败"把通过的门禁变成不通过;但失败必须 stderr 可见,不静默。(supervisor 已拍板 fail-open,2026-06-11)
 - 可观测:本功能即可观测性增强;jsonl 可被 `tail -f` / `jq` 直接消费。
 - 限流/审计:N/A。

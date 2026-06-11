@@ -121,6 +121,37 @@ class TestGateAuditLog(_RepoCase):
         self.assertEqual(rc, 0)  # gate 判定不受影响
         self.assertIn("审计追加失败", err.getvalue())  # 但有警告
 
+    def test_audit_symlink_path_refused(self):
+        """评审落改(High):审计路径是 symlink → 拒绝跟随写,gate 退出码不变(fail-open)。"""
+        import io
+        from contextlib import redirect_stderr
+        spec = self.write_spec()
+        # .aiforge/audit 指向 repo 外目录 → 不应跟随写
+        outside = Path(tempfile.mkdtemp())
+        (self.tmp / ".aiforge").mkdir()
+        (self.tmp / ".aiforge" / "audit").symlink_to(outside)
+        err = io.StringIO()
+        with redirect_stderr(err):
+            rc = cli_main(["gate-spec", str(spec)])
+        self.assertEqual(rc, 0)
+        self.assertIn("symlink", err.getvalue())
+        self.assertFalse((outside / "gates.jsonl").exists())  # 没写到 repo 外
+
+    def test_audit_no_sensitive_fields(self):
+        """评审落改(Low,防回归):审计行只含 allowlist,绝不含 argv/ack/reviewer/inputs。"""
+        # gate-commit 的 receipt 含 argv/ack;审计行必须只取子集
+        spec = self.write_spec()
+        cli_main(["gate-spec", str(spec)])
+        _git(self.tmp, "add", "specs")
+        (self.tmp / "src").mkdir()
+        (self.tmp / "src" / "m.py").write_text("def f():\n    return 1\n")
+        _git(self.tmp, "add", "src/m.py")
+        cli_main(["gate-commit", "--feature", "feat-x"])
+        row = self._audit_lines()[-1]
+        self.assertEqual(set(row), {"created_at", "gate", "feature_id", "decision", "exit_code", "git_head", "run_id"})
+        for forbidden in ("argv", "ack", "reviewer", "inputs", "tool", "aiforge_version", "schema_version"):
+            self.assertNotIn(forbidden, row)
+
 
 class TestGateSpec(_RepoCase):
     def test_valid_spec_approved_with_receipt(self):
