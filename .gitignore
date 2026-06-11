@@ -27,3 +27,6 @@ AI工程化开发企业软件系统方案-调研/
 .cursor/
 # 无 feature 归属的本地草稿 receipt(gate-judge/gate-commit 不带 --feature 时落这里)
 specs/_workspace/
+# gate-commit receipt 是"记录本次提交"的产物,无法进它自己那个 commit;本地反馈层产物,
+# 权威 = CI 重跑(契约 01)。gate-spec/gate-trace receipt 仍入库(冻结链需要)。
+specs/*/gates/gate-commit.json
