@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import List
 
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
-from aiforge.orchestration.state import FileChange
+from aiforge.orchestration.state import FileChange   # 运行期可解析(get_type_hints 不炸)；循环已由 orchestration/__init__ 延迟 graph 破除
 
 
 # 路径命中这些关键字视为高风险，无条件进入人审（无论 diff 大小）

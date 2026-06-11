@@ -13,7 +13,7 @@ from typing import List, Optional
 from aiforge.config import DEFAULT_GOVERNANCE, GovernanceConfig
 from aiforge.governance.audit import AuditTrail
 from aiforge.governance.permissions import PermissionBroker
-from aiforge.orchestration.state import FileChange
+from aiforge.orchestration.state import FileChange   # 运行期可解析(get_type_hints 不炸)；循环已由 orchestration/__init__ 延迟 graph 破除
 
 
 class SafeHaltError(Exception):
