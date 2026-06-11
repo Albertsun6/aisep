@@ -32,8 +32,8 @@ arch:
 	lint-imports
 
 fmt:
-	ruff format src tests
-	ruff check --fix src tests
+	$(PY) -m ruff format src tests
+	$(PY) -m ruff check --fix src tests
 
 install-dev:
 	$(PY) -m pip install -r requirements-dev.txt
