@@ -1,0 +1,53 @@
+我会按代码评审口径来挑刺：先承认这版设计想达成的安全边界，再专门从 receipt、退出码、git/path、CI/ack 契约几个方向找可被绕过的点。
+模型身份：GPT-5.5。  
+结论先说：这版方向是对的，`subprocess` 没用 shell、`0/1/2/3` 有统一 mapper、`--ci` 不消费本地 ack、坏 JSON/高版本 receipt 走 3，这些都符合 M1 想落的边界。但现在还不能合入，主要问题集中在 **receipt 可伪造/路径可逃逸/工作区与 index TOCTOU/退出码 0 漏洞**。
+
+## 主要问题
+
+- [Blocker / `harness.write_receipt`, `check_receipt_chain` / `feature_id` 未校验导致路径穿越 / 建议只允许严格 feature id，如 `^[A-Za-z0-9._-]+$`，禁止 `/`、`\`、`.`、`..`、绝对路径，并在最终路径 `resolve()` 后确认仍在 `repo_root/specs/<id>/gates/` 下。]  
+  `--feature ../../.git/hooks` 或类似值会影响 receipt 写入/读取路径，可能写到 repo 外或 `.git` 下。
+
+- [Blocker / `check_receipt_chain` / receipt 可以手写伪造，只要 hash 正确就通过 / 建议至少校验 `gate == gate-spec`、`feature_id`、`exit_code == 0`、`inputs` 结构、`inputs[].path` 精确等于 `specs/<id>/spec.md`；更强方案是在 CI 中重跑上游 gate，而不是信任已提交 receipt。]  
+  当前“伪造测试”只覆盖 hash 不符。攻击者完全可以手写一个 `decision=approved` 且 hash 正确的 `gate-spec.json`。
+
+- [Blocker / `gate_commit` + `check_receipt_chain` / 校验的是 worktree 文件，不是 staged/index 内容 / 建议 gate-commit 对即将提交的内容读取 index blob，例如 `git show :specs/<id>/spec.md`，lint 也应基于 staged snapshot。]  
+  可操作绕过：先 stage 被篡改的 `spec.md`，再把工作区改回与 receipt 匹配；`gate-commit` 通过，但 commit 里进去的是被篡改版本。
+
+- [Blocker / `_run_lint` / lint 检查 worktree，不检查 staged 内容 / 建议在 pre-commit 场景用 index 快照，或要求 clean worktree，否则同样存在 staged 内容和实际 lint 内容不一致。]  
+  这会造成“提交进去的代码没被 lint”或“未提交的脏改动导致提交被拒”的双向错误。
+
+- [High / `__main__._main` / `SystemExit("error")` 会被映射成 0 / 建议 `None -> 0`，`int -> 原码但 2 重映射 3`，非 int 一律 3。]  
+  当前：
+  ```python
+  code = exc.code if isinstance(exc.code, int) else 0
+  ```
+  这会把字符串型 `sys.exit("bad")` 变成通过，属于退出码 fail-open。
+
+- [High / `write_receipt`, `load_receipt`, `gate_trace` / symlink 拒绝不完整 / 建议 receipt 文件、父目录、feature_dir、spec/plan/tasks 都做 `lstat`/`O_NOFOLLOW` 级别检查。]  
+  `gate_trace` 在 `sha256_file()` 拒绝 symlink 前已经 `read_text()`，会先跟随 symlink 读取外部文件。`write_receipt()` 也可能跟随已有 symlink 覆盖外部目标。
+
+- [High / `_git`, `staged_diff`, `staged_numstat` / git diff 可能触发外部 diff driver / 建议所有 diff 类命令加 `--no-ext-diff`，并清理 `GIT_EXTERNAL_DIFF`、`GIT_DIFF_OPTS`，必要时用 `git -c diff.external=`。]  
+  虽然没有 shell 注入，但在不可信仓库里 `git diff` 本身可能执行外部 diff 配置，这属于命令执行面。
+
+- [High / `cli.py` 顶层 import / gate CLI 入口提前 import demo/eval/dashboard / 建议 gate 子命令路径只 lazy import harness，非 gate 命令也 lazy import。]  
+  契约 04 要求 gate CLI 永不调模型、运行期依赖边界清楚。现在 `from aiforge.cli import main` 会先加载非 gate 模块，未来这些模块一旦引入 LLM SDK，gate 路径就被污染。
+
+- [Medium / `gate_commit` / `--ack-human` 只在 `decision == needs_human` 时检查 tty / 契约写的是非 tty 环境下 `--ack-human -> 3`，建议只要传了 `--ack-human` 且非 CI，就先检查 tty。]  
+  当前 clean diff 下非 tty `--ack-human` 仍可 0，语义和审计摩擦不一致。
+
+- [Medium / `check_receipt_chain` / `schema_version=0` 会被接受 / 建议仅接受 `schema_version == 1`，高版本 3，缺失/非 int/未知低版本也 3。]  
+  契约是 v1 schema；未知低版本不应默默按 v1 解析。
+
+- [Medium / `_run_lint` / ruff 自身错误、配置错误、崩溃统一当 rejected / 建议区分 lint 发现问题是 1，工具不可用/配置不可解析/内部错误是 3。]  
+  现在只有 `"No module named"` 被映射为 infra，其他 ruff infra 失败可能被误报为内容拒绝。
+
+- [Medium / `staged_paths`, `review_items` / git 输出按换行和 tab 解析，特殊文件名会误判 / 建议用 `git diff -z --name-only`、`--numstat -z` 并按 NUL 解析。]  
+  否则带换行、tab、转义字符的路径可能绕过 `src/`/`tests/` 判断或污染 review 清单。
+
+- [Low / `_cmd_gate_commit`, `_cmd_gate_judge` / receipt 的 `argv` 不完整 / 建议把 `--feature <id>` 也写入 argv。]  
+  现在 audit receipt 无法完整复现调用参数。
+
+## Verdict
+
+需修后再合入。  
+最少要先修 4 个 blocker：`feature_id` 路径校验、receipt 元数据校验/CI 重跑策略、基于 staged/index 校验、`SystemExit` 非 int 不能映射 0。否则 receipt 链和退出码契约都有实际绕过路径。

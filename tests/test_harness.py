@@ -155,6 +155,7 @@ class TestGateCommit(_RepoCase):
     def _approved_feature(self, fid: str = "feat-x") -> None:
         spec = self.write_spec(fid)
         self.assertEqual(cli_main(["gate-spec", str(spec)]), 0)
+        _git(self.tmp, "add", "specs")  # 链校验以 index 为准:spec 必须随提交入库
 
     def test_code_without_feature_declaration_rejected(self):
         """契约 02:src/tests 改动无 feature 声明 → 1(攻击探针①本地半身)。"""
@@ -165,6 +166,13 @@ class TestGateCommit(_RepoCase):
         self._stage_code()
         self.assertEqual(cli_main(["gate-commit", "--feature", "ghost"]), 1)
 
+    def test_unstaged_spec_rejected(self):
+        """链校验以 index 为准:spec 只在工作区、没 git add → 1。"""
+        spec = self.write_spec()
+        self.assertEqual(cli_main(["gate-spec", str(spec)]), 0)
+        self._stage_code()
+        self.assertEqual(cli_main(["gate-commit", "--feature", "feat-x"]), 1)
+
     def test_happy_path(self):
         self._approved_feature()
         self._stage_code()
@@ -173,12 +181,20 @@ class TestGateCommit(_RepoCase):
         self.assertEqual(rcpt["decision"], "approved")
         self.assertIsNone(rcpt["ack"])
 
-    def test_tampered_spec_stales_receipt(self):
-        """契约 06 篡改测试:改 spec 不重跑 gate-spec → 1。"""
+    def test_tampered_staged_spec_stales_receipt(self):
+        """契约 06 篡改测试(TOCTOU 修复):篡改并 stage、不重跑 gate-spec → 1。"""
         self._approved_feature()
         (self.tmp / "specs" / "feat-x" / "spec.md").write_text(GHERKIN_SPEC + "\n偷偷加一行需求\n")
+        _git(self.tmp, "add", "specs")  # 篡改版进 index——这才是将被提交的内容
         self._stage_code()
         self.assertEqual(cli_main(["gate-commit", "--feature", "feat-x"]), 1)
+
+    def test_worktree_only_tamper_does_not_block(self):
+        """index 语义反面:只改工作区不 stage(不会被提交)→ 不误伤。"""
+        self._approved_feature()
+        (self.tmp / "specs" / "feat-x" / "spec.md").write_text(GHERKIN_SPEC + "\n工作区草稿\n")
+        self._stage_code()
+        self.assertEqual(cli_main(["gate-commit", "--feature", "feat-x"]), 0)
 
     def test_forged_receipt_hash_mismatch(self):
         """契约 06 伪造测试:decision=approved 但 hash 不符 → 1。"""
@@ -190,6 +206,22 @@ class TestGateCommit(_RepoCase):
         self._stage_code()
         self.assertEqual(cli_main(["gate-commit", "--feature", "feat-x"]), 1)
 
+    def test_forged_receipt_metadata_mismatch(self):
+        """M1 评审 blocker 落改:hash 对但元数据不符(feature_id 串号)→ 1。"""
+        self._approved_feature()
+        rp = self.receipt_path("feat-x", "gate-spec")
+        rcpt = json.loads(rp.read_text())
+        rcpt["feature_id"] = "other-feature"
+        rp.write_text(json.dumps(rcpt))
+        self._stage_code()
+        self.assertEqual(cli_main(["gate-commit", "--feature", "feat-x"]), 1)
+
+    def test_feature_id_path_traversal_is_infra(self):
+        """M1 评审 blocker 落改:--feature 路径穿越 → 3,receipt 不落 repo 外。"""
+        self._stage_code()
+        self.assertEqual(cli_main(["gate-commit", "--feature", "../evil"]), 3)
+        self.assertFalse((self.tmp.parent / "evil").exists())
+
     def test_corrupt_receipt_is_infra(self):
         """契约 06/03:receipt 不可解析 → 3(同样阻断,诊断不同)。"""
         self._approved_feature()
@@ -198,14 +230,15 @@ class TestGateCommit(_RepoCase):
         self.assertEqual(cli_main(["gate-commit", "--feature", "feat-x"]), 3)
 
     def test_unknown_schema_version_is_infra(self):
-        """契约 09:版本高于已知 → 3,不猜。"""
-        self._approved_feature()
-        rp = self.receipt_path("feat-x", "gate-spec")
-        rcpt = json.loads(rp.read_text())
-        rcpt["schema_version"] = 99
-        rp.write_text(json.dumps(rcpt))
-        self._stage_code()
-        self.assertEqual(cli_main(["gate-commit", "--feature", "feat-x"]), 3)
+        """契约 09:版本 ≠ 已知(高或低)→ 3,不猜。"""
+        for bad_ver in (99, 0):
+            self._approved_feature()
+            rp = self.receipt_path("feat-x", "gate-spec")
+            rcpt = json.loads(rp.read_text())
+            rcpt["schema_version"] = bad_ver
+            rp.write_text(json.dumps(rcpt))
+            self._stage_code()
+            self.assertEqual(cli_main(["gate-commit", "--feature", "feat-x"]), 3, f"ver={bad_ver}")
 
     def test_unknown_fields_ignored(self):
         """契约 09:消费者忽略未知字段(新增兼容字段不升版)。"""
@@ -223,11 +256,18 @@ class TestGateCommit(_RepoCase):
         self.assertEqual(cli_main(["gate-commit"]), 2)
 
     def test_ack_non_tty_is_infra(self):
-        """契约 07:非 tty --ack-human → 3(审计环境不可满足)。"""
+        """契约 07:非 tty --ack-human → 3(审计环境不可满足);传了就查,不等 needs_human。"""
         (self.tmp / "danger.py").write_text("import os\nos.system(cmd)\n")
         _git(self.tmp, "add", "danger.py")
         with mock.patch.object(sys.stdin, "isatty", return_value=False, create=True):
-            self.assertEqual(cli_main(["gate-commit", "--ack-human"]), 2 if sys.stdin.isatty() else 3)
+            self.assertEqual(cli_main(["gate-commit", "--ack-human"]), 3)
+
+    def test_ack_non_tty_checked_even_on_clean_diff(self):
+        """M1 评审落改:clean diff 下非 tty --ack-human 也 3,语义一致。"""
+        (self.tmp / "clean.py").write_text("x = 1\n")
+        _git(self.tmp, "add", "clean.py")
+        with mock.patch.object(sys.stdin, "isatty", return_value=False, create=True):
+            self.assertEqual(cli_main(["gate-commit", "--ack-human"]), 3)
 
     def test_ack_with_tty_records_audit(self):
         """契约 07:tty 下 ack → 0,receipt.ack 记录最小身份字段(审计,非认证)。"""
@@ -270,6 +310,14 @@ class TestMainEntry(unittest.TestCase):
         proc = subprocess.run([sys.executable, "-m", "aiforge"], cwd=str(repo),
                               env=env, capture_output=True)
         self.assertEqual(proc.returncode, 3)
+
+    def test_string_systemexit_maps_to_infra(self):
+        """M1 评审落改:sys.exit("msg") 非 int → 3,绝不映射 0(fail-open 洞)。"""
+        from aiforge import __main__ as entry
+        with mock.patch("aiforge.cli.main", side_effect=SystemExit("bad")):
+            self.assertEqual(entry._main(), 3)
+        with mock.patch("aiforge.cli.main", side_effect=SystemExit(None)):
+            self.assertEqual(entry._main(), 0)
 
 
 if __name__ == "__main__":

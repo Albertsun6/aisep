@@ -15,8 +15,13 @@ def _main() -> int:
     try:
         return main()
     except SystemExit as exc:  # argparse: usage 错误=2,--help=0
-        code = exc.code if isinstance(exc.code, int) else 0
-        return 3 if code == 2 else code
+        if exc.code is None:
+            return 0
+        if isinstance(exc.code, int):
+            return 3 if exc.code == 2 else exc.code
+        # 字符串等非 int(sys.exit("msg"))→ 3,绝不映射 0(评审:fail-open 洞)
+        sys.stderr.write(f"[infra] 非常规退出: {exc.code}\n")
+        return 3
     except Exception as exc:  # noqa: BLE001
         sys.stderr.write(f"[infra] 未预期异常: {exc}\n")
         return 3

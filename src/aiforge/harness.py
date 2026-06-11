@@ -1,12 +1,14 @@
 """文件/git → aiforge 门禁适配层(STEP 0 v2 M1 薄 CLI 核心)。
 
 把吃 PipelineState 的复用核门禁(SpecGate / StaticRiskScanner / review_after_session)
-适配到"文件 + git diff"输入,并落 gate receipt(契约 06)。全部 stdlib,**永不调模型**(契约 04)。
+适配到"文件 + git"输入,并落 gate receipt(契约 06)。全部 stdlib,**永不调模型**(契约 04)。
 
 退出码契约(契约 03,单点 mapper 见 EXIT):0=approved / 1=rejected / 2=needs_human / 3=infra_error。
-诚实边界:
-- gate-trace 只校验文档链(spec←plan←tasks 的声明式 refs);代码↔feature 的关联走声明制
-  (契约 02:--feature / AIFORGE_FEATURE)由 gate-commit 强制,不在 trace 内。
+诚实边界(经 M1 异构评审收敛,见 specs/contracts/REVIEW-2026-06-11.md):
+- receipt 链的 spec 内容以 **git index(待提交内容)** 为准——绕过 index 校验的手写 receipt
+  由 CI 重跑上游 gate 兜底(权威层);
+- 本地 lint 检查工作区快照(反馈层);CI 对已提交树重跑 make lint(权威);
+- gate-trace 只校验文档链;代码↔feature 关联走声明制(契约 02),由 gate-commit 强制;
 - isatty / user 信息是审计信号,不是身份认证(契约 07)。
 """
 from __future__ import annotations
@@ -36,6 +38,8 @@ EXIT: dict[str, int] = {APPROVED: 0, REJECTED: 1, NEEDS_HUMAN: 2, INFRA: 3}
 WORKSPACE_FEATURE = "_workspace"
 _CODE_PREFIXES = ("src/", "tests/")
 _REFS_RE = re.compile(r"^\s*>?\s*refs:\s*(.+?)\s*$", re.MULTILINE)
+# feature id:首字符限 [a-z0-9_](允许 _workspace),全串无 / 与前导点 → 杜绝路径穿越
+_FID_RE = re.compile(r"^[a-z0-9_][a-z0-9._-]{0,99}$")
 
 
 class InfraError(RuntimeError):
@@ -46,18 +50,31 @@ def exit_code(decision: str) -> int:
     return EXIT[decision]
 
 
+def validate_feature_id(fid: str) -> str:
+    """receipt 路径以 feature id 拼装——不合法 id = 路径穿越面,直接 infra。"""
+    if not _FID_RE.match(fid or ""):
+        raise InfraError(
+            f"feature id 不合法: {fid!r}(需匹配 ^[a-z0-9_][a-z0-9._-]{{0,99}}$,禁止 / 与前导点)"
+        )
+    return fid
+
+
 # ---------------------------------------------------------------- git helpers
 
-def _git(repo_root: Path, *args: str) -> str:
+def _git_raw(repo_root: Path, *args: str, text: bool = True) -> subprocess.CompletedProcess:
     try:
-        out = subprocess.run(
-            ["git", *args], cwd=str(repo_root), capture_output=True, text=True, check=True
+        return subprocess.run(
+            ["git", *args], cwd=str(repo_root), capture_output=True, text=text, check=True
         )
     except FileNotFoundError as exc:  # git 本体缺失
         raise InfraError(f"git 不可用: {exc}") from exc
     except subprocess.CalledProcessError as exc:
-        raise InfraError(f"git {' '.join(args)} 失败: {exc.stderr.strip()}") from exc
-    return out.stdout
+        err = exc.stderr.strip() if isinstance(exc.stderr, str) else (exc.stderr or b"").decode("utf-8", "replace").strip()
+        raise InfraError(f"git {' '.join(args)} 失败: {err}") from exc
+
+
+def _git(repo_root: Path, *args: str) -> str:
+    return _git_raw(repo_root, *args).stdout
 
 
 def find_repo_root(start: Path) -> Path:
@@ -82,17 +99,31 @@ def _git_state(repo_root: Path) -> tuple[str | None, bool | None]:
     return head, dirty
 
 
+# 禁外部 diff driver/textconv(评审:git diff 本身是命令执行面)
+_DIFF_GUARDS = ("-c", "diff.external=", "diff", "--no-ext-diff", "--no-textconv")
+
+
 def staged_diff(repo_root: Path, staged: bool = True) -> str:
-    return _git(repo_root, "diff", "--cached") if staged else _git(repo_root, "diff", "HEAD")
+    tail = ["--cached"] if staged else ["HEAD"]
+    return _git(repo_root, *_DIFF_GUARDS, *tail)
 
 
 def staged_numstat(repo_root: Path, staged: bool = True) -> str:
-    args = ["diff", "--numstat"] + (["--cached"] if staged else ["HEAD"])
-    return _git(repo_root, *args)
+    tail = ["--numstat", "-z"] + (["--cached"] if staged else ["HEAD"])
+    return _git(repo_root, *_DIFF_GUARDS, *tail)
 
 
 def staged_paths(repo_root: Path) -> list[str]:
-    return [p for p in _git(repo_root, "diff", "--cached", "--name-only").splitlines() if p]
+    out = _git(repo_root, *_DIFF_GUARDS, "--cached", "--name-only", "-z")
+    return [p for p in out.split("\0") if p]
+
+
+def index_blob(repo_root: Path, rel_posix: str) -> bytes | None:
+    """读 git index 中的文件内容(= 本次将被提交的版本);不在 index → None。"""
+    try:
+        return _git_raw(repo_root, "show", f":{rel_posix}", text=False).stdout
+    except InfraError:
+        return None
 
 
 # ------------------------------------------------------------- hash & receipt
@@ -102,6 +133,12 @@ def sha256_file(path: Path) -> str:
     if path.is_symlink():
         raise InfraError(f"{path} 是 symlink,gate 输入不跟随 symlink(契约 09)")
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _read_no_symlink(path: Path) -> str:
+    if path.is_symlink():
+        raise InfraError(f"{path} 是 symlink,gate 输入不跟随 symlink(契约 09)")
+    return path.read_text(encoding="utf-8")
 
 
 def _rel_posix(path: Path, repo_root: Path) -> str:
@@ -124,7 +161,7 @@ def build_receipt(
         "schema_version": RECEIPT_SCHEMA_VERSION,
         "run_id": str(uuid.uuid4()),
         "gate": gate,
-        "feature_id": feature_id,
+        "feature_id": validate_feature_id(feature_id),
         "inputs": inputs,
         "exit_code": EXIT[decision],
         "decision": decision,
@@ -140,23 +177,35 @@ def build_receipt(
 
 
 def write_receipt(receipt: dict, repo_root: Path) -> Path:
-    dest = repo_root / "specs" / receipt["feature_id"] / "gates" / f"{receipt['gate']}.json"
-    dest.parent.mkdir(parents=True, exist_ok=True)
+    fid = validate_feature_id(receipt["feature_id"])
+    gates_dir = repo_root / "specs" / fid / "gates"
+    # 路径上任一已存在组件是 symlink → 拒(防 receipt 被导出 repo 外)
+    probe = repo_root
+    for part in ("specs", fid, "gates"):
+        probe = probe / part
+        if probe.is_symlink():
+            raise InfraError(f"{probe} 是 symlink,receipt 不写入 symlink 路径(契约 09)")
+    gates_dir.mkdir(parents=True, exist_ok=True)
+    dest = gates_dir / f"{receipt['gate']}.json"
+    if dest.is_symlink():
+        raise InfraError(f"{dest} 是 symlink,拒绝覆盖(契约 09)")
     dest.write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return dest
 
 
 def load_receipt(path: Path) -> dict:
-    """契约 06/09:不可解析/版本不识别 → InfraError(3),带可读诊断;未知字段忽略。"""
+    """契约 06/09:不可解析/版本≠1 → InfraError(3),带可读诊断;未知字段忽略。"""
+    if path.is_symlink():
+        raise InfraError(f"receipt {path} 是 symlink,拒绝读取(契约 09)")
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise InfraError(f"receipt 不可解析: {path}(建议删除后重跑对应 gate)— {exc}") from exc
     ver = data.get("schema_version")
-    if not isinstance(ver, int) or ver > RECEIPT_SCHEMA_VERSION:
+    if ver != RECEIPT_SCHEMA_VERSION:
         raise InfraError(
-            f"receipt schema_version={ver!r} 高于已知 {RECEIPT_SCHEMA_VERSION}: {path}"
-            "(升级 aiforge 或检查该文件来源)"
+            f"receipt schema_version={ver!r} ≠ 已知 {RECEIPT_SCHEMA_VERSION}: {path}"
+            "(高于=升级 aiforge;其他=检查文件来源,勿手写 receipt)"
         )
     return data
 
@@ -165,17 +214,18 @@ def load_receipt(path: Path) -> dict:
 
 def derive_feature_id(spec_path: Path, repo_root: Path, declared: str | None) -> str:
     if declared:
-        return declared
+        return validate_feature_id(declared)
     try:
         rel = spec_path.resolve().relative_to(repo_root.resolve())
         if len(rel.parts) >= 3 and rel.parts[0] == "specs":
-            return rel.parts[1]
+            return validate_feature_id(rel.parts[1])
     except ValueError:
         pass
     return WORKSPACE_FEATURE
 
 
 def gate_spec(spec_path: Path, repo_root: Path, feature_id: str, argv: list[str]) -> tuple[str, list[str]]:
+    validate_feature_id(feature_id)
     msgs: list[str] = []
     inputs: list[dict[str, str]] = []
     if spec_path.is_symlink():
@@ -202,8 +252,12 @@ _CHAIN = (("plan.md", "spec.md"), ("tasks.md", "plan.md"))
 def gate_trace(feature_dir: Path, repo_root: Path, argv: list[str]) -> tuple[str, list[str]]:
     """P2 语义(文档链):每个存在的下游必须声明 refs 且解析到存在的上游。"""
     msgs: list[str] = []
+    for name in ("spec.md", "plan.md", "tasks.md"):
+        p = feature_dir / name
+        if p.is_symlink():
+            raise InfraError(f"{p} 是 symlink(契约 09)")
     spec = feature_dir / "spec.md"
-    if not spec.exists() or not spec.read_text(encoding="utf-8").strip():
+    if not spec.exists() or not _read_no_symlink(spec).strip():
         decision = REJECTED
         msgs = [f"P2: {feature_dir} 缺 spec.md,追溯链无根"]
     else:
@@ -212,7 +266,7 @@ def gate_trace(feature_dir: Path, repo_root: Path, argv: list[str]) -> tuple[str
             down = feature_dir / down_name
             if not down.exists():
                 continue
-            declared = " ".join(_REFS_RE.findall(down.read_text(encoding="utf-8")))
+            declared = " ".join(_REFS_RE.findall(_read_no_symlink(down)))
             if up_name not in declared:
                 decision, msgs = REJECTED, [f"P2: {down_name} 未声明上游 refs(需含 `> refs: {up_name}`)"]
                 break
@@ -226,7 +280,7 @@ def gate_trace(feature_dir: Path, repo_root: Path, argv: list[str]) -> tuple[str
     ]
     fid = derive_feature_id(feature_dir / "spec.md", repo_root, None)
     if fid == WORKSPACE_FEATURE:
-        fid = feature_dir.name
+        fid = validate_feature_id(feature_dir.name)
     receipt = build_receipt(gate="gate-trace", feature_id=fid, inputs=inputs,
                             decision=decision, repo_root=repo_root, argv=argv)
     write_receipt(receipt, repo_root)
@@ -239,37 +293,65 @@ def judge_diff(diff_text: str) -> tuple[str, list[dict]]:
     return (NEEDS_HUMAN if findings else APPROVED), findings
 
 
-def review_items(numstat_text: str) -> list[str]:
+def review_items(numstat_z: str) -> list[str]:
+    """解析 ``git diff --numstat -z``(NUL 分隔;rename 记录占 3 个 token)。"""
     changes: list[FileChange] = []
-    for line in numstat_text.splitlines():
-        parts = line.split("\t")
-        if len(parts) != 3 or parts[0] == "-" or parts[1] == "-":
+    toks = numstat_z.split("\0")
+    i = 0
+    while i < len(toks):
+        tok = toks[i]
+        if not tok:
+            i += 1
             continue
-        changes.append(FileChange(path=parts[2], added_lines=int(parts[0]), removed_lines=int(parts[1])))
+        parts = tok.split("\t")
+        if len(parts) < 3:
+            i += 1
+            continue
+        added, removed, path = parts[0], parts[1], parts[2]
+        if path == "":  # rename/copy:后续两个 token 是旧名、新名
+            path = toks[i + 2] if i + 2 < len(toks) else ""
+            i += 3
+        else:
+            i += 1
+        if added == "-" or removed == "-" or not path:  # binary / 异常
+            continue
+        changes.append(FileChange(path=path, added_lines=int(added), removed_lines=int(removed)))
     review = review_after_session(changes)
     return [
-        f"[{'必读' if i.must_fully_review else '抽审'}] {i.path} ({i.lines_changed} 行) — {i.reason}"
-        for i in review.items
+        f"[{'必读' if it.must_fully_review else '抽审'}] {it.path} ({it.lines_changed} 行) — {it.reason}"
+        for it in review.items
     ]
 
 
 # ----------------------------------------------------------------- gate-commit
 
 def check_receipt_chain(repo_root: Path, feature_id: str) -> str | None:
-    """契约 06 链校验:问题返回描述(→1);receipt 坏/版本不识别抛 InfraError(→3)。"""
-    spec = repo_root / "specs" / feature_id / "spec.md"
-    if not spec.exists():
-        return f"{feature_id}: 无 specs/{feature_id}/spec.md(无 spec 的代码改动,拒绝)"
+    """契约 06 链校验(本地反馈层;CI 重跑上游 gate 才是权威):
+
+    问题返回描述(→1);receipt 坏/版本不识别抛 InfraError(→3)。
+    spec 内容以 **git index** 为准——staged 篡改逃不掉,worktree 噪声不误伤。
+    """
+    validate_feature_id(feature_id)
+    rel = f"specs/{feature_id}/spec.md"
+    blob = index_blob(repo_root, rel)
+    if blob is None:
+        if not (repo_root / rel).exists():
+            return f"{feature_id}: 无 {rel}(无 spec 的代码改动,拒绝)"
+        return f"{feature_id}: {rel} 未加入 index(spec 必须随提交入库:git add specs/{feature_id})"
     rcpt_path = repo_root / "specs" / feature_id / "gates" / "gate-spec.json"
     if not rcpt_path.exists():
-        return f"{feature_id}: 缺 gate-spec receipt(先跑 python -m aiforge gate-spec specs/{feature_id}/spec.md)"
+        return f"{feature_id}: 缺 gate-spec receipt(先跑 aiforge gate-spec {rel})"
     rcpt = load_receipt(rcpt_path)
-    if rcpt.get("decision") != APPROVED:
+    # 元数据校验(评审 blocker:不只比 hash)
+    if rcpt.get("gate") != "gate-spec" or rcpt.get("feature_id") != feature_id:
+        return f"{feature_id}: receipt 元数据不符(gate={rcpt.get('gate')!r}, feature_id={rcpt.get('feature_id')!r})"
+    if rcpt.get("decision") != APPROVED or rcpt.get("exit_code") != 0:
         return f"{feature_id}: gate-spec receipt decision={rcpt.get('decision')},非 approved"
-    want = {i.get("path"): i.get("sha256") for i in rcpt.get("inputs", [])}
-    rel = _rel_posix(spec, repo_root)
-    if want.get(rel) != sha256_file(spec):
-        return f"{feature_id}: receipt 过期/伪造(spec.md hash 不符),重跑 gate-spec"
+    want = {i.get("path"): i.get("sha256") for i in rcpt.get("inputs", []) if isinstance(i, dict)}
+    if rel not in want:
+        return f"{feature_id}: receipt inputs 不含 {rel},不可信"
+    if want[rel] != hashlib.sha256(blob).hexdigest():
+        return f"{feature_id}: receipt 过期/伪造(index 中 spec.md hash 不符),重跑 gate-spec 后重新 add"
     return None
 
 
@@ -289,7 +371,8 @@ def _ack_info() -> dict:
 
 
 def _run_lint(repo_root: Path) -> tuple[str, list[str]]:
-    """PreCommitGate 语义(fails-closed):lint 证据必须真实产生;工具缺失=infra。"""
+    """PreCommitGate 语义(fails-closed)。诚实边界:lint 的是工作区快照(反馈层),
+    CI 对已提交树重跑 make lint(权威)。ruff 退出码:0=过 1=内容问题 ≥2=工具自身问题。"""
     targets = [d for d in ("src", "tests") if (repo_root / d).is_dir()]
     if not targets:
         return APPROVED, []  # 无可 lint 对象,证据空集但非缺失
@@ -300,10 +383,12 @@ def _run_lint(repo_root: Path) -> tuple[str, list[str]]:
         raise InfraError(f"无法执行 {cmd[0]}: {exc}") from exc
     if "No module named" in (proc.stderr or ""):
         raise InfraError("ruff 不可用(P3 缺 lint 证据,fails-closed):pip install -r requirements-dev.txt")
-    if proc.returncode != 0:
+    if proc.returncode == 0:
+        return APPROVED, []
+    if proc.returncode == 1:
         tail = (proc.stdout or proc.stderr).strip().splitlines()[-10:]
         return REJECTED, ["lint 未通过:", *tail]
-    return APPROVED, []
+    raise InfraError(f"ruff 自身错误(exit {proc.returncode}): {(proc.stderr or proc.stdout).strip()[-300:]}")
 
 
 def gate_commit(
@@ -317,6 +402,11 @@ def gate_commit(
     msgs: list[str] = []
     ci_mode = ci or bool(os.environ.get("CI"))  # 契约 07:CI 标记只收紧,不放宽
     declared = feature or os.environ.get("AIFORGE_FEATURE") or None
+    if declared:
+        validate_feature_id(declared)
+    # 契约 07:--ack-human 的审计环境前置检查(传了就查,不等 needs_human)
+    if ack_human and not ci_mode and not sys.stdin.isatty():
+        raise InfraError("非 tty 环境不可 --ack-human(审计环境不可满足,契约 07)")
 
     paths = staged_paths(repo_root)
     # ① feature 声明制(契约 02)
@@ -334,7 +424,7 @@ def gate_commit(
         problem = check_receipt_chain(repo_root, fid)
         if problem:
             return REJECTED, [problem]
-    # ③ lint(fails-closed)
+    # ③ lint(fails-closed;工作区快照,CI 权威)
     lint_dec, lint_msgs = _run_lint(repo_root)
     if lint_dec != APPROVED:
         return lint_dec, lint_msgs
@@ -345,8 +435,6 @@ def gate_commit(
     if decision == NEEDS_HUMAN and ack_human:
         if ci_mode:
             msgs.append("CI 模式忽略 --ack-human(契约 07:CI 永远重跑 gate,不消费本地 ack)")
-        elif not sys.stdin.isatty():
-            raise InfraError("非 tty 环境不可 --ack-human(审计环境不可满足,契约 07)")
         else:
             ack = _ack_info()
             decision = APPROVED

@@ -12,19 +12,20 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from aiforge.dashboard import write_dashboard
-from aiforge.eval.harness import run_eval
-from aiforge.governance.audit import AuditTrail
-from aiforge.governance.permissions import PermissionBroker
-from aiforge.governance.review import review_after_session
-from aiforge.llm import StubCodeLLM
-from aiforge.orchestration.agents import AgentContext
-from aiforge.orchestration.graph import build_default_pipeline
-from aiforge.orchestration.state import PipelineState, Status
-from aiforge.runtime.local import LocalSandbox
+# 注意:demo/eval/dashboard 的依赖全部 lazy import(评审:gate 子命令路径不得
+# 提前加载非 gate 模块,守住契约 04 的 import 边界)。
 
 
 def _cmd_demo(args: argparse.Namespace) -> int:
+    from aiforge.governance.audit import AuditTrail
+    from aiforge.governance.permissions import PermissionBroker
+    from aiforge.governance.review import review_after_session
+    from aiforge.llm import StubCodeLLM
+    from aiforge.orchestration.agents import AgentContext
+    from aiforge.orchestration.graph import build_default_pipeline
+    from aiforge.orchestration.state import PipelineState, Status
+    from aiforge.runtime.local import LocalSandbox
+
     audit = AuditTrail(path=None)
     perms = PermissionBroker(audit=audit)
     perms.grant("developer", "write", reason="demo")
@@ -56,18 +57,22 @@ def _cmd_demo(args: argparse.Namespace) -> int:
 
 
 def _cmd_eval(args: argparse.Namespace) -> int:
+    from aiforge.eval.harness import run_eval
     report = run_eval(dataset_path=args.dataset)
     if report.not_production_metric:
         print("⚠️  合成门禁路由自测（StubReviewer + 合成 evidence）——**非生产能力指标**。"
               "真实能力需真实 LLM + 独立 oracle 测试 + 真覆盖率/SAST 工具。")
     print(json.dumps({"kind": report.kind, **report.metrics.as_dict()}, ensure_ascii=False, indent=2))
     if args.dashboard:
+        from aiforge.dashboard import write_dashboard
         path = write_dashboard(report, args.dashboard)
         print(f"看板已生成: {path}")
     return 0
 
 
 def _cmd_dashboard(args: argparse.Namespace) -> int:
+    from aiforge.dashboard import write_dashboard
+    from aiforge.eval.harness import run_eval
     report = run_eval(dataset_path=args.dataset)
     path = write_dashboard(report, args.out)
     print(f"看板已生成: {path}")
@@ -131,11 +136,13 @@ def _cmd_gate_judge(args: argparse.Namespace) -> int:
     msgs = [f"[{f['severity']}] {f['issue']}(静态扫描只升级人审,不裁决)" for f in findings]
     if decision == harness.NEEDS_HUMAN:
         msgs.append("人审清单:确认上述命中是误报或已有补偿控制,放行走契约 07 通道")
+    argv = ["gate-judge"] + (["--staged"] if args.staged else []) \
+        + (["--feature", args.feature] if args.feature else [])
     receipt = harness.build_receipt(
         gate="gate-judge", feature_id=args.feature or harness.WORKSPACE_FEATURE,
         inputs=[{"path": "<staged-diff>" if args.staged else "<worktree-diff>",
                  "sha256": hashlib.sha256(diff.encode("utf-8")).hexdigest()}],
-        decision=decision, repo_root=root, argv=["gate-judge"] + (["--staged"] if args.staged else []),
+        decision=decision, repo_root=root, argv=argv,
     )
     harness.write_receipt(receipt, root)
     return _emit("gate-judge", decision, msgs)
@@ -156,9 +163,10 @@ def _cmd_review_3f(args: argparse.Namespace) -> int:
 def _cmd_gate_commit(args: argparse.Namespace) -> int:
     from aiforge import harness
     root = harness.find_repo_root(Path.cwd())
+    argv = ["gate-commit"] + (["--feature", args.feature] if args.feature else []) \
+        + (["--ci"] if args.ci else []) + (["--ack-human"] if args.ack_human else [])
     decision, msgs = harness.gate_commit(
-        root, feature=args.feature, ack_human=args.ack_human, ci=args.ci,
-        argv=["gate-commit"] + (["--ci"] if args.ci else []) + (["--ack-human"] if args.ack_human else []),
+        root, feature=args.feature, ack_human=args.ack_human, ci=args.ci, argv=argv,
     )
     return _emit("gate-commit", decision, msgs)
 

@@ -32,11 +32,12 @@
 - `git_head` + `git_dirty`:生成时刻的 HEAD 与工作区是否干净;
 - 消费方**忽略未知字段**;`schema_version` 高于自己认识 → 退出码 3 并打印诊断(契约 09)。
 
-## 链校验规则(`gate-commit` 与 CI 同语义)
+## 链校验规则(`gate-commit` 与 CI 同语义;经 M1 异构评审修订)
 
-1. **feature 声明制**(契约 02):staged 含 `src/`、`tests/` 改动 → 必须有 feature 声明(`--feature`/`AIFORGE_FEATURE`),无声明 → 1;
-2. 声明的 id 与 staged 中出现的 `specs/<id>/`:上游 receipt 必须**齐全**(按阶段顺序,最低要求 gate-spec)且**未过期**(inputs hash 与当前文件一致)、decision=approved(2 走契约 07 通道);缺失/过期/伪造(hash 不符)→ 1;
-3. receipt 文件不可解析/版本不识别 → 3,stderr 给出可读诊断(哪个文件、建议重跑哪个 gate)。**3 与 1 同样阻断**,差别仅在诊断含义(内容问题 vs 基础设施问题)。
+1. **feature 声明制**(契约 02):staged 含 `src/`、`tests/` 改动 → 必须有 feature 声明(`--feature`/`AIFORGE_FEATURE`,id 须匹配 `^[a-z0-9_][a-z0-9._-]{0,99}$`——防路径穿越),无声明 → 1;
+2. 声明的 id 与 staged 中出现的 `specs/<id>/`:上游 receipt 必须**齐全**(最低要求 gate-spec)、**元数据相符**(gate 名/feature_id/exit_code/inputs 路径精确匹配)且**未过期**——spec 内容以 **git index(待提交版本)**为准比对 hash(防"stage 篡改版、工作区改回"的 TOCTOU);spec 不在 index → 1(spec 必须随提交入库);缺失/过期/伪造 → 1;
+3. receipt 文件不可解析 / `schema_version ≠ 1`(v1 消费者只接受 1)→ 3,stderr 给出可读诊断。**3 与 1 同样阻断**,差别仅在诊断含义;
+4. **本地链校验是反馈层;权威 = CI 对 PR 涉及的 specs 重跑上游 gate**(gates.yml)——手写"hash 正确"的 receipt 逃不过 CI 真跑。
 
 ## 钉死方式(M1)
 
