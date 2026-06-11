@@ -30,17 +30,19 @@ def esc(value: object) -> str:
 def _git(repo_root: Path, *args: str) -> str:
     try:
         out = subprocess.run(
-            ["git", *args], cwd=str(repo_root), capture_output=True, text=True, timeout=10
+            ["git", *args], cwd=str(repo_root), capture_output=True,
+            text=True, errors="replace", timeout=10,  # errors=replace:坏编码不崩(评审落改)
         )
         return out.stdout if out.returncode == 0 else ""
-    except (OSError, subprocess.SubprocessError):
+    except (OSError, subprocess.SubprocessError, UnicodeError):
         return ""
 
 
 def _read(path: Path) -> str:
+    # errors=replace + 捕 OSError/UnicodeError:文件缺失/损坏/非法 UTF-8 都降级为空,不崩(评审落改)
     try:
-        return path.read_text(encoding="utf-8")
-    except OSError:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except (OSError, UnicodeError):
         return ""
 
 
@@ -83,9 +85,11 @@ def _collect_audit(repo_root: Path, limit: int = 25) -> list:
         if not ln:
             continue
         try:
-            rows.append(json.loads(ln))
+            obj = json.loads(ln)
         except ValueError:
             continue
+        if isinstance(obj, dict):  # 评审落改:合法 JSON 但非 dict(如 []、123)视为坏行跳过
+            rows.append(obj)
     return list(reversed(rows))[:limit]  # 最近的在前
 
 
@@ -223,8 +227,24 @@ def render_html(state: dict) -> str:
     )
 
 
+# 这是只读报告生成,只许写文档产物——绝不写进代码/规格/审计目录(评审落改:护栏不靠调用方自觉)
+_PROTECTED_OUT_DIRS = ("specs", ".aiforge", "src", "tests", ".git")
+
+
 def write_project_dashboard(repo_root: Path, out: Path | None = None) -> Path:
     dest = out or (repo_root / "docs" / "project-dashboard.html")
+    # 护栏:输出路径若落在受保护目录(代码/规格/审计)→ 拒绝(spec:只生成 HTML 到 docs/,不改其它)
+    try:
+        rel = dest.resolve().relative_to(repo_root.resolve())
+        if rel.parts and rel.parts[0] in _PROTECTED_OUT_DIRS:
+            raise ValueError(
+                f"project-dashboard 是只读报告,拒绝写入受保护目录 {rel.parts[0]}/;"
+                f"请输出到 docs/ 或 repo 外"
+            )
+    except ValueError as exc:
+        if "拒绝写入" in str(exc):
+            raise
+        # relative_to 抛 ValueError = dest 在 repo 外,允许(用户显式指定的外部路径)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(render_html(collect_state(repo_root)), encoding="utf-8")
     return dest

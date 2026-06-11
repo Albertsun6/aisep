@@ -120,5 +120,38 @@ class TestGenerateE2E(_Repo):
         self.assertIn("暂无", html)  # 降级文案
 
 
+class TestReviewFixes(_Repo):
+    """异构评审落改(2026-06-11):损坏文件/非 dict 审计/输出护栏。"""
+
+    def test_corrupt_utf8_does_not_crash(self):
+        """评审①:spec.md 非法 UTF-8 → 降级不崩。"""
+        d = self.tmp / "specs" / "bad"
+        d.mkdir(parents=True)
+        (d / "spec.md").write_bytes(b"# \xff\xfe bad bytes\nstatus: active\n")
+        state = pd.collect_state(self.tmp)  # 不应抛
+        self.assertEqual(state["features"][0]["id"], "bad")
+
+    def test_audit_non_dict_line_skipped(self):
+        """评审②:审计行是合法 JSON 但非 dict([]、123、字符串)→ 跳过,不崩。"""
+        adir = self.tmp / ".aiforge" / "audit"
+        adir.mkdir(parents=True)
+        (adir / "gates.jsonl").write_text(
+            '[]\n123\n"hello"\n{"gate":"gate-spec","decision":"approved"}\n', encoding="utf-8"
+        )
+        state = pd.collect_state(self.tmp)
+        self.assertEqual(len(state["audit"]), 1)  # 只有 dict 行
+        # render 不崩(_audit_row 只拿到 dict)
+        self.assertIn("gate-spec", pd.render_html(state))
+
+    def test_refuses_writing_into_protected_dir(self):
+        """评审③:输出路径落在 specs/.aiforge/src/tests → 拒绝(只读报告不改代码/规格)。"""
+        for prot in ("specs/x.html", ".aiforge/x.html", "src/x.html", "tests/x.html"):
+            with self.assertRaises(ValueError):
+                pd.write_project_dashboard(self.tmp, self.tmp / prot)
+        # docs/ 与 repo 外允许
+        ok = pd.write_project_dashboard(self.tmp, self.tmp / "docs" / "ok.html")
+        self.assertTrue(ok.exists())
+
+
 if __name__ == "__main__":
     unittest.main()
