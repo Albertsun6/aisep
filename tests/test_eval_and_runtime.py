@@ -4,10 +4,15 @@ import unittest
 from aiforge.config import GovernanceConfig
 from aiforge.eval.harness import run_eval
 from aiforge.governance.permissions import PermissionBroker, PermissionError_
+from aiforge.orchestration.codegen import select_isolated_or_none
 from aiforge.orchestration.state import FileChange
 from aiforge.runtime.base import SafeHaltError
 from aiforge.runtime.local import LocalSandbox
 from aiforge.runtime.openhands import OpenHandsRuntime
+
+# spec: specs/ci-isolation-contract — eval 经 StatusGate(要求 DONE);无真隔离时 verifier
+# fail-closed BLOCKED → 全部止于 StatusGate,门禁路由无法被演练。真隔离仅 macOS sandbox-exec。
+_ISOLATION = select_isolated_or_none() is not None
 
 
 class TestEval(unittest.TestCase):
@@ -16,12 +21,18 @@ class TestEval(unittest.TestCase):
         report = run_eval(dataset_path=path)
         m = report.metrics
         self.assertEqual(m.n, 8)
-        # eval = 合成门禁路由自测(StubCode/StubReviewer + 合成 evidence)，非生产能力指标。
-        # dataset oracle 权威(撤销了 C3 的自测覆盖):F001/F002/F008 过链;F005 覆盖率不足、
-        # F007 dataset tests_ok=False(回归信号保留)、F003/F004/F006 高风险转人审。
-        self.assertAlmostEqual(m.task_completion_rate, 3 / 8, places=4)
-        self.assertAlmostEqual(m.regression_introduction_rate, 1 / 8, places=4)
-        self.assertGreater(m.avg_blast_radius_on_failure, 0)
+        if _ISOLATION:
+            # eval = 合成门禁路由自测(StubCode/StubReviewer + 合成 evidence)，非生产能力指标。
+            # dataset oracle 权威:F001/F002/F008 过链;F005 覆盖率不足、F007 dataset tests_ok=False
+            # (回归信号保留)、B003/M004/F006 高风险转人审。
+            self.assertAlmostEqual(m.task_completion_rate, 3 / 8, places=4)
+            self.assertAlmostEqual(m.regression_introduction_rate, 1 / 8, places=4)
+            self.assertGreater(m.avg_blast_radius_on_failure, 0)
+        else:
+            # 无真隔离:verifier C4 fail-closed → 全部 BLOCKED,止于 StatusGate(契约,非缺陷)。
+            # eval 此时无法演练门禁路由——task_completion 必为 0;回归计数仍来自 dataset 标记。
+            self.assertAlmostEqual(m.task_completion_rate, 0.0, places=4)
+            self.assertAlmostEqual(m.regression_introduction_rate, 1 / 8, places=4)
 
 
 class TestLocalRuntime(unittest.TestCase):

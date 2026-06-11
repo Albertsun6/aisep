@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "run_id": "a5fb228a-69b7-4deb-a2bd-674b50040d32",
+  "gate": "gate-trace",
+  "feature_id": "ci-isolation-contract",
+  "inputs": [
+    {
+      "path": "specs/ci-isolation-contract/spec.md",
+      "sha256": "886a98688a676333789c0f7df96498c3127551865d83d9f7a94043ac3738631e"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "acf0ef82c45bdcb67ff86ad7ecc6033e6e55cad7",
+  "git_dirty": true,
+  "created_at": "2026-06-11T18:29:03.303345+08:00",
+  "tool": "aiforge gate-trace",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-trace",
+    "specs/ci-isolation-contract"
+  ],
+  "ack": null,
+  "reviewer": null
+}

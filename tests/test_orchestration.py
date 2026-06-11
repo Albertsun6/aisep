@@ -5,9 +5,14 @@ from aiforge.governance.audit import AuditTrail
 from aiforge.governance.permissions import PermissionBroker
 from aiforge.llm import StubCodeLLM
 from aiforge.orchestration.agents import AgentContext
+from aiforge.orchestration.codegen import select_isolated_or_none
 from aiforge.orchestration.graph import build_default_pipeline
 from aiforge.orchestration.state import ArtifactKind, PipelineState, Status
 from aiforge.runtime.local import LocalSandbox
+
+# spec: specs/ci-isolation-contract — verifier 在无真隔离后端时 fail-closed 为 BLOCKED
+# (C4/P4)。真隔离仅 macOS sandbox-exec;Linux CI 无后端 → 走 fail-closed 契约。
+_ISOLATION = select_isolated_or_none() is not None
 
 
 def _ctx(config=None):
@@ -27,12 +32,19 @@ class TestPipeline(unittest.TestCase):
         sup = build_default_pipeline(ctx)
         state = PipelineState(feature_id="X1", request="加个端点", task_type="feature")
         state = sup.invoke(state)
-        self.assertEqual(state.status, Status.DONE)
         kinds = {a.kind for a in state.artifacts}
-        # 端到端产出规格驱动全链 artifact
-        for k in (ArtifactKind.SPEC, ArtifactKind.PLAN, ArtifactKind.TASKS,
-                  ArtifactKind.CODE, ArtifactKind.REVIEW, ArtifactKind.TEST):
-            self.assertIn(k, kinds)
+        if _ISOLATION:
+            # 有真隔离:端到端到 DONE,产出规格驱动全链 artifact
+            self.assertEqual(state.status, Status.DONE)
+            for k in (ArtifactKind.SPEC, ArtifactKind.PLAN, ArtifactKind.TASKS,
+                      ArtifactKind.CODE, ArtifactKind.REVIEW, ArtifactKind.TEST):
+                self.assertIn(k, kinds)
+        else:
+            # 无真隔离:verifier C4 fail-closed → BLOCKED(契约,不是缺陷);仍产出到 TEST
+            self.assertEqual(state.status, Status.BLOCKED)
+            self.assertEqual((state.verification or {}).get("reason"), "no-isolation")
+            for k in (ArtifactKind.SPEC, ArtifactKind.CODE, ArtifactKind.TEST):
+                self.assertIn(k, kinds)
 
     def test_high_risk_triggers_hitl_then_resume(self):
         ctx, _ = _ctx()
@@ -41,10 +53,14 @@ class TestPipeline(unittest.TestCase):
         state = sup.invoke(state)
         self.assertEqual(state.status, Status.NEEDS_HUMAN)
         self.assertIsNotNone(state.needs_human_reason)
-        # 人审通过后恢复，继续到 tester 完成
+        # 人审通过后恢复;有隔离 → DONE,无隔离 → verifier fail-closed BLOCKED(C4)
         resumed = sup.resume("M1", approve=True)
-        self.assertEqual(resumed.status, Status.DONE)
         self.assertIn(ArtifactKind.TEST, {a.kind for a in resumed.artifacts})
+        if _ISOLATION:
+            self.assertEqual(resumed.status, Status.DONE)
+        else:
+            self.assertEqual(resumed.status, Status.BLOCKED)
+            self.assertEqual((resumed.verification or {}).get("reason"), "no-isolation")
 
     def test_checkpoint_history_recorded(self):
         ctx, _ = _ctx()
