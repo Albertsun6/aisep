@@ -16,7 +16,8 @@ env/
 *.log
 .aiforge/audit/*.jsonl
 !.aiforge/audit/.gitkeep
-.claude/
+# .claude/ 整体入库(M2/M3 交付物:agents/skills/settings.json);只忽略本机个人配置
+.claude/settings.local.json
 
 # 调研/实验文件夹：不属于核心仓库，且会污染健康度探针基线（死代码/重复/复杂度噪声）
 AI工程化开发企业软件系统方案-调研/
