@@ -32,3 +32,5 @@ specs/_workspace/
 specs/*/gates/gate-commit.json
 # project-dashboard 生成的 HTML 产物(make dashboard-project 随时重生成;GitHub 不渲染 HTML)
 docs/project-dashboard.html
+# bpmn-status 生成物(重跑 aiforge bpmn-status 即最新;备援源 sdlc-pipeline.js 入库)
+docs/flows/sdlc-status.js

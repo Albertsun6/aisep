@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- spec: specs/feat-bpmn 验收 5 fixture:1 pool + 2 lane + 1 exclusive gateway + 1 边界事件 + 带 name 任务 -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="defs_order" targetNamespace="http://aiforge.example/bpmn">
+  <bpmn:collaboration id="collab_1">
+    <bpmn:participant id="pool_order" name="订单审批" processRef="proc_order"/>
+  </bpmn:collaboration>
+  <bpmn:process id="proc_order" isExecutable="false">
+    <bpmn:laneSet id="lanes_1">
+      <bpmn:lane id="lane_sales" name="销售">
+        <bpmn:flowNodeRef>start_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_submit</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="lane_finance" name="财务">
+        <bpmn:flowNodeRef>t_review</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>bnd_timeout</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>gw_ok</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_notify</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>end_ok</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>end_reject</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>end_timeout</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="start_1" name="收到订单"/>
+    <bpmn:task id="t_submit" name="提交审批"/>
+    <bpmn:task id="t_review" name="财务复核"/>
+    <bpmn:boundaryEvent id="bnd_timeout" name="超时" attachedToRef="t_review">
+      <bpmn:timerEventDefinition id="timer_1"/>
+    </bpmn:boundaryEvent>
+    <bpmn:exclusiveGateway id="gw_ok" name="复核通过?"/>
+    <bpmn:task id="t_notify" name="通知发货"/>
+    <bpmn:endEvent id="end_ok" name="完成"/>
+    <bpmn:endEvent id="end_reject" name="驳回"/>
+    <bpmn:endEvent id="end_timeout" name="超时关闭"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="start_1" targetRef="t_submit"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="t_submit" targetRef="t_review"/>
+    <bpmn:sequenceFlow id="f3" sourceRef="t_review" targetRef="gw_ok"/>
+    <bpmn:sequenceFlow id="f4" name="通过" sourceRef="gw_ok" targetRef="t_notify"/>
+    <bpmn:sequenceFlow id="f5" name="驳回" sourceRef="gw_ok" targetRef="end_reject"/>
+    <bpmn:sequenceFlow id="f6" sourceRef="t_notify" targetRef="end_ok"/>
+    <bpmn:sequenceFlow id="f7" sourceRef="bnd_timeout" targetRef="end_timeout"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="dia_1">
+    <bpmndi:BPMNPlane id="plane_1" bpmnElement="collab_1">
+      <bpmndi:BPMNShape id="s_pool" bpmnElement="pool_order" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="760" height="420"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_lane_sales" bpmnElement="lane_sales" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="730" height="160"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_lane_fin" bpmnElement="lane_finance" isHorizontal="true">
+        <dc:Bounds x="190" y="240" width="730" height="260"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_start" bpmnElement="start_1">
+        <dc:Bounds x="242" y="142" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_submit" bpmnElement="t_submit">
+        <dc:Bounds x="330" y="120" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_review" bpmnElement="t_review">
+        <dc:Bounds x="330" y="280" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_bnd" bpmnElement="bnd_timeout">
+        <dc:Bounds x="362" y="342" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_gw" bpmnElement="gw_ok" isMarkerVisible="true">
+        <dc:Bounds x="495" y="295" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_notify" bpmnElement="t_notify">
+        <dc:Bounds x="610" y="280" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_end_ok" bpmnElement="end_ok">
+        <dc:Bounds x="772" y="302" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_end_rej" bpmnElement="end_reject">
+        <dc:Bounds x="502" y="412" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_end_to" bpmnElement="end_timeout">
+        <dc:Bounds x="362" y="430" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="e_f1" bpmnElement="f1">
+        <di:waypoint x="278" y="160"/><di:waypoint x="330" y="160"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_f2" bpmnElement="f2">
+        <di:waypoint x="380" y="200"/><di:waypoint x="380" y="280"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_f3" bpmnElement="f3">
+        <di:waypoint x="430" y="320"/><di:waypoint x="495" y="320"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_f4" bpmnElement="f4">
+        <di:waypoint x="545" y="320"/><di:waypoint x="610" y="320"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_f5" bpmnElement="f5">
+        <di:waypoint x="520" y="345"/><di:waypoint x="520" y="412"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_f6" bpmnElement="f6">
+        <di:waypoint x="710" y="320"/><di:waypoint x="772" y="320"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_f7" bpmnElement="f7">
+        <di:waypoint x="380" y="378"/><di:waypoint x="380" y="430"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

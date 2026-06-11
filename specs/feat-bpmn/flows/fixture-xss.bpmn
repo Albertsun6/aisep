@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- spec: specs/feat-bpmn 验收 13 fixture:元素 name/documentation 含哨兵 payload,
+     渲染/XML 视图/详情面板后 window.__pwned 必须保持 undefined -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="defs_xss" targetNamespace="http://aiforge.example/bpmn">
+  <bpmn:process id="proc_xss" isExecutable="false">
+    <bpmn:startEvent id="start_x" name="&lt;script&gt;window.__pwned=1&lt;/script&gt;"/>
+    <bpmn:task id="t_x" name="&lt;img src=x onerror=&quot;window.__pwned=1&quot;&gt;">
+      <bpmn:documentation>&lt;script&gt;window.__pwned=1&lt;/script&gt;</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:endEvent id="end_x" name="end&amp;&lt;b&gt;x&lt;/b&gt;"/>
+    <bpmn:sequenceFlow id="fx1" sourceRef="start_x" targetRef="t_x"/>
+    <bpmn:sequenceFlow id="fx2" sourceRef="t_x" targetRef="end_x"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="dia_x">
+    <bpmndi:BPMNPlane id="plane_x" bpmnElement="proc_xss">
+      <bpmndi:BPMNShape id="sx_start" bpmnElement="start_x">
+        <dc:Bounds x="180" y="120" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sx_t" bpmnElement="t_x">
+        <dc:Bounds x="280" y="98" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sx_end" bpmnElement="end_x">
+        <dc:Bounds x="440" y="120" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ex_1" bpmnElement="fx1">
+        <di:waypoint x="216" y="138"/><di:waypoint x="280" y="138"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ex_2" bpmnElement="fx2">
+        <di:waypoint x="380" y="138"/><di:waypoint x="440" y="138"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

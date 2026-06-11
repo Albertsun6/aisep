@@ -118,6 +118,19 @@ def _cmd_project_dashboard(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_bpmn_status(args: argparse.Namespace) -> int:
+    # spec: specs/feat-bpmn 验收 9 — 只读导出门禁状态供工作台项目模式(不调模型)
+    from aiforge.bpmn_status import write_bpmn_status
+    out = Path(args.out) if args.out else None
+    try:
+        dest = write_bpmn_status(Path.cwd(), out, emit_pipeline=args.emit_pipeline)
+    except (FileNotFoundError, ValueError) as e:
+        print(f"bpmn-status: {e}")
+        return 1
+    print(f"状态已导出: {dest}（工作台「项目模式」读取;重跑即最新）")
+    return 0
+
+
 # ---------------------------------------------------------- STEP 0 门禁子命令
 
 def _infra_guard(fn: Callable[[argparse.Namespace], int]) -> Callable[[argparse.Namespace], int]:
@@ -178,7 +191,7 @@ def _cmd_gate_judge(args: argparse.Namespace) -> int:
         diff = harness.range_diff(root, args.base)
     else:
         diff = harness.staged_diff(root, staged=args.staged)
-    decision, findings = harness.judge_diff(diff)
+    decision, findings = harness.judge_diff(diff, root)
     msgs = [f"[{f['severity']}] {f['issue']}(静态扫描只升级人审,不裁决)" for f in findings]
     if decision == harness.NEEDS_HUMAN:
         msgs.append("人审清单:确认上述命中是误报或已有补偿控制,放行走契约 07 通道")
@@ -245,6 +258,12 @@ def main(argv: list[str] | None = None) -> int:
     p_pd = sub.add_parser("project-dashboard", help="读项目真实状态生成单页 HTML 总览(人性化,只读)")
     p_pd.add_argument("--out", default=None, help="输出路径(默认 docs/project-dashboard.html)")
     p_pd.set_defaults(func=_cmd_project_dashboard)
+
+    p_bs = sub.add_parser("bpmn-status", help="导出门禁状态为 sdlc-status.js(工作台项目模式,只读)")
+    p_bs.add_argument("--out", default=None, help="输出路径(默认 docs/flows/sdlc-status.js)")
+    p_bs.add_argument("--emit-pipeline", action="store_true",
+                      help="同时从 sdlc-pipeline.bpmn 生成入库备援源 sdlc-pipeline.js")
+    p_bs.set_defaults(func=_cmd_bpmn_status)
 
     p_gs = sub.add_parser("gate-spec", help="P1: 校验 spec.md 验收结构(0/1/3)")
     p_gs.add_argument("spec", help="spec.md 路径")
