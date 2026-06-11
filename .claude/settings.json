@@ -19,6 +19,16 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/session-bootstrap.sh"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
