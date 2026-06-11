@@ -13,7 +13,7 @@ _FULL_EV = {"lint_ok": True, "coverage": 0.9, "sast_ok": True, "tests_ok": True,
 
 def _trusted_chain():
     # eval/测试需**显式**注入可信评审替身(默认门禁是保守的，不带 stub)
-    return build_default_gates(judge=AgentAsJudge(llm=StubReviewerLLM()))
+    return build_default_gates(judge=AgentAsJudge(llm=StubReviewerLLM(), trust_llm=True))
 
 
 class TestGates(unittest.TestCase):
@@ -89,13 +89,29 @@ class TestGates(unittest.TestCase):
         from aiforge.llm import StubReviewerLLM
         # 无可信 LLM(MockLLM) → 保守转人审，连干净变更也不自动放行
         self.assertFalse(AgentAsJudge().review("加个工具函数", task_type="feature").approved)
-        # 可信评审 + 干净 + 非高风险 → 自动通过
-        self.assertTrue(AgentAsJudge(llm=StubReviewerLLM()).review("加个纯函数", task_type="feature").approved)
+        # 显式可信评审 + 干净 + 非高风险 → 自动通过
+        self.assertTrue(AgentAsJudge(llm=StubReviewerLLM(), trust_llm=True).review("加个纯函数", task_type="feature").approved)
         # 危险内容(SQL 注入)即便 task_type=feature 也不自动通过（静态扫描升级人审）
         danger = 'q = f"SELECT * FROM u WHERE n={x}"'
-        self.assertFalse(AgentAsJudge(llm=StubReviewerLLM()).review(danger, task_type="feature").approved)
+        self.assertFalse(AgentAsJudge(llm=StubReviewerLLM(), trust_llm=True).review(danger, task_type="feature").approved)
         # 高风险类型 → 转人审
-        self.assertFalse(AgentAsJudge(llm=StubReviewerLLM()).review("改支付", task_type="payment").approved)
+        self.assertFalse(AgentAsJudge(llm=StubReviewerLLM(), trust_llm=True).review("改支付", task_type="payment").approved)
+
+    def test_judge_trust_requires_explicit_opt_in(self):
+        """回归(STEP 0 v2 首批③):挂真 LLM 不自动可信——默认 trust_llm=False,绝不静默放行。
+
+        原地雷(judge.py:81):trust_llm = not isinstance(llm, MockLLM) → 接通真模型即 trusted,
+        重开自称修掉的 C2。本测试钉死翻转后的语义,改回去即红。
+        """
+        from aiforge.llm import StubReviewerLLM
+        # 非 MockLLM 但未显式 opt-in → 不可信 → 干净变更也转人审而非自动通过
+        verdict = AgentAsJudge(llm=StubReviewerLLM()).review("加个纯函数", task_type="feature")
+        self.assertFalse(verdict.approved)
+        self.assertTrue(verdict.requires_human)
+        # MockLLM 即便显式 trust_llm=True 也不信(fail-closed,只会更保守)
+        verdict = AgentAsJudge(trust_llm=True).review("加个纯函数", task_type="feature")
+        self.assertFalse(verdict.approved)
+        self.assertTrue(verdict.requires_human)
 
 
 class TestMetrics(unittest.TestCase):

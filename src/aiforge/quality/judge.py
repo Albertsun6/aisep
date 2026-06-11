@@ -3,6 +3,7 @@
 原版缺陷 C2：approved 仅由 task_type ∩ {5 词} 决定，三个 persona 的 LLM 意见被生成后丢弃，
 危险代码只要标签是 feature 就自动放行。修复（经异构评审，见挑战评估/fix_proposal）：
 - 自动通过的**充要条件** = 可信 LLM 非阻断裁决 且 静态扫描无命中 且 非高风险；
+- 可信 = **显式** trust_llm=True 且非 MockLLM——挂真模型不自动可信(STEP 0 v2 首批③翻转原"接通即 trusted"地雷)；
 - 无可信 LLM（MockLLM）/ 解析失败 / 扫描命中 / 高风险 → 一律转人审，**绝不自动放行**；
 - 静态扫描只"升级到人审"，不据其放行、也不据其硬拒（误报至多多看一眼）；
 - 三态 APPROVED / NEEDS_HUMAN / REJECTED。
@@ -77,8 +78,9 @@ class AgentAsJudge:
         self.llm = llm or MockLLM()
         self.config = config
         self.scanner = StaticRiskScanner()
-        # MockLLM 无真实判断力 → 不可信 → 不据其自动放行
-        self.trust_llm = (not isinstance(self.llm, MockLLM)) if trust_llm is None else trust_llm
+        # 默认不可信,显式 opt-in:挂真 LLM 不自动获得放行权(防"接通即 trusted"重开 C2);
+        # MockLLM 无真实判断力,即便显式 trust_llm=True 也不信(只会更保守,fail-closed)。
+        self.trust_llm = (trust_llm is True) and not isinstance(self.llm, MockLLM)
 
     def review(self, diff_summary: str, task_type: Optional[str] = None,
                risk_keywords: Optional[List[str]] = None) -> JudgeVerdict:

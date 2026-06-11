@@ -47,7 +47,7 @@ def _run_one(task: EvalTask, config: GovernanceConfig) -> TaskOutcome:
 
     # ⚠️ eval 是**合成门禁路由自测**(显式注入 StubReviewerLLM 可信评审替身 + 合成 evidence)，
     # **不是生产能力指标**——真实能力需真实 LLM + 独立 oracle 测试。
-    gates = build_default_gates(config, judge=AgentAsJudge(llm=StubReviewerLLM()))
+    gates = build_default_gates(config, judge=AgentAsJudge(llm=StubReviewerLLM(), trust_llm=True))
     gate_results = gates.run(state, evidence)
     cicd = next((g for g in gate_results if g.layer == "cicd"), None)
     passed_ci = bool(cicd and cicd.passed)
