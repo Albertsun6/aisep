@@ -20,6 +20,7 @@ AIForge 是一套"用 AI 工程化方式开发大型企业软件"的参考系统
 
 ## 代码结构约定
 - 业务逻辑放 `src/aiforge/<层>/`，每层职责单一，对应七层架构。
+- 新增流程图默认用 BPMN（编辑器 `docs/bpmn-workbench.html`）；特性级流程放 `specs/<feature-id>/flows/*.bpmn`，项目级放 `docs/flows/`（约定，非机器强制；spec: specs/feat-bpmn）。
 - 编排只通过 `orchestration/state.py` 的共享状态通信，禁止角色 agent 间直接耦合。
 - 所有"写动作 / state-mutating"必须经 `governance/permissions.py` 与 `runtime` 沙箱，禁止直接 `os.system` / 裸写磁盘。
 - 类型注解统一 `from __future__ import annotations` + `typing`（兼容 3.9，禁用 `X | Y` 运行时联合）。
