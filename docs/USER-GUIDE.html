@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AISEP × Claude Code 工程 Harness — 使用手册</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: '"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif',
+      primaryColor: "#ecfdf5",
+      primaryTextColor: "#064e3b",
+      primaryBorderColor: "#10b981",
+      lineColor: "#475569",
+      secondaryColor: "#eff6ff",
+      tertiaryColor: "#fef3c7",
+    },
+    flowchart: { curve: "basis", padding: 16 },
+  });
+</script>
+<style>
+  :root {
+    --ink: #0f172a; --ink-soft: #334155; --line: #e2e8f0;
+    --bg: #fafaf9; --accent: #047857; --accent-soft: #ecfdf5;
+  }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body {
+    font-family: "PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    color: var(--ink); background: var(--bg); line-height: 1.75; font-feature-settings: "palt";
+  }
+  h1,h2,h3,h4 { font-weight: 700; letter-spacing: -0.01em; }
+  h2 { scroll-margin-top: 72px; }
+  h3 { font-size: 1.02rem; margin: 1.3rem 0 0.6rem; color: var(--ink); }
+  code, pre, .mono { font-family: "JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace; }
+  code:not(.codeblk code) { background:#f1f5f9; padding:0.08rem 0.35rem; border-radius:4px; font-size:0.86em; color:#0f172a; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color .15s; }
+  a:hover { border-bottom-color: var(--accent); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  th { background: #f1f5f9; text-align: left; font-weight: 600; color: var(--ink); }
+  th, td { border: 1px solid var(--line); padding: 0.55rem 0.75rem; vertical-align: top; }
+  tbody tr:hover { background: #f8fafc; }
+  .tablewrap { overflow-x: auto; margin: 0.5rem 0 1rem; }
+  .pill { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+  .pill-ok { background: #d1fae5; color: #065f46; }
+  .pill-warn { background: #fef3c7; color: #92400e; }
+  .pill-info { background: #dbeafe; color: #1e40af; }
+  .pill-muted { background: #f1f5f9; color: #475569; }
+  .pill-err { background: #fee2e2; color: #991b1b; }
+  blockquote { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 0.6rem 1rem; margin: 1rem 0; color: var(--ink-soft); border-radius: 0 6px 6px 0; }
+  pre.codeblk { background: #0f172a; color: #e2e8f0; padding: 1rem 1.2rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.65; margin: 0.75rem 0; }
+  pre.codeblk code { background: transparent; padding: 0; color: inherit; }
+  .section-card { background: white; border: 1px solid var(--line); border-radius: 10px; padding: 1.5rem 1.75rem; margin-bottom: 1.5rem; }
+  .anchor-link { color: #94a3b8; margin-left: 0.4rem; font-size: 0.85rem; opacity: 0; transition: opacity .15s; }
+  h2:hover .anchor-link { opacity: 1; }
+  .nav-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .mermaid { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; text-align: center; }
+  .callout-warn { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 0.75rem 1rem; border-radius: 0 6px 6px 0; margin: 1rem 0; }
+  ul.tight { list-style: disc; padding-left: 1.3rem; }
+  ul.tight li { margin: 0.2rem 0; }
+  @media print {
+    .no-print, nav, aside { display: none !important; }
+    main { max-width: none !important; padding: 0 !important; }
+    .section-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body x-data="{ activeSection: '#summary' }">
+
+<nav class="no-print sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-5 py-3 flex items-center gap-4">
+    <div class="font-bold text-slate-900 text-sm md:text-base">
+      AISEP × Claude Code Harness
+      <span class="hidden md:inline text-slate-400 font-normal ml-2">使用手册 · STEP 0</span>
+    </div>
+    <div class="ml-auto flex items-center gap-3 text-xs text-slate-500">
+      <span class="hidden md:inline">2026-06-11</span>
+      <span class="pill pill-ok">已完整实施</span>
+      <button onclick="window.print()" class="hidden md:inline px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 text-slate-700">打印 / PDF</button>
+    </div>
+  </div>
+</nav>
+
+<div class="max-w-7xl mx-auto px-5 py-8 flex gap-8">
+
+  <aside class="no-print hidden lg:block w-60 shrink-0">
+    <div class="sticky top-20">
+      <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">目录</div>
+      <ul class="space-y-1 text-sm">
+        <template x-for="item in [
+          {h:'#summary',t:'摘要'},
+          {h:'#sec1',t:'1. 这是什么'},
+          {h:'#sec2',t:'2. 快速开始'},
+          {h:'#sec3',t:'3. 完整工作流'},
+          {h:'#sec4',t:'4. 门禁 CLI 参考'},
+          {h:'#sec5',t:'5. 三层权威模型'},
+          {h:'#sec6',t:'6. 十条契约速查'},
+          {h:'#sec7',t:'7. 角色 agent 与 skill'},
+          {h:'#sec8',t:'8. 配置与回退'},
+          {h:'#sec9',t:'9. 故障排查'},
+          {h:'#sec10',t:'10. 设计依据'}
+        ]">
+          <li>
+            <a :href="item.h" :class="{'active': activeSection === item.h}"
+               @click="activeSection = item.h"
+               class="nav-link block px-3 py-1.5 rounded text-slate-600 hover:bg-slate-100"
+               x-text="item.t"></a>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+
+  <!-- ====== Hero ====== -->
+  <section id="summary" class="section-card">
+    <div class="flex flex-wrap items-center gap-2 mb-4 text-xs">
+      <span class="pill pill-info">STEP 0 · 有头模式</span>
+      <span class="pill pill-muted">AISEP6-6</span>
+      <span class="pill pill-ok">CI 绿</span>
+    </div>
+    <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">AISEP × Claude Code 工程 Harness — 完整使用手册</h1>
+    <div class="text-sm text-slate-500 mb-5">
+      项目 <code>github.com/Albertsun6/AISEP6-6</code>(public) · 基线 tag <code>archive/pre-harness</code> · 2026-06-11 完整实施
+    </div>
+    <blockquote class="!my-5">
+      <strong>一句话 ——</strong>
+      把 aiforge 七层方法论做成 Claude Code 的企业工程纪律层:薄门禁 CLI + 进程外强制层(GitHub CI)+ 会话内护栏,人当 supervisor。<strong>记住一句:会话内的一切都不是强制,真强制只在 GitHub CI。</strong>
+    </blockquote>
+    <div class="text-sm text-slate-600">面向<strong>使用者(人)</strong>。给 agent 的指令在 <code>CLAUDE.md</code>;架构为什么这么定在 <code>docs/decisions/</code>;接口契约在 <code>specs/contracts/</code>。</div>
+  </section>
+
+  <!-- ====== 1 ====== -->
+  <section id="sec1" class="section-card">
+    <h2 class="text-xl mb-4">1. 这套东西是什么 <a href="#sec1" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-4">一个把"AI 工程化开发企业软件"的方法论落成<strong>可执行纪律</strong>的骨架。它不替换 Claude Code 引擎,而是在其上叠三件事:</p>
+    <ol class="list-decimal list-inside text-slate-700 space-y-2 mb-4">
+      <li><strong>一条薄门禁 CLI</strong>(<code>python -m aiforge gate-*</code>)——把规格驱动的质量门(spec 验收结构、追溯链、静态风险、提交聚合)变成命令,<strong>永不调用模型</strong>,退出码可被脚本/CI 消费。</li>
+      <li><strong>进程外强制层</strong>(GitHub CI <code>gates</code> workflow)——唯一"AI 和人都绕不过"的层。本地钩子和会话护栏都只是反馈/防呆。</li>
+      <li><strong>状态落盘约定</strong>(<code>specs/&lt;feature-id&gt;/</code>)——每个特性的 spec/plan/tasks + 门禁回执(receipt)落文件,既是有头模式的状态存储,也是将来自动化 driver 的继承对象。</li>
+    </ol>
+    <blockquote><strong>核心心智:三层权威</strong>(详见 §5)。记住一句话就够——会话内的一切都不是强制,真强制只在 GitHub CI。</blockquote>
+  </section>
+
+  <!-- ====== 2 ====== -->
+  <section id="sec2" class="section-card">
+    <h2 class="text-xl mb-4">2. 快速开始 <a href="#sec2" class="anchor-link">#</a></h2>
+
+    <h3>2.1 跑起来(零安装,纯标准库)</h3>
+    <pre class="codeblk"><code>git clone https://github.com/Albertsun6/AISEP6-6.git
+cd AISEP6-6
+
+make test     # 跑全部测试(78 个,无需任何安装)
+make demo     # 端到端规格驱动 + 多 agent 编排(mock LLM,离线)
+make eval     # eval 四指标</code></pre>
+    <blockquote><strong>source-rooted:</strong>本项目用 <code>PYTHONPATH=src</code>,不是 pip 安装。<code>make</code> 已内置该环境变量;直接调 CLI 时必须自己带上(见 §4)。</blockquote>
+
+    <h3>2.2 启用本地门禁(可选,反馈层)</h3>
+    <pre class="codeblk"><code>make hooks    # = git config core.hooksPath .githooks</code></pre>
+    <p class="text-slate-700 mb-2">启用后每次 <code>git commit</code> 自动跑 <code>gate-commit</code>(feature 声明 + receipt 链 + lint + 静态风险)。这是<strong>反馈层</strong>,可用 <code>git commit --no-verify</code> 旁路——明文承认,真拦截在 CI。</p>
+
+    <h3>2.3 装可选开发依赖(lint 需要)</h3>
+    <pre class="codeblk"><code>make install-dev   # 装 ruff + import-linter</code></pre>
+    <p class="text-slate-700"><code>gate-commit</code> 的 lint 步骤是 fails-closed 的:ruff 缺失会让门禁退出码 <span class="pill pill-info">3</span> 基础设施错误,不是静默放行。</p>
+  </section>
+
+  <!-- ====== 3 ====== -->
+  <section id="sec3" class="section-card">
+    <h2 class="text-xl mb-4">3. 完整工作流:一个特性怎么走完管线 <a href="#sec3" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-3">每个特性一个 <code>specs/&lt;feature-id&gt;/</code> 目录(<code>feature-id</code> 小写 kebab-case)。阶段顺序与对应门禁:</p>
+
+    <div class="mermaid">
+flowchart LR
+    N["需求 spec.md"] --> GS{"gate-spec"}
+    GS --> A["架构 plan.md"]
+    A --> GT{"gate-trace"}
+    GT --> D["拆分 tasks.md"]
+    D --> IMPL["实现 developer reviewer tester"]
+    IMPL --> GJ{"gate-judge"}
+    GJ --> GC{"gate-commit"}
+    GC --> CI["GitHub CI gates 唯一强制层"]
+    classDef stage fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#064e3b
+    classDef gate fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#92400e
+    classDef enforce fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e40af
+    class N,A,D,IMPL stage
+    class GS,GT,GJ,GC gate
+    class CI enforce
+    </div>
+
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>步</th><th>你做什么</th><th>跑什么门禁</th><th>产物</th></tr></thead>
+      <tbody>
+        <tr><td>① 需求</td><td>写 <code>specs/&lt;id&gt;/spec.md</code>(Gherkin/EARS 验收结构 + 非功能清单)</td><td><code>gate-spec specs/&lt;id&gt;/spec.md</code></td><td>spec.md + <code>gates/gate-spec.json</code></td></tr>
+        <tr><td>② 架构</td><td>写 <code>plan.md</code>(声明 <code>&gt; refs: spec.md</code>)</td><td>—</td><td>plan.md</td></tr>
+        <tr><td>③ 拆分</td><td>写 <code>tasks.md</code>(声明 <code>&gt; refs: plan.md</code>)</td><td><code>gate-trace specs/&lt;id&gt;</code></td><td>tasks.md + receipt</td></tr>
+        <tr><td>④ 实现</td><td>写 <code>src/</code> 代码 + <code>tests/</code> 测试</td><td><code>gate-judge --staged</code>(随时)</td><td>代码/测试</td></tr>
+        <tr><td>⑤ 提交</td><td><code>git add</code> + 提交</td><td><code>gate-commit --feature &lt;id&gt;</code>(钩子自动)</td><td><code>gates/gate-commit.json</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="callout-warn"><strong>⚠ 铁律:</strong><code>src/</code>、<code>tests/</code> 的改动提交时必须声明所属 feature(<code>--feature &lt;id&gt;</code> 或 <code>AIFORGE_FEATURE=&lt;id&gt;</code>),且该 feature 有过 gate-spec receipt。否则被拒(退出码 1)——这就是"无 spec 不许写代码"的机器强制。</div>
+
+    <h3>用 skill 走需求阶段</h3>
+    <p class="text-slate-700">会话里直接说"走管线 / 起 spec / 需求工程",触发 <code>sdlc-requirements</code> skill:调 <code>analyst</code> 子代理产出 spec 草稿 → 跑 <code>gate-spec</code> → 不过则迭代,不带病推进。门禁怎么跑见 <code>sdlc-gate</code> skill。</p>
+  </section>
+
+  <!-- ====== 4 ====== -->
+  <section id="sec4" class="section-card">
+    <h2 class="text-xl mb-4">4. 门禁 CLI 完整参考 <a href="#sec4" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-3">所有命令前缀 <code>PYTHONPATH=src python3 -m aiforge</code>(或先 <code>export PYTHONPATH=src</code>)。</p>
+
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>命令</th><th>作用</th><th>退出码</th></tr></thead>
+      <tbody>
+        <tr><td><code>gate-spec specs/&lt;id&gt;/spec.md</code></td><td>P1:校验 spec 验收结构,过则落冻结 receipt</td><td><span class="pill pill-ok">0</span> <span class="pill pill-warn">1</span> <span class="pill pill-info">3</span></td></tr>
+        <tr><td><code>gate-spec --check …</code></td><td><strong>只读冻结校验</strong>(CI 用):验 spec 仍合法 <strong>且</strong>已提交 receipt 与当前内容相符,<strong>不重新生成 receipt</strong></td><td><span class="pill pill-ok">0</span> <span class="pill pill-warn">1</span> <span class="pill pill-info">3</span></td></tr>
+        <tr><td><code>gate-trace specs/&lt;id&gt;</code></td><td>P2:校验文档追溯链(plan→spec,tasks→plan 的 refs 解析)</td><td><span class="pill pill-ok">0</span> <span class="pill pill-warn">1</span> <span class="pill pill-info">3</span></td></tr>
+        <tr><td><code>gate-judge --staged</code></td><td>静态风险扫描三态(扫 <code>git diff --cached</code>)。<strong>永不调模型</strong></td><td><span class="pill pill-ok">0</span> <span class="pill pill-warn">2</span></td></tr>
+        <tr><td><code>gate-judge --base &lt;sha&gt;</code></td><td>同上,审 <code>&lt;sha&gt;...HEAD</code> 范围(CI 用)</td><td><span class="pill pill-ok">0</span> <span class="pill pill-warn">2</span></td></tr>
+        <tr><td><code>review-3f --staged</code></td><td>P7:三文件 review 必读清单(信息性)</td><td><span class="pill pill-ok">0</span></td></tr>
+        <tr><td><code>gate-commit --feature &lt;id&gt;</code></td><td>聚合:feature 声明 + receipt 链 + lint + 静态风险</td><td><span class="pill pill-ok">0</span> <span class="pill pill-warn">1</span> <span class="pill pill-warn">2</span> <span class="pill pill-info">3</span></td></tr>
+        <tr><td><code>gate-commit --ack-human</code></td><td>本地人审 ack(needs_human 时,<strong>仅审计</strong>,需 tty)</td><td>—</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>退出码语义(契约 03,所有消费方只认这四个)</h3>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>码</th><th>含义</th><th>消费方动作</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill pill-ok">0</span></td><td>approved,通过</td><td>放行</td></tr>
+        <tr><td><span class="pill pill-warn">1</span></td><td>rejected,内容问题(缺 spec / 链断 / receipt 过期 / lint 未过)</td><td>拒绝,按输出修内容后重跑</td></tr>
+        <tr><td><span class="pill pill-warn">2</span></td><td>needs_human,转人审</td><td>不得当通过;本地放行走 <code>--ack-human</code>(仅审计),<strong>权威放行=GitHub 人类账号 PR approval</strong></td></tr>
+        <tr><td><span class="pill pill-info">3</span></td><td>infra_error,基础设施错误(包 import 失败 / 配置缺失 / receipt 坏 / ruff 缺)</td><td>看 stderr 诊断,修好再来</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <blockquote>CI 与本地钩子遇到 <strong>0/1/2/3 之外的任何值</strong>(进程被杀 130/137、超时 124 等)一律按 infra_error 处理,不放行。</blockquote>
+
+    <h3>receipt(门禁回执)</h3>
+    <p class="text-slate-700 mb-2">每次门禁由 CLI 真实命令写出 <code>specs/&lt;id&gt;/gates/&lt;gate&gt;.json</code>,记录:gate 名、输入文件路径+sha256、退出码、decision、git HEAD、时间、工具版本、argv。这是对抗"长程自主静默跳阶段"的机器证据——<strong>跳了 = receipt 缺失 = gate-commit/CI 拒绝</strong>。</p>
+    <ul class="tight text-slate-700 text-sm">
+      <li><code>gate-spec</code>/<code>gate-trace</code> 的 receipt <strong>入库</strong>(冻结链/追溯需要)。</li>
+      <li><code>gate-commit</code> 的 receipt 是"记录本次提交"的产物,无法进它自己那个 commit,<strong>被 gitignore</strong>(本地反馈,权威=CI 重跑)。</li>
+    </ul>
+  </section>
+
+  <!-- ====== 5 ====== -->
+  <section id="sec5" class="section-card">
+    <h2 class="text-xl mb-4">5. 三层权威模型(最重要的心智) <a href="#sec5" class="anchor-link">#</a></h2>
+
+    <div class="mermaid">
+flowchart TD
+    subgraph L1["强制层 唯一真强制"]
+      CI["GitHub CI gates + branch protection + CODEOWNERS"]
+    end
+    subgraph L2["反馈层 可旁路"]
+      PC["本地 pre-commit (.githooks)"]
+    end
+    subgraph L3["会话护栏 防呆不防恶"]
+      DENY["permissions.deny"]
+    end
+    subgraph L4["建议层 模型可无视"]
+      MD["CLAUDE.md / constitution.md / skill 文案"]
+    end
+    MD -.可无视.-> L3
+    DENY -.可改设置绕过.-> L2
+    PC -.no-verify 旁路.-> L1
+    classDef enforce fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e40af
+    classDef feedback fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#064e3b
+    classDef guard fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#92400e
+    classDef advise fill:#f1f5f9,stroke:#94a3b8,stroke-width:1px,color:#475569
+    class CI enforce
+    class PC feedback
+    class DENY guard
+    class MD advise
+    </div>
+
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>层</th><th>机制</th><th>性质</th><th>谁能绕过</th></tr></thead>
+      <tbody>
+        <tr class="bg-emerald-50/40"><td><strong>强制层(唯一)</strong></td><td>GitHub CI(<code>gates</code>)+ branch protection + CODEOWNERS</td><td>对 AI 和人同等生效</td><td>仅 repo admin 走 break-glass</td></tr>
+        <tr><td>反馈层</td><td>本地 <code>.githooks/pre-commit</code></td><td>快速反馈,<strong>明文可旁路</strong></td><td>任何人/任何会话</td></tr>
+        <tr><td>会话护栏</td><td><code>permissions.deny</code></td><td>会话内摩擦,防呆不防恶</td><td>改 settings、换会话</td></tr>
+        <tr><td>建议层</td><td><code>CLAUDE.md</code> / <code>constitution.md</code> / skill 文案</td><td>模型可无视</td><td>模型自身</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <blockquote><strong>硬规则:</strong>会话内的一切编排(Workflow、Agent 工具、长程会话、本地 hooks)<strong>永远不是强制</strong>——它们是"被约束方自己执行的约束"。"已强制"四个字只能指向 GitHub 配置生效后的强制层。</blockquote>
+
+    <h3>GitHub 强制层配置(已配)</h3>
+    <ul class="tight text-slate-700 text-sm">
+      <li>branch protection on <code>main</code>:required status check = <strong><code>gates</code></strong>(名字钉死)、strict、需 PR、需 code-owner 审批。</li>
+      <li>CODEOWNERS 保护:<code>.github/</code>、<code>specs/contracts/</code>、<code>constitution.md</code>、<code>.githooks/</code> → <code>@Albertsun6</code>。</li>
+    </ul>
+    <div class="callout-warn"><strong>⚠ 已知偏差(你的裁决):</strong><code>enforce_admins=false</code>——强制层对 repo admin(你本人)不生效,只对其余主体生效。<strong>多操作者时须重开:</strong><code>gh api -X PUT repos/Albertsun6/AISEP6-6/branches/main/protection</code>(把 <code>enforce_admins</code> 设 true)。</div>
+  </section>
+
+  <!-- ====== 6 ====== -->
+  <section id="sec6" class="section-card">
+    <h2 class="text-xl mb-4">6. 十条冻结契约速查 <a href="#sec6" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-3">接口级约定,改了就全链断裂或数据不可比——动它们须走 PR + 人审 + 重跑异构评审。全文见 <code>specs/contracts/</code>。</p>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>契约</th><th>一句话</th></tr></thead>
+      <tbody>
+        <tr><td>01</td><td>权威层级</td><td>唯一强制=GitHub CI;会话内一切不算强制</td></tr>
+        <tr><td>02</td><td>基线与受保护路径</td><td>基线 tag + feature↔代码声明制 + 受保护路径</td></tr>
+        <tr><td>03</td><td>退出码</td><td>0/1/2/3;受控路径只产生这四个;fails-closed 用会失败的测试钉死</td></tr>
+        <tr><td>04</td><td>计费边界</td><td><code>aiforge</code> CLI 任何路径永不调模型</td></tr>
+        <tr><td>05</td><td>异构 fail-closed</td><td>judge 缺真异构 → 转人审,绝不作者模型自审;记评审者身份</td></tr>
+        <tr><td>06</td><td>receipt 链</td><td>每门禁落 receipt;CI 用 <code>gate-spec --check</code> 验冻结(不洗白篡改)</td></tr>
+        <tr><td>07</td><td><code>--ack-human</code> 双层</td><td>本地 ack 仅审计;权威放行=人类账号 PR approval;CI 不消费 ack</td></tr>
+        <tr><td>08</td><td>specs 布局 + 双宿主</td><td>目录契约;agent file-in/file-out、JSON 落 outputs/、定序逻辑不进 prompt</td></tr>
+        <tr><td>09</td><td>数据与安全</td><td>schema_version / hash 规范化 / secret 不入账 / CI 最小权限 / break-glass</td></tr>
+        <tr><td>10</td><td>模型配置</td><td>model/effort 显式配置;被拒参数 fail-closed;记实际模型;厂商事实进 vendor-facts.md</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <!-- ====== 7 ====== -->
+  <section id="sec7" class="section-card">
+    <h2 class="text-xl mb-4">7. 角色 agent 与阶段 skill <a href="#sec7" class="anchor-link">#</a></h2>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>资产</th><th>位置</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td><code>analyst</code>(需求→spec)</td><td><code>.claude/agents/analyst.md</code></td><td><span class="pill pill-ok">已物化</span></td></tr>
+        <tr><td>其余角色(architect/developer/reviewer/tester/verifier/judge)</td><td><code>.claude/agents/</code></td><td><span class="pill pill-muted">按需物化</span>(上限 7,非验收指标)</td></tr>
+        <tr><td><code>sdlc-requirements</code>(需求阶段)</td><td><code>.claude/skills/sdlc-requirements/</code></td><td><span class="pill pill-ok">已建</span></td></tr>
+        <tr><td><code>sdlc-gate</code>(门禁说明书)</td><td><code>.claude/skills/sdlc-gate/</code></td><td><span class="pill pill-ok">已建</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <blockquote><strong>双宿主规范</strong>(契约 08):任何角色 agent 必须 file-in/file-out、结构化 JSON 落 <code>specs/&lt;id&gt;/outputs/&lt;role&gt;.json</code>、<strong>定序逻辑不写进 prompt</strong>(下一步走哪由人/skill 决定)。规范冻结,提示词文案随用随改。</blockquote>
+  </section>
+
+  <!-- ====== 8 ====== -->
+  <section id="sec8" class="section-card">
+    <h2 class="text-xl mb-4">8. 配置在哪 / 怎么撤 <a href="#sec8" class="anchor-link">#</a></h2>
+
+    <h3>配置位置(全在 repo 内,删除即回退)</h3>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>配置</th><th>文件</th></tr></thead>
+      <tbody>
+        <tr><td>会话模型/算力/护栏</td><td><code>.claude/settings.json</code>(<code>model=claude-fable-5</code>、<code>effortLevel=xhigh</code>、deny 清单、Stop 提示 hook)</td></tr>
+        <tr><td>角色/技能/宪法导入</td><td><code>.claude/agents/</code>、<code>.claude/skills/sdlc-*</code>、<code>CLAUDE.md</code></td></tr>
+        <tr><td>本地钩子</td><td><code>.githooks/pre-commit</code></td></tr>
+        <tr><td>CI 强制层</td><td><code>.github/workflows/gates.yml</code>、<code>.github/CODEOWNERS</code></td></tr>
+        <tr><td>契约</td><td><code>specs/contracts/</code>(10 条 + <code>vendor-facts.md</code>)</td></tr>
+        <tr><td>成本台账</td><td><code>eval/cost-log.md</code>(双口径 schema,<strong>/cost 数值留空——本人决定不补</strong>)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>怎么撤</h3>
+    <ul class="tight text-slate-700 text-sm">
+      <li><strong>解本地钩子:</strong><code>git config --unset core.hooksPath</code>(回到无 pre-commit)。</li>
+      <li><strong>关 CI 强制:</strong>GitHub repo → Settings → Branches → 删 <code>main</code> 的 protection rule。</li>
+      <li><strong>整体回退:</strong>harness 资产都在上表路径,删除即回退;<code>git checkout archive/pre-harness</code> 是 harness 之前的状态。</li>
+    </ul>
+
+    <h3>0 号地雷(已处置)</h3>
+    <p class="text-slate-700">用户级 <code>~/.claude/settings.json</code> 的 <code>defaultMode=bypassPermissions</code> 保持现状(你的裁决);本 repo 已用项目级 <code>.claude/settings.json</code>(<code>acceptEdits</code>)覆盖。真锁定(managed-settings/MDM)是强制版事项,本 STEP 0 不建。</p>
+  </section>
+
+  <!-- ====== 9 ====== -->
+  <section id="sec9" class="section-card">
+    <h2 class="text-xl mb-4">9. 故障排查 <a href="#sec9" class="anchor-link">#</a></h2>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>症状</th><th>原因</th><th>解</th></tr></thead>
+      <tbody>
+        <tr><td><code>No module named aiforge</code></td><td>没带 <code>PYTHONPATH=src</code>(source-rooted,非 pip)</td><td>命令前加 <code>PYTHONPATH=src</code>,或用 <code>make</code> 目标</td></tr>
+        <tr><td>退出码 <span class="pill pill-info">3</span>,提示 ruff 不可用</td><td>lint fails-closed,缺开发依赖</td><td><code>make install-dev</code></td></tr>
+        <tr><td>退出码 <span class="pill pill-warn">1</span>,"必须声明 feature"</td><td>改了代码但没说属于哪个 feature</td><td><code>gate-commit --feature &lt;id&gt;</code> 或 <code>AIFORGE_FEATURE=&lt;id&gt;</code></td></tr>
+        <tr><td>退出码 <span class="pill pill-warn">1</span>,"receipt 过期/伪造"</td><td>改了 spec 却没重跑 gate-spec</td><td>重跑 <code>gate-spec</code> 后重新 <code>git add</code></td></tr>
+        <tr><td>退出码 <span class="pill pill-warn">2</span> 卡住提交</td><td>静态扫描命中(eval/exec/os.system),转人审</td><td>确认误报/有补偿控制 → tty 里 <code>gate-commit --ack-human</code>;权威放行走 PR approval</td></tr>
+        <tr><td>CI <code>gates</code> 红但本地绿</td><td>环境差异(如 verifier 无真隔离后端在 Linux fail-closed)</td><td>看 CI 日志具体步骤;测试已做环境感知,真红是真问题</td></tr>
+        <tr><td>pre-commit 没生效</td><td>没启用 hooksPath</td><td><code>make hooks</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <!-- ====== 10 ====== -->
+  <section id="sec10" class="section-card">
+    <h2 class="text-xl mb-4">10. 设计依据与延伸阅读 <a href="#sec10" class="anchor-link">#</a></h2>
+    <ul class="tight text-slate-700 text-sm mb-4">
+      <li><strong>怎么用</strong> → 本手册。</li>
+      <li><strong>为什么这么设计</strong> → <code>docs/decisions/AISEP-ClaudeCode架构决策文档.md</code>(ADR-001~014)。</li>
+      <li><strong>实施怎么落的</strong> → <code>docs/plans/AISEP-ClaudeCode有头先行实施方案-v2.md</code> + <code>specs/contracts/</code>。</li>
+      <li><strong>前期怎么论证的</strong> → <code>docs/research/</code>(harness 可行性、健康度报告)。</li>
+      <li><strong>异构评审留痕</strong> → <code>specs/contracts/REVIEW-2026-06-11*.md</code>(契约包 + M1 代码评审,自报 GPT-5.5)。</li>
+      <li><strong>文档总导航</strong> → <code>docs/README.md</code>。</li>
+    </ul>
+
+    <details class="mt-2 bg-slate-50 border border-slate-200 rounded-lg p-4">
+      <summary class="font-semibold text-slate-800">当前边界(刻意不做的)</summary>
+      <ul class="tight text-slate-700 text-sm mt-3">
+        <li><strong>Agent SDK driver</strong>(无人值守的进程外编排):四级升级阶梯第一级=人肉定序;硬触发(无人值守/跨会话权威/多操作者)未命中前<strong>刻意不建</strong>(Fable 5"少建设")。</li>
+        <li><strong>强制版</strong>(managed-settings/MDM/OTel/HMAC 审计):交付对象要求真锁时才启动。</li>
+        <li><strong>成本基线:</strong>已决定不补 <code>/cost</code> 数值。</li>
+        <li><strong>P6 外部集成</strong>(ERP/GitHub MCP/部署):需外部资源,不在 STEP 0 内。</li>
+      </ul>
+    </details>
+  </section>
+
+  <footer class="text-center text-xs text-slate-400 mt-8 mb-12">
+    生成自 <code>docs/USER-GUIDE.md</code> · 2026-06-11 · 单文件 HTML(Tailwind + Alpine + Mermaid CDN,双击即开)
+  </footer>
+
+  </main>
+</div>
+
+<script>
+  const sections = document.querySelectorAll('section[id]');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = '#' + entry.target.id;
+        const root = document.querySelector('[x-data]');
+        if (root && root._x_dataStack) {
+          root._x_dataStack[0].activeSection = id;
+        }
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
