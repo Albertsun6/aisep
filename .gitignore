@@ -23,3 +23,5 @@ env/
 AI工程化开发企业软件系统方案-调研/
 # /project-health 探针默认输出（若指定 --out 落到仓库内）
 .project-health/
+# 本机工具状态(cursor 本地 plan 等),非仓库资产
+.cursor/

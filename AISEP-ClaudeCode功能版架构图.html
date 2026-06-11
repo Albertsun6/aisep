@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AISEP × Claude Code 功能版架构图(三视角)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    securityLevel: "strict",
+    themeVariables: {
+      fontFamily: '"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif',
+      primaryColor: "#ecfdf5", primaryTextColor: "#064e3b", primaryBorderColor: "#10b981",
+      lineColor: "#475569", secondaryColor: "#eff6ff", tertiaryColor: "#fef9c3"
+    },
+    flowchart: { curve: "basis", padding: 18, useMaxWidth: true },
+    sequence: { useMaxWidth: true, wrap: true }
+  });
+</script>
+<style>
+  :root { --ink:#0f172a; --line:#e2e8f0; --bg:#fafaf9; --accent:#047857; }
+  body { font-family:"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+         color:var(--ink); background:var(--bg); line-height:1.75; margin:0; }
+  .wrap { max-width:1100px; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
+  h1 { font-size:1.5rem; font-weight:700; margin:0.2rem 0 0.3rem; }
+  h2 { font-size:1.15rem; font-weight:700; margin:0 0 0.2rem; padding-bottom:0.4rem;
+       border-bottom:2px solid #ecfdf5; }
+  .sub { color:#64748b; font-size:0.9rem; margin-bottom:1.5rem; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px;
+          padding:1.25rem 1.4rem; margin-bottom:1.5rem; }
+  .mermaid { overflow-x:auto; text-align:center; margin:0.5rem 0 0.8rem; }
+  .legend { background:#f8fafc; border-left:4px solid var(--accent); border-radius:0 8px 8px 0;
+            padding:0.7rem 1rem; font-size:0.9rem; color:#334155; }
+  .legend b { color:#0f172a; }
+  .pill { display:inline-block; padding:0.1rem 0.55rem; border-radius:999px; font-size:0.72rem;
+          font-weight:600; background:#d1fae5; color:#065f46; }
+  nav { position:sticky; top:0; z-index:30; background:rgba(255,255,255,.95); backdrop-filter:blur(6px);
+        border-bottom:1px solid var(--line); }
+  nav .inner { max-width:1100px; margin:0 auto; padding:0.7rem 1.25rem; display:flex; align-items:center; gap:0.75rem; }
+  nav b { font-size:0.95rem; } nav .tag { margin-left:auto; font-size:0.75rem; color:#64748b; }
+  @media print { nav { display:none; } .card { break-inside:avoid; border:none; } }
+</style>
+</head>
+<body>
+<nav><div class="inner">
+  <b>AISEP × Claude Code · 功能版架构图</b>
+  <span class="pill">抛开强制 · 只看功能</span>
+  <span class="tag">三视角:总览 / 管线 / 时序 · 2026-06-10</span>
+</div></nav>
+
+<div class="wrap">
+  <h1>AISEP 用 Claude Code 实现 —— 功能版架构(三视角)</h1>
+  <div class="sub">
+    这是"<b>抛开所有 fail-closed 强制约束、只看功能能不能跑通</b>"的架构。核心心智:<b>外层 SDK supervisor 是骨架</b>(定序/并行/resume)、<b>CC 引擎是每阶段的执行力</b>(角色子代理+技能+hooks+宪法)、<b>aiforge 纯 Python 核是大脑</b>(方法论判断,直接复用不重写)、MCP 接外部、OTel 记账。唯一非原生处:真·跨模型异构靠 shell-out cursor/codex。
+  </div>
+
+  <div class="card">
+    <h2>图 1 · 分层总览(什么跑在哪)</h2>
+    <div class="mermaid">
+flowchart TB
+  H["人 / 操作者：给需求 · 审批断点"]
+
+  subgraph OUTER["外层编排 — Agent SDK Supervisor (sdlc_driver.py)"]
+    SUP["确定性阶段定序 · decompose 并行 · resume · 阶段间调门禁"]
+  end
+
+  subgraph ENGINE["Claude Code 引擎 — 每阶段一次 query()"]
+    SK["技能 Skills：requirements(P3) / architecture(PA) / decompose / integrate"]
+    AG["角色子代理：analyst · architect · developer · reviewer · tester · verifier · judge"]
+    HK["Hooks：质量门当功能跑(出报告/checklist)"]
+    CM["CLAUDE.md：宪法 P1-P9 + 上下文(建议层)"]
+  end
+
+  subgraph CORE["复用 — aiforge 纯 Python 方法论核(不重写)"]
+    GATES["gates 逻辑 · EARS 校验 · 依赖图 · judge 投票 · 四指标"]
+  end
+
+  subgraph MCP["MCP 外部集成"]
+    GH["GitHub"]
+    ERP["Odoo / ERP"]
+    HET["异构桥：cursor · codex(真·跨模型)"]
+  end
+
+  OBS["观测/审计：OTel + transcript → 看板"]
+
+  H -->|需求 / 审批| SUP
+  SUP -->|每阶段驱动| ENGINE
+  AG -.读.-> CM
+  AG -.用.-> SK
+  SUP -->|阶段间判过没过| GATES
+  ENGINE -->|调用判断| GATES
+  ENGINE -->|集成| MCP
+  AG -->|独立评审| HET
+  ENGINE --> OBS
+  SUP --> OBS
+
+  classDef outer fill:#eff6ff,stroke:#3b82f6,color:#1e3a8a
+  classDef engine fill:#ecfdf5,stroke:#10b981,color:#064e3b
+  classDef core fill:#fef9c3,stroke:#ca8a04,color:#713f12
+  class SUP outer
+  class SK,AG,HK,CM engine
+  class GATES core
+    </div>
+    <div class="legend">
+      <b>读法:</b>外层 SDK supervisor 是<b>骨架</b>(定序、并行、resume);CC 引擎是<b>每阶段的执行力</b>;黄色 aiforge 核是<b>大脑</b>(所有方法论判断,直接复用);MCP 接外部世界,OTel 记账。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>图 2 · SDLC 管线流程(一次需求怎么流过去)</h2>
+    <div class="mermaid">
+flowchart LR
+  N["需求 needs"] --> P3["需求工程 P3：EARS 验收标准"]
+  P3 --> G1{"门：spec 结构 + 独立歧义/oracle"}
+  G1 -. 歧义 .-> HIL1["人审断点"]
+  HIL1 -. 批准 .-> PA
+  G1 -->|过| PA["架构设计 PA：质量属性 + 选型 + ADR"]
+  PA --> G2{"门：fitness 架构红线"}
+  G2 --> DEC["decompose：拆成多特性"]
+
+  subgraph FEAT["每个特性一条并行管线（fan-out）"]
+    direction LR
+    DEV["developer 写码"] --> REV["reviewer 评审"] --> TST["tester 测试"] --> JDG["judge 选优 + 异构"]
+  end
+
+  DEC --> FEAT
+  FEAT --> INT["integrate：共享契约 + 依赖图装配"]
+  INT --> VER["verifier：沙箱真跑 + 集成测试"]
+  VER --> DONE["交付"]
+
+  classDef gate fill:#fee2e2,stroke:#ef4444,color:#991b1b
+  classDef hil fill:#fef9c3,stroke:#ca8a04,color:#713f12
+  class G1,G2 gate
+  class HIL1 hil
+    </div>
+    <div class="legend">
+      <b>读法:</b>红色菱形是<b>质量门</b>(过不了就停);黄色是<b>人审断点</b>;<code>decompose</code> 后<b>多个特性各跑一条 dev→review→test→judge 并行管线</b>,再 <code>integrate</code> 按依赖图装配、<code>verifier</code> 真跑验收。对应骨架的 realrun / decompose / integrate。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>图 3 · 调用时序(supervisor 怎么指挥一次特性)</h2>
+    <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant H as 人
+  participant D as Driver外层
+  participant C as CC角色子代理
+  participant K as aiforge核
+  participant X as 异构桥
+  participant O as 审计OTel
+
+  H->>D: 给需求
+  D->>C: P3 调 analyst 产结构化 spec
+  C-->>D: spec + EARS 验收标准
+  D->>K: 跑 SpecGate / EARS 校验
+  K-->>D: 过 或 报歧义
+  alt 有歧义
+    D->>H: 请澄清(审批断点)
+    H-->>D: 批准 / 修改
+  end
+  D->>C: PA 调 architect 出设计
+  D->>K: fitness 架构红线
+  D->>C: 调 developer 写码
+  D->>C: 调 reviewer / tester
+  D->>X: 请独立(非 Claude)评审
+  X-->>D: 异构意见
+  D->>K: judge 投票选优 + 质量门
+  D->>O: 每一步落审计事件
+  D-->>H: 交付 / 转人审
+    </div>
+    <div class="legend">
+      <b>读法:</b><b>Driver(外层)是总指挥</b>——它不写代码,只"派活给角色子代理 → 产物交给 aiforge 核判过没过 → 该选优时请异构桥 → 每步记账"。注意 <code>judge</code> 那步会<b>出 CC 进程调 cursor/codex</b>(全图唯一非原生处)。
+    </div>
+  </div>
+
+  <div class="sub" style="margin-top:0.5rem">
+    三视角分别回答:<b>东西怎么摆(图1)、活怎么流(图2)、谁指挥谁(图3)</b>。这是功能蓝图,不含强制脚手架(managed 锁 / HMAC sink / 进程外审批 / attestation —— 那些是"防 AI 掀翻"的,功能版不需要)。
+  </div>
+</div>
+</body>
+</html>
