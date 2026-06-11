@@ -229,26 +229,62 @@ def derive_feature_id(spec_path: Path, repo_root: Path, declared: str | None) ->
     return WORKSPACE_FEATURE
 
 
+def _spec_decision(spec_path: Path, feature_id: str) -> tuple[str, list[str]]:
+    """SpecGate 结构校验(只读,不写 receipt)。"""
+    if not spec_path.exists() or not spec_path.read_text(encoding="utf-8").strip():
+        return REJECTED, ["P1: 无 spec / spec 为空,拒绝推进"]
+    state = PipelineState(feature_id=feature_id, request="harness:gate-spec")
+    state.add_artifact(Artifact(kind=ArtifactKind.SPEC, content=spec_path.read_text(encoding="utf-8"), produced_by="file"))
+    res = SpecGate().check(state, {})
+    if res.passed:
+        return APPROVED, []
+    return REJECTED, [res.reason, "缺什么:验收结构需 Gherkin(Given/When/Then) 或 EARS(shall+when/if/while/where) 或 User Story+验收标记,且 ≥40 字符"]
+
+
 def gate_spec(spec_path: Path, repo_root: Path, feature_id: str, argv: list[str]) -> tuple[str, list[str]]:
     validate_feature_id(feature_id)
-    msgs: list[str] = []
-    inputs: list[dict[str, str]] = []
     if spec_path.is_symlink():
         raise InfraError(f"{spec_path} 是 symlink(契约 09)")
-    if not spec_path.exists() or not spec_path.read_text(encoding="utf-8").strip():
-        decision, msgs = REJECTED, ["P1: 无 spec / spec 为空,拒绝推进"]
-    else:
-        inputs = [{"path": _rel_posix(spec_path, repo_root), "sha256": sha256_file(spec_path)}]
-        state = PipelineState(feature_id=feature_id, request="harness:gate-spec")
-        state.add_artifact(Artifact(kind=ArtifactKind.SPEC, content=spec_path.read_text(encoding="utf-8"), produced_by="file"))
-        res = SpecGate().check(state, {})
-        decision = APPROVED if res.passed else REJECTED
-        if not res.passed:
-            msgs = [res.reason, "缺什么:验收结构需 Gherkin(Given/When/Then) 或 EARS(shall+when/if/while/where) 或 User Story+验收标记,且 ≥40 字符"]
+    decision, msgs = _spec_decision(spec_path, feature_id)
+    inputs = (
+        [{"path": _rel_posix(spec_path, repo_root), "sha256": sha256_file(spec_path)}]
+        if decision == APPROVED else []
+    )
     receipt = build_receipt(gate="gate-spec", feature_id=feature_id, inputs=inputs,
                             decision=decision, repo_root=repo_root, argv=argv)
     write_receipt(receipt, repo_root)
     return decision, msgs
+
+
+def gate_spec_check(spec_path: Path, repo_root: Path, feature_id: str) -> tuple[str, list[str]]:
+    """**只读冻结校验**(CI 用,契约 02/06):验证 spec 仍结构合法 **且** 已存在的
+    gate-spec receipt 与当前 spec 内容相符——**不重新生成 receipt**。
+
+    catches:改了冻结 spec 但不重跑 gate-spec(receipt 过期)→ 1;伪造 receipt(结构非法/
+    hash 不符)→ 1;无 receipt → 1;receipt 坏/版本不识别 → 3。
+    """
+    validate_feature_id(feature_id)
+    if spec_path.is_symlink():
+        raise InfraError(f"{spec_path} 是 symlink(契约 09)")
+    decision, msgs = _spec_decision(spec_path, feature_id)
+    if decision != APPROVED:
+        return decision, msgs
+    rcpt_path = spec_path.parent / "gates" / "gate-spec.json"
+    if not rcpt_path.exists():
+        return REJECTED, [f"冻结校验:缺 gate-spec receipt({rcpt_path}),spec 未经门禁冻结"]
+    rcpt = load_receipt(rcpt_path)
+    if rcpt.get("gate") != "gate-spec" or rcpt.get("feature_id") != feature_id:
+        return REJECTED, [f"冻结校验:receipt 元数据不符(gate={rcpt.get('gate')!r}, feature_id={rcpt.get('feature_id')!r})"]
+    if rcpt.get("decision") != APPROVED or rcpt.get("exit_code") != 0:
+        return REJECTED, [f"冻结校验:receipt decision={rcpt.get('decision')},非 approved"]
+    rel = _rel_posix(spec_path, repo_root)
+    want = {i.get("path"): i.get("sha256") for i in rcpt.get("inputs", []) if isinstance(i, dict)}
+    if want.get(rel) != sha256_file(spec_path):
+        return REJECTED, [
+            "冻结校验:spec.md 内容与 receipt 记录的 hash 不符——改了冻结 spec 却未重跑 gate-spec"
+            "(或 receipt 被伪造)。授权变更须走 specs/contracts/02 流程后重跑 gate-spec。"
+        ]
+    return APPROVED, [f"冻结校验通过:{rel} 与 receipt 一致"]
 
 
 _CHAIN = (("plan.md", "spec.md"), ("tasks.md", "plan.md"))

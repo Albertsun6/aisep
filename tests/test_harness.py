@@ -99,6 +99,42 @@ class TestGateSpec(_RepoCase):
         self.assertEqual(cli_main(["gate-spec", str(link)]), 3)
 
 
+class TestGateSpecCheckFrozen(_RepoCase):
+    """probe③ 落改:--check 只读冻结校验,改冻结 spec 不重跑 gate-spec 即被抓。"""
+
+    def test_check_passes_when_receipt_matches(self):
+        spec = self.write_spec()
+        self.assertEqual(cli_main(["gate-spec", str(spec)]), 0)
+        self.assertEqual(cli_main(["gate-spec", "--check", str(spec)]), 0)
+
+    def test_check_does_not_write_receipt(self):
+        """关键:--check 不重新生成 receipt(否则会洗白篡改)。"""
+        spec = self.write_spec()
+        self.assertEqual(cli_main(["gate-spec", str(spec)]), 0)
+        before = self.receipt_path("feat-x", "gate-spec").read_text()
+        spec.write_text(GHERKIN_SPEC + "\n篡改但仍结构合法\n")
+        self.assertEqual(cli_main(["gate-spec", "--check", str(spec)]), 1)  # 抓到
+        after = self.receipt_path("feat-x", "gate-spec").read_text()
+        self.assertEqual(before, after, "--check 不得改写 receipt")
+
+    def test_check_rejects_tampered_frozen_spec(self):
+        """probe③ 复刻:gate-spec 通过后篡改 spec(仍 Gherkin 合法)→ --check 1。"""
+        spec = self.write_spec()
+        self.assertEqual(cli_main(["gate-spec", str(spec)]), 0)
+        spec.write_text(GHERKIN_SPEC + "\n## 偷偷追加(未过 gate)\nGiven x When y Then z\n")
+        self.assertEqual(cli_main(["gate-spec", "--check", str(spec)]), 1)
+
+    def test_check_missing_receipt_rejected(self):
+        spec = self.write_spec()  # 没跑过 gate-spec,无 receipt
+        self.assertEqual(cli_main(["gate-spec", "--check", str(spec)]), 1)
+
+    def test_check_corrupt_receipt_is_infra(self):
+        spec = self.write_spec()
+        self.assertEqual(cli_main(["gate-spec", str(spec)]), 0)
+        self.receipt_path("feat-x", "gate-spec").write_text("{bad")
+        self.assertEqual(cli_main(["gate-spec", "--check", str(spec)]), 3)
+
+
 class TestGateTrace(_RepoCase):
     def test_spec_only_passes(self):
         self.write_spec()

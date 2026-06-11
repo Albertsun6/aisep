@@ -142,6 +142,10 @@ def _cmd_gate_spec(args: argparse.Namespace) -> int:
     spec = Path(args.spec)
     root = harness.find_repo_root(spec if spec.exists() else Path.cwd())
     fid = harness.derive_feature_id(spec, root, args.feature)
+    if args.check:
+        # 只读冻结校验:不写 receipt,比对已存在 receipt(CI 用,契约 02/06)
+        decision, msgs = harness.gate_spec_check(spec, root, fid)
+        return _emit("gate-spec --check", decision, msgs)
     decision, msgs = harness.gate_spec(spec, root, fid, argv=["gate-spec", args.spec])
     return _emit("gate-spec", decision, msgs)
 
@@ -232,6 +236,8 @@ def main(argv: list[str] | None = None) -> int:
     p_gs = sub.add_parser("gate-spec", help="P1: 校验 spec.md 验收结构(0/1/3)")
     p_gs.add_argument("spec", help="spec.md 路径")
     p_gs.add_argument("--feature", default=None, help="feature id(默认从 specs/<id>/ 推导)")
+    p_gs.add_argument("--check", action="store_true",
+                      help="只读冻结校验:比对已存在 receipt,不重新生成(CI 用,契约 02)")
     p_gs.set_defaults(func=_cmd_gate_spec)
 
     p_gt = sub.add_parser("gate-trace", help="P2: 校验 specs/<id>/ 文档追溯链(0/1/3)")

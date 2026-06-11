@@ -47,16 +47,18 @@ jobs:
             echo "::error::无 spec 的代码改动(契约 02:src/tests 须随附 specs/<id>/ 产物或走 break-glass)"
             exit 1
           fi
-      - name: 权威重跑 gate-spec / gate-trace(对 PR 涉及的 specs,契约 06-4)
+      - name: 冻结校验 + 追溯(对 PR 涉及的 specs,契约 02/06-4)
         run: |
           BASE="${{ steps.base.outputs.sha }}"
           set -e
           for spec in $(git diff --no-ext-diff --name-only "$BASE"...HEAD -- 'specs/*/spec.md' | grep -v '^specs/contracts/' || true); do
-            [ -f "$spec" ] || continue  # 删除的 spec 不重跑
-            echo "== re-run gate-spec $spec =="
-            PYTHONPATH=src python3 -m aiforge gate-spec "$spec"
+            [ -f "$spec" ] || continue  # 删除的 spec 不校验
             dir=$(dirname "$spec")
-            echo "== re-run gate-trace $dir =="
+            # --check 只读:验证 spec 仍合法 AND 已提交 receipt 与 spec 一致(改了冻结 spec
+            # 却不重跑 gate-spec → receipt 过期 → 1)。**不重新生成 receipt**(否则会洗白篡改)。
+            echo "== gate-spec --check $spec =="
+            PYTHONPATH=src python3 -m aiforge gate-spec --check "$spec"
+            echo "== gate-trace $dir =="
             PYTHONPATH=src python3 -m aiforge gate-trace "$dir"
           done
       - name: gate-judge(PR 范围 diff;needs_human=2 即红——CI 不消费本地 ack,契约 07)
