@@ -68,6 +68,60 @@ class TestExitMapper(unittest.TestCase):
         self.assertEqual(harness.EXIT, {"approved": 0, "rejected": 1, "needs_human": 2, "infra_error": 3})
 
 
+class TestGateAuditLog(_RepoCase):
+    """spec: specs/gate-audit-log — 每次 gate 追加一行到 .aiforge/audit/gates.jsonl(fail-open)。"""
+
+    def _audit_lines(self) -> list:
+        p = self.tmp / ".aiforge" / "audit" / "gates.jsonl"
+        if not p.exists():
+            return []
+        return [json.loads(ln) for ln in p.read_text(encoding="utf-8").splitlines() if ln.strip()]
+
+    def test_gate_appends_audit_row(self):
+        """验收1:跑 gate-spec → 审计追加一行,含约定字段。"""
+        spec = self.write_spec()
+        self.assertEqual(cli_main(["gate-spec", str(spec)]), 0)
+        rows = self._audit_lines()
+        self.assertEqual(len(rows), 1)
+        for key in ("created_at", "gate", "feature_id", "decision", "exit_code", "git_head", "run_id"):
+            self.assertIn(key, rows[0])
+        self.assertEqual(rows[0]["gate"], "gate-spec")
+        self.assertEqual(rows[0]["decision"], "approved")
+
+    def test_append_not_overwrite(self):
+        """验收2:连跑多个 gate → 多行,append 不覆盖(第一行原样保留)。"""
+        spec = self.write_spec()
+        cli_main(["gate-spec", str(spec)])
+        first = self._audit_lines()[0]
+        cli_main(["gate-trace", "specs/feat-x"])
+        rows = self._audit_lines()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0], first)  # 旧行不变
+        self.assertEqual(rows[1]["gate"], "gate-trace")
+
+    def test_audit_dir_autocreated(self):
+        """验收3:.aiforge/audit 不存在 → 自动创建,gate 不报错。"""
+        self.assertFalse((self.tmp / ".aiforge" / "audit").exists())
+        spec = self.write_spec()
+        self.assertEqual(cli_main(["gate-spec", str(spec)]), 0)
+        self.assertTrue((self.tmp / ".aiforge" / "audit" / "gates.jsonl").exists())
+
+    def test_audit_write_failure_is_fail_open(self):
+        """验收4:审计写失败 → gate 退出码不变(fail-open),仅 stderr 警告。"""
+        import io
+        from contextlib import redirect_stderr
+        spec = self.write_spec()
+        # 让 .aiforge/audit 变成一个文件,使其下 mkdir/写入失败
+        adir = self.tmp / ".aiforge"
+        adir.mkdir()
+        (adir / "audit").write_text("not a dir", encoding="utf-8")  # audit 是文件,mkdir 会 OSError
+        err = io.StringIO()
+        with redirect_stderr(err):
+            rc = cli_main(["gate-spec", str(spec)])
+        self.assertEqual(rc, 0)  # gate 判定不受影响
+        self.assertIn("审计追加失败", err.getvalue())  # 但有警告
+
+
 class TestGateSpec(_RepoCase):
     def test_valid_spec_approved_with_receipt(self):
         spec = self.write_spec()

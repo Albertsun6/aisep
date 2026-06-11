@@ -195,7 +195,25 @@ def write_receipt(receipt: dict, repo_root: Path) -> Path:
     if dest.is_symlink():
         raise InfraError(f"{dest} 是 symlink,拒绝覆盖(契约 09)")
     dest.write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    _append_audit(receipt, repo_root)  # spec: gate-audit-log(旁路,fail-open)
     return dest
+
+
+# receipt 同 gate 重跑会覆盖;审计是 append-only 本地时间线,补"何时跑过哪些 gate"(spec: gate-audit-log)。
+# **诚实定位**:本地流水,非防篡改(可删改;真防篡改=HMAC 链+外部 sink,契约 06 强制版推迟)。
+_AUDIT_FIELDS = ("created_at", "gate", "feature_id", "decision", "exit_code", "git_head", "run_id")
+
+
+def _append_audit(receipt: dict, repo_root: Path) -> None:
+    """fail-open(supervisor 拍板):写失败只 stderr 警告,绝不改 gate 判定/退出码。"""
+    try:
+        audit_dir = repo_root / ".aiforge" / "audit"
+        audit_dir.mkdir(parents=True, exist_ok=True)
+        row = {k: receipt.get(k) for k in _AUDIT_FIELDS}  # 子集字段,无文件内容/secret
+        with (audit_dir / "gates.jsonl").open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+    except OSError as exc:
+        print(f"[audit] 审计追加失败(旁路,不影响门禁): {exc}", file=sys.stderr)
 
 
 def load_receipt(path: Path) -> dict:

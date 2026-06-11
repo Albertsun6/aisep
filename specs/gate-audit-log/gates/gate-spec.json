@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "run_id": "0909ac70-5822-4320-ae6e-afcbd670e8e1",
+  "gate": "gate-spec",
+  "feature_id": "gate-audit-log",
+  "inputs": [
+    {
+      "path": "specs/gate-audit-log/spec.md",
+      "sha256": "42e86c1ffaf9cb47d4e4c80ff552e648d2341f3e9bce6c765a0aa21648ee18af"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "a51d169a76d6cb081249b975cfacf720b28e6503",
+  "git_dirty": true,
+  "created_at": "2026-06-11T20:29:47.026558+08:00",
+  "tool": "aiforge gate-spec",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-spec",
+    "specs/gate-audit-log/spec.md"
+  ],
+  "ack": null,
+  "reviewer": null
+}
