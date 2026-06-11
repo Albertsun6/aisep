@@ -2,9 +2,10 @@
 PY ?= python3
 export PYTHONPATH := src
 
-.PHONY: help test lint arch fmt demo eval clean install-dev hooks gate-commit gate-feature
+.PHONY: help test lint arch fmt demo eval clean install-dev hooks gate-commit gate-feature bootstrap
 
 help:
+	@echo "make bootstrap  新克隆后一键: 装 lint 依赖 + 激活本地门禁钩子（见 docs/DEPLOY.md）"
 	@echo "make test       跑全部测试（标准库 unittest，无需安装）"
 	@echo "make demo       端到端规格驱动 + 多 agent 编排（mock LLM，离线）"
 	@echo "make eval       跑 eval 集，输出四个生产指标"
@@ -15,6 +16,12 @@ help:
 	@echo "make hooks      安装 repo 内 git hooks（core.hooksPath=.githooks，反馈层）"
 	@echo "make gate-commit  本地聚合门禁（pre-commit 同款；0/1/2/3 见 specs/contracts/03）"
 	@echo "make gate-feature 门禁链全量（CI 'gates' check 同款）"
+
+# 新克隆/新机器一键就绪（GitHub 强制层另用 scripts/setup-github-protection.sh，见 docs/DEPLOY.md）
+bootstrap: install-dev hooks
+	@echo "✓ 本地就绪: lint 依赖已装 + .githooks 已激活。"
+	@echo "  门禁验证: make test && make arch"
+	@echo "  GitHub 强制层(推到新 remote 后): scripts/setup-github-protection.sh <owner/repo>"
 
 test:
 	$(PY) -m unittest discover -s tests -p "test_*.py" -v

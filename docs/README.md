@@ -9,6 +9,7 @@
 |---|---|---|
 | [GETTING-STARTED.md](GETTING-STARTED.md) | **第一次用的人** | 手把手照着敲,15 分钟从零跑通一个特性(所有输出真机捕获) |
 | [USER-GUIDE.md](USER-GUIDE.md) | 已上手、要查命令的人 | 按主题组织的完整参考(CLI / 三层权威 / 10 契约 / 故障排查) |
+| [DEPLOY.md](DEPLOY.md) | 部署/迁移到新机器或新 GitHub repo 的人 | 哪些在 repo、哪些要重建(`make bootstrap` + 强制层脚本);唯一会静默降级安全的坑 |
 
 > **交互增强版**:每份都有同名 `.html`(粘性目录 + Mermaid 流程图),在 `docs/` 下**双击即开**。
 > 注:`GETTING-STARTED.html` 含 `eval`/`os.system` **代码示例**(教"危险代码长什么样"),按
