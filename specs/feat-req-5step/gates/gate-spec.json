@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "run_id": "ed14722a-3942-482b-afc4-78b45dcbb84c",
+  "gate": "gate-spec",
+  "feature_id": "feat-req-5step",
+  "inputs": [
+    {
+      "path": "specs/feat-req-5step/spec.md",
+      "sha256": "0dbb9f6b91f3906844735c5723df4cb713fd6935059781be55122306117cf5db"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "20b28664a48318daaadfc9bf9b5791fdcd858a67",
+  "git_dirty": true,
+  "created_at": "2026-06-12T22:54:47.565468+08:00",
+  "tool": "aiforge gate-spec",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-spec",
+    "specs/feat-req-5step/spec.md"
+  ],
+  "ack": null,
+  "reviewer": null
+}
