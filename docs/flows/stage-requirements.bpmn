@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 讨论稿 to-be v2:requirements 阶段 5 步渐进细化(R1-R5),依据《需求工程化细化全流程》调研报告 §推荐
+     + 用户补充:输入不限形态(一句话/会议纪要/BRD);track 三档 fast/standard/epic,epic 在 R2 后拆分分形回流。
+     as-is 对照:stage-requirements.bpmn。主图 docs/flows/sdlc-pipeline.bpmn 不动。 -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="defs_stage_req_tobe" targetNamespace="http://aiforge.example/bpmn">
+  <bpmn:collaboration id="collab_req_tobe">
+    <bpmn:participant id="pool_req_tobe" name="需求阶段 to-be:R1-R5 渐进细化(三档分流)" processRef="proc_req_tobe"/>
+  </bpmn:collaboration>
+  <bpmn:process id="proc_req_tobe" isExecutable="false">
+    <bpmn:laneSet id="lanes_req_tobe">
+      <bpmn:lane id="lane_h2" name="人类(用户)— 决策者">
+        <bpmn:flowNodeRef>start_tobe</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r2b</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r3b</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r4</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="lane_c2" name="Claude 角色 — 放大器">
+        <bpmn:flowNodeRef>r1a</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>gw_track</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r2a</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>gw_split</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r_split</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>end_epic</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r3a</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r5</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>end_tobe</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="lane_g2" name="门禁 CLI(aiforge,无模型通道)">
+        <bpmn:flowNodeRef>gate_intent</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>gate_scope</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>gate_spec2</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="lane_ci2" name="CI 权威(gates.yml,PR 时)">
+        <bpmn:flowNodeRef>ci_check2</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="start_tobe" name="原始输入(任意形态)"/>
+    <bpmn:task id="r1a" name="AI 萃取原始输入:要点/分歧/未决问题"/>
+    <bpmn:userTask id="r1" name="R1 意图简报:人主写/改定 intent.md"/>
+    <bpmn:serviceTask id="gate_intent" name="gate-intent:必填节+non-goals 非空+track 合法,写 receipt"/>
+    <bpmn:exclusiveGateway id="gw_track" name="track?(人定 appetite)"/>
+    <bpmn:task id="r2a" name="R2 AI 生成发现地图:backbone+候选+假设"/>
+    <bpmn:userTask id="r2b" name="R2 人圈范围:in/out 两张表"/>
+    <bpmn:serviceTask id="gate_scope" name="gate-scope:in→intent 可追溯+out 非空,写 receipt"/>
+    <bpmn:exclusiveGateway id="gw_split" name="范围=单 feature?"/>
+    <bpmn:task id="r_split" name="按 release 切片拆 N 个子 feature(人定序)"/>
+    <bpmn:endEvent id="end_epic" name="子 feature 逐个回流本流程(分形)"/>
+    <bpmn:task id="r3a" name="R3 AI 按维度矩阵出 [NEEDS CLARIFICATION] 问题"/>
+    <bpmn:userTask id="r3b" name="R3 人作答:红卡清零或显式 defer"/>
+    <bpmn:userTask id="r4" name="R4 优先级+首版切片:AI 算分,人改定 → scope.md"/>
+    <bpmn:task id="r5" name="R5 analyst 起草 spec.md:fit criterion+trace 回上游"/>
+    <bpmn:serviceTask id="gate_spec2" name="gate-spec 升级:结构+标记清零+trace 链,写 receipt"/>
+    <bpmn:endEvent id="end_tobe" name="spec 冻结"/>
+    <bpmn:serviceTask id="ci_check2" name="CI:gate-* --check 只读复验(PR 时)"/>
+    <bpmn:sequenceFlow id="t1" sourceRef="start_tobe" targetRef="r1a"/>
+    <bpmn:sequenceFlow id="t1b" sourceRef="r1a" targetRef="r1"/>
+    <bpmn:sequenceFlow id="t2" sourceRef="r1" targetRef="gate_intent"/>
+    <bpmn:sequenceFlow id="t3" sourceRef="gate_intent" targetRef="gw_track"/>
+    <bpmn:sequenceFlow id="t4" name="standard / epic" sourceRef="gw_track" targetRef="r2a"/>
+    <bpmn:sequenceFlow id="t5" name="fast(微变更)" sourceRef="gw_track" targetRef="r5"/>
+    <bpmn:sequenceFlow id="t6" sourceRef="r2a" targetRef="r2b"/>
+    <bpmn:sequenceFlow id="t7" sourceRef="r2b" targetRef="gate_scope"/>
+    <bpmn:sequenceFlow id="t8" sourceRef="gate_scope" targetRef="gw_split"/>
+    <bpmn:sequenceFlow id="t8b" name="是" sourceRef="gw_split" targetRef="r3a"/>
+    <bpmn:sequenceFlow id="t8c" name="否(epic)" sourceRef="gw_split" targetRef="r_split"/>
+    <bpmn:sequenceFlow id="t8d" sourceRef="r_split" targetRef="end_epic"/>
+    <bpmn:sequenceFlow id="t9" sourceRef="r3a" targetRef="r3b"/>
+    <bpmn:sequenceFlow id="t10" name="新红卡↻" sourceRef="r3b" targetRef="r3a"/>
+    <bpmn:sequenceFlow id="t11" name="红卡清零" sourceRef="r3b" targetRef="r4"/>
+    <bpmn:sequenceFlow id="t12" sourceRef="r4" targetRef="r5"/>
+    <bpmn:sequenceFlow id="t13" sourceRef="r5" targetRef="gate_spec2"/>
+    <bpmn:sequenceFlow id="t14" sourceRef="gate_spec2" targetRef="end_tobe"/>
+    <bpmn:textAnnotation id="ann_input2">
+      <bpmn:text>原始输入不限形态:一句话/业务会议纪要/BRD 草稿/聊天记录——AI 先萃取(要点/分歧/未决),人后改定;intent 记 source 出处</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:textAnnotation id="ann_r1b">
+      <bpmn:text>人主写/改定:problem/为谁/成功指标/non-goals/appetite;AI 只问与萃取,不代填业务判断</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:textAnnotation id="ann_track2">
+      <bpmn:text>track 三档:fast 微变更(如"调整页面位置",须 track: fast 留痕)/ standard 单特性 / epic 史诗级(如"做个 ERP")</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:textAnnotation id="ann_gates2">
+      <bpmn:text>三个 gate 均写 receipt;退出码同契约03(0 进/1 回环修产物/3 修环境)——回环线略以保可读</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:textAnnotation id="ann_scope2">
+      <bpmn:text>out 表非空=强制显式排除(没有排除=没做范围决策)</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:textAnnotation id="ann_epic2">
+      <bpmn:text>epic:范围&gt;单 feature → 按 release 切片拆 N 个子 feature 逐个回流(分形);原 intent 升格为 program vision,子 feature 的 intent refs 它</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:textAnnotation id="ann_ci2b">
+      <bpmn:text>本地=反馈层,CI=权威(契约01)</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="b0" sourceRef="r1a" targetRef="ann_input2"/>
+    <bpmn:association id="b1" sourceRef="r1" targetRef="ann_r1b"/>
+    <bpmn:association id="b2" sourceRef="gate_intent" targetRef="ann_gates2"/>
+    <bpmn:association id="b3" sourceRef="gate_scope" targetRef="ann_scope2"/>
+    <bpmn:association id="b4" sourceRef="gw_track" targetRef="ann_track2"/>
+    <bpmn:association id="b5" sourceRef="ci_check2" targetRef="ann_ci2b"/>
+    <bpmn:association id="b6" sourceRef="gate_spec2" targetRef="ci_check2"/>
+    <bpmn:association id="b7" sourceRef="end_epic" targetRef="ann_epic2"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="dia_req_tobe">
+    <bpmndi:BPMNPlane id="plane_req_tobe" bpmnElement="collab_req_tobe">
+      <bpmndi:BPMNShape id="s2_pool" bpmnElement="pool_req_tobe" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="2800" height="800"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_lane_h" bpmnElement="lane_h2" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="2770" height="170"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_lane_c" bpmnElement="lane_c2" isHorizontal="true">
+        <dc:Bounds x="190" y="250" width="2770" height="240"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_lane_g" bpmnElement="lane_g2" isHorizontal="true">
+        <dc:Bounds x="190" y="490" width="2770" height="210"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_lane_ci" bpmnElement="lane_ci2" isHorizontal="true">
+        <dc:Bounds x="190" y="700" width="2770" height="180"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_start" bpmnElement="start_tobe">
+        <dc:Bounds x="230" y="147" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_r1a" bpmnElement="r1a">
+        <dc:Bounds x="300" y="330" width="160" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_r1" bpmnElement="r1">
+        <dc:Bounds x="520" y="125" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_gi" bpmnElement="gate_intent">
+        <dc:Bounds x="730" y="555" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_gw" bpmnElement="gw_track" isMarkerVisible="true">
+        <dc:Bounds x="930" y="345" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_r2a" bpmnElement="r2a">
+        <dc:Bounds x="1030" y="330" width="160" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_r2b" bpmnElement="r2b">
+        <dc:Bounds x="1240" y="125" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_gs" bpmnElement="gate_scope">
+        <dc:Bounds x="1450" y="555" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_gwsplit" bpmnElement="gw_split" isMarkerVisible="true">
+        <dc:Bounds x="1650" y="345" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_rsplit" bpmnElement="r_split">
+        <dc:Bounds x="1740" y="425" width="170" height="60"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_endepic" bpmnElement="end_epic">
+        <dc:Bounds x="1960" y="437" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_r3a" bpmnElement="r3a">
+        <dc:Bounds x="1750" y="330" width="160" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_r3b" bpmnElement="r3b">
+        <dc:Bounds x="1960" y="125" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_r4" bpmnElement="r4">
+        <dc:Bounds x="2170" y="125" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_r5" bpmnElement="r5">
+        <dc:Bounds x="2380" y="330" width="160" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_gsp" bpmnElement="gate_spec2">
+        <dc:Bounds x="2590" y="555" width="160" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_end" bpmnElement="end_tobe">
+        <dc:Bounds x="2810" y="352" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_ci" bpmnElement="ci_check2">
+        <dc:Bounds x="2590" y="750" width="190" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_ann_input" bpmnElement="ann_input2">
+        <dc:Bounds x="240" y="425" width="300" height="60"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_ann_r1" bpmnElement="ann_r1b">
+        <dc:Bounds x="700" y="85" width="300" height="56"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_ann_track" bpmnElement="ann_track2">
+        <dc:Bounds x="1000" y="252" width="380" height="44"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_ann_gates" bpmnElement="ann_gates2">
+        <dc:Bounds x="230" y="648" width="320" height="56"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_ann_scope" bpmnElement="ann_scope2">
+        <dc:Bounds x="1360" y="496" width="240" height="46"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_ann_epic" bpmnElement="ann_epic2">
+        <dc:Bounds x="2020" y="420" width="330" height="64"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s2_ann_ci" bpmnElement="ann_ci2b">
+        <dc:Bounds x="2310" y="760" width="250" height="40"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="e2_t1" bpmnElement="t1">
+        <di:waypoint x="266" y="165"/><di:waypoint x="286" y="165"/><di:waypoint x="286" y="370"/><di:waypoint x="300" y="370"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t1b" bpmnElement="t1b">
+        <di:waypoint x="460" y="370"/><di:waypoint x="490" y="370"/><di:waypoint x="490" y="165"/><di:waypoint x="520" y="165"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t2" bpmnElement="t2">
+        <di:waypoint x="595" y="205"/><di:waypoint x="595" y="595"/><di:waypoint x="730" y="595"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t3" bpmnElement="t3">
+        <di:waypoint x="880" y="595"/><di:waypoint x="910" y="595"/><di:waypoint x="910" y="370"/><di:waypoint x="930" y="370"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t4" bpmnElement="t4">
+        <di:waypoint x="980" y="370"/><di:waypoint x="1030" y="370"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t5" bpmnElement="t5">
+        <di:waypoint x="955" y="345"/><di:waypoint x="955" y="310"/><di:waypoint x="2460" y="310"/><di:waypoint x="2460" y="330"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t6" bpmnElement="t6">
+        <di:waypoint x="1190" y="370"/><di:waypoint x="1220" y="370"/><di:waypoint x="1220" y="165"/><di:waypoint x="1240" y="165"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t7" bpmnElement="t7">
+        <di:waypoint x="1315" y="205"/><di:waypoint x="1315" y="595"/><di:waypoint x="1450" y="595"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t8" bpmnElement="t8">
+        <di:waypoint x="1600" y="595"/><di:waypoint x="1625" y="595"/><di:waypoint x="1625" y="370"/><di:waypoint x="1650" y="370"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t8b" bpmnElement="t8b">
+        <di:waypoint x="1700" y="370"/><di:waypoint x="1750" y="370"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t8c" bpmnElement="t8c">
+        <di:waypoint x="1675" y="395"/><di:waypoint x="1675" y="455"/><di:waypoint x="1740" y="455"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t8d" bpmnElement="t8d">
+        <di:waypoint x="1910" y="455"/><di:waypoint x="1960" y="455"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t9" bpmnElement="t9">
+        <di:waypoint x="1910" y="370"/><di:waypoint x="1935" y="370"/><di:waypoint x="1935" y="165"/><di:waypoint x="1960" y="165"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t10" bpmnElement="t10">
+        <di:waypoint x="2035" y="205"/><di:waypoint x="2035" y="262"/><di:waypoint x="1830" y="262"/><di:waypoint x="1830" y="330"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t11" bpmnElement="t11">
+        <di:waypoint x="2110" y="165"/><di:waypoint x="2170" y="165"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t12" bpmnElement="t12">
+        <di:waypoint x="2245" y="205"/><di:waypoint x="2245" y="370"/><di:waypoint x="2380" y="370"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t13" bpmnElement="t13">
+        <di:waypoint x="2460" y="410"/><di:waypoint x="2460" y="595"/><di:waypoint x="2590" y="595"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_t14" bpmnElement="t14">
+        <di:waypoint x="2750" y="595"/><di:waypoint x="2780" y="595"/><di:waypoint x="2780" y="370"/><di:waypoint x="2810" y="370"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_b0" bpmnElement="b0">
+        <di:waypoint x="380" y="410"/><di:waypoint x="350" y="428"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_b1" bpmnElement="b1">
+        <di:waypoint x="670" y="145"/><di:waypoint x="700" y="118"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_b2" bpmnElement="b2">
+        <di:waypoint x="730" y="625"/><di:waypoint x="550" y="672"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_b3" bpmnElement="b3">
+        <di:waypoint x="1510" y="555"/><di:waypoint x="1495" y="542"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_b4" bpmnElement="b4">
+        <di:waypoint x="962" y="352"/><di:waypoint x="1010" y="296"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_b5" bpmnElement="b5">
+        <di:waypoint x="2590" y="790"/><di:waypoint x="2560" y="785"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_b6" bpmnElement="b6">
+        <di:waypoint x="2670" y="635"/><di:waypoint x="2682" y="750"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e2_b7" bpmnElement="b7">
+        <di:waypoint x="1996" y="455"/><di:waypoint x="2020" y="452"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

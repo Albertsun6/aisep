@@ -185,6 +185,42 @@ def _cmd_gate_spec(args: argparse.Namespace) -> int:
     return _emit("gate-spec", decision, msgs)
 
 
+def _req_artifact(args: argparse.Namespace, name: str) -> tuple:
+    """gate-intent/gate-scope 共用:解析 (repo_root, 产物路径, feature_id)。
+    路径与 --feature 至少给一个;只给 --feature 时路径推导为 specs/<id>/<name>。"""
+    from aiforge import harness
+    if args.path:
+        p = Path(args.path)
+        root = harness.find_repo_root(p if p.exists() else Path.cwd())
+        fid = harness.derive_feature_id(p, root, args.feature)
+        return root, p, fid
+    if not args.feature:
+        raise harness.InfraError(f"需给 {name} 路径或 --feature <id>")
+    root = harness.find_repo_root(Path.cwd())
+    fid = harness.validate_feature_id(args.feature)
+    return root, root / "specs" / fid / name, fid
+
+
+@_infra_guard
+def _cmd_gate_intent(args: argparse.Namespace) -> int:
+    from aiforge import harness
+    root, path, fid = _req_artifact(args, "intent.md")
+    argv = ["gate-intent"] + ([args.path] if args.path else []) \
+        + (["--feature", args.feature] if args.feature else [])
+    decision, msgs = harness.gate_intent(path, root, fid, argv=argv)
+    return _emit("gate-intent", decision, msgs)
+
+
+@_infra_guard
+def _cmd_gate_scope(args: argparse.Namespace) -> int:
+    from aiforge import harness
+    root, path, fid = _req_artifact(args, "discovery.md")
+    argv = ["gate-scope"] + ([args.path] if args.path else []) \
+        + (["--feature", args.feature] if args.feature else [])
+    decision, msgs = harness.gate_scope(path, root, fid, argv=argv)
+    return _emit("gate-scope", decision, msgs)
+
+
 @_infra_guard
 def _cmd_gate_trace(args: argparse.Namespace) -> int:
     from aiforge import harness
@@ -288,6 +324,16 @@ def main(argv: list[str] | None = None) -> int:
     p_gs.add_argument("--check", action="store_true",
                       help="只读冻结校验:比对已存在 receipt,不重新生成(CI 用,契约 02)")
     p_gs.set_defaults(func=_cmd_gate_spec)
+
+    p_gi = sub.add_parser("gate-intent", help="R1: 校验 intent.md 必填节+track 三档(0/1/3)")
+    p_gi.add_argument("path", nargs="?", default=None, help="intent.md 路径(或用 --feature 推导)")
+    p_gi.add_argument("--feature", default=None, help="feature id(路径缺省时推导 specs/<id>/intent.md)")
+    p_gi.set_defaults(func=_cmd_gate_intent)
+
+    p_gsc = sub.add_parser("gate-scope", help="R2: 校验 discovery.md in/out 范围表+追溯(0/1/3)")
+    p_gsc.add_argument("path", nargs="?", default=None, help="discovery.md 路径(或用 --feature 推导)")
+    p_gsc.add_argument("--feature", default=None, help="feature id(路径缺省时推导 specs/<id>/discovery.md)")
+    p_gsc.set_defaults(func=_cmd_gate_scope)
 
     p_gt = sub.add_parser("gate-trace", help="P2: 校验 specs/<id>/ 文档追溯链(0/1/3)")
     p_gt.add_argument("dir", help="specs/<id>/ 目录")

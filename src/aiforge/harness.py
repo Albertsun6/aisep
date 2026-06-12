@@ -271,12 +271,24 @@ def _spec_decision(spec_path: Path, feature_id: str) -> tuple[str, list[str]]:
     """SpecGate 结构校验(只读,不写 receipt)。"""
     if not spec_path.exists() or not spec_path.read_text(encoding="utf-8").strip():
         return REJECTED, ["P1: 无 spec / spec 为空,拒绝推进"]
+    text = spec_path.read_text(encoding="utf-8")
     state = PipelineState(feature_id=feature_id, request="harness:gate-spec")
-    state.add_artifact(Artifact(kind=ArtifactKind.SPEC, content=spec_path.read_text(encoding="utf-8"), produced_by="file"))
+    state.add_artifact(Artifact(kind=ArtifactKind.SPEC, content=text, produced_by="file"))
     res = SpecGate().check(state, {})
-    if res.passed:
-        return APPROVED, []
-    return REJECTED, [res.reason, "缺什么:验收结构需 Gherkin(Given/When/Then) 或 EARS(shall+when/if/while/where) 或 User Story+验收标记,且 ≥40 字符"]
+    if not res.passed:
+        return REJECTED, [res.reason, "缺什么:验收结构需 Gherkin(Given/When/Then) 或 EARS(shall+when/if/while/where) 或 User Story+验收标记,且 ≥40 字符"]
+    # spec feat-req-5step 验收 9:R3 清零(总是跑)——裸文本残留标记不许冻结;
+    # 代码格式内的提及(反引号/fenced)是"讨论该标记",剥离后再搜(plan §1)
+    bare = _strip_code(text)
+    if _CLARIFY_MARK in bare:
+        n = bare.count(_CLARIFY_MARK)
+        return REJECTED, [f"R3 未清零:残留 `{_CLARIFY_MARK}` 标记 {n} 处——答完回填或显式 defer 后删除标记"]
+    # spec feat-req-5step 验收 10:trace 链(仅 intent.md 存在 = R1-R4 产物链生效)
+    if (spec_path.parent / "intent.md").exists():
+        declared = " ".join(_REFS_RE.findall(text))
+        if not re.search(r"(scope|intent)(\.md|#)", declared):
+            return REJECTED, ["trace 链断:spec 须含 `> refs: scope.md`(或 intent 条目)挂回 R1/R4 产物(沿用 gate-trace 约定)"]
+    return APPROVED, []
 
 
 def gate_spec(spec_path: Path, repo_root: Path, feature_id: str, argv: list[str]) -> tuple[str, list[str]]:
@@ -323,6 +335,134 @@ def gate_spec_check(spec_path: Path, repo_root: Path, feature_id: str) -> tuple[
             "(或 receipt 被伪造)。授权变更须走 specs/contracts/02 流程后重跑 gate-spec。"
         ]
     return APPROVED, [f"冻结校验通过:{rel} 与 receipt 一致"]
+
+
+# ---- R1-R5 渐进细化的结构门禁(spec: specs/feat-req-5step;判据见其 plan §1) ----
+
+_TRACK_RE = re.compile(r"^track:\s*(\S+)\s*$", re.MULTILINE)
+_TRACKS = ("fast", "standard", "epic")
+_H2_RE = re.compile(r"^##\s*(.+?)\s*$", re.MULTILINE)
+# 必填节:规范名 → 可接受写法(匹配时忽略大小写/首尾空白)
+_INTENT_SECTIONS = {
+    "problem": ("problem",),
+    "users": ("users",),
+    "成功指标": ("成功指标", "success-metrics"),
+    "non-goals": ("non-goals",),
+    "appetite": ("appetite",),
+}
+_FENCE_RE = re.compile(r"^```.*?(?:^```\s*$|\Z)", re.MULTILINE | re.DOTALL)
+_CODE_SPAN_RE = re.compile(r"`[^`\n]*`")
+_CLARIFY_MARK = "[NEEDS CLARIFICATION"
+
+
+def _strip_code(text: str) -> str:
+    """剥离 fenced 块与行内代码段:真残留标记是裸文本,代码格式内的是'讨论该标记'。"""
+    return _CODE_SPAN_RE.sub("", _FENCE_RE.sub("", text))
+
+
+def _split_h2(text: str) -> dict[str, str]:
+    """二级标题 → 节体(标题到下一 `## `/EOF);键统一小写+去首尾空白。"""
+    out: dict[str, str] = {}
+    matches = list(_H2_RE.finditer(text))
+    for i, m in enumerate(matches):
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        out[m.group(1).strip().lower()] = text[m.end():end]
+    return out
+
+
+def _intent_decision(intent_path: Path) -> tuple[str, list[str]]:
+    """R1 结构校验(只读,不写 receipt)。缺文件/解析不到任何节标题 → infra(验收 4)。"""
+    if not intent_path.exists():
+        raise InfraError(f"{intent_path} 不存在——无法评估 R1 产物,先按 R1 产出 intent.md")
+    text = _read_no_symlink(intent_path)
+    sections = _split_h2(text)
+    if not sections:
+        raise InfraError(f"{intent_path} 解析不到任何 `## ` 必填节标题(结构损坏),按模板修复后重跑")
+    msgs: list[str] = []
+    for canon, aliases in _INTENT_SECTIONS.items():
+        body = next((sections[a] for a in aliases if a in sections), None)
+        if body is None:
+            msgs.append(f"缺必填节 `## {canon}`")
+        elif not body.strip():
+            msgs.append(f"必填节 `## {canon}` 为空")
+    m = _TRACK_RE.search(text)
+    if not m:
+        msgs.append(f"缺 `track:` 行(允许值:{'/'.join(_TRACKS)})")
+    elif m.group(1) not in _TRACKS:
+        msgs.append(f"track 非法值 {m.group(1)!r}(允许值:{'/'.join(_TRACKS)})")
+    return (REJECTED, msgs) if msgs else (APPROVED, [])
+
+
+def gate_intent(intent_path: Path, repo_root: Path, feature_id: str, argv: list[str]) -> tuple[str, list[str]]:
+    validate_feature_id(feature_id)
+    if intent_path.is_symlink():
+        raise InfraError(f"{intent_path} 是 symlink(契约 09)")
+    decision, msgs = _intent_decision(intent_path)
+    inputs = (
+        [{"path": _rel_posix(intent_path, repo_root), "sha256": sha256_file(intent_path)}]
+        if decision == APPROVED else []
+    )
+    receipt = build_receipt(gate="gate-intent", feature_id=feature_id, inputs=inputs,
+                            decision=decision, repo_root=repo_root, argv=argv)
+    write_receipt(receipt, repo_root)
+    return decision, msgs
+
+
+def _scope_items(body: str) -> list[str]:
+    """节内的项 = bullet 行或表格数据行(分隔行前的 `|` 行按表头忽略)。"""
+    items: list[str] = []
+    saw_sep = False
+    for line in body.splitlines():
+        s = line.strip()
+        if s.startswith(("- ", "* ")):
+            items.append(s)
+        elif s.startswith("|"):
+            inner = s.strip("|").strip()
+            if inner and set(inner.replace(" ", "")) <= set("-:|"):
+                saw_sep = True
+                continue
+            if saw_sep:
+                items.append(s)
+    return items
+
+
+def _scope_decision(discovery_path: Path, feature_dir: Path) -> tuple[str, list[str]]:
+    """R2 结构校验:in 项逐条挂回 intent、out 非空(没有显式排除 = 没做范围决策)。"""
+    if not discovery_path.exists():
+        raise InfraError(f"{discovery_path} 不存在——无法评估 R2 产物,先按 R2 产出 discovery.md")
+    text = _read_no_symlink(discovery_path)
+    sections = _split_h2(text)
+    if "in" not in sections or "out" not in sections:
+        raise InfraError(f"{discovery_path} 解析不出 `## in` / `## out` 两表结构,按模板修复后重跑")
+    msgs: list[str] = []
+    if not (feature_dir / "intent.md").exists():
+        msgs.append("intent.md 不存在——范围无法挂回意图,先过 gate-intent(R1)")
+    in_items = _scope_items(sections["in"])
+    out_items = _scope_items(sections["out"])
+    if not in_items:
+        msgs.append("in 表为空:范围未圈定")
+    msgs.extend(
+        f"in 项未追溯到 intent(需含 `refs: intent...`):{it[:60]}"
+        for it in in_items if not ("refs:" in it and "intent" in it)
+    )
+    if not out_items:
+        msgs.append("out 表为空:没有显式排除 = 没做范围决策")
+    return (REJECTED, msgs) if msgs else (APPROVED, [])
+
+
+def gate_scope(discovery_path: Path, repo_root: Path, feature_id: str, argv: list[str]) -> tuple[str, list[str]]:
+    validate_feature_id(feature_id)
+    if discovery_path.is_symlink():
+        raise InfraError(f"{discovery_path} 是 symlink(契约 09)")
+    decision, msgs = _scope_decision(discovery_path, discovery_path.parent)
+    inputs = (
+        [{"path": _rel_posix(discovery_path, repo_root), "sha256": sha256_file(discovery_path)}]
+        if decision == APPROVED else []
+    )
+    receipt = build_receipt(gate="gate-scope", feature_id=feature_id, inputs=inputs,
+                            decision=decision, repo_root=repo_root, argv=argv)
+    write_receipt(receipt, repo_root)
+    return decision, msgs
 
 
 _CHAIN = (("plan.md", "spec.md"), ("tasks.md", "plan.md"))
@@ -552,6 +692,29 @@ def check_receipt_chain(repo_root: Path, feature_id: str) -> str | None:
         return f"{feature_id}: receipt inputs 不含 {rel},不可信"
     if want[rel] != hashlib.sha256(blob).hexdigest():
         return f"{feature_id}: receipt 过期/伪造(index 中 spec.md hash 不符),重跑 gate-spec 后重新 add"
+    # spec feat-req-5step 验收 14/15:有 intent.md 的 feature,链上须有合法 gate-intent receipt;
+    # 无 intent.md 的存量 feature 此检查不触发(向后兼容,渐进启用)
+    intent_rel = f"specs/{feature_id}/intent.md"
+    intent_blob = index_blob(repo_root, intent_rel)
+    if intent_blob is None:
+        p = repo_root / intent_rel
+        if p.exists() and not p.is_symlink():
+            try:
+                intent_blob = p.read_bytes()
+            except OSError:
+                intent_blob = None
+    if intent_blob is not None:
+        ipath = repo_root / "specs" / feature_id / "gates" / "gate-intent.json"
+        if not ipath.exists():
+            return f"{feature_id}: 有 intent.md 但缺 gate-intent receipt(先跑 aiforge gate-intent --feature {feature_id})"
+        ircpt = load_receipt(ipath)
+        if ircpt.get("gate") != "gate-intent" or ircpt.get("feature_id") != feature_id:
+            return f"{feature_id}: gate-intent receipt 元数据不符(gate={ircpt.get('gate')!r}, feature_id={ircpt.get('feature_id')!r})"
+        if ircpt.get("decision") != APPROVED or ircpt.get("exit_code") != 0:
+            return f"{feature_id}: gate-intent receipt decision={ircpt.get('decision')},非 approved"
+        want_i = {i.get("path"): i.get("sha256") for i in ircpt.get("inputs", []) if isinstance(i, dict)}
+        if want_i.get(intent_rel) != hashlib.sha256(intent_blob).hexdigest():
+            return f"{feature_id}: gate-intent receipt 过期/伪造(intent.md hash 不符),重跑 gate-intent"
     return None
 
 
