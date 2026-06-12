@@ -17,7 +17,7 @@ requirements → `gate-spec` → architecture → `gate-trace` → decompose →
 |---|---|
 | 每阶段先落盘产物、跑 gate,再继续 | receipt 链(契约 06):缺/过期 = exit 1;本地是反馈,CI 是权威 |
 | receipt 必须由真实命令产生,贴回会话的只是引用 | hash 校验:伪造/过期 = exit 1 |
-| spec 过 gate-spec 后冻结 | 改动不重跑 gate = exit 1;远端另有 CODEOWNERS(契约 02) |
+| spec 过 gate-spec 后冻结 | 改动不重跑 gate = exit 1;CI `gate-spec --check` 复验(契约 06;CODEOWNERS 强制已撤销,契约 01 修订 2026-06-13) |
 | judge 缺真异构 → 转人审,不许作者模型自审自过 | CLI 无模型调用通道(契约 04);CI 重跑 gate |
 | 本地 `--ack-human` 仅审计 | CI 不消费 ack(契约 07) |
 | 本文件其余内容 | **建议层,无机器强制**(契约 01——诚实标注) |

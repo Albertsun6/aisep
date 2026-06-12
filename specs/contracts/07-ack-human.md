@@ -5,7 +5,7 @@
 | 层 | 动作 | 效力 |
 |---|---|---|
 | 本地 ack | `aiforge gate-commit --ack-human` | **仅本地审计记录**:要求 stdin isatty + 记录 `{user, uid, hostname, tty, at}` 到 receipt 的 `ack` 字段;只解锁**本地 pre-commit** |
-| 权威放行 | GitHub **人类账号**对 PR 的 approval(branch protection 要求,契约 01) | 唯一作数的放行 |
+| 权威放行 | `needs_human` 的机器语义 = CI 红(gate-judge exit 2)。放行只有两条路:① 修改/补证使 gate 不再 exit 2 → CI 绿后正常合并;② repo admin 对红 CI break-glass 合并(契约 09 第 6 条,24h 内补 ADR)。~~branch protection 强制 approval~~ 已撤销(契约 01 修订 2026-06-13);**自愿 approval 仅审计留痕,不构成放行**(required check 红时 approval 不解锁合并) | 唯一作数的放行 |
 
 ## 硬规则
 
