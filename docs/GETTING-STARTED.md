@@ -11,8 +11,8 @@
 ### 第 0 步 · 拿到代码
 
 ```bash
-git clone https://github.com/Albertsun6/AISEP6-6.git
-cd AISEP6-6
+git clone https://github.com/Albertsun6/aisep.git
+cd aisep
 ```
 
 ### 第 1 步 · 确认能跑(零安装)

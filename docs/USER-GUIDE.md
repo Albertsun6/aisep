@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **项目** | AISEP6-6 · `github.com/Albertsun6/AISEP6-6`(public) |
+| **项目** | AISEP · `github.com/Albertsun6/aisep`(public) |
 | **版本** | STEP 0(有头模式,2026-06-11 完整实施) |
 | **一句话** | 把 aiforge 七层方法论做成 Claude Code 的企业工程纪律层:薄门禁 CLI + 进程外强制层(GitHub CI)+ 会话内护栏,人当 supervisor。 |
 | **基线 tag** | `archive/pre-harness`(harness 之前的状态,随时可回退) |
@@ -28,8 +28,8 @@
 ### 2.1 跑起来(零安装,纯标准库)
 
 ```bash
-git clone https://github.com/Albertsun6/AISEP6-6.git
-cd AISEP6-6
+git clone https://github.com/Albertsun6/aisep.git
+cd aisep
 
 make test     # 跑全部测试(78 个,无需任何安装)
 make demo     # 端到端规格驱动 + 多 agent 编排(mock LLM,离线)
@@ -131,7 +131,7 @@ spec.md                   plan.md             tasks.md            (developer/rev
 
 - branch protection on `main`:required status check = **`gates`**(名字钉死),strict、需 PR、需 code-owner 审批。
 - CODEOWNERS 保护路径:`.github/`、`specs/contracts/`、`constitution.md`、`.githooks/` → owner `@Albertsun6`。
-- ⚠️ **`enforce_admins=false`**(你的裁决:单人仓库 admin 可 bypass)。后果:强制层对 repo admin(你本人)不生效,只对其余主体生效。**多操作者时须重开**:`gh api -X PUT repos/Albertsun6/AISEP6-6/branches/main/protection`(把 `enforce_admins` 设 true)。
+- ⚠️ **`enforce_admins=false`**(你的裁决:单人仓库 admin 可 bypass)。后果:强制层对 repo admin(你本人)不生效,只对其余主体生效。**多操作者时须重开**:`gh api -X PUT repos/Albertsun6/aisep/branches/main/protection`(把 `enforce_admins` 设 true)。
 
 ---
 

@@ -126,7 +126,7 @@
     </div>
     <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">AISEP × Claude Code 工程 Harness — 完整使用手册</h1>
     <div class="text-sm text-slate-500 mb-5">
-      项目 <code>github.com/Albertsun6/AISEP6-6</code>(public) · 基线 tag <code>archive/pre-harness</code> · 2026-06-11 完整实施
+      项目 <code>github.com/Albertsun6/aisep</code>(public) · 基线 tag <code>archive/pre-harness</code> · 2026-06-11 完整实施
     </div>
     <blockquote class="!my-5">
       <strong>一句话 ——</strong>
@@ -152,8 +152,8 @@
     <h2 class="text-xl mb-4">2. 快速开始 <a href="#sec2" class="anchor-link">#</a></h2>
 
     <h3>2.1 跑起来(零安装,纯标准库)</h3>
-    <pre class="codeblk"><code>git clone https://github.com/Albertsun6/AISEP6-6.git
-cd AISEP6-6
+    <pre class="codeblk"><code>git clone https://github.com/Albertsun6/aisep.git
+cd aisep
 
 make test     # 跑全部测试(78 个,无需任何安装)
 make demo     # 端到端规格驱动 + 多 agent 编排(mock LLM,离线)
@@ -304,7 +304,7 @@ flowchart TD
       <li>branch protection on <code>main</code>:required status check = <strong><code>gates</code></strong>(名字钉死)、strict、需 PR、需 code-owner 审批。</li>
       <li>CODEOWNERS 保护:<code>.github/</code>、<code>specs/contracts/</code>、<code>constitution.md</code>、<code>.githooks/</code> → <code>@Albertsun6</code>。</li>
     </ul>
-    <div class="callout-warn"><strong>⚠ 已知偏差(你的裁决):</strong><code>enforce_admins=false</code>——强制层对 repo admin(你本人)不生效,只对其余主体生效。<strong>多操作者时须重开:</strong><code>gh api -X PUT repos/Albertsun6/AISEP6-6/branches/main/protection</code>(把 <code>enforce_admins</code> 设 true)。</div>
+    <div class="callout-warn"><strong>⚠ 已知偏差(你的裁决):</strong><code>enforce_admins=false</code>——强制层对 repo admin(你本人)不生效,只对其余主体生效。<strong>多操作者时须重开:</strong><code>gh api -X PUT repos/Albertsun6/aisep/branches/main/protection</code>(把 <code>enforce_admins</code> 设 true)。</div>
   </section>
 
   <!-- ====== 6 ====== -->
