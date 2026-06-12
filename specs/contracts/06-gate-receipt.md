@@ -38,7 +38,7 @@
 2. 声明的 id 与 staged 中出现的 `specs/<id>/`:上游 receipt 必须**齐全**(最低要求 gate-spec)、**元数据相符**(gate 名/feature_id/exit_code/inputs 路径精确匹配)且**未过期**——spec 内容以 **git index(待提交版本)**为准比对 hash(防"stage 篡改版、工作区改回"的 TOCTOU);spec 不在 index → 1(spec 必须随提交入库);缺失/过期/伪造 → 1;
 3. receipt 文件不可解析 / `schema_version ≠ 1`(v1 消费者只接受 1)→ 3,stderr 给出可读诊断。**3 与 1 同样阻断**,差别仅在诊断含义;
 4. **本地链校验是反馈层;权威 = CI 对 PR 涉及的 specs 跑 `gate-spec --check`**(gates.yml,契约 02)——**只读冻结校验**:验证 spec 仍结构合法 **且**已提交 receipt 与当前 spec 内容相符,**不重新生成 receipt**。
-   - ⚠️ 历史教训(2026-06-11 probe③):CI 早期版本 *重跑* `gate-spec`(会重新生成 receipt),导致"改了冻结 spec 但仍结构合法"的篡改被洗白通过。`--check` 模式修复:改冻结 spec 不重跑 → receipt 过期 → exit 1。授权变更须走契约 02 流程(改 spec + 重跑 gate-spec 提交新 receipt + CODEOWNERS 审)。
+   - ⚠️ 历史教训(2026-06-11 probe③):CI 早期版本 *重跑* `gate-spec`(会重新生成 receipt),导致"改了冻结 spec 但仍结构合法"的篡改被洗白通过。`--check` 模式修复:改冻结 spec 不重跑 → receipt 过期 → exit 1。授权变更须走契约 02 流程(改 spec + 重跑 gate-spec 提交新 receipt;CODEOWNERS 强制审已撤销——契约 01 修订 2026-06-13,CI `--check` 复验仍强制)。
 
 ## 钉死方式(M1)
 

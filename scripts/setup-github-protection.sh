@@ -5,6 +5,9 @@
 # 用法: scripts/setup-github-protection.sh <owner/repo>
 #   例: scripts/setup-github-protection.sh Albertsun6/AISEP6-6
 # 前置: gh auth login;CODEOWNERS 里的 @owner 已改成你的账号
+# 注:本脚本设的是**完整保护**(含 review/code-owner 项)——适用于多人仓或恢复强制;
+#     单人仓裁决(契约 01 修订 2026-06-13)已撤销 review 项,单人部署可在跑完后
+#     `gh api -X DELETE repos/<owner/repo>/branches/main/protection/required_pull_request_reviews` 复刻该裁决。
 set -e
 REPO="${1:?用法: $0 <owner/repo>}"
 gh api -X PUT "repos/$REPO/branches/main/protection" --input - <<JSON

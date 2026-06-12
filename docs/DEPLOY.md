@@ -36,6 +36,7 @@ scripts/setup-github-protection.sh <你的owner>/<repo>
 
 该脚本设:required status check = `gates`(strict)、require code-owner review、`enforce_admins=false`。
 ⚠️ `enforce_admins=false` 是单人开发的裁决(ADR-014);**多操作者时改 true**,否则强制层对 repo admin 不生效。
+⚠️ **单人仓 2026-06-13 修订(契约 01)**:强制 review/code-owner 项已撤销,机器强制仅剩 required check `gates`;脚本保留完整保护配置以便多人化时一键恢复——单人部署跑完脚本后可按脚本头注释删除 review 项复刻该裁决。
 
 ## D. 个人/机器级(不进 repo,也不影响项目运行)
 
