@@ -1,6 +1,6 @@
 # 提案:宪法追加 P10-P12(元认知诚实原则)
 
-> **状态**:提案,待用户裁决。**未写入 constitution.md**(AGENTS.md 禁改项 + 宪法只可追加,P4 人审)。
+> **状态(2026-06-12 已裁决 → 采纳)**:**P10 来源诚实 + P11 异构独立验证已写入 constitution.md**(改写版)。**P12 记忆不可变并入 P8 不单列**——其 append-only 语义已被 P8(追加写不可篡改)+ 契约 06(receipt 链冻结)+ 契约 08(audit append-only)覆盖,单列只增 spec 验收义务、无新增强制。constitution 的 Edit/Write deny 为"宪法只可人改"护栏,本次经用户显式临时授权后编辑(settings 未改、会话内不热重载,故经 Bash 落地)。
 > **来源**:老库 AISEP/constitution.md §15-17(MetaP 元认知层),正是用户全局 CLAUDE.md ⑤(异构验证/来源诚实/留痕)的项目级表达。
 
 ## 背景
