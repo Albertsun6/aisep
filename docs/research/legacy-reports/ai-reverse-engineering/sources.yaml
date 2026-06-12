@@ -1,0 +1,67 @@
+research:
+  id: "research-001"
+  title: "AI 辅助系统逆向工程行业调研"
+  date: "2026-03-15"
+  conversation_id: "0b998d9e-fade-452c-b2c8-9fb78230f897"
+  status: "completed"
+  
+  sources:
+    - name: "ThoughtWorks Technology Radar"
+      type: "industry_report"
+      url: "https://www.thoughtworks.com/radar"
+      key_insight: "GraphRAG (Trial) + GenAI for legacy codebases (Adopt)"
+      
+    - name: "Gartner 2026 预测"
+      type: "analyst_forecast"
+      key_insight: "40% 遗留现代化将采用 AI 逆向工程"
+      
+    - name: "CodeBoarding"
+      type: "open_source_tool"
+      url: "https://github.com/CodeBoarding"
+      key_insight: "静态分析 + LLM Agent → 交互式架构图"
+      
+    - name: "Qlerify"
+      type: "commercial_tool"
+      url: "https://qlerify.com"
+      key_insight: "AI 驱动 DDD 逆向，GitHub 集成"
+      
+    - name: "Replay.build"
+      type: "commercial_tool"
+      url: "https://replay.build"
+      key_insight: "视觉逆向：视频录制 → React 代码"
+      
+    - name: "Hexaware RapidX"
+      type: "commercial_platform"
+      url: "https://hexaware.com"
+      key_insight: "Agentic AI 多 Agent 逆向平台"
+      
+    - name: "Palantir Foundry Ontology"
+      type: "architecture_pattern"
+      url: "https://palantir.com"
+      key_insight: "本体论方式：Object Types + Properties + Link Types 构建数字孪生"
+      
+    - name: "RECoRD Framework"
+      type: "academic_paper"
+      url: "https://openreview.net"
+      key_insight: "多 Agent LLM 逆向为关系图"
+
+  decisions:
+    - id: "D1"
+      decision: "采用 Multi-Pass Progressive Disclosure 架构"
+      rationale: "ThoughtWorks + Cloudflare + Anthropic 验证的模式"
+      status: "approved"
+      
+    - id: "D2"
+      decision: "引入知识图谱中间层概念"
+      rationale: "GraphRAG 模式是行业共识，提高逆向精度"
+      status: "approved"
+      
+    - id: "D3"
+      decision: "框架插件化设计"
+      rationale: "避免 Odoo 锁定，支持更多技术栈"
+      status: "approved"
+      
+    - id: "D4"
+      decision: "AI+人共建的论述+选择模式"
+      rationale: "业务意图不应是纯人工填写，AI 应提供假设"
+      status: "approved"
