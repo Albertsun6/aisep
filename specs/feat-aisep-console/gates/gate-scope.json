@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "run_id": "35b1b6f9-93a0-43e3-a4ef-9719cdf9d025",
+  "gate": "gate-scope",
+  "feature_id": "feat-aisep-console",
+  "inputs": [
+    {
+      "path": "specs/feat-aisep-console/discovery.md",
+      "sha256": "32a094d16a0030f5a92f879685398e0a5ef61ff2da566236b4d03436603a3b0a"
+    }
+  ],
+  "exit_code": 0,
+  "decision": "approved",
+  "git_head": "f61a0f51b1d29c3d44db9cece5e330196c208165",
+  "git_dirty": true,
+  "created_at": "2026-06-13T12:26:34.242697+08:00",
+  "tool": "aiforge gate-scope",
+  "aiforge_version": "0.1.0",
+  "argv": [
+    "gate-scope",
+    "--feature",
+    "feat-aisep-console"
+  ],
+  "ack": null,
+  "reviewer": null
+}
