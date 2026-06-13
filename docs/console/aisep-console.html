@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AISEP Console v1 · R1 引导填表 + 管线总览</title>
+<!-- spec: specs/feat-aisep-console。零构建、无 server、无外部依赖、离线可用。
+     R1 表单产物结构与 aiforge gate-intent 判据逐字一致(见 R5 spec 验收 A1)。
+     v1 = 客户端表单 + 总览外壳;实时多仓数据 = v1.1;前端直写 = v1.5。 -->
+<style>
+  :root{
+    --bg:#0e1116;--panel:#161b22;--panel2:#1c232c;--line:#2a323c;
+    --txt:#e6edf3;--dim:#8b949e;--faint:#6e7681;
+    --accent:#d29922;--accent-soft:#3d2f12;
+    --green:#3fb950;--green-soft:#132d1a;--blue:#58a6ff;--blue-soft:#10243e;
+    --red:#f85149;--red-soft:#3a1313;--gray:#484f58;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{background:var(--bg);color:var(--txt);font:14px/1.6 -apple-system,"PingFang SC","Segoe UI",system-ui,sans-serif}
+  .top{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:4px;padding:0 16px;height:48px}
+  .top h1{font-size:15px;margin:0 18px 0 0;letter-spacing:.3px}
+  .tab{padding:8px 14px;cursor:pointer;color:var(--dim);font-size:13px;border-bottom:2px solid transparent;height:48px;display:flex;align-items:center;gap:7px}
+  .tab:hover{color:var(--txt)}
+  .tab.on{color:var(--txt);border-bottom-color:var(--accent)}
+  .badge{margin-left:auto;font-size:11px;color:var(--accent);background:var(--accent-soft);border:1px solid #5a4413;border-radius:6px;padding:2px 9px}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 24px 70px}
+  .pagehint{color:var(--dim);font-size:13px;margin:2px 0 18px}
+
+  /* ---- R1 form ---- */
+  .r1grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+  @media(max-width:920px){.r1grid{grid-template-columns:1fr}}
+  .field{margin-bottom:16px}
+  .flabel{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:3px}
+  .req{color:var(--red);font-size:11px}
+  .ok{color:var(--green);font-size:12px}
+  .fhelp{font-size:12px;color:var(--faint);margin-bottom:6px}
+  input[type=text],textarea,select{width:100%;background:#0b0e13;border:1px solid var(--line);border-radius:7px;color:var(--txt);padding:8px 11px;font:13px/1.5 inherit;resize:vertical}
+  textarea{min-height:62px}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+  .field.miss input,.field.miss textarea{border-color:var(--red)}
+  .trackrow{display:flex;gap:8px}
+  .trk{flex:1;border:1px solid var(--line);border-radius:7px;padding:9px 10px;cursor:pointer;background:#0b0e13}
+  .trk.on{border-color:var(--accent);background:var(--accent-soft)}
+  .trk b{font-size:13px}
+  .trk .td{font-size:11px;color:var(--faint);margin-top:2px}
+
+  /* ---- preview ---- */
+  .preview{position:sticky;top:70px}
+  .pvhead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .pvhead h3{font-size:14px;margin:0}
+  .pvstate{font-size:12px;padding:2px 9px;border-radius:6px}
+  .pvstate.good{background:var(--green-soft);color:var(--green)}
+  .pvstate.bad{background:var(--red-soft);color:var(--red)}
+  pre.code{background:#0b0e13;border:1px solid var(--line);border-radius:8px;padding:13px 14px;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:#c9d1d9;white-space:pre-wrap;word-break:break-word;max-height:420px;overflow:auto;margin:0}
+  pre.code .h{color:var(--accent)}
+  .pvact{display:flex;gap:9px;margin-top:11px}
+  .btn{font-size:13px;padding:7px 14px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);cursor:pointer}
+  .btn:hover{border-color:var(--faint)}
+  .btn.primary{background:var(--accent);color:#1a1205;border-color:var(--accent);font-weight:600}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .missnote{font-size:12px;color:var(--red);margin-top:8px;display:none}
+  .missnote.on{display:block}
+  .nextflow{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:13px 15px;margin-top:16px;font-size:13px;color:var(--dim)}
+  .nextflow b{color:var(--txt)}
+  .nextflow code{background:#0b0e13;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:ui-monospace,monospace;color:var(--green);font-size:12px}
+
+  /* ---- overview shells ---- */
+  .shellnote{background:var(--accent-soft);border:1px solid #5a4413;color:var(--accent);font-size:12px;border-radius:8px;padding:9px 13px;margin-bottom:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gray);border-radius:9px;padding:12px 15px;margin-bottom:10px}
+  .card.you{border-left-color:var(--accent)}
+  .card.rej{border-left-color:var(--red)}
+  .crow{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+  .stagepill{font-size:11px;font-weight:600;padding:1px 8px;border-radius:20px;background:var(--blue-soft);color:var(--blue)}
+  .stagepill.r{background:var(--red-soft);color:var(--red)}
+  .crumb{font-size:12px;color:var(--dim)}.crumb b{color:var(--txt)}
+  .turn{margin-left:auto;font-size:11px;color:var(--accent);font-weight:600}
+  .q{font-size:13px;margin:2px 0 9px}
+  .acts{display:flex;gap:7px;flex-wrap:wrap}
+  .ptable{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+  .ptable th{text-align:left;color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:6px 10px;border-bottom:1px solid var(--line)}
+  .ptable th.c{text-align:center;width:70px}
+  .ptable td{padding:8px 10px;border-bottom:1px solid var(--line)}
+  .step{width:40px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;margin:0 auto}
+  .s-done{background:var(--green-soft);color:var(--green)}.s-you{background:var(--accent-soft);color:var(--accent);outline:1px solid var(--accent)}
+  .s-none{color:var(--gray);border:1px dashed var(--line)}.s-skip{color:var(--faint);border:1px dashed var(--line);font-style:italic}
+  .projhdr{margin:18px 0 4px;font-size:14px;font-weight:600}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--green);color:var(--green);padding:8px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:60}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>AISEP Console <span style="font-size:11px;color:var(--faint)">v1</span></h1>
+  <div class="tab on" data-t="r1" onclick="tab('r1')">📝 R1 引导填表</div>
+  <div class="tab" data-t="inbox" onclick="tab('inbox')">📥 Decision Inbox</div>
+  <div class="tab" data-t="port" onclick="tab('port')">▦ Portfolio</div>
+  <div class="badge">v1 = 表单可用 · 总览为演示快照(实时数据 v1.1)</div>
+</div>
+
+<!-- ============ R1 INTAKE ============ -->
+<div class="wrap" id="p-r1">
+  <div class="pagehint">把"在聊天里记住六问"换成"结构化表单填六字段"。填完右侧实时生成 <b>intent.md</b>,复制/下载交给会话跑 <code style="font-family:ui-monospace,monospace">gate-intent</code>。这一页就是用来解锁 R1 的——你不用预先知道要答什么;<b>不会写就照实写一句现状即可</b>,门禁只检查有没有填、不评判措辞。</div>
+  <div class="r1grid">
+    <!-- left: form -->
+    <div>
+      <div class="field">
+        <div class="flabel">feature-id <span class="req" data-for="fid">必填</span></div>
+        <div class="fhelp">本次需求的短标识(小写 kebab-case)。例:auction-mvp</div>
+        <input type="text" id="fid" placeholder="auction-mvp" oninput="render()">
+      </div>
+
+      <div class="field">
+        <div class="flabel">track <span class="ok">已选 <span id="tklabel">standard</span></span></div>
+        <div class="fhelp">需求量级 — 决定走全流程还是短路径。</div>
+        <div class="trackrow" id="trackrow">
+          <div class="trk" data-tk="fast" onclick="setTrack('fast')"><b>fast</b><div class="td">微变更(如"调整页面位置"),R1+R5 短路径</div></div>
+          <div class="trk on" data-tk="standard" onclick="setTrack('standard')"><b>standard</b><div class="td">单个特性,走全 R1-R5</div></div>
+          <div class="trk" data-tk="epic" onclick="setTrack('epic')"><b>epic</b><div class="td">史诗级(如"做个 ERP"),R2 后拆子特性</div></div>
+        </div>
+      </div>
+
+      <div class="field" id="f-problem">
+        <div class="flabel">problem <span class="req" data-for="problem">必填</span></div>
+        <div class="fhelp">为什么做?给谁解决什么痛点?现在这件事是怎么发生的(线下/Excel/旧系统/全新)?——这句也决定是不是隐性棕地。</div>
+        <textarea id="problem" placeholder="例:线下喊价靠微信群接龙登记,易错、无法回溯。需要在线实时竞价。" oninput="render()"></textarea>
+      </div>
+      <div class="field" id="f-users">
+        <div class="flabel">users <span class="req" data-for="users">必填</span></div>
+        <div class="fhelp">谁用?各角色 + 大致量级。</div>
+        <textarea id="users" placeholder="例:买家(每场 10-50 人出价)、卖家(发布拍品)、平台管理员(我自己)。" oninput="render()"></textarea>
+      </div>
+      <div class="field" id="f-metrics">
+        <div class="flabel">成功指标 <span class="req" data-for="metrics">必填</span></div>
+        <div class="fhelp">做完后什么"可观察的现象"出现算成功?要能被看见,不是"提升体验"这种虚的。</div>
+        <textarea id="metrics" placeholder="例:第一场线上拍卖完整跑通——N 个买家实时出价、最高价成交、结果可回溯。" oninput="render()"></textarea>
+      </div>
+      <div class="field" id="f-nongoals">
+        <div class="flabel">non-goals <span class="req" data-for="nongoals">必填</span></div>
+        <div class="fhelp">明确不做什么?(支付清结算?实名认证?直播?App?)——这是范围的种子,越明确越防 AI 臆想。</div>
+        <textarea id="nongoals" placeholder="例:不做在线支付(线下结算)、不做实名认证、不做直播、不做移动 App(先 Web)。" oninput="render()"></textarea>
+      </div>
+      <div class="field" id="f-appetite">
+        <div class="flabel">appetite <span class="req" data-for="appetite">必填</span></div>
+        <div class="fhelp">愿意投多少?(几人日/几周)——它决定第一版切多大,不是估算而是"意愿上限"。</div>
+        <textarea id="appetite" placeholder="例:2 周,先做能办一场真实拍卖的最小闭环。" oninput="render()"></textarea>
+      </div>
+      <div class="field">
+        <div class="flabel">source <span style="color:var(--faint);font-size:11px">可选</span></div>
+        <div class="fhelp">原始材料出处(会议纪要/聊天记录/一句话)。仅留痕,不影响门禁。</div>
+        <input type="text" id="source" placeholder="例:2026-06-13 与卖家的需求沟通" oninput="render()">
+      </div>
+    </div>
+
+    <!-- right: live preview -->
+    <div class="preview">
+      <div class="pvhead">
+        <h3>生成的 intent.md</h3>
+        <span class="pvstate good" id="pvstate">✓ 六项齐全,可过 gate-intent</span>
+      </div>
+      <pre class="code" id="pv"></pre>
+      <div class="missnote" id="missnote"></div>
+      <div class="pvact">
+        <button class="btn primary" id="btn-copy" onclick="copyMd()">复制</button>
+        <button class="btn" id="btn-dl" onclick="downloadMd()">下载 intent.md</button>
+      </div>
+      <div class="nextflow">
+        <b>交给会话 →</b> 在 auction(或对应仓)的 Claude 会话里说:<br>
+        「我填好了 <span id="nf-fid">auction-mvp</span> 的 R1,intent 如下」+ 粘贴,或把下载的文件存到 <code>specs/<span id="nf-fid2">auction-mvp</span>/intent.md</code>;<br>
+        会话写盘后跑 <code>gate-intent --feature <span id="nf-fid3">auction-mvp</span></code> → 过了 R1 完成,进 R2。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ INBOX (shell) ============ -->
+<div class="wrap" id="p-inbox" style="display:none">
+  <div class="pagehint">只显示「轮到你」的事 — 借 Gerrit Attention Set + Linear Triage(每项 ≤4 动作)。</div>
+  <div class="shellnote">⚠ 演示快照 · 实时多仓扫描 = v1.1。当前卡片为示意,真实版由只读扫各仓 specs/*/ + gates/*.json 机器推导。</div>
+  <div id="inbox"></div>
+</div>
+
+<!-- ============ PORTFOLIO (shell) ============ -->
+<div class="wrap" id="p-port" style="display:none">
+  <div class="pagehint">项目 × R1–R5 阶段 — 一眼看全。</div>
+  <div class="shellnote">⚠ 演示快照 · 实时数据 = v1.1。</div>
+  <div id="port"></div>
+</div>
+
+<div class="toast" id="toast">已复制到剪贴板</div>
+
+<script>
+var track="standard";
+var REQ=[["fid","fid"],["problem","problem"],["users","users"],["metrics","成功指标"],["nongoals","non-goals"],["appetite","appetite"]];
+
+function tab(t){
+  document.querySelectorAll(".tab").forEach(e=>e.classList.toggle("on",e.dataset.t===t));
+  ["r1","inbox","port"].forEach(x=>document.getElementById("p-"+x).style.display = x===t?"":"none");
+}
+function setTrack(t){track=t;document.querySelectorAll(".trk").forEach(e=>e.classList.toggle("on",e.dataset.tk===t));document.getElementById("tklabel").textContent=t;render();}
+function val(id){return (document.getElementById(id).value||"").trim();}
+// 防 markdown 注入:用户输入里行首的 # 缩进一空格,gate 锚定 ^## 就不会把它当新节
+// (内容原样保留为正文,表单显示与 gate 判定永远一致;评审 2026-06-13 CONCERN①)
+function defuse(s){return s.replace(/^(#+)/gm," $1");}
+
+function buildMd(){
+  var fid=val("fid")||"<feature-id>";
+  var src=val("source");
+  var L=[];
+  L.push("# "+fid+" — 意图简报");
+  L.push("");
+  L.push("track: "+track);
+  if(src) L.push("source: "+defuse(src));
+  L.push("");
+  L.push("## problem");      L.push(defuse(val("problem")));
+  L.push("");
+  L.push("## users");        L.push(defuse(val("users")));
+  L.push("");
+  L.push("## 成功指标");      L.push(defuse(val("metrics")));
+  L.push("");
+  L.push("## non-goals");    L.push(defuse(val("nongoals")));
+  L.push("");
+  L.push("## appetite");     L.push(defuse(val("appetite")));
+  L.push("");
+  return L.join("\n");
+}
+function missing(){
+  return REQ.filter(function(r){return !val(r[0]);});
+}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function hl(md){
+  // highlight ## headings + track line for readability
+  return esc(md).replace(/^(## .+|track: .+|# .+)$/gm,'<span class="h">$1</span>');
+}
+function render(){
+  var md=buildMd();
+  document.getElementById("pv").innerHTML=hl(md);
+  // sync next-flow feature-id echoes
+  var fid=val("fid")||"<feature-id>";
+  ["nf-fid","nf-fid2","nf-fid3"].forEach(function(i){document.getElementById(i).textContent=fid;});
+  // required-field visual + state
+  REQ.forEach(function(r){
+    var box=document.getElementById("f-"+(r[0]==="fid"?"":r[0]))||null;
+  });
+  document.querySelectorAll(".field").forEach(function(f){f.classList.remove("miss");});
+  var miss=missing();
+  miss.forEach(function(r){
+    var el=document.getElementById(r[0]);
+    if(el&&el.closest(".field")) el.closest(".field").classList.add("miss");
+  });
+  var st=document.getElementById("pvstate"), mn=document.getElementById("missnote");
+  if(miss.length===0){
+    st.className="pvstate good"; st.textContent="✓ 六项齐全,可过 gate-intent";
+    mn.classList.remove("on"); mn.textContent="";
+  }else{
+    st.className="pvstate bad"; st.textContent="✗ 还差 "+miss.length+" 项必填";
+    mn.classList.add("on");
+    mn.textContent="未填(gate-intent 会拒,如实提示):"+miss.map(function(r){return r[1];}).join("、");
+  }
+  // feature-id 为空 → 禁用交接(防 <feature-id> 占位符被照抄;评审 CONCERN③)
+  var noFid=!val("fid");
+  var bc=document.getElementById("btn-copy"), bd=document.getElementById("btn-dl");
+  bc.disabled=noFid; bd.disabled=noFid;
+  bc.style.opacity=bd.style.opacity=noFid?"0.45":"1";
+  bc.style.cursor=bd.style.cursor=noFid?"not-allowed":"pointer";
+  bc.textContent=noFid?"先填 feature-id":"复制";
+}
+function copyMd(){
+  if(!val("fid")){toast("请先填 feature-id");return;}
+  var md=buildMd();
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(md).then(function(){toast("已复制 intent.md");},function(){fallbackCopy(md);});
+  }else fallbackCopy(md);
+}
+function fallbackCopy(md){
+  var ta=document.createElement("textarea");ta.value=md;document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy");toast("已复制 intent.md");}catch(e){toast("复制失败,请手动选中预览区文本");}
+  document.body.removeChild(ta);
+}
+function downloadMd(){
+  if(!val("fid")){toast("请先填 feature-id");return;}
+  var md=buildMd(), blob=new Blob([md],{type:"text/markdown;charset=utf-8"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="intent.md";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+  toast("已下载 intent.md → 存到 specs/"+ (val("fid")||"<feature-id>") +"/");
+}
+var tt;function toast(m){var e=document.getElementById("toast");e.textContent=m;e.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){e.classList.remove("on");},2000);}
+
+// ---- overview shell mock(演示快照)----
+var inboxCards=[
+  {stage:"R1",cls:"you",proj:"auction",feat:"auction-mvp",q:"意图简报待你撰写 — 用 R1 引导填表标签即可生成,无需在聊天里逐问回答",acts:["开始 R1 填表"]},
+  {stage:"R1",cls:"you",proj:"AISEP",feat:"feat-aisep-console",q:"控制台自身的意图待确认(本特性,已走完 R1-R5 并冻结)",acts:["查看"]},
+  {stage:"R3",cls:"you",proj:"(示例)",feat:"feat-y",q:"3 张澄清红卡待答(演示其他决策类型)",acts:["逐张作答","全部 defer"]},
+  {stage:"gate-spec",cls:"rej",proj:"(示例)",feat:"feat-z",q:"spec 被拒:trace 链断(演示 rejected 卡)",acts:["查看原因"]},
+];
+function renderInbox(){
+  document.getElementById("inbox").innerHTML=inboxCards.map(function(c){
+    var sp=c.cls==="rej"?"stagepill r":"stagepill";
+    var turn=c.cls==="you"?'<span class="turn">● 轮到你</span>':"";
+    var cls="card "+(c.cls==="rej"?"rej":(c.cls==="you"?"you":""));
+    var acts=c.acts.map(function(a){return '<button class="btn" onclick="toast(\'(演示)动作:'+a+'\')">'+a+'</button>';}).join("");
+    return '<div class="'+cls+'"><div class="crow"><span class="'+sp+'">'+c.stage+'</span><span class="crumb"><b>'+c.proj+'</b> · '+c.feat+'</span>'+turn+'</div><div class="q">'+c.q+'</div><div class="acts">'+acts+'</div></div>';
+  }).join("");
+}
+var STEPS=["R1意图","R2范围","R3澄清","R4优先级","R5规格"];
+var portData=[
+  {name:"auction",feats:[{id:"auction-mvp",steps:["you","none","none","none","none"]}]},
+  {name:"AISEP",feats:[
+    {id:"feat-aisep-console",steps:["done","done","skip","skip","done"]},
+    {id:"feat-req-5step",steps:["done","done","done","done","done"]},
+  ]},
+];
+function cell(s){var m={done:["s-done","✓"],you:["s-you","你"],none:["s-none","–"],skip:["s-skip","跳"]};var x=m[s]||m.none;return '<td><div class="step '+x[0]+'">'+x[1]+'</div></td>';}
+function renderPort(){
+  var h="";portData.forEach(function(p){
+    h+='<div class="projhdr">'+p.name+'</div><table class="ptable"><thead><tr><th>Feature</th>'+STEPS.map(function(s){return '<th class="c">'+s+'</th>';}).join("")+'</tr></thead><tbody>';
+    p.feats.forEach(function(f){h+='<tr><td>'+f.id+'</td>'+f.steps.map(cell).join("")+'</tr>';});
+    h+='</tbody></table>';
+  });
+  document.getElementById("port").innerHTML=h;
+}
+
+setTrack("standard");render();renderInbox();renderPort();
+</script>
+</body>
+</html>
