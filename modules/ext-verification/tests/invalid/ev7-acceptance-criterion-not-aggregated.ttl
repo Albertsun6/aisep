@@ -1,0 +1,38 @@
+# expect: EV7:
+# Invalid: AcceptanceCriterion with no parent requirement aggregating it (only associated).
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/ext-verification-test/> .
+
+:model a arch:Model ;
+    skos:prefLabel "验证扩展测试模型"@zh .
+
+:quoteSvc a am4:ApplicationComponent ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务"@zh .
+
+:tc a aisep:TestCase ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务测试"@zh .
+
+:ver a aisep:Verification ;
+    arch:inModel :model ;
+    arch:source :tc ;
+    arch:target :quoteSvc .
+
+:req a am4:Requirement ;
+    arch:inModel :model ;
+    skos:prefLabel "报价需按时审批"@zh .
+
+:ac a aisep:AcceptanceCriterion ;
+    arch:inModel :model ;
+    skos:prefLabel "超时自动升级"@zh .
+
+:assoc a am4:Association ;
+    arch:inModel :model ;
+    arch:source :req ;
+    arch:target :ac .

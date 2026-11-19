@@ -1,0 +1,249 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix schema:  <http://schema.org/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+@prefix :        <https://meta.linked.archi/examples/cloudplatform/onto#> .
+
+<https://meta.linked.archi/examples/cloudplatform/onto#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/archimate4/onto#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/examples/cloudplatform/onto#" ;
+    vann:preferredNamespacePrefix "cp" ;
+    dcterms:title                      "Cloud Platform Architecture Ontology"@en ;
+    dcterms:description                '''Example custom metamodel extending ArchiMate 4.0 with cloud platform
+concepts — microservices, containers, message brokers, API gateways, and
+observability components. Demonstrates how to build an organization-specific
+modeling language on top of the Linked.Archi foundation.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Custom Elements — extending ArchiMate 4.0
+## ═══════════════════════════════════════════════════════════════════════════════
+
+## ─── Runtime Elements ───────────────────────────────────────────────────────
+
+:Microservice
+    a               owl:Class ;
+    rdfs:subClassOf am4:ApplicationComponent ;
+    skos:prefLabel  "Microservice"@en ;
+    skos:definition '''A fine-grained, independently deployable service that implements
+a bounded context. Communicates with other services via APIs or messaging.'''@en ;
+    arch:prefVisNotation "https://example.com/icons/microservice.svg" ;
+    skos:example    '''ex:OrderService a cp:Microservice ;
+    skos:prefLabel "Order Service"@en ;
+    cp:resilienceLevel "critical" ;
+    cp:deploymentStrategy "blue-green" ;
+    cp:serviceTier "tier-1" .'''@en ;
+.
+
+:APIGateway
+    a               owl:Class ;
+    rdfs:subClassOf am4:ApplicationComponent ;
+    skos:prefLabel  "API Gateway"@en ;
+    skos:definition '''An entry point that routes, authenticates, rate-limits, and aggregates
+API calls from external consumers to internal microservices.'''@en ;
+    arch:prefVisNotation "https://example.com/icons/api-gateway.svg" ;
+.
+
+:Container
+    a               owl:Class ;
+    rdfs:subClassOf am4:Node ;
+    skos:prefLabel  "Container"@en ;
+    skos:definition '''A lightweight, portable runtime unit (e.g., Docker container) that
+packages a microservice with its dependencies.'''@en ;
+    arch:prefVisNotation "https://example.com/icons/container.svg" ;
+.
+
+:KubernetesCluster
+    a               owl:Class ;
+    rdfs:subClassOf am4:Node ;
+    skos:prefLabel  "Kubernetes Cluster"@en ;
+    skos:definition "A Kubernetes cluster that orchestrates container deployment and scaling."@en ;
+    arch:prefVisNotation "https://example.com/icons/k8s-cluster.svg" ;
+.
+
+## ─── Integration Elements ───────────────────────────────────────────────────
+
+:MessageBroker
+    a               owl:Class ;
+    rdfs:subClassOf am4:ApplicationComponent ;
+    skos:prefLabel  "Message Broker"@en ;
+    skos:definition '''An asynchronous messaging infrastructure component (e.g., Kafka, RabbitMQ)
+that decouples producers from consumers.'''@en ;
+    arch:prefVisNotation "https://example.com/icons/message-broker.svg" ;
+.
+
+:EventTopic
+    a               owl:Class ;
+    rdfs:subClassOf am4:DataObject ;
+    skos:prefLabel  "Event Topic"@en ;
+    skos:definition "A named channel on a message broker where events are published and consumed."@en ;
+    arch:prefVisNotation "https://example.com/icons/event-topic.svg" ;
+.
+
+## ─── Data Elements ──────────────────────────────────────────────────────────
+
+:ManagedDatabase
+    a               owl:Class ;
+    rdfs:subClassOf am4:ApplicationComponent ;
+    skos:prefLabel  "Managed Database"@en ;
+    skos:definition "A cloud-managed database service (e.g., RDS, Cloud SQL, Cosmos DB)."@en ;
+    arch:prefVisNotation "https://example.com/icons/managed-db.svg" ;
+.
+
+:CacheStore
+    a               owl:Class ;
+    rdfs:subClassOf am4:ApplicationComponent ;
+    skos:prefLabel  "Cache Store"@en ;
+    skos:definition "An in-memory cache (e.g., Redis, Memcached) for low-latency data access."@en ;
+    arch:prefVisNotation "https://example.com/icons/cache.svg" ;
+.
+
+## ─── Observability Elements ─────────────────────────────────────────────────
+
+:ObservabilityStack
+    a               owl:Class ;
+    rdfs:subClassOf am4:ApplicationComponent ;
+    skos:prefLabel  "Observability Stack"@en ;
+    skos:definition "A monitoring, logging, and tracing infrastructure (e.g., Prometheus + Grafana + Jaeger)."@en ;
+    arch:prefVisNotation "https://example.com/icons/observability.svg" ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Custom Properties
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:resilienceLevel
+    a                   owl:DatatypeProperty ;
+    skos:prefLabel      "resilience level"@en ;
+    skos:definition     "Criticality classification: critical, high, medium, low."@en ;
+    arch:domainIncludes :Microservice ;
+    rdfs:range          xsd:string .
+
+:deploymentStrategy
+    a                   owl:DatatypeProperty ;
+    skos:prefLabel      "deployment strategy"@en ;
+    skos:definition     "How the service is deployed: blue-green, canary, rolling, recreate."@en ;
+    arch:domainIncludes :Microservice ;
+    rdfs:range          xsd:string .
+
+:serviceTier
+    a                   owl:DatatypeProperty ;
+    skos:prefLabel      "service tier"@en ;
+    skos:definition     "SLA tier: tier-1 (99.99%), tier-2 (99.9%), tier-3 (99%)."@en ;
+    arch:domainIncludes :Microservice ;
+    rdfs:range          xsd:string .
+
+:containerImage
+    a                   owl:DatatypeProperty ;
+    skos:prefLabel      "container image"@en ;
+    skos:definition     "Docker image reference (e.g., registry.example.com/order-service:1.2.3)."@en ;
+    arch:domainIncludes :Container ;
+    rdfs:range          xsd:string .
+
+:replicaCount
+    a                   owl:DatatypeProperty ;
+    skos:prefLabel      "replica count"@en ;
+    skos:definition     "Number of running replicas for this container determining its horizontal scale."@en ;
+    arch:domainIncludes :Container ;
+    rdfs:range          xsd:integer .
+
+:topicPartitions
+    a                   owl:DatatypeProperty ;
+    skos:prefLabel      "topic partitions"@en ;
+    skos:definition     "Number of partitions for this event topic controlling parallelism and throughput."@en ;
+    arch:domainIncludes :EventTopic ;
+    rdfs:range          xsd:integer .
+
+:databaseEngine
+    a                   owl:DatatypeProperty ;
+    skos:prefLabel      "database engine"@en ;
+    skos:definition     "Database engine type (e.g., PostgreSQL, MySQL, MongoDB)."@en ;
+    arch:domainIncludes :ManagedDatabase ;
+    rdfs:range          xsd:string .
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Custom Relationships — three-declaration pattern
+## ═══════════════════════════════════════════════════════════════════════════════
+
+## ─── publishesTo — Microservice → EventTopic ────────────────────────────────
+
+:publishesTo
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "publishes to"@en ;
+    skos:definition      "A microservice publishes domain events to a topic for asynchronous consumption."@en ;
+    arch:domainIncludes  :Microservice ;
+    arch:rangeIncludes   :EventTopic .
+
+:Publishing
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :publishesTo ;
+    skos:prefLabel       "Publishing"@en ;
+    skos:definition      "A publishing relationship from a microservice to an event topic."@en ;
+.
+
+:qualifiedPublishing
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Publishing ;
+    arch:unqualifiedForm :publishesTo .
+
+## ─── subscribesTo — Microservice → EventTopic ──────────────────────────────
+
+:subscribesTo
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "subscribes to"@en ;
+    skos:definition      "A microservice subscribes to events from a topic for reactive processing."@en ;
+    arch:domainIncludes  :Microservice ;
+    arch:rangeIncludes   :EventTopic .
+
+:Subscription
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :subscribesTo ;
+    skos:prefLabel       "Subscription"@en ;
+    skos:definition      "A subscription relationship from a microservice to an event topic."@en ;
+.
+
+:qualifiedSubscription
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Subscription ;
+    arch:unqualifiedForm :subscribesTo .
+
+## ─── deployedIn — Container → KubernetesCluster ────────────────────────────
+
+:deployedIn
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "deployed in"@en ;
+    skos:definition      "A container is deployed in a Kubernetes cluster for orchestration and scaling."@en ;
+    arch:domainIncludes  :Container ;
+    arch:rangeIncludes   :KubernetesCluster .
+
+:Deployment
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :deployedIn ;
+    skos:prefLabel       "Deployment"@en ;
+    skos:definition      "A deployment relationship from a container to a cluster."@en ;
+.
+
+:qualifiedDeployment
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Deployment ;
+    arch:unqualifiedForm :deployedIn .
+

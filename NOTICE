@@ -1,0 +1,8 @@
+AISEP
+
+This repository vendors ontology files from Linked.Archi (https://meta.linked.archi/),
+licensed under CC-BY-4.0, in vendor/meta.linked.archi/ (unmodified; see SHA256SUMS there).
+
+AISEP's own ontologies and shapes (modules/) are licensed under CC-BY-4.0 and build on
+Linked.Archi core and its ArchiMate 4.0 ontology. See docs/metamodel-spec.md §12 for the
+license position (CC-BY-SA sources such as core-vis, edgy and ddd-crew texts are not included).

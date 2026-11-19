@@ -1,0 +1,214 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix umltax:  <https://meta.linked.archi/uml/tax#> .
+@prefix umlvp:   <https://meta.linked.archi/uml/viewpoints#> .
+@prefix :        <https://meta.linked.archi/uml/metamodel#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/uml/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uml/metamodel#" ;
+    vann:preferredNamespacePrefix "umlmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi UML 2.5.1 Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for UML 2.5.1. Ties together the UML
+element/relationship ontology, SHACL shapes, alignment axioms, SKOS taxonomy,
+viewpoints, and reference data into a single discoverable resource.
+
+This metamodel formalizes the OMG Unified Modeling Language as a Linked.Archi
+modeling language, enabling UML model data to participate in the unified
+architecture knowledge graph alongside ArchiMate, C4, BPMN, and Backstage.
+
+The mapping from the MOF-based UML metamodel to OWL/RDF is informed by the OMG
+Ontology Definition Metamodel (ODM, formal/2014-09-02) Annex D mapping rules,
+with Linked.Archi conventions (three-declaration qualified relationships,
+SHACL validation, SKOS classification) applied on top. ODM maps UML model
+instances (M1) to OWL for dataset use; this metamodel represents the UML
+metamodel itself (M2) in OWL for architecture knowledge graph use.'''@en ;
+    dcterms:created               "2025-12-01"^^xsd:date ;
+    dcterms:modified              "2026-02-01"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/uml/metamodel/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://www.omg.org/spec/UML/2.5.1/>,
+                                  <https://www.omg.org/spec/ODM/1.1/>,
+                                  <https://www.omg.org/spec/MOF/2.5.1/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UML/2.5.1/>,
+                                  <https://www.omg.org/spec/ODM/1.1/>,
+                                  <https://www.omg.org/spec/MOF/2.5.1/> ;
+    rdfs:seeAlso                  <https://www.omg.org/spec/UML/2.5.1/>,
+                                  <https://www.omg.org/spec/ODM/1.1/>,
+                                  <https://www.omg.org/spec/MOF/2.5.1/>,
+                                  <https://www.iso.org/standard/32624.html>,
+                                  <https://www.iso.org/standard/52854.html> ;
+.
+
+
+#################################################################
+# UML Framework Individual
+#################################################################
+
+:UMLFramework
+    a               arch:Framework ;
+    skos:prefLabel  "UML"@en ;
+    skos:scopeNote  '''The language, not a release: the label deliberately carries no version,
+and the namespace it sits in (uml/metamodel#) carries none either, so this IRI stays correct
+when a further UML version is added. The release is the arch:Metamodel individual :UML2,
+which declares owl:versionInfo "2.5.1".
+
+2.5.1 is currently the only version covered, so the distinction buys nothing today. It is
+drawn anyway because ArchiMate shows what happens when it is not: two versions each minted
+their own framework individual in their own namespace, and there was no version-independent
+way to select ArchiMate models at all.'''@en ;
+    skos:definition '''The Unified Modeling Language (UML) — the OMG standard
+general-purpose modeling language for software-intensive systems. Provides 14
+diagram types covering structural and behavioral modeling. Version 2.5.1 is standardized as
+ISO/IEC 19505-1:2012 (Infrastructure) and ISO/IEC 19505-2:2012 (Superstructure).
+
+UML is defined using the Meta Object Facility (MOF) as its meta-metamodel (M3 layer).
+The OMG Ontology Definition Metamodel (ODM) defines MOF metamodels for OWL/RDF
+and provides UML profiles for ontology authoring in UML tools. Its Annex D mapping
+rules are used as an informative reference for how UML constructs surface in OWL.'''@en ;
+    dcterms:publisher    "Object Management Group (OMG)" ;
+    rdfs:seeAlso    <https://www.omg.org/spec/UML/2.5.1/>,
+                    <https://www.omg.org/spec/MOF/2.5.1/>,
+                    <https://www.omg.org/spec/ODM/1.1/>,
+                    <https://www.iso.org/standard/32624.html>,
+                    <https://www.iso.org/standard/52854.html> ;
+.
+
+
+#################################################################
+# Related Standards
+#################################################################
+
+:MOFStandard
+    a               arch:Framework ;
+    skos:prefLabel  "MOF 2.5.1"@en ;
+    skos:definition '''The Meta Object Facility (MOF) 2.5.1 — the OMG meta-metamodel
+that defines the abstract syntax used to specify UML and other modeling languages.
+MOF is the M3 layer in the four-layer metamodel architecture.'''@en ;
+    dcterms:source  <https://www.omg.org/spec/MOF/2.5.1/> ;
+    dcterms:publisher    "Object Management Group (OMG)" ;
+.
+
+:ODMStandard
+    a               arch:Framework ;
+    skos:prefLabel  "ODM 1.1"@en ;
+    skos:definition '''The Ontology Definition Metamodel (ODM) 1.1 — the OMG specification
+that defines MOF metamodels for RDF, OWL, Common Logic, and Topic Maps, along with
+mappings to and from UML and profiles for UML-based ontology authoring tools.
+
+ODM is relevant for building data models and vocabularies for datasets using UML tools.
+Its Annex D mapping rules (informative, not normative) remain a useful reference for
+how UML constructs should surface in OWL — even though Linked.Archi uses OWL directly
+rather than authoring through UML profiles.
+
+Key ODM Annex D mapping rules used as reference in this metamodel:
+  - UML Package → owl:Ontology (Annex D.3.2)
+  - UML Class → owl:Class (Annex D.3.3)
+  - UML Generalization → rdfs:subClassOf (Annex D.3.3)
+  - UML Property → owl:DatatypeProperty or owl:ObjectProperty (Annex D.3.4)
+  - UML Association → owl:ObjectProperty (Annex D.3.5)
+  - UML AssociationClass → owl:Class + functional properties (Annex D.3.6)
+  - UML Multiplicity → owl:minCardinality/maxCardinality (Annex D.3.7)
+  - UML Enumeration → SKOS ConceptScheme (Linked.Archi convention; ODM D.3.9 uses owl:oneOf)'''@en ;
+    dcterms:source  <https://www.omg.org/spec/ODM/1.1/> ;
+    dcterms:publisher    "Object Management Group (OMG)" ;
+.
+
+
+#################################################################
+# UML 2.5.1 Metamodel Instance
+#################################################################
+
+:UML2
+    a                             arch:Metamodel ;
+    skos:prefLabel                "UML 2.5.1 Metamodel"@en ;
+    dcterms:description               '''The complete UML 2.5.1 metamodel definition for Linked.Archi,
+aggregating the element/relationship ontology, SHACL shapes, alignment axioms,
+SKOS taxonomy, viewpoints, and reference data. Covers structural classifiers
+(Class, Interface, Component, Package), behavioral elements (Activity, StateMachine,
+Interaction), deployment concepts (Node, Artifact), and use cases (Actor, UseCase).
+
+This metamodel enables UML model data to coexist with ArchiMate, C4, BPMN, and
+Backstage models in the same knowledge graph, queryable with the same SPARQL,
+validatable with the same SHACL, and navigable through the same tools.'''@en ;
+
+    ## Foundation — the language, not this release
+    arch:basedOnFramework         :UMLFramework ;
+    owl:versionInfo               "2.5.1" ;
+
+    ## Model concepts — element/relationship ontology
+    ## File: uml-onto.ttl
+    arch:modelConcepts            <https://meta.linked.archi/uml/onto#> ;
+
+    ## Formal rules — SHACL shapes
+    ## Files: uml-shapes.ttl, uml-publication-shapes.ttl
+    ##
+    ## uml/shapes# is the conformance set: it constrains what UML 2.5.1 actually
+    ## requires, which is why it holds no naming rule — NamedElement::name is
+    ## [0..1] throughout the specification.
+    ##
+    ## uml/publication-shapes# is opt-in. It requires a language-tagged label on
+    ## the classes a reader navigates by name, for models that are going to be
+    ## published. Listed here so it is discoverable from the manifest; loading it
+    ## is a decision the consumer makes, not a conformance requirement. See
+    ## UML-DD-14.
+    arch:formalRules              <https://meta.linked.archi/uml/shapes#>,
+                                  <https://meta.linked.archi/uml/publication-shapes#> ;
+
+    ## Viewpoints — UML diagram types as architecture viewpoints
+    ## File: uml-viewpoints.ttl
+    arch:architectureViewpoints   <https://meta.linked.archi/uml/viewpoints#> ;
+
+    ## Concept classification — SKOS taxonomy (by diagram type, by metaclass category)
+    ## File: uml-tax.ttl
+    arch:conceptClassification    <https://meta.linked.archi/uml/tax#> ;
+    arch:paletteGrouping          umltax:PaletteGrouping ;
+
+    ## Visual notation set — default element/relationship appearance
+    ## File: uml-notation.ttl
+    arch:notationSet              <https://meta.linked.archi/uml/notation#UMLStandardNotation> ;
+
+    ## Viewpoint library
+    ## File: uml-viewpoints.ttl
+    arch:viewpointLibrary         umlvp:ViewpointCatalog ;
+
+    ## No arch:referenceData: the UML Enumeration value sets (visibility,
+    ## aggregation, message sort, …) are closed by the specification, so their
+    ## values are named individuals in uml-onto.ttl and are grouped for
+    ## navigation under umltax:ByEnumerationValue rather than kept as a
+    ## separate reference-data document. See UML-DD-12.
+
+    ## Stakeholders (referencing core viewpoint individuals)
+    arch:metamodelIdentifiesStakeholder
+        archvp:SoftwareArchitect,
+        archvp:SolutionArchitect,
+        archvp:SoftwareDeveloper,
+        archvp:BusinessAnalyst ;
+
+    ## Concerns (referencing core viewpoint individuals)
+    arch:metamodelIdentifiesConsideration
+        archvp:StructureConcern,
+        archvp:BehaviorConcern,
+        archvp:DependencyConcern,
+        archvp:DeploymentConcern,
+        archvp:IntegrationConcern ;
+.

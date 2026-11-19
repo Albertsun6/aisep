@@ -1,0 +1,54 @@
+# Procurement example — BPMN part: the executable-level quotation approval process.
+# The process refines the am4 process :quoteApproval (spec §7.2, D4: tasks/lanes are NOT promoted to am4).
+# Internal sequence flows (task -> gateway etc.) are BPMN-only and not judged by the am4 matrix (spec §10.2).
+# Labels: one @zh per element (BPMN/UML upstream shapes allow one prefLabel).
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix bpmn:  <https://meta.linked.archi/bpmn/onto#> .
+@prefix :      <https://aisep.example/model/procurement/> .
+
+:bpmnQuoteApproval a bpmn:Process ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "报价审批流程"@zh ;
+    bpmn:processType "Private" ;
+    bpmn:isExecutable false ;
+    bpmn:flowElements :bpmnStart , :bpmnReview , :bpmnAmountGateway , :bpmnFirstLevel , :bpmnSecondLevel , :bpmnEnd ,
+                      :sf1 , :sf2 , :sf3 , :sf4 , :sf5 , :sf6 .
+
+:bpmnStart a bpmn:StartEvent ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "收到报价单"@zh .
+
+:bpmnReview a bpmn:UserTask ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "审核报价单"@zh .
+
+:bpmnAmountGateway a bpmn:ExclusiveGateway ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "金额超过10万?"@zh ;
+    bpmn:gatewayDirection "Diverging" ;
+    bpmn:default :sf3 .
+
+:bpmnFirstLevel a bpmn:UserTask ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "一级审批"@zh .
+
+:bpmnSecondLevel a bpmn:UserTask ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "二级审批"@zh .
+
+:bpmnEnd a bpmn:EndEvent ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "审批完成"@zh .
+
+:sf1 a bpmn:SequenceFlow ; arch:inModel <https://aisep.example/model/procurement/> ; arch:source :bpmnStart         ; arch:target :bpmnReview .
+:sf2 a bpmn:SequenceFlow ; arch:inModel <https://aisep.example/model/procurement/> ; arch:source :bpmnReview        ; arch:target :bpmnAmountGateway .
+:sf3 a bpmn:SequenceFlow ; arch:inModel <https://aisep.example/model/procurement/> ; arch:source :bpmnAmountGateway ; arch:target :bpmnFirstLevel .
+:sf4 a bpmn:SequenceFlow ; arch:inModel <https://aisep.example/model/procurement/> ; arch:source :bpmnAmountGateway ; arch:target :bpmnSecondLevel .
+:sf5 a bpmn:SequenceFlow ; arch:inModel <https://aisep.example/model/procurement/> ; arch:source :bpmnFirstLevel    ; arch:target :bpmnEnd .
+:sf6 a bpmn:SequenceFlow ; arch:inModel <https://aisep.example/model/procurement/> ; arch:source :bpmnSecondLevel   ; arch:target :bpmnEnd .
+
+# Cross-notation: the BPMN process refines the ArchiMate process (refiner = source).
+:rel-bpmnQuoteApproval-refines-quoteApproval a arch:Refines ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :bpmnQuoteApproval ; arch:target :quoteApproval .

@@ -1,0 +1,91 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix iso-thes: <http://purl.org/iso25964/skos-thes#> .
+
+@prefix lmm3:   <https://meta.linked.archi/leanix/v3/onto#> .
+@prefix :       <https://meta.linked.archi/leanix/v3/tax#> .
+
+
+<https://meta.linked.archi/leanix/v3/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "LeanIX Meta Model v3 Concept Scheme"@en ;
+    dcterms:description  "Classification of the LeanIX Meta Model v3 fact sheet types by architecture layer."@en ;
+    skos:hasTopConcept :FactSheetType ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/leanix/v3/tax#" ;
+    vann:preferredNamespacePrefix "lmm3tax" ;
+    dcterms:title                 "Linked.Archi LeanIX Meta Model v3 Taxonomy"@en ;
+    dcterms:created               "2026-11-16"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    prov:wasDerivedFrom <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    rdfs:seeAlso                  <https://help.sap.com/docs/leanix/ea/meta-model>,
+                                  <https://help.sap.com/docs/leanix/ea/modeling-guidelines-v3> ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+
+#################################################################
+# Top-level concept
+#################################################################
+
+:FactSheetType
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/leanix/v3/tax#> ;
+    skos:prefLabel "Fact Sheet Type"@en ;
+    skos:definition "The fact sheet types defined by LeanIX Meta Model v3, by architecture layer."@en ;
+    skos:inScheme <https://meta.linked.archi/leanix/v3/tax#> ;
+.
+
+
+#################################################################
+# Layers, as leanix/tax# names those of Meta Model v4
+#################################################################
+
+:StrategyTransformationLayer
+    a skos:Concept ; skos:broader :FactSheetType ;
+    skos:prefLabel "Strategy & Transformation"@en ;
+    skos:definition "Fact sheets for transformation management: the projects that change the landscape."@en ;
+    skos:inScheme <https://meta.linked.archi/leanix/v3/tax#> ;
+    skos:narrower lmm3:Project ;
+.
+
+:BusinessLayer
+    a skos:Concept ; skos:broader :FactSheetType ;
+    skos:prefLabel "Business"@en ;
+    skos:definition "Fact sheets representing business capabilities, processes, products and the user groups they serve."@en ;
+    skos:inScheme <https://meta.linked.archi/leanix/v3/tax#> ;
+    skos:narrower lmm3:BusinessCapability, lmm3:Process, lmm3:Product, lmm3:UserGroup ;
+.
+
+:ApplicationDataLayer
+    a skos:Concept ; skos:broader :FactSheetType ;
+    skos:prefLabel "Application & Data"@en ;
+    skos:definition "Fact sheets representing applications, the interfaces between them and the data objects they exchange."@en ;
+    skos:inScheme <https://meta.linked.archi/leanix/v3/tax#> ;
+    skos:narrower lmm3:Application, lmm3:Interface, lmm3:DataObject ;
+.
+
+:TechnicalLayer
+    a skos:Concept ; skos:broader :FactSheetType ;
+    skos:prefLabel "Technical"@en ;
+    skos:definition "Fact sheets representing IT components, their categories and providers, and the technical platforms they form."@en ;
+    skos:inScheme <https://meta.linked.archi/leanix/v3/tax#> ;
+    skos:narrower lmm3:ITComponent, lmm3:TechCategory, lmm3:TechPlatform, lmm3:Provider ;
+.
+
+
+#################################################################
+# Layer order
+#################################################################
+
+:LayerOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    iso-thes:superOrdinate :FactSheetType ;
+    skos:prefLabel         "Layer Order"@en ;
+    skos:memberList        ( :StrategyTransformationLayer :BusinessLayer :ApplicationDataLayer :TechnicalLayer ) ;
+.

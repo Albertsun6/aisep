@@ -1,0 +1,22 @@
+# expect-warning: derived-only relationship asserted
+# Spec §6.4: ApplicationComponent -Realization-> Capability is permitted only as a derivation (am4rt:permitsRealization
+# but not permitsDirectRealization): legal (no Violation) but L2 warns.
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix am4vp: <https://meta.linked.archi/archimate4/viewpoints#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:crm a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "客户关系系统"@zh .
+:custMgmt a am4:Capability ; arch:inModel :t ; skos:prefLabel "客户管理能力"@zh .
+:rel-crm-realizes-custMgmt a am4:Realization ; arch:source :crm ; arch:target :custMgmt ; arch:inModel :t .

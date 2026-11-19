@@ -1,0 +1,129 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix infra: <https://meta.linked.archi/bpmn/infra#> .
+@prefix archvis: <https://meta.linked.archi/core-vis#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix bpmndi: <https://meta.linked.archi/bpmn/di#> .
+@prefix dc: <https://meta.linked.archi/bpmn/dc#> .
+@prefix di: <https://meta.linked.archi/bpmn/di-core#> .
+@prefix : <https://meta.linked.archi/bpmn/infra-shapes#> .
+
+#################################################################
+# Shapes Graph Declaration
+#
+# Scope note — cardinality
+#
+# sh:minCount is asserted only where BPMN genuinely requires the attribute:
+# infra:targetNamespace on bpmn:definitions, and importType / location /
+# namespace on bpmn:import. The CMOF metamodel also gives lowerBound=1 to
+# name, expressionLanguage, typeLanguage, exporter and exporterVersion, but all
+# five are optional in serialized BPMN XML (the language attributes carry spec
+# defaults, the exporter attributes are optional tool metadata), so no
+# sh:minCount is asserted for them.
+#################################################################
+
+<https://meta.linked.archi/bpmn/infra-shapes#>
+    a owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/infra-shapes#" ;
+    vann:preferredNamespacePrefix "infrash" ;
+    dcterms:title "Linked.Archi BPMN Infrastructure SHACL Shapes"@en ;
+    dcterms:description '''SHACL shapes validating BPMN 2.0.2 infrastructure classes — Definitions
+container and Import elements.'''@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    dcterms:modified "2026-07-25"^^xsd:date ;
+    dcterms:publisher "Linked.Archi"@en, <https://linked.archi> ;
+    owl:imports <https://meta.linked.archi/bpmn/infra#> ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+:DefinitionsShape a sh:NodeShape ;
+    sh:targetClass infra:Definitions ;
+    sh:property [
+        sh:path infra:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        rdfs:comment "Optional in BPMN, although CMOF gives it lowerBound=1."@en ;
+    ] ;
+    sh:property [
+        sh:path infra:targetNamespace ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        rdfs:comment "Genuinely required on bpmn:definitions."@en ;
+    ] ;
+    sh:property [
+        sh:path infra:expressionLanguage ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        rdfs:comment "Carries a spec default; may be omitted from the serialization."@en ;
+    ] ;
+    sh:property [
+        sh:path infra:typeLanguage ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        rdfs:comment "Carries a spec default; may be omitted from the serialization."@en ;
+    ] ;
+    sh:property [
+        sh:path infra:imports ;
+        sh:class infra:Import ;
+    ] ;
+    sh:property [
+        sh:path infra:extensions ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+    sh:property [
+        sh:path infra:relationships ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+    sh:property [
+        sh:path infra:rootElements ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+    sh:property [
+        sh:path infra:diagrams ;
+        sh:class bpmndi:BPMNDiagram ;
+    ] ;
+    sh:property [
+        sh:path infra:exporter ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        rdfs:comment "Optional tool metadata in BPMN."@en ;
+    ] ;
+    sh:property [
+        sh:path infra:exporterVersion ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        rdfs:comment "Optional tool metadata in BPMN."@en ;
+    ] ;
+.
+
+:ImportShape a sh:NodeShape ;
+    sh:targetClass infra:Import ;
+    sh:property [
+        sh:path infra:importType ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path infra:location ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path infra:namespace ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.

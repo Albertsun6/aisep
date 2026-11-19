@@ -1,0 +1,471 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix edgy:    <https://meta.linked.archi/edgy/onto#> .
+@prefix :        <https://meta.linked.archi/edgy/viewpoints#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/edgy/viewpoints#>
+    a                             owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by-sa/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/edgy/viewpoints#" ;
+    vann:preferredNamespacePrefix "edgyvp" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi EDGY 23 Viewpoints"@en ;
+    dcterms:description           '''Viewpoint definitions for EDGY 23 enterprise design models.
+Defines viewpoints aligned with the three EDGY facets (Identity, Architecture, Experience),
+their intersections, and cross-cutting enterprise-wide perspectives.'''@en ;
+    dcterms:created               "2025-06-27"^^xsd:date ;
+    dcterms:modified              "2026-04-17"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/edgy/viewpoints/23#> ;
+    owl:versionInfo               "23"@en ;
+    dcterms:source  <https://enterprise.design/wiki/Enterprise_Design_Facets> ;
+    prov:wasDerivedFrom <https://enterprise.design/wiki/Enterprise_Design_Facets> ;
+.
+
+
+#################################################################
+# Viewpoint Catalog
+#################################################################
+
+:ViewpointCatalog
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "EDGY 23 Viewpoint Catalog"@en ;
+    dcterms:description  "Catalog of viewpoints for EDGY 23 enterprise design maps."@en ;
+    skos:hasTopConcept :FullEnterpriseMap, :IdentityMap, :ArchitectureMap,
+                       :ExperienceMap, :CapabilityMap, :JourneyMap,
+                       :OrganisationMap, :ProductMap, :BrandMap ;
+.
+
+
+#################################################################
+# Full Enterprise Map
+#################################################################
+
+:FullEnterpriseMap
+    a                arch:Viewpoint ;
+    skos:prefLabel   "Full Enterprise Map"@en ;
+    skos:definition  "Shows all enterprise elements across all three facets and their intersections — the complete EDGY picture."@en ;
+    skos:scopeNote   "Use this viewpoint for holistic enterprise design workshops where all facets need to be visible and connected. Suitable for initial mapping sessions and cross-facet alignment."@en ;
+    arch:viewType    arch:DesignViewpoint ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme    :ViewpointCatalog ;
+    arch:targetsStakeholder :EnterpriseDesigner, :CLevel ;
+    arch:viewpointFramesConcern :EnterpriseAlignment, :CrossFacetCoherence ;
+    arch:includesConcept
+        edgy:People, edgy:Outcome, edgy:Activity, edgy:Object,
+        edgy:Purpose, edgy:Story, edgy:Content,
+        edgy:Capability, edgy:Process, edgy:Asset,
+        edgy:Task, edgy:Journey, edgy:Channel,
+        edgy:Organisation, edgy:Product, edgy:Brand,
+        edgy:Link, edgy:Flow, edgy:Tree,
+        edgy:Tagging, edgy:Metrics ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Enterprise_Elements> ;
+.
+
+
+#################################################################
+# Facet Viewpoints
+#################################################################
+
+:IdentityMap
+    a                arch:Viewpoint ;
+    skos:prefLabel   "Identity Map"@en ;
+    skos:definition  "Focuses on the Identity facet — why the enterprise exists, who it is, and what matters to it."@en ;
+    skos:scopeNote   "Use for brand strategy, purpose definition, storytelling workshops, and content strategy. Shows Purpose, Story, Content plus Organisation and Brand as intersection elements."@en ;
+    arch:viewType    arch:DesignViewpoint ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme    :ViewpointCatalog ;
+    arch:targetsStakeholder :BrandStrategist, :CommunicationsLead, :CLevel ;
+    arch:viewpointFramesConcern :EnterprisePurpose, :BrandIdentity, :Storytelling ;
+    arch:includesConcept
+        edgy:People,
+        edgy:Purpose, edgy:Story, edgy:Content,
+        edgy:Organisation, edgy:Brand,
+        edgy:Link, edgy:Flow, edgy:Tree,
+        edgy:Tagging, edgy:Metrics ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Identity> ;
+.
+
+:ArchitectureMap
+    a                arch:Viewpoint ;
+    skos:prefLabel   "Architecture Map"@en ;
+    skos:definition  "Focuses on the Architecture facet — how the enterprise runs, what it is capable of, and what makes everything work together."@en ;
+    skos:scopeNote   "Use for capability planning, process design, asset management, and operational architecture. Shows Capability, Process, Asset plus Organisation and Product as intersection elements."@en ;
+    arch:viewType    arch:DesignViewpoint ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme    :ViewpointCatalog ;
+    arch:targetsStakeholder :EnterpriseArchitect, :OperationsLead, :CTO ;
+    arch:viewpointFramesConcern :OperationalEfficiency, :CapabilityPlanning, :AssetManagement ;
+    arch:includesConcept
+        edgy:People,
+        edgy:Capability, edgy:Process, edgy:Asset,
+        edgy:Organisation, edgy:Product,
+        edgy:Link, edgy:Flow, edgy:Tree,
+        edgy:Tagging, edgy:Metrics ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Architecture> ;
+.
+
+:ExperienceMap
+    a                arch:Viewpoint ;
+    skos:prefLabel   "Experience Map"@en ;
+    skos:definition  "Focuses on the Experience facet — what role the enterprise plays in people's lives."@en ;
+    skos:scopeNote   "Use for customer experience design, journey mapping, channel strategy, and service design. Shows Task, Journey, Channel plus Product and Brand as intersection elements."@en ;
+    arch:viewType    arch:DesignViewpoint ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme    :ViewpointCatalog ;
+    arch:targetsStakeholder :ServiceDesigner, :UXDesigner, :ProductOwner ;
+    arch:viewpointFramesConcern :CustomerExperience, :ChannelStrategy, :TaskCompletion ;
+    arch:includesConcept
+        edgy:People,
+        edgy:Task, edgy:Journey, edgy:Channel,
+        edgy:Product, edgy:Brand,
+        edgy:Link, edgy:Flow, edgy:Tree,
+        edgy:Tagging, edgy:Metrics ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Experience> ;
+.
+
+
+#################################################################
+# Focused Viewpoints
+#################################################################
+
+:CapabilityMap
+    a                arch:Viewpoint ;
+    skos:prefLabel   "Capability Map"@en ;
+    skos:definition  "Focused view on enterprise capabilities, their decomposition (trees), and the assets and processes that realise them."@en ;
+    skos:scopeNote   "Use for capability-based planning, investment decisions, and modularisation. Shows capabilities in tree hierarchies with links to processes and assets."@en ;
+    arch:viewType    arch:DesignViewpoint ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme    :ViewpointCatalog ;
+    arch:targetsStakeholder :EnterpriseArchitect, :CTO, :StrategyLead ;
+    arch:viewpointFramesConcern :CapabilityPlanning, :Modularisation, :InvestmentDecision ;
+    arch:includesConcept
+        edgy:Capability, edgy:Process, edgy:Asset,
+        edgy:Organisation, edgy:Product,
+        edgy:Link, edgy:Tree,
+        edgy:Tagging, edgy:Metrics ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Capability>,
+                     <https://enterprise.design/wiki/Capability_Modelling_Guidelines> ;
+.
+
+:JourneyMap
+    a                arch:Viewpoint ;
+    skos:prefLabel   "Journey Map"@en ;
+    skos:definition  "Focused view on people's journeys, the tasks they accomplish, and the channels they traverse."@en ;
+    skos:scopeNote   "Use for customer journey mapping, service blueprinting, and touchpoint analysis. Shows journeys as sequences of tasks using channels, with products featuring in the journey."@en ;
+    arch:viewType    arch:DesignViewpoint ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme    :ViewpointCatalog ;
+    arch:targetsStakeholder :ServiceDesigner, :UXDesigner, :ProductOwner ;
+    arch:viewpointFramesConcern :CustomerExperience, :TouchpointOptimisation, :ServiceBlueprint ;
+    arch:includesConcept
+        edgy:People,
+        edgy:Task, edgy:Journey, edgy:Channel,
+        edgy:Product, edgy:Brand,
+        edgy:Link, edgy:Flow,
+        edgy:Tagging, edgy:Metrics ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Journey> ;
+.
+
+:OrganisationMap
+    a                arch:Viewpoint ;
+    skos:prefLabel   "Organisation Map"@en ;
+    skos:definition  "Focused view on the organisation — its structure, capabilities, processes, purpose, and brands."@en ;
+    skos:scopeNote   "Use for organisational design, operating model definition, and governance. Shows the organisation at the intersection of Identity and Architecture facets."@en ;
+    arch:viewType    arch:DesignViewpoint ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme    :ViewpointCatalog ;
+    arch:targetsStakeholder :CLevel, :HRLead, :EnterpriseArchitect ;
+    arch:viewpointFramesConcern :OrganisationalDesign, :OperatingModel, :Governance ;
+    arch:includesConcept
+        edgy:People,
+        edgy:Organisation,
+        edgy:Purpose, edgy:Story,
+        edgy:Capability, edgy:Process, edgy:Asset,
+        edgy:Brand, edgy:Product,
+        edgy:Link, edgy:Tree,
+        edgy:Tagging, edgy:Metrics ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Organisation> ;
+.
+
+:ProductMap
+    a                arch:Viewpoint ;
+    skos:prefLabel   "Product Map"@en ;
+    skos:definition  "Focused view on products — what the enterprise makes, the capabilities required, and the tasks they serve."@en ;
+    skos:scopeNote   "Use for product portfolio management, product-capability alignment, and product-market fit analysis. Shows products at the intersection of Architecture and Experience facets."@en ;
+    arch:viewType    arch:DesignViewpoint ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme    :ViewpointCatalog ;
+    arch:targetsStakeholder :ProductOwner, :StrategyLead, :ServiceDesigner ;
+    arch:viewpointFramesConcern :ProductPortfolio, :ProductCapabilityAlignment, :ValueDelivery ;
+    arch:includesConcept
+        edgy:People,
+        edgy:Product,
+        edgy:Capability, edgy:Process,
+        edgy:Task, edgy:Journey, edgy:Channel,
+        edgy:Organisation, edgy:Brand,
+        edgy:Link, edgy:Flow, edgy:Tree,
+        edgy:Tagging, edgy:Metrics ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Product> ;
+.
+
+:BrandMap
+    a                arch:Viewpoint ;
+    skos:prefLabel   "Brand Map"@en ;
+    skos:definition  "Focused view on brands — what they stand for, the stories they evoke, and the journeys they appear in."@en ;
+    skos:scopeNote   "Use for brand architecture, brand-experience alignment, and brand portfolio management. Shows brands at the intersection of Identity and Experience facets."@en ;
+    arch:viewType    arch:DesignViewpoint ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme    :ViewpointCatalog ;
+    arch:targetsStakeholder :BrandStrategist, :CommunicationsLead, :ProductOwner ;
+    arch:viewpointFramesConcern :BrandArchitecture, :BrandExperienceAlignment, :BrandPortfolio ;
+    arch:includesConcept
+        edgy:People,
+        edgy:Brand,
+        edgy:Purpose, edgy:Story, edgy:Content,
+        edgy:Task, edgy:Journey,
+        edgy:Organisation, edgy:Product,
+        edgy:Link, edgy:Flow,
+        edgy:Tagging, edgy:Metrics ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Brand> ;
+.
+
+
+#################################################################
+# Stakeholders
+#################################################################
+
+:EnterpriseDesigner
+    a              arch:Stakeholder ;
+    skos:prefLabel "Enterprise Designer"@en ;
+    skos:definition "A practitioner who designs enterprises holistically across all facets."@en ;
+.
+
+:CLevel
+    a              arch:Stakeholder ;
+    skos:prefLabel "C-Level Executive"@en ;
+    skos:definition "Senior executive responsible for enterprise-wide strategy and direction."@en ;
+.
+
+:EnterpriseArchitect
+    a              arch:Stakeholder ;
+    skos:prefLabel "Enterprise Architect"@en ;
+    skos:definition "Architect responsible for the structural design of the enterprise."@en ;
+.
+
+:ServiceDesigner
+    a              arch:Stakeholder ;
+    skos:prefLabel "Service Designer"@en ;
+    skos:definition "Designer focused on end-to-end service experiences."@en ;
+.
+
+:UXDesigner
+    a              arch:Stakeholder ;
+    skos:prefLabel "UX Designer"@en ;
+    skos:definition "Designer focused on user experience across channels."@en ;
+.
+
+:ProductOwner
+    a              arch:Stakeholder ;
+    skos:prefLabel "Product Owner"@en ;
+    skos:definition "Person responsible for product vision, backlog, and value delivery."@en ;
+.
+
+:BrandStrategist
+    a              arch:Stakeholder ;
+    skos:prefLabel "Brand Strategist"@en ;
+    skos:definition "Strategist responsible for brand identity, positioning, and architecture."@en ;
+.
+
+:CommunicationsLead
+    a              arch:Stakeholder ;
+    skos:prefLabel "Communications Lead"@en ;
+    skos:definition "Leader responsible for enterprise storytelling and content strategy."@en ;
+.
+
+:OperationsLead
+    a              arch:Stakeholder ;
+    skos:prefLabel "Operations Lead"@en ;
+    skos:definition "Leader responsible for operational processes and efficiency."@en ;
+.
+
+:CTO
+    a              arch:Stakeholder ;
+    skos:prefLabel "CTO"@en ;
+    skos:definition "Chief Technology Officer — responsible for technology strategy and assets."@en ;
+.
+
+:StrategyLead
+    a              arch:Stakeholder ;
+    skos:prefLabel "Strategy Lead"@en ;
+    skos:definition "Leader responsible for enterprise strategy and capability planning."@en ;
+.
+
+:HRLead
+    a              arch:Stakeholder ;
+    skos:prefLabel "HR Lead"@en ;
+    skos:definition "Leader responsible for people, organisational design, and talent."@en ;
+.
+
+
+#################################################################
+# Concerns
+#################################################################
+
+:EnterpriseAlignment
+    a              arch:Concern ;
+    skos:prefLabel "Enterprise Alignment"@en ;
+    skos:definition "Ensuring all parts of the enterprise work together coherently."@en ;
+.
+
+:CrossFacetCoherence
+    a              arch:Concern ;
+    skos:prefLabel "Cross-Facet Coherence"@en ;
+    skos:definition "Maintaining consistency across Identity, Architecture, and Experience facets."@en ;
+.
+
+:EnterprisePurpose
+    a              arch:Concern ;
+    skos:prefLabel "Enterprise Purpose"@en ;
+    skos:definition "Clarity on why the enterprise exists and what it stands for."@en ;
+.
+
+:BrandIdentity
+    a              arch:Concern ;
+    skos:prefLabel "Brand Identity"@en ;
+    skos:definition "How the enterprise is perceived and differentiated through its brands."@en ;
+.
+
+:Storytelling
+    a              arch:Concern ;
+    skos:prefLabel "Storytelling"@en ;
+    skos:definition "How the enterprise communicates its narrative to people."@en ;
+.
+
+:OperationalEfficiency
+    a              arch:Concern ;
+    skos:prefLabel "Operational Efficiency"@en ;
+    skos:definition "How effectively the enterprise operates through its processes and assets."@en ;
+.
+
+:CapabilityPlanning
+    a              arch:Concern ;
+    skos:prefLabel "Capability Planning"@en ;
+    skos:definition "Planning and developing the capabilities the enterprise needs."@en ;
+.
+
+:AssetManagement
+    a              arch:Concern ;
+    skos:prefLabel "Asset Management"@en ;
+    skos:definition "Managing the tangible and intangible assets the enterprise relies on."@en ;
+.
+
+:CustomerExperience
+    a              arch:Concern ;
+    skos:prefLabel "Customer Experience"@en ;
+    skos:definition "The quality of interactions people have with the enterprise."@en ;
+.
+
+:ChannelStrategy
+    a              arch:Concern ;
+    skos:prefLabel "Channel Strategy"@en ;
+    skos:definition "How the enterprise reaches and interacts with people through channels."@en ;
+.
+
+:TaskCompletion
+    a              arch:Concern ;
+    skos:prefLabel "Task Completion"@en ;
+    skos:definition "Enabling people to accomplish what they want to get done."@en ;
+.
+
+:Modularisation
+    a              arch:Concern ;
+    skos:prefLabel "Modularisation"@en ;
+    skos:definition "Defining boundaries around what belongs together in the enterprise."@en ;
+.
+
+:InvestmentDecision
+    a              arch:Concern ;
+    skos:prefLabel "Investment Decision"@en ;
+    skos:definition "Deciding where to invest in capability development."@en ;
+.
+
+:TouchpointOptimisation
+    a              arch:Concern ;
+    skos:prefLabel "Touchpoint Optimisation"@en ;
+    skos:definition "Improving the quality of interaction points in people's journeys."@en ;
+.
+
+:ServiceBlueprint
+    a              arch:Concern ;
+    skos:prefLabel "Service Blueprint"@en ;
+    skos:definition "Understanding the full service delivery chain behind a journey."@en ;
+.
+
+:OrganisationalDesign
+    a              arch:Concern ;
+    skos:prefLabel "Organisational Design"@en ;
+    skos:definition "Structuring the organisation to deliver on its purpose."@en ;
+.
+
+:OperatingModel
+    a              arch:Concern ;
+    skos:prefLabel "Operating Model"@en ;
+    skos:definition "How the organisation operates to deliver its capabilities."@en ;
+.
+
+:Governance
+    a              arch:Concern ;
+    skos:prefLabel "Governance"@en ;
+    skos:definition "Decision-making structures and accountability within the organisation."@en ;
+.
+
+:ProductPortfolio
+    a              arch:Concern ;
+    skos:prefLabel "Product Portfolio"@en ;
+    skos:definition "Managing the set of products the enterprise offers."@en ;
+.
+
+:ProductCapabilityAlignment
+    a              arch:Concern ;
+    skos:prefLabel "Product-Capability Alignment"@en ;
+    skos:definition "Ensuring products are supported by the right capabilities."@en ;
+.
+
+:ValueDelivery
+    a              arch:Concern ;
+    skos:prefLabel "Value Delivery"@en ;
+    skos:definition "How the enterprise delivers value to people through its products."@en ;
+.
+
+:BrandArchitecture
+    a              arch:Concern ;
+    skos:prefLabel "Brand Architecture"@en ;
+    skos:definition "How brands relate to each other and to the enterprise."@en ;
+.
+
+:BrandExperienceAlignment
+    a              arch:Concern ;
+    skos:prefLabel "Brand-Experience Alignment"@en ;
+    skos:definition "Ensuring brand promises are delivered through actual experiences."@en ;
+.
+
+:BrandPortfolio
+    a              arch:Concern ;
+    skos:prefLabel "Brand Portfolio"@en ;
+    skos:definition "Managing the set of brands the enterprise operates."@en ;
+.

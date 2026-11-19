@@ -1,0 +1,26 @@
+# expect-no-warning: one notation per element
+# modules: bpmn ext-verification
+# R2 valid: redundant superclasses from the SAME notation (bpmn:UserTask + bpmn:Task; aisep:AcceptanceCriterion
+# + am4:Requirement, both am4) and notation-neutral core classes (arch:Element) are fine.
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix ddd:  <https://aisep.example/ont/ddd#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:task a bpmn:UserTask , bpmn:Task ; arch:inModel :t ; skos:prefLabel "审核"@zh .
+:ac1 a aisep:AcceptanceCriterion , am4:Requirement ; arch:inModel :t ; skos:prefLabel "两级审批"@zh .
+:req a am4:Requirement ; arch:inModel :t ; skos:prefLabel "报价审批需求"@zh .
+:rel-req-aggregates-ac1 a am4:Aggregation ; arch:inModel :t ; arch:source :req ; arch:target :ac1 .
+:crm a am4:ApplicationComponent , arch:Element ; arch:inModel :t ; skos:prefLabel "客户关系系统"@zh .

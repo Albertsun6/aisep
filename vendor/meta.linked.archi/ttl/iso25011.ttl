@@ -1,0 +1,127 @@
+@prefix owl:                     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:                     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:                    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:                     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix adms:                    <http://www.w3.org/ns/adms#> .
+@prefix dcterms:                 <http://purl.org/dc/terms/> .
+@prefix bibo:                    <http://purl.org/ontology/bibo/> .
+@prefix vaem:                    <http://www.linkedmodel.org/schema/vaem> .
+@prefix vann:                    <http://purl.org/vocab/vann/> .
+@prefix pav:                     <http://purl.org/pav/> .
+@prefix prov:                    <http://www.w3.org/ns/prov#> .
+@prefix cc:                      <http://creativecommons.org/ns#> .
+
+@prefix skos:                    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:                  <http://schema.org/> .
+@prefix arch:                    <https://meta.linked.archi/core#> .
+@prefix :                        <https://meta.linked.archi/iso25011#> .
+
+<https://meta.linked.archi/iso25011#>
+    rdf:type owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/iso25011#" ;
+    vann:preferredNamespacePrefix "iso25011" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ISO/IEC 25011 IT Service Quality Model"@en ;
+    dcterms:description                '''
+Ontology of IT service quality characteristics from ISO/IEC 25011.
+ITServiceQuality is the root owl:Class (subClassOf arch:QualityAttribute).
+The nine service quality characteristics are owl:NamedIndividual instances of ITServiceQuality —
+vocabulary terms referenced by arch:QualityMeasure and ad:QualityAttributeRequirement.
+                                   '''@en ;
+    dcterms:source  <https://www.iso.org/standard/78180.html> ;
+    prov:wasDerivedFrom <https://www.iso.org/standard/78180.html> ;
+    dcterms:abstract              '''
+IT service quality characteristics from ISO/IEC 25011, modelled as a class/individual hierarchy
+for use in service quality evaluation and architecture assessment.
+      '''@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-05-02"^^xsd:date ;
+    dcterms:publisher
+                                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/iso25011/0.2.0#> ;
+    owl:versionInfo               "0.2.0" ;
+    owl:priorVersion              <https://meta.linked.archi/iso25011/0.1.0#> ;
+    schema:citation               "ISO/IEC 25011 Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Service quality model" ;
+    schema:logo                   <https://iso25000.com/images/header_iso25000_en.png> ;
+    prov:wasDerivedFrom           "ISO/IEC 25011" ;
+    rdfs:seeAlso                  <https://iso25000.com/index.php/en/iso-25000-standards/iso-25011>,
+                                  <https://www.iso.org/standard/78180.html> ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Root quality model class
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ITServiceQuality
+    a               owl:Class ;
+    rdfs:subClassOf arch:QualityAttribute ;
+    skos:prefLabel  "IT Service Quality"@en ;
+    skos:definition "The totality of characteristics of an IT service that bear on its ability to satisfy stated and implied needs of the service consumer."@en ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Service quality characteristics — owl:NamedIndividual (vocabulary terms)
+##
+## Referenced by arch:QualityMeasure via arch:measuredQualityAttribute
+## and by ad:QualityAttributeRequirement via ad:onQualityAttribute.
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:Availability
+    a               owl:NamedIndividual, :ITServiceQuality ;
+    skos:prefLabel  "Availability"@en ;
+    skos:definition "Degree to which an IT service is operational and accessible when required for use by the service consumer."@en ;
+.
+
+:Responsiveness
+    a               owl:NamedIndividual, :ITServiceQuality ;
+    skos:prefLabel  "Responsiveness"@en ;
+    skos:definition "Degree to which the response times, processing times, and throughput rates of an IT service meet the requirements of the service consumer."@en ;
+.
+
+:Integrity
+    a               owl:NamedIndividual, :ITServiceQuality ;
+    skos:prefLabel  "Integrity"@en ;
+    skos:definition "Degree to which an IT service prevents unauthorized access to, or modification of, data and ensures that data is accurate and complete."@en ;
+.
+
+:Usability
+    a               owl:NamedIndividual, :ITServiceQuality ;
+    skos:prefLabel  "Usability"@en ;
+    skos:definition "Degree to which an IT service can be used by specified consumers to achieve specified goals with effectiveness, efficiency, and satisfaction."@en ;
+.
+
+:Portability
+    a               owl:NamedIndividual, :ITServiceQuality ;
+    skos:prefLabel  "Portability"@en ;
+    skos:definition "Degree to which an IT service can be transferred from one environment to another while maintaining its quality characteristics."@en ;
+.
+
+:Recoverability
+    a               owl:NamedIndividual, :ITServiceQuality ;
+    skos:prefLabel  "Recoverability"@en ;
+    skos:definition "Degree to which an IT service can re-establish its specified levels of performance and recover the data directly affected after an interruption or failure."@en ;
+.
+
+:Capacity
+    a               owl:NamedIndividual, :ITServiceQuality ;
+    skos:prefLabel  "Capacity"@en ;
+    skos:definition "Degree to which the maximum limits of an IT service parameter meet the requirements of the service consumer under expected and peak load conditions."@en ;
+.
+
+:Continuity
+    a               owl:NamedIndividual, :ITServiceQuality ;
+    skos:prefLabel  "Continuity"@en ;
+    skos:definition "Degree to which an IT service can continue to operate at acceptable predefined levels during and after a disruptive event."@en ;
+.
+
+:Security
+    a               owl:NamedIndividual, :ITServiceQuality ;
+    skos:prefLabel  "Security"@en ;
+    skos:definition "Degree to which an IT service protects information and data so that persons or other systems have the degree of access appropriate to their types and levels of authorization."@en ;
+.

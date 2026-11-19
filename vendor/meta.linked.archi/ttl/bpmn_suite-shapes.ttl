@@ -1,0 +1,37 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+
+
+<https://meta.linked.archi/bpmn/suite-shapes#>
+    a owl:Ontology ;
+    vann:preferredNamespaceUri "https://meta.linked.archi/bpmn/suite-shapes#" ;
+    vann:preferredNamespacePrefix "bpmnsuitesh" ;
+    cc:license "http://creativecommons.org/licenses/by/4.0/" ;
+    dcterms:title "Linked.Archi BPMN Suite Shapes Imports (draft)"@en ;
+    dcterms:description '''Shape aggregator that pulls together all SHACL shape modules for the
+BPMN suite (Core, Infrastructure, BPMNDI, DI, DC) into a single importable unit.'''@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    dcterms:modified "2026-07-25"^^xsd:date ;
+    rdfs:comment '''Imports-only aggregate. SHACL processors do not dereference owl:imports,
+so loading this document alone contributes zero shapes and validates nothing. Load the five
+shape documents directly:
+
+  https://meta.linked.archi/bpmn/onto-shapes
+  https://meta.linked.archi/bpmn/infra-shapes
+  https://meta.linked.archi/bpmn/di-shapes
+  https://meta.linked.archi/bpmn/di-core-shapes
+  https://meta.linked.archi/bpmn/dc-shapes
+
+For that reason the BPMN metamodel does not list this aggregate among its formal rules
+(arch:formalRules); it names the five documents above.'''@en ;
+    owl:imports <https://meta.linked.archi/bpmn/onto-shapes#> ;
+    owl:imports <https://meta.linked.archi/bpmn/di-shapes#> ;
+    owl:imports <https://meta.linked.archi/bpmn/di-core-shapes#> ;
+    owl:imports <https://meta.linked.archi/bpmn/dc-shapes#> ;
+    owl:imports <https://meta.linked.archi/bpmn/infra-shapes#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .

@@ -1,0 +1,29 @@
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# AISEP module manifest — BPMN 2.0.2 (spec §6.2). Full bpmn: vocabulary, NOT bpmn-lite.
+# BPMN-internal connectors (task -> gateway etc.) are validated only by the vendored BPMN shapes;
+# the am4 relationship tables do not apply (inheritsHubRules false, spec §10.2).
+# Connector endpoints: authors write arch:source / arch:target on the qualified bpmn:SequenceFlow etc.
+# (upstream convention, bpmn_onto-shapes.ttl lines 41-44: bpmn:sourceRef/targetRef are normalised to
+# arch:source/arch:target). The direct triple (bpmn:sequenceFlow ...) comes from arch:unqualifiedForm,
+# which upstream already declares on every drawable connector class (bpmn_onto.ttl 1450-1538).
+# bpmn_infra.ttl is loaded because bpmn_onto-shapes uses sh:class infra:Import.
+# core-vis (imported by bpmn_onto) is NOT loaded: CC-BY-SA (spec §12) and no BPMN term needs it.
+
+<https://aisep.example/module/bpmn>
+    a                      arch:Metamodel ;
+    skos:prefLabel         "BPMN 2.0.2"@zh ;
+    aisep:moduleKind       aisep:Language ;
+    owl:versionInfo        "0.2.0" ;
+    aisep:loads            "vendor/meta.linked.archi/ttl/core.ttl" ,
+                           "vendor/meta.linked.archi/ttl/bpmn_infra.ttl" ,
+                           "vendor/meta.linked.archi/ttl/bpmn_onto.ttl" ;
+    aisep:shapesFile       "vendor/meta.linked.archi/ttl/bpmn_onto-shapes.ttl" ;
+    aisep:alignmentFile    "modules/bpmn/align.ttl" ;
+    aisep:inheritsHubRules false ;
+    aisep:notationLevel    aisep:LevelDesign ;   # spec v0.2 §5/§7.2
+    aisep:ownsNamespace    "https://meta.linked.archi/bpmn/onto#" .

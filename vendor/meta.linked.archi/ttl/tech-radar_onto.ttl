@@ -1,0 +1,290 @@
+@prefix :        <https://meta.linked.archi/tech-radar/onto#> .
+@prefix radar:   <https://meta.linked.archi/tech-radar/onto#> .
+@prefix radartax: <https://meta.linked.archi/tech-radar/tax#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+
+
+#################################################################
+# Ontology
+#################################################################
+
+<https://meta.linked.archi/tech-radar/onto#>
+    a owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespacePrefix "radar" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/tech-radar/onto#" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Technology Radar Ontology"@en ;
+    dcterms:description           '''Ontology for representing technology governance decisions using the
+Technology Radar model. Classifies technologies into rings (Adopt, Trial,
+Assess, Hold) and quadrants (domains), with point-in-time assessments
+tracking movement over time.
+
+Inspired by the ThoughtWorks Technology Radar (est. 2010). Extended with
+a Retire ring for portfolio lifecycle management.
+
+This is the OWL layer of the Tech Radar framework. Use together with:
+* tech-radar-shapes.ttl (SHACL) — validates completeness and value constraints
+* tech-radar-tax.ttl (SKOS) — organizes controlled vocabularies for navigation
+
+This is not an official ThoughtWorks document.'''@en ;
+    dcterms:abstract              "Technology governance ontology based on the Technology Radar model."@en ;
+    dcterms:created               "2026-06-22"^^xsd:date ;
+    dcterms:modified              "2026-06-22"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/tech-radar/onto/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    prov:wasDerivedFrom           "ThoughtWorks Technology Radar" ;
+    dcterms:references
+        <https://www.thoughtworks.com/radar>,
+        <https://www.thoughtworks.com/en-gb/insights/blog/technology-strategy/how-to-create-your-enterprise-technology-radar>,
+        <https://www.thoughtworks.com/en-gb/insights/blog/birth-technology-radar>,
+        <https://martinfowler.com/articles/radar-faq.html>,
+        <https://www.thoughtworks.com/en-sg/insights/podcasts/technology-podcasts/build-your-own-radar-using-technology-radar-governance-tool> ;
+    rdfs:seeAlso                  <https://www.thoughtworks.com/radar>,
+                                  <https://martinfowler.com/articles/radar-faq.html> ;
+.
+
+
+#################################################################
+# Core Classes
+#################################################################
+
+radar:Technology
+    a owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Technology"@en ;
+    skos:definition '''A technology item tracked on the radar — a language, framework,
+platform, tool, technique, or infrastructure component.'''@en ;
+.
+
+radar:RadarAssessment
+    a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    skos:prefLabel "Radar assessment"@en ;
+    skos:definition '''A point-in-time governance recommendation for a technology.
+Records the ring placement, quadrant, rationale, and assessment metadata.
+Multiple assessments over time track movement across rings.'''@en ;
+.
+
+radar:Radar
+    a owl:Class ;
+    skos:prefLabel "Radar"@en ;
+    skos:definition '''A radar instance representing a specific publication (e.g., "Q2 2026
+Technology Radar"). Groups assessments into a coherent snapshot.'''@en ;
+.
+
+
+#################################################################
+# Controlled Vocabulary Classes (OWL enumerations)
+#################################################################
+
+# --- Rings (governance recommendation) ---
+
+radar:Ring
+    a owl:Class ;
+    skos:prefLabel "Ring"@en ;
+    skos:definition "Radar ring representing the governance recommendation for a technology."@en ;
+    owl:oneOf ( radar:Adopt radar:Trial radar:Assess radar:Hold radar:Retire ) .
+
+radar:Adopt a owl:NamedIndividual, radar:Ring, skos:Concept ;
+    skos:prefLabel "Adopt"@en ;
+    skos:definition "Proven in production at scale. New projects should use this technology by default."@en ;
+    skos:broader  radartax:Rings ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+radar:Trial a owl:NamedIndividual, radar:Ring, skos:Concept ;
+    skos:prefLabel "Trial"@en ;
+    skos:definition "Ready for use in non-critical workloads. Pursue actively with the goal of confirming production readiness."@en ;
+    skos:broader  radartax:Rings ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+radar:Assess a owl:NamedIndividual, radar:Ring, skos:Concept ;
+    skos:prefLabel "Assess"@en ;
+    skos:definition "Worth exploring. Investigate how it could address a specific need. Not yet approved for project use."@en ;
+    skos:broader  radartax:Rings ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+radar:Hold a owl:NamedIndividual, radar:Ring, skos:Concept ;
+    skos:prefLabel "Hold"@en ;
+    skos:definition "Proceed with caution. Existing use is acceptable but new adoption is discouraged."@en ;
+    skos:broader  radartax:Rings ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+radar:Retire a owl:NamedIndividual, radar:Ring, skos:Concept ;
+    skos:prefLabel "Retire"@en ;
+    skos:definition "Actively being decommissioned. Migration path required for remaining workloads. Not in the original ThoughtWorks model — added for portfolio lifecycle management."@en ;
+    skos:scopeNote "Extension beyond the ThoughtWorks 4-ring model for enterprise lifecycle governance."@en ;
+    skos:broader  radartax:Rings ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+# --- Quadrants (technology domains) ---
+
+radar:Quadrant
+    a owl:Class ;
+    skos:prefLabel "Quadrant"@en ;
+    skos:definition "Technology domain grouping on the radar. Organizations customize quadrant names to their context."@en ;
+    owl:oneOf ( radar:Techniques radar:Platforms radar:Tools radar:LanguagesAndFrameworks ) .
+
+radar:Techniques a owl:NamedIndividual, radar:Quadrant, skos:Concept ;
+    skos:prefLabel "Techniques"@en ;
+    skos:definition "Development practices, architectural patterns, methodologies."@en ;
+    skos:broader  radartax:Quadrants ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+radar:Platforms a owl:NamedIndividual, radar:Quadrant, skos:Concept ;
+    skos:prefLabel "Platforms"@en ;
+    skos:definition "Infrastructure, cloud services, container orchestration, databases."@en ;
+    skos:broader  radartax:Quadrants ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+radar:Tools a owl:NamedIndividual, radar:Quadrant, skos:Concept ;
+    skos:prefLabel "Tools"@en ;
+    skos:definition "Developer tools, CI/CD, observability, testing frameworks."@en ;
+    skos:broader  radartax:Quadrants ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+radar:LanguagesAndFrameworks a owl:NamedIndividual, radar:Quadrant, skos:Concept ;
+    skos:prefLabel "Languages & Frameworks"@en ;
+    skos:definition "Programming languages, application frameworks, libraries."@en ;
+    skos:broader  radartax:Quadrants ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+# --- Movement direction ---
+
+radar:Movement
+    a owl:Class ;
+    skos:prefLabel "Movement"@en ;
+    skos:definition "Direction of movement since last radar publication."@en ;
+    owl:oneOf ( radar:New radar:MovedIn radar:MovedOut radar:NoChange ) .
+
+radar:New a owl:NamedIndividual, radar:Movement, skos:Concept ;
+    skos:prefLabel "New"@en ;
+    skos:definition "First appearance on the radar."@en ;
+    skos:broader  radartax:Movements ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+radar:MovedIn a owl:NamedIndividual, radar:Movement, skos:Concept ;
+    skos:prefLabel "Moved in"@en ;
+    skos:definition "Moved to an inner ring (increased confidence)."@en ;
+    skos:broader  radartax:Movements ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+radar:MovedOut a owl:NamedIndividual, radar:Movement, skos:Concept ;
+    skos:prefLabel "Moved out"@en ;
+    skos:definition "Moved to an outer ring (decreased confidence or nearing end-of-life)."@en ;
+    skos:broader  radartax:Movements ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+radar:NoChange a owl:NamedIndividual, radar:Movement, skos:Concept ;
+    skos:prefLabel "No change"@en ;
+    skos:definition "Position unchanged since last publication."@en ;
+    skos:broader  radartax:Movements ;
+    skos:inScheme <https://meta.linked.archi/tech-radar/tax#> .
+
+
+#################################################################
+# Object Properties
+#################################################################
+
+radar:hasAssessment
+    a owl:ObjectProperty ;
+    skos:prefLabel "has assessment"@en ;
+    skos:definition "Relates a technology to one or more radar assessments over time."@en ;
+    rdfs:domain radar:Technology ;
+    rdfs:range radar:RadarAssessment ;
+    owl:inverseOf radar:assessedTechnology .
+
+radar:assessedTechnology
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "assessed technology"@en ;
+    skos:definition "Relates a radar assessment to the technology it evaluates."@en ;
+    rdfs:domain radar:RadarAssessment ;
+    rdfs:range radar:Technology .
+
+radar:ring
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "ring"@en ;
+    skos:definition "The ring (governance recommendation) assigned in this assessment."@en ;
+    rdfs:domain radar:RadarAssessment ;
+    rdfs:range radar:Ring .
+
+radar:quadrant
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "quadrant"@en ;
+    skos:definition "The quadrant (technology domain) the technology belongs to."@en ;
+    rdfs:domain radar:Technology ;
+    rdfs:range radar:Quadrant .
+
+radar:movement
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "movement"@en ;
+    skos:definition "Direction of movement relative to the previous radar publication."@en ;
+    rdfs:domain radar:RadarAssessment ;
+    rdfs:range radar:Movement .
+
+radar:publishedInRadar
+    a owl:ObjectProperty ;
+    skos:prefLabel "published in radar"@en ;
+    skos:definition "Relates an assessment to the radar publication it appeared in."@en ;
+    rdfs:domain radar:RadarAssessment ;
+    rdfs:range radar:Radar .
+
+radar:governedBy
+    a owl:ObjectProperty ;
+    skos:prefLabel "governed by"@en ;
+    skos:definition "The governance body responsible for approving ring placements."@en ;
+    rdfs:domain radar:Radar ;
+    rdfs:range arch:Stakeholder .
+
+
+#################################################################
+# Datatype Properties
+#################################################################
+
+radar:assessmentDate
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "assessment date"@en ;
+    skos:definition "Date when the ring placement was decided."@en ;
+    rdfs:domain radar:RadarAssessment ;
+    rdfs:range xsd:date .
+
+radar:rationale
+    a owl:DatatypeProperty ;
+    skos:prefLabel "rationale"@en ;
+    skos:definition "Narrative justification for the ring placement."@en ;
+    rdfs:domain radar:RadarAssessment ;
+    rdfs:range xsd:string .
+
+radar:publicationDate
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "publication date"@en ;
+    skos:definition "Date the radar was published."@en ;
+    rdfs:domain radar:Radar ;
+    rdfs:range xsd:date .
+
+radar:migrationDeadline
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "migration deadline"@en ;
+    skos:definition "For Hold/Retire technologies: deadline by which remaining workloads must migrate."@en ;
+    rdfs:domain radar:RadarAssessment ;
+    rdfs:range xsd:date .
+
+radar:replacementTechnology
+    a owl:ObjectProperty ;
+    skos:prefLabel "replacement technology"@en ;
+    skos:definition "For Hold/Retire: the recommended replacement technology."@en ;
+    rdfs:domain radar:RadarAssessment ;
+    rdfs:range radar:Technology .

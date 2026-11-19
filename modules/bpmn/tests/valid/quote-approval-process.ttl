@@ -1,0 +1,65 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix :     <https://aisep.example/model/bpmn-test/> .
+
+# Valid BPMN: start -> task -> exclusive gateway -> (approve | reject) -> end, one lane.
+# Connectors are qualified bpmn:SequenceFlow resources with arch:source/arch:target (no direct triples).
+# Labels are @zh only (one per element).
+
+:model a arch:Model ;
+    skos:prefLabel "BPMN 测试模型"@zh .
+
+:proc a bpmn:Process ;
+    arch:inModel :model ;
+    skos:prefLabel "报价审批流程"@zh ;
+    bpmn:processType "Private" ;
+    bpmn:isExecutable false ;
+    bpmn:flowElements :start , :review , :gw , :approve , :reject , :end ,
+                      :sf1 , :sf2 , :sf3 , :sf4 , :sf5 , :sf6 ;
+    bpmn:laneSets :laneSet .
+
+:laneSet a bpmn:LaneSet ;
+    arch:inModel :model ;
+    skos:prefLabel "泳道集"@zh ;
+    bpmn:lanes :buyerLane .
+
+:buyerLane a bpmn:Lane ;
+    arch:inModel :model ;
+    skos:prefLabel "采购员"@zh ;
+    bpmn:flowNodeRefs :start , :review , :gw , :approve , :reject , :end .
+
+:start a bpmn:StartEvent ;
+    arch:inModel :model ;
+    skos:prefLabel "收到报价"@zh ;
+    bpmn:isInterrupting true .
+
+:review a bpmn:UserTask ;
+    arch:inModel :model ;
+    skos:prefLabel "审核报价"@zh .
+
+:gw a bpmn:ExclusiveGateway ;
+    arch:inModel :model ;
+    skos:prefLabel "是否通过"@zh ;
+    bpmn:gatewayDirection "Diverging" ;
+    bpmn:default :sf4 .
+
+:approve a bpmn:UserTask ;
+    arch:inModel :model ;
+    skos:prefLabel "批准报价"@zh .
+
+:reject a bpmn:UserTask ;
+    arch:inModel :model ;
+    skos:prefLabel "驳回报价"@zh .
+
+:end a bpmn:EndEvent ;
+    arch:inModel :model ;
+    skos:prefLabel "审批结束"@zh .
+
+:sf1 a bpmn:SequenceFlow ; arch:inModel :model ; arch:source :start   ; arch:target :review .
+:sf2 a bpmn:SequenceFlow ; arch:inModel :model ; arch:source :review  ; arch:target :gw .
+:sf3 a bpmn:SequenceFlow ; arch:inModel :model ; arch:source :gw      ; arch:target :approve .
+:sf4 a bpmn:SequenceFlow ; arch:inModel :model ; arch:source :gw      ; arch:target :reject .
+:sf5 a bpmn:SequenceFlow ; arch:inModel :model ; arch:source :approve ; arch:target :end .
+:sf6 a bpmn:SequenceFlow ; arch:inModel :model ; arch:source :reject  ; arch:target :end .

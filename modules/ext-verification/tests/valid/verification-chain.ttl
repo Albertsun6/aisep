@@ -1,0 +1,56 @@
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/ext-verification-test/> .
+
+# Valid: Requirement aggregates an AcceptanceCriterion (EV7, EV8 with gherkin);
+# a TestCase verifies the criterion and an application component (EV1, EV2, EV3);
+# a TestResult reports on it (EV4, EV5, EV6). Only qualified relationships, no direct triples.
+# MoSCoW priority on the requirement (Must) and on the criterion (Should) (EV9, EV10).
+
+:model a arch:Model ;
+    skos:prefLabel "验证扩展测试模型"@zh .
+
+:reqQuote a am4:Requirement ;
+    arch:inModel :model ;
+    skos:prefLabel "报价需在 2 个工作日内审批"@zh ;
+    aisep:priority aisep:Must .
+
+:acQuoteSla a aisep:AcceptanceCriterion ;
+    arch:inModel :model ;
+    skos:prefLabel "超时报价自动升级"@zh ;
+    aisep:priority aisep:Should ;
+    aisep:gherkin "Given 一张提交满 2 个工作日的报价\nWhen 仍未审批\nThen 自动升级给采购经理" .
+
+:aggReqAc a am4:Aggregation ;
+    arch:inModel :model ;
+    arch:source :reqQuote ;
+    arch:target :acQuoteSla .
+
+:quoteSvc a am4:ApplicationComponent ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务"@zh .
+
+:tcEscalation a aisep:TestCase ;
+    arch:inModel :model ;
+    skos:prefLabel "报价超时升级测试"@zh .
+
+:verAc a aisep:Verification ;
+    arch:inModel :model ;
+    arch:source :tcEscalation ;
+    arch:target :acQuoteSla .
+
+:verSvc a aisep:Verification ;
+    arch:inModel :model ;
+    arch:source :tcEscalation ;
+    arch:target :quoteSvc .
+
+:trRun1 a aisep:TestResult ;
+    arch:inModel :model ;
+    skos:prefLabel "报价超时升级测试 第 1 次运行"@zh ;
+    aisep:resultOf :tcEscalation ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-19T10:00:00Z"^^xsd:dateTime .

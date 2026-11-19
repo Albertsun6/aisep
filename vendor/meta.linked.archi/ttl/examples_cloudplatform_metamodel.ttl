@@ -1,0 +1,45 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix cp:      <https://meta.linked.archi/examples/cloudplatform/onto#> .
+@prefix cptax:   <https://meta.linked.archi/examples/cloudplatform/tax#> .
+@prefix cpvp:    <https://meta.linked.archi/examples/cloudplatform/viewpoints#> .
+@prefix cpdt:    <https://meta.linked.archi/examples/cloudplatform/deliverable-templates#> .
+@prefix cpref:   <https://meta.linked.archi/examples/cloudplatform/reference-data#> .
+@prefix :        <https://meta.linked.archi/examples/cloudplatform/metamodel#> .
+
+<https://meta.linked.archi/examples/cloudplatform/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/examples/cloudplatform/metamodel#" ;
+    vann:preferredNamespacePrefix "cpmm" ;
+    dcterms:title                      "Cloud Platform Architecture Metamodel"@en ;
+    dcterms:description                "Metamodel manifest for the Cloud Platform Architecture example."@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+:CloudPlatformFramework
+    a               arch:Framework ;
+    skos:prefLabel  "Cloud Platform Architecture"@en ;
+    skos:definition "Organization-specific framework for cloud-native platform architecture."@en ;
+.
+
+:CloudPlatformMetamodel
+    a                             arch:Metamodel ;
+    skos:prefLabel                "Cloud Platform Metamodel"@en ;
+    arch:basedOnFramework         :CloudPlatformFramework ;
+    arch:modelConcepts            <https://meta.linked.archi/examples/cloudplatform/onto#> ;
+    arch:formalRules              <https://meta.linked.archi/examples/cloudplatform/shapes#> ;
+    arch:architectureViewpoints   <https://meta.linked.archi/examples/cloudplatform/viewpoints#> ;
+    arch:conceptClassification    <https://meta.linked.archi/examples/cloudplatform/tax#> ;
+    arch:hasDeliverableTemplate   cpdt:ServiceCatalog, cpdt:DeploymentGuide ;
+    arch:referenceData            cpref:CloudPlatformReferenceData ;
+.
+

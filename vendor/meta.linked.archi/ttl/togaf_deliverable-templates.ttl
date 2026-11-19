@@ -1,0 +1,459 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix togafvp: <https://meta.linked.archi/togaf/viewpoints#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix archdt:  <https://meta.linked.archi/core-deliverable-templates#> .
+@prefix togaf:   <https://meta.linked.archi/togaf/onto#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix :        <https://meta.linked.archi/togaf/deliverable-templates#> .
+
+#################################################################
+# TOGAF Deliverable Templates
+#################################################################
+
+## ── Architecture Vision (Phase A) ────────────────────────────
+
+:ArchitectureVisionDocument
+    a                       arch:DeliverableTemplate ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/togaf/deliverable-templates#" ;
+    vann:preferredNamespacePrefix "togafdt" ;
+    dcterms:title                 "Linked.Archi TOGAF Deliverable Templates"@en ;
+    owl:versionInfo               "10.0"@en ;
+    skos:prefLabel          "Architecture Vision"@en ;
+    dcterms:description          "Deliverable template definitions for generating architecture documents from TOGAF models."@en ;
+    dcterms:creator         "Kalin Maldzhanski"^^xsd:string ;
+    skos:definition         '''The Architecture Vision provides a high-level, aspirational view of
+the end architecture product. Created during ADM Phase A, it describes the
+problem being addressed, the stakeholders, their concerns, and the proposed
+solution concept. Aligned with TOGAF Architecture Vision deliverable.'''@en ;
+    arch:templateResource   "templates/architecture-vision.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        togafvp:StakeholderMapMatrix, togafvp:SolutionConceptDiagram,
+        togafvp:ValueChainDiagram ;
+    arch:templateHasSection :AV-S1, :AV-S2, :AV-S3 ;
+    arch:templateTargetsPurpose togafvp:Informing, togafvp:Deciding ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:HTMLFormat, archdt:PDFFormat ;
+.
+
+:AV-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint togafvp:StakeholderMapMatrix ;
+    arch:sectionResultKey "stakeholders" ;
+    skos:prefLabel "1. Stakeholder Map"@en ;
+    skos:definition "Stakeholders, their concerns, and engagement approach."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description ?concern WHERE {
+    ?element a ?type ; skos:prefLabel ?label .
+    VALUES ?type { togaf:Actor togaf:Organization togaf:Role }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element togaf:tracks ?g .
+        ?g skos:prefLabel ?concern .
+        FILTER(lang(?concern) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+:AV-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint togafvp:ValueChainDiagram ;
+    arch:sectionResultKey "valueChain" ;
+    skos:prefLabel "2. Value Chain"@en ;
+    skos:definition "Key business functions and their contribution to value creation."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?description ?supports WHERE {
+    ?element a togaf:BusinessFunction ; skos:prefLabel ?label .
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element togaf:supports ?svc .
+        ?svc skos:prefLabel ?supports .
+        FILTER(lang(?supports) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?label
+"""^^xsd:string .
+
+:AV-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint togafvp:SolutionConceptDiagram ;
+    arch:sectionResultKey "solutionConcept" ;
+    skos:prefLabel "3. Solution Concept"@en ;
+    skos:definition "High-level overview of the proposed solution."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description WHERE {
+    ?element a ?type ; skos:prefLabel ?label .
+    VALUES ?type {
+        togaf:LogicalApplicationComponent togaf:LogicalTechnologyComponent
+        togaf:BusinessService togaf:Platform togaf:Vision
+    }
+    OPTIONAL { ?element skos:definition ?description }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+
+## ── Architecture Definition Document (Phase B-D) ────────────
+
+:ArchitectureDefinitionDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Architecture Definition Document"@en ;
+    skos:definition         '''The primary TOGAF deliverable spanning Phases B through D. Documents
+the baseline and target architectures across business, data, application, and
+technology domains. Includes gap analysis and architecture requirements.'''@en ;
+    arch:templateResource   "templates/architecture-definition-document.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        togafvp:OrganizationActorCatalog, togafvp:BusinessServiceFunctionCatalog,
+        togafvp:DataEntityComponentCatalog, togafvp:ApplicationPortfolioCatalog,
+        togafvp:TechnologyPortfolioCatalog ;
+    arch:templateHasSection :ADD-S1, :ADD-S2, :ADD-S3, :ADD-S4, :ADD-S5 ;
+    arch:templateTargetsPurpose togafvp:Designing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:HTMLFormat, archdt:PDFFormat ;
+.
+
+:ADD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint togafvp:OrganizationActorCatalog ;
+    arch:sectionResultKey "businessArchitecture" ;
+    skos:prefLabel "1. Business Architecture"@en ;
+    skos:definition "Organizations, actors, roles, services, functions, processes."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description WHERE {
+    ?element a ?type ; skos:prefLabel ?label .
+    VALUES ?type {
+        togaf:Organization togaf:Actor togaf:Role
+        togaf:BusinessService togaf:BusinessFunction togaf:BusinessProcess
+        togaf:BusinessEvent togaf:Product togaf:Location
+    }
+    OPTIONAL { ?element skos:definition ?description }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+:ADD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint togafvp:DataEntityComponentCatalog ;
+    arch:sectionResultKey "dataArchitecture" ;
+    skos:prefLabel "2. Data Architecture"@en ;
+    skos:definition "Data entities, logical and physical data components."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description ?accesses WHERE {
+    ?element a ?type ; skos:prefLabel ?label .
+    VALUES ?type { togaf:DataEntity togaf:LogicalDataComponent togaf:PhysicalDataComponent }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?proc togaf:accesses ?element .
+        ?proc skos:prefLabel ?accesses .
+        FILTER(lang(?accesses) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+:ADD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint togafvp:ApplicationPortfolioCatalog ;
+    arch:sectionResultKey "applicationArchitecture" ;
+    skos:prefLabel "3. Application Architecture"@en ;
+    skos:definition "Logical and physical application components, services, interfaces."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description ?supports WHERE {
+    ?element a ?type ; skos:prefLabel ?label .
+    VALUES ?type {
+        togaf:LogicalApplicationComponent togaf:PhysicalApplicationComponent
+        togaf:InformationSystemService togaf:ApplicationInterface
+    }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element togaf:supports ?svc .
+        ?svc skos:prefLabel ?supports .
+        FILTER(lang(?supports) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+:ADD-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    arch:sectionViewpoint togafvp:TechnologyPortfolioCatalog ;
+    arch:sectionResultKey "technologyArchitecture" ;
+    skos:prefLabel "4. Technology Architecture"@en ;
+    skos:definition "Logical and physical technology components, services, platforms."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description ?supports WHERE {
+    ?element a ?type ; skos:prefLabel ?label .
+    VALUES ?type {
+        togaf:LogicalTechnologyComponent togaf:PhysicalTechnologyComponent
+        togaf:TechnologyService togaf:TechnologyInterface togaf:Platform
+    }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element togaf:supports ?app .
+        ?app skos:prefLabel ?supports .
+        FILTER(lang(?supports) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+:ADD-S5 a arch:TemplateSection ; arch:sectionOrder 5 ;
+    arch:sectionViewpoint togafvp:PrinciplesCatalog ;
+    arch:sectionResultKey "gapAnalysis" ;
+    skos:prefLabel "5. Gap Analysis"@en ;
+    skos:definition "Gaps between baseline and target architectures."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?description ?migratesFrom ?migratesTo WHERE {
+    ?element a togaf:Gap ; skos:prefLabel ?label .
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element togaf:migratesFrom ?from .
+        ?from skos:prefLabel ?migratesFrom .
+        FILTER(lang(?migratesFrom) = "en")
+    }
+    OPTIONAL {
+        ?element togaf:migratesTo ?to .
+        ?to skos:prefLabel ?migratesTo .
+        FILTER(lang(?migratesTo) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?label
+"""^^xsd:string .
+
+
+## ── Architecture Requirements Specification (Phase B-D) ─────
+
+:ArchitectureRequirementsSpecification
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Architecture Requirements Specification"@en ;
+    skos:definition         '''Documents the architecture requirements, constraints, and assumptions
+that must be addressed. Produced alongside the Architecture Definition Document
+during Phases B through D.'''@en ;
+    arch:templateResource   "templates/architecture-requirements-spec.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        togafvp:DriverGoalObjectiveCatalog, togafvp:PrinciplesCatalog ;
+    arch:templateHasSection :ARS-S1, :ARS-S2, :ARS-S3 ;
+    arch:templateTargetsPurpose togafvp:Deciding ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:PDFFormat ;
+.
+
+:ARS-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint togafvp:DriverGoalObjectiveCatalog ;
+    arch:sectionResultKey "driversGoals" ;
+    skos:prefLabel "1. Drivers, Goals & Objectives"@en ;
+    skos:definition "Business drivers, goals, and measurable objectives."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description WHERE {
+    ?element a ?type ; skos:prefLabel ?label .
+    VALUES ?type { togaf:Driver togaf:Goal togaf:Objective togaf:Measure }
+    OPTIONAL { ?element skos:definition ?description }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+:ARS-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint togafvp:PrinciplesCatalog ;
+    arch:sectionResultKey "principles" ;
+    skos:prefLabel "2. Architecture Principles"@en ;
+    skos:definition "Principles governing the architecture."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?description WHERE {
+    ?element a togaf:Principle ; skos:prefLabel ?label .
+    OPTIONAL { ?element skos:definition ?description }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?label
+"""^^xsd:string .
+
+:ARS-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint togafvp:PrinciplesCatalog ;
+    arch:sectionResultKey "requirements" ;
+    skos:prefLabel "3. Requirements & Constraints"@en ;
+    skos:definition "Architecture requirements, constraints, and assumptions."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description ?governs WHERE {
+    ?element a ?type ; skos:prefLabel ?label .
+    VALUES ?type { togaf:Requirement togaf:Constraint togaf:Assumption }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element togaf:governs ?target .
+        ?target skos:prefLabel ?governs .
+        FILTER(lang(?governs) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+
+## ── Architecture Roadmap (Phase E-F) ────────────────────────
+
+:ArchitectureRoadmap
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Architecture Roadmap"@en ;
+    skos:definition         '''The Architecture Roadmap lists work packages, transition architectures,
+and the implementation schedule. Produced during Phases E and F.'''@en ;
+    arch:templateResource   "templates/architecture-roadmap.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        togafvp:ProjectContextDiagram, togafvp:BenefitsDiagram ;
+    arch:templateHasSection :AR-S1, :AR-S2, :AR-S3 ;
+    arch:templateTargetsPurpose togafvp:Deciding, togafvp:Governing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:PDFFormat ;
+.
+
+:AR-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint togafvp:ProjectContextDiagram ;
+    arch:sectionResultKey "workPackages" ;
+    skos:prefLabel "1. Work Packages"@en ;
+    skos:definition "Implementation work packages and their dependencies."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?description ?dependsOn WHERE {
+    ?element a togaf:WorkPackage ; skos:prefLabel ?label .
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element togaf:dependsOn ?dep .
+        ?dep skos:prefLabel ?dependsOn .
+        FILTER(lang(?dependsOn) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?label
+"""^^xsd:string .
+
+:AR-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint togafvp:ProjectContextDiagram ;
+    arch:sectionResultKey "transitionArchitectures" ;
+    skos:prefLabel "2. Transition Architectures"@en ;
+    skos:definition "Plateaus representing intermediate target states."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?description ?migratesFrom ?migratesTo WHERE {
+    ?element a togaf:Plateau ; skos:prefLabel ?label .
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element togaf:migratesFrom ?from .
+        ?from skos:prefLabel ?migratesFrom .
+        FILTER(lang(?migratesFrom) = "en")
+    }
+    OPTIONAL {
+        ?element togaf:migratesTo ?to .
+        ?to skos:prefLabel ?migratesTo .
+        FILTER(lang(?migratesTo) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?label
+"""^^xsd:string .
+
+:AR-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint togafvp:BenefitsDiagram ;
+    arch:sectionResultKey "capabilities" ;
+    skos:prefLabel "3. Capability Assessment"@en ;
+    skos:definition "Capabilities required and their realization through work packages."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?description ?realizedBy WHERE {
+    ?element a togaf:Capability ; skos:prefLabel ?label .
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?wp togaf:realizes ?element .
+        ?wp skos:prefLabel ?realizedBy .
+        FILTER(lang(?realizedBy) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?label
+"""^^xsd:string .
+
+
+## ── Implementation Governance Model (Phase G) ───────────────
+
+:ImplementationGovernanceModel
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Implementation Governance Model"@en ;
+    skos:definition         '''Documents the governance framework for architecture implementation.
+Covers deliverables tracking, compliance reviews, and change management.
+Produced during Phase G.'''@en ;
+    arch:templateResource   "templates/implementation-governance-model.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        togafvp:PrinciplesCatalog, togafvp:ContractMeasureCatalog ;
+    arch:templateHasSection :IGM-S1, :IGM-S2 ;
+    arch:templateTargetsPurpose togafvp:Governing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:PDFFormat ;
+.
+
+:IGM-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint togafvp:PrinciplesCatalog ;
+    arch:sectionResultKey "deliverables" ;
+    skos:prefLabel "1. Deliverables & Compliance"@en ;
+    skos:definition "Architecture deliverables and their compliance status."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?description ?workPackage WHERE {
+    ?element a togaf:Deliverable ; skos:prefLabel ?label .
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?wp togaf:contains ?element .
+        ?wp a togaf:WorkPackage .
+        ?wp skos:prefLabel ?workPackage .
+        FILTER(lang(?workPackage) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?label
+"""^^xsd:string .
+
+:IGM-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint togafvp:ContractMeasureCatalog ;
+    arch:sectionResultKey "contractsMeasures" ;
+    skos:prefLabel "2. Contracts & Measures"@en ;
+    skos:definition "Service contracts and performance measures."@en ;
+    arch:sectionQuery """
+PREFIX togaf: <https://meta.linked.archi/togaf/onto#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description ?tracks WHERE {
+    ?element a ?type ; skos:prefLabel ?label .
+    VALUES ?type { togaf:Contract togaf:Measure }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element togaf:tracks ?target .
+        ?target skos:prefLabel ?tracks .
+        FILTER(lang(?tracks) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .

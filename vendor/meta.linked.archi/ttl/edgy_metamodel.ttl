@@ -1,0 +1,135 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix edgytax: <https://meta.linked.archi/edgy/tax#> .
+@prefix edgynot: <https://meta.linked.archi/edgy/notation#> .
+@prefix edgyvp:  <https://meta.linked.archi/edgy/viewpoints#> .
+@prefix edgydt:  <https://meta.linked.archi/edgy/deliverable-templates#> .
+@prefix :        <https://meta.linked.archi/edgy/metamodel#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/edgy/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by-sa/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/edgy/metamodel#" ;
+    vann:preferredNamespacePrefix "edgymm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EDGY 23 Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for EDGY 23 — the Enterprise Design language by
+Intersection Group. This file ties together all the EDGY semantic resources — the
+element/relationship ontology and SKOS taxonomy — into a single arch:Metamodel instance.
+
+EDGY is an open-source tool for collaborative Enterprise Design that provides a simple
+but rich visual language of base elements, facet elements, relationships, and labels
+to describe what an enterprise consists of and how its parts form a whole.
+
+This is the entry point for tools that need to discover all resources that make up
+the EDGY 23 modeling language definition.'''@en ;
+    dcterms:created               "2025-06-27"^^xsd:date ;
+    dcterms:modified              "2026-10-06"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/edgy/metamodel/23#> ;
+    owl:versionInfo               "23"@en ;
+    dcterms:source  <https://enterprise.design/wiki/Enterprise_Elements> ;
+    prov:wasDerivedFrom <https://enterprise.design/wiki/Enterprise_Elements> ;
+    rdfs:seeAlso                  <https://enterprise.design/wiki/EDGY:Tools>,
+                                  <https://enterprise.design/wiki/EDGY:Sitemap> ;
+.
+
+
+#################################################################
+# EDGY Framework Individual
+#################################################################
+
+:EDGYFramework
+    a                   arch:Framework ;
+    skos:prefLabel      "EDGY"@en ;
+    skos:scopeNote      '''The language, not a release: the label deliberately carries no version.
+The release is the arch:Metamodel individual below, which declares owl:versionInfo "23".'''@en ;
+    dcterms:description '''EDGY is an open-source Enterprise Design language created by Intersection Group.
+It provides a simple but rich and expressive visual language of only four base elements,
+twelve facet/intersection elements, three relationship types, and two label types that
+can be universally used across design challenges and disciplines. EDGY organizes enterprise
+design through three facets: Identity, Architecture, and Experience, with intersections
+at Organisation, Product, and Brand.'''@en ;
+    dcterms:publisher   "Intersection Group"@en ;
+    rdfs:seeAlso        <https://enterprise.design>,
+                        <https://enterprise.design/wiki/Enterprise_Elements>,
+                        <https://enterprise.design/wiki/Enterprise_Design_Facets>,
+                        <https://enterprise.design/wiki/EDGY:Tools>,
+                        <https://enterprise.design/wiki/EDGY:Sitemap> ;
+.
+
+
+#################################################################
+# EDGY 23 Metamodel Instance
+#################################################################
+
+:EDGY23
+    a                             arch:Metamodel ;
+    skos:prefLabel                "EDGY 23 Metamodel"@en ;
+    dcterms:description               '''The complete EDGY 23 metamodel definition, aggregating
+the element/relationship ontology and SKOS taxonomy into a single discoverable resource.
+EDGY provides a universal language for enterprise design across Identity, Architecture,
+and Experience facets.'''@en ;
+
+    ## Foundation — the language, not this release
+    arch:basedOnFramework         :EDGYFramework ;
+    owl:versionInfo               "23" ;
+
+    ## Model concepts — elements, relationships, labels
+    ## File: edgy-onto.ttl
+    arch:modelConcepts            <https://meta.linked.archi/edgy/onto#> ;
+
+    ## Concept classification — SKOS taxonomy (by facet, by element type)
+    ## File: edgy-tax.ttl
+    arch:conceptClassification    <https://meta.linked.archi/edgy/tax#> ;
+
+    ## Visual notation set — default element/relationship appearance
+    ## File: edgy-notation.ttl
+    arch:notationSet              edgynot:EDGYStandardNotation ;
+
+    ## Presentation contexts — audiences, each selecting a notation set with
+    ## arch:usesNotationSet (the v2 default above or the circle-based v1 set)
+    ## File: edgy-presentation-contexts.ttl
+    arch:presentationContextScheme <https://meta.linked.archi/edgy/presentation-contexts#> ;
+
+    ## Formal rules — SHACL shapes for validation
+    ## File: edgy-shapes.ttl
+    arch:formalRules              <https://meta.linked.archi/edgy/shapes#> ;
+
+    ## Viewpoints — viewpoint individuals and their properties
+    ## File: edgy-viewpoints.ttl
+    arch:architectureViewpoints   <https://meta.linked.archi/edgy/viewpoints#> ;
+
+    ## Viewpoint library — SKOS scheme grouping viewpoints
+    ## File: edgy-viewpoints.ttl
+    arch:viewpointLibrary         edgyvp:ViewpointCatalog ;
+
+    ## Reference data — asset types, metric categories, maturity levels
+    ## File: edgy-reference-data.ttl
+    arch:referenceData            <https://meta.linked.archi/edgy/reference-data#> ;
+
+    ## Deliverable templates — document generation
+    ## File: edgy-deliverable-templates.ttl
+    arch:hasDeliverableTemplate   edgydt:EnterpriseDesignOverview,
+                                  edgydt:CapabilityMapDocument,
+                                  edgydt:CustomerJourneyDocument,
+                                  edgydt:ServiceBlueprintDocument,
+                                  edgydt:IdentityDocument,
+                                  edgydt:ProductPortfolioDocument,
+                                  edgydt:OrganisationDesignDocument ;
+.

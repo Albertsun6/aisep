@@ -1,0 +1,850 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix skosxl:  <http://www.w3.org/2008/05/skos-xl#> .
+@prefix schema:  <http://schema.org/> .
+@prefix :        <https://meta.linked.archi/core-shapes#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/core-shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/core-shapes#" ;
+    vann:preferredNamespacePrefix "archsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Core SHACL Shapes"@en ;
+    dcterms:description                '''Base SHACL shapes for the Linked.Archi core ontology. These shapes
+apply to all metamodels that extend the core. Metamodel-specific shapes (e.g., ArchiMate,
+C4, Backstage) import this file and add type-specific constraints.
+
+Label requirements are deliberately not here. arch:Element means "a node in a model", and
+several notations have nodes that are legitimately unnamed — BPMN gateways and events,
+ArchiMate junctions — so each metamodel states its own naming rule in its own shapes. See the
+labelling contract in this file and DD-24.
+
+Viewpoint conformance is here too: a View declares one viewpoint, its type and contents
+match what that viewpoint admits, and a viewpoint says what it admits. The rules read
+the viewpoint definitions from the loaded graph (arch:includesConcept, arch:viewType),
+so they work for any viewpoint — a language's catalogue, a framework's, or your own.'''@en ;
+    skos:editorialNote '''Contains no label shape by design. See "WHERE THE LABEL RULE LIVES"
+below: requiring skos:prefLabel on every arch:Element is not a sound cross-notation rule,
+because routing and connector constructs are genuine elements that notations permit to be
+unnamed. Naming rules are owned by each metamodel's shapes graph.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-11-08"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/core-shapes/0.4.0#> ;
+    owl:versionInfo               "0.4.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/core-shapes/0.3.0#> ;
+    skos:historyNote              '''0.2.0 — added archsh:InModelShape and archsh:InViewShape for the
+membership properties introduced in core 0.4.0. Neither shape requires the property; both bound it.'''@en,
+                                  '''0.3.0 (2026-11-06) — the five viewpoint conformance shapes moved here
+from the ArchiMate 3.2 and 4.0 viewpoint shapes, which had the same rules twice: a model that loads
+both languages had every finding reported twice. They use no ArchiMate term, so core states them
+once, under the 4.0 names (3.2 called two of them ViewMustDeclareViewpointShape and
+ElementConformanceShape). The ArchiMate viewpoint shapes now import this file and add nothing.'''@en,
+                                  '''0.4.0 (2026-11-08) — names per presentation context (core 0.5.0's
+arch:inPresentationContext on SKOS-XL labels): a name has one language-tagged literal form and is for at
+most one context; a name for one context is a skosxl:altLabel, not a skosxl:prefLabel; an element has at
+most one name per context and language; and, a warning, a name's literal form is also the element's
+skos:altLabel, so that tools reading plain SKOS see it. Pictures likewise (arch:prefVisNotation,
+arch:altVisNotation): a picture has at most one schema:contentUrl and one context, one for a context has
+its schema:contentUrl, a canonical picture is for no single context, and an element has at most one
+picture per context.'''@en ;
+    sh:declare [
+        sh:prefix    "arch" ;
+        sh:namespace "https://meta.linked.archi/core#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix    "rdf" ;
+        sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix    "rdfs" ;
+        sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix    "skos" ;
+        sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix    "skosxl" ;
+        sh:namespace "http://www.w3.org/2008/05/skos-xl#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix    "schema" ;
+        sh:namespace "http://schema.org/"^^xsd:anyURI ;
+    ] ;
+.
+
+#################################################################
+# THE LABELLING CONTRACT — read this before writing a converter
+#
+# skos:prefLabel is the canonical human-readable label across every Linked.Archi
+# metamodel. All tooling reads it: documentation generators, palette builders,
+# deliverable templates, and SPARQL reporting. Two rules catch converter authors
+# out:
+#
+#  1. The literal MUST carry a language tag. Notation shapes assert
+#     sh:datatype rdf:langString, so "Charge card" fails and "Charge card"@en
+#     passes. Use the source document's language where it declares one, "en"
+#     otherwise. This is the single most common cause of a converter's output
+#     failing validation while looking correct to the eye.
+#
+#  2. A notation's own name attribute does NOT satisfy the rule. Notation
+#     ontologies faithfully retain their source attributes — bpmn:name from BPMN
+#     XML, and the equivalent elsewhere — as plain xsd:string, for round-trip
+#     fidelity and because they also appear on classes that are not architecture
+#     elements. Those properties are serialization-level facts, not labels.
+#     Converters MUST emit both: the source attribute verbatim, and a
+#     language-tagged skos:prefLabel mirroring it.
+#
+#       ex:t1 a bpmn:ServiceTask ;
+#           bpmn:name      "Charge card" ;      # source attribute, verbatim
+#           skos:prefLabel "Charge card"@en .   # canonical label
+#
+#     Do not try to bridge the two with rdfs:subPropertyOf. The entailed
+#     prefLabel inherits the plain xsd:string datatype, so a correctly named
+#     element still fails — the report merely moves from sh:MinCount to
+#     sh:Datatype, pointing away from the real problem.
+#
+# WHERE THE LABEL RULE LIVES — deliberately NOT here
+#
+# There is no core label shape. Requiring a label on every arch:Element is not a
+# sound cross-notation rule, because arch:Element means "a node in a model" and
+# several notations have nodes that are legitimately unnamed:
+#
+#   BPMN         Gateway and Event subtypes — routing and triggering constructs;
+#                the spec makes name optional and modellers leave it off.
+#   ArchiMate    AndJunction / OrJunction — connectors drawn as dots or bars.
+#   BPMN         TextAnnotation and Group carry bpmn:text, not a name at all.
+#   BPMNDI       BPMNDiagram — the spec makes the diagram name optional, which is
+#                why there is no core arch:View label rule either.
+#
+# Those constructs are genuine elements: they have identity, they render on
+# diagrams, they belong in element counts. Excluding them from arch:Element to
+# satisfy a label rule would misstate the model. So each metamodel owns its own
+# naming rule and states it in its own shapes, listing the classes that must be
+# named with plain sh:targetClass:
+#
+#   bpmnsh:RequiredNameShape                  BPMN 2.0.2
+#   bpmnls:*Shape                             BPMN Lite
+#   am4sh:ArchiMateElementShape               ArchiMate 4.0
+#   amsh:ArchiMateElementShape                ArchiMate 3.2
+#   c4sh: / bssh: / strsh: equivalents        C4, Backstage, Structurizr
+#
+# A metamodel shape MUST NOT target arch:Element for this purpose. In a merged
+# multi-notation graph that would apply one notation's naming policy to every
+# other notation's elements. Target the metamodel's own classes — its abstract
+# domain or layer roots are usually the concise way to do it.
+#
+# See doc/guide/design-decisions.md DD-24, and P-8 / P-9 in the same document.
+#################################################################
+
+#################################################################
+# QualifiedRelationship — source + target contract
+#################################################################
+
+:QualifiedRelationshipShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:QualifiedRelationship ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    arch:ModelConcept ;
+        sh:message  "Every QualifiedRelationship must have exactly one arch:source pointing to a ModelConcept."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    arch:ModelConcept ;
+        sh:message  "Every QualifiedRelationship must have exactly one arch:target pointing to a ModelConcept."@en ;
+    ] ;
+.
+
+#################################################################
+# Governance — conceptOwner must be a Stakeholder
+#################################################################
+
+:ConceptOwnerShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:ModelConcept ;
+    sh:property [
+        sh:path     arch:conceptOwner ;
+        sh:maxCount 1 ;
+        sh:class    arch:Stakeholder ;
+        sh:message  "arch:conceptOwner must point to a Stakeholder."@en ;
+    ] ;
+.
+#################################################################
+# Governance — approval state
+#
+# Targets subjects of the property rather than a class, because
+# arch:approvalState applies to model concepts and to whole models.
+# Cardinality and range are asserted here rather than in OWL: per
+# DD-23 an owl:FunctionalProperty would entail owl:sameAs between two
+# state individuals instead of reporting the error, and owl:oneOf
+# would close the vocabulary against downstream extension.
+#
+# The value set is intentionally NOT closed with sh:in — a consumer
+# may add states its governance process needs (UnderReview,
+# Delegated). Add sh:in in your own profile if you want it closed.
+#################################################################
+
+:ApprovalStateShape
+    a                   sh:NodeShape ;
+    sh:targetSubjectsOf arch:approvalState ;
+    sh:property [
+        sh:path     arch:approvalState ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:class    arch:ApprovalState ;
+        sh:message  '''A subject carries at most one arch:approvalState, and the value must be an
+IRI typed arch:ApprovalState. Record approval history with prov:wasRevisionOf or
+dcterms:modified — approvalState holds only the current standing.'''@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+#################################################################
+# Membership — a concept belongs to exactly one Model
+#
+# Targets subjects of the property rather than arch:ModelConcept,
+# for two reasons. A concept typed only in its notation's namespace
+# is still constrained, which matters because emitting the core
+# types is optional in several converters. And silence is not an
+# error: a concept may legitimately carry no arch:inModel when it
+# is read from a quad store where the named graph carries
+# membership instead, so this shape bounds the property without
+# requiring it. A metamodel that does want it mandatory states
+# sh:minCount 1 against its own classes.
+#
+# The bound is SHACL rather than owl:FunctionalProperty for the
+# reason DD-23 gives above: a functional property would entail
+# owl:sameAs between the two Models rather than reporting the
+# conflict.
+#
+# arch:inView is deliberately unconstrained here. It is
+# many-valued by design, and a concept presented in no View at all
+# is an ordinary state.
+#################################################################
+
+:InModelShape
+    a                   sh:NodeShape ;
+    sh:targetSubjectsOf arch:inModel ;
+    sh:property [
+        sh:path     arch:inModel ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:class    arch:Model ;
+        sh:message  '''A ModelConcept belongs to at most one Model, named by an IRI typed
+arch:Model. Two values mean either two concepts that were merged in error, or one concept whose
+IRI was minted outside the model namespace it is claimed to belong to.'''@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+#################################################################
+# Membership — arch:inView points at a View
+#
+# Cardinality is deliberately absent: a concept may appear in any
+# number of Views, including none. Only the range is checked, and
+# only for subjects that use the property.
+#################################################################
+
+:InViewShape
+    a                   sh:NodeShape ;
+    sh:targetSubjectsOf arch:inView ;
+    sh:property [
+        sh:path     arch:inView ;
+        sh:nodeKind sh:IRI ;
+        sh:class    arch:View ;
+        sh:message  '''arch:inView must point at an IRI typed arch:View — a Diagram, Catalog or
+Matrix. Geometry belongs on an arch-vis:ArchNode, not here.'''@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+#################################################################
+# Model questions — what makes a question well formed
+#
+# A question a tool can offer and a generator can ask: the question
+# itself as its label, one query, a stage, and — for a finding — its
+# severity and the column naming what each finding is about. Concerns, stakeholders and
+# viewpoints are checked as IRIs only: they live in the viewpoint
+# documents, which a question set does not import.
+#################################################################
+
+:ModelQuestionShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:ModelQuestion ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:uniqueLang true ;
+        sh:pattern  "\\?$" ;
+        sh:message  '''A ModelQuestion is named by the question itself — one sentence ending in a question
+mark, which is what tells it from a Concern's noun phrase — as a language-tagged skos:prefLabel.'''@en ;
+    ] ;
+    sh:property [
+        sh:path     sh:select ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path     sh:construct ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path     sh:ask ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path     sh:prefixes ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "sh:prefixes names the resource that declares the question's prefixes — normally its question set."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:questionStage ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in       ( arch:OrientationStage arch:ResolutionStage arch:DiscoveryStage arch:AnalysisStage
+                      arch:EnrichmentStage arch:QualityStage arch:ViewsStage ) ;
+        sh:message  "A ModelQuestion has one arch:questionStage from arch:QuestionStageScheme."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:resultIsFinding ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:message  "A ModelQuestion says whether its rows are findings: arch:resultIsFinding true or false."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:findingSeverity ;
+        sh:maxCount 1 ;
+        sh:in       ( sh:Info sh:Warning sh:Violation ) ;
+    ] ;
+    sh:property [
+        sh:path     arch:findingFocus ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern  "^[A-Za-z_][A-Za-z0-9_]*$" ;
+        sh:message  "arch:findingFocus names a result variable, without its ?."@en ;
+    ] ;
+    sh:property [
+        sh:path     sh:parameter ;
+        sh:node     :ModelQuestionParameterShape ;
+    ] ;
+    sh:property [
+        sh:path     arch:answers ;
+        sh:datatype rdf:langString ;
+        sh:uniqueLang true ;
+    ] ;
+    sh:property [
+        sh:path     arch:doesNotProve ;
+        sh:datatype rdf:langString ;
+        sh:uniqueLang true ;
+    ] ;
+    sh:property [
+        sh:path     arch:defaultLimit ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+    ] ;
+    sh:property [
+        sh:path     arch:requiresDataset ;
+        sh:maxCount 1 ;
+        sh:in       ( arch:ModelDataset arch:ModelAndMetamodelDataset ) ;
+    ] ;
+    sh:property [
+        sh:path     arch:requiresMetamodel ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+    sh:property [ sh:path arch:questionAddressesConcern ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path arch:questionTargetsStakeholder ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path arch:questionHasPurpose ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path arch:questionFitsViewpoint ; sh:nodeKind sh:IRI ] ;
+    sh:property [
+        sh:path     arch:resultKey ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+# One query, in one of the three forms. Written with sh:or rather than
+# sh:xone, which RDF4J's validator does not evaluate.
+:ModelQuestionQueryShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:ModelQuestion ;
+    sh:or (
+        [ sh:property [ sh:path sh:select ; sh:minCount 1 ] ;
+          sh:property [ sh:path sh:construct ; sh:maxCount 0 ] ;
+          sh:property [ sh:path sh:ask ; sh:maxCount 0 ] ]
+        [ sh:property [ sh:path sh:construct ; sh:minCount 1 ] ;
+          sh:property [ sh:path sh:select ; sh:maxCount 0 ] ;
+          sh:property [ sh:path sh:ask ; sh:maxCount 0 ] ]
+        [ sh:property [ sh:path sh:ask ; sh:minCount 1 ] ;
+          sh:property [ sh:path sh:select ; sh:maxCount 0 ] ;
+          sh:property [ sh:path sh:construct ; sh:maxCount 0 ] ]
+    ) ;
+    sh:message "A ModelQuestion carries exactly one query: one of sh:select, sh:construct or sh:ask."@en ;
+.
+
+# A finding says how serious it is and which column names what it is about.
+:ModelQuestionFindingShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:ModelQuestion ;
+    sh:or (
+        [ sh:property [ sh:path arch:resultIsFinding ; sh:hasValue false ] ]
+        [ sh:property [ sh:path arch:findingSeverity ; sh:minCount 1 ] ;
+          sh:property [ sh:path arch:findingFocus ; sh:minCount 1 ] ]
+    ) ;
+    sh:message "A finding ModelQuestion (arch:resultIsFinding true) gives its arch:findingSeverity and its arch:findingFocus."@en ;
+.
+
+# Severity and focus belong to findings only; a listing carries neither.
+:ModelQuestionListingShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:ModelQuestion ;
+    sh:or (
+        [ sh:property [ sh:path arch:resultIsFinding ; sh:hasValue true ] ]
+        [ sh:property [ sh:path arch:findingSeverity ; sh:maxCount 0 ] ;
+          sh:property [ sh:path arch:findingFocus ; sh:maxCount 0 ] ]
+    ) ;
+    sh:message "arch:findingSeverity and arch:findingFocus describe findings: a ModelQuestion whose rows are not findings carries neither."@en ;
+.
+
+# Not targeted: what ModelQuestionShape requires of each sh:parameter.
+:ModelQuestionParameterShape
+    a              sh:NodeShape ;
+    sh:property [
+        sh:path     sh:path ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "A question parameter names the variable it binds with one sh:path: a parameter on arch:focus binds ?focus."@en ;
+    ] ;
+    sh:property [
+        sh:path     sh:optional ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path     sh:order ;
+        sh:maxCount 1 ;
+    ] ;
+.
+
+#################################################################
+# Question sets — the root of a question set document
+#################################################################
+
+:QuestionSetShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:QuestionSet ;
+    sh:property [
+        sh:path     dcterms:title ;
+        sh:minCount 1 ;
+        sh:message  "A question set carries its document's dcterms:title."@en ;
+    ] ;
+    sh:property [
+        sh:path     vann:preferredNamespaceUri ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path     vann:preferredNamespacePrefix ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path     sh:declare ;
+        sh:node     [
+            sh:property [ sh:path sh:prefix ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+            sh:property [ sh:path sh:namespace ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:anyURI ] ;
+        ] ;
+        sh:message  "Each sh:declare entry pairs one sh:prefix with one sh:namespace (an xsd:anyURI)."@en ;
+    ] ;
+.
+
+#################################################################
+# Viewpoint conformance — views and the viewpoints they declare
+#
+# Five shapes, data-driven: they read each viewpoint's definition
+# from the loaded graph (arch:includesConcept, arch:viewType) rather
+# than naming any viewpoint, so they judge a language's catalogue, a
+# framework's and an organisation's own viewpoints alike. They use
+# no notation's terms, which is why they are here and stated once:
+# the ArchiMate 3.2 and 4.0 viewpoint shapes each had a copy, and a
+# model loading both languages had every finding twice.
+#
+#   1. ViewDeclaresViewpointShape            sh:Warning
+#   2. ViewTypeConformanceShape              sh:Warning
+#   3. ViewElementConformanceShape           sh:Warning
+#   4. RelationshipEndpointConformanceShape  sh:Info
+#   5. ViewpointCompletenessShape            sh:Info
+#
+# Organisations may promote any of them.
+#
+# They target arch:View and arch:Viewpoint, superclasses of what a
+# model types its views and viewpoints as, so core-onto.ttl must be
+# in the shapes graph for sh:targetClass and sh:class to reach a
+# Diagram. The SPARQL ones walk rdfs:subClassOf* in the data graph,
+# so a language's ontology must be loaded as data for its element
+# types to be recognised.
+#
+# sh:severity is repeated on property shapes. SHACL takes the
+# severity of a result from the shape that declares the violated
+# constraint, and a property shape does not inherit sh:severity
+# from the node shape it is nested in — without its own it defaults
+# to sh:Violation. The node-level declaration governs constraints
+# stated on the node shape itself, sh:sparql among them, which is
+# why shapes 2, 3 and 4 need nothing further.
+#################################################################
+
+#################################################################
+# 1. Viewpoint declaration
+#
+# Every View declares exactly one viewpoint, as an arch:Viewpoint
+# individual rather than a string.
+#
+# Targets arch:View, not arch:Diagram: arch:Catalog and arch:Matrix
+# are Views too, and a viewpoint governs them as it governs a
+# diagram.
+#################################################################
+
+:ViewDeclaresViewpointShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:View ;
+    sh:severity    sh:Warning ;
+    sh:property [
+        sh:path     arch:viewConformsToViewpoint ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    arch:Viewpoint ;
+        sh:message  "Every View must declare exactly one arch:viewConformsToViewpoint, and the value must be an arch:Viewpoint."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+.
+
+#################################################################
+# 2. View type conformance
+#
+# A View's rdf:type must be compatible with its viewpoint's
+# arch:viewType. A viewpoint declaring arch:viewType arch:Catalog
+# is not satisfied by a Diagram.
+#################################################################
+
+:ViewTypeConformanceShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:View ;
+    sh:severity    sh:Warning ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/core-shapes#> ;
+        sh:message  "View type {?viewType} does not match any arch:viewType declared by viewpoint {?vp}."@en ;
+        sh:select   """
+            SELECT $this ?vp ?viewType
+            WHERE {
+                $this arch:viewConformsToViewpoint ?vp .
+                $this rdf:type ?viewType .
+                ?viewType rdfs:subClassOf* arch:View .
+                FILTER(?viewType != arch:View)
+                FILTER NOT EXISTS {
+                    ?vp arch:viewType ?allowedType .
+                    ?viewType rdfs:subClassOf* ?allowedType .
+                }
+                FILTER EXISTS {
+                    ?vp arch:viewType ?anyType .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+#################################################################
+# 3. Element conformance
+#
+# Elements presented in a View must be instances of types the
+# viewpoint's arch:includesConcept allows. The type is walked
+# through rdf:type/rdfs:subClassOf*, so a viewpoint may admit an
+# abstract class and with it every type beneath.
+#
+# Keyed on arch:inView rather than the arch-vis: node layer
+# (DD-30): a rule reading the visual graph would report nothing for
+# a model published without views, or for a notation carrying no
+# geometry.
+#################################################################
+
+:ViewElementConformanceShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:View ;
+    sh:severity    sh:Warning ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/core-shapes#> ;
+        sh:message  "Element {?element} of type {?elementType} is not allowed in viewpoint {?vp} (not in arch:includesConcept)."@en ;
+        sh:select   """
+            SELECT $this ?vp ?element ?elementType WHERE {
+                $this arch:viewConformsToViewpoint ?vp .
+                ?element arch:inView $this .
+                ?element rdf:type ?elementType .
+                ?elementType rdfs:subClassOf* arch:Element .
+                FILTER(?elementType != arch:Element)
+
+                FILTER EXISTS { ?vp arch:includesConcept ?anyConcept . }
+
+                # MINUS, not FILTER NOT EXISTS: the same results (?element and ?vp are bound
+                # above), and much faster on a large model.
+                MINUS {
+                    ?element rdf:type/rdfs:subClassOf* ?allowedType .
+                    ?vp arch:includesConcept ?allowedType .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+#################################################################
+# 4. Relationship endpoint conformance
+#
+# A qualified relationship presented in a View should connect
+# elements the viewpoint itself allows. An endpoint outside the
+# palette is suspicious rather than wrong — the relationship may be
+# drawn to something the viewpoint tolerates as context — so this
+# is sh:Info.
+#################################################################
+
+:RelationshipEndpointConformanceShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:View ;
+    sh:severity    sh:Info ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/core-shapes#> ;
+        sh:message  "Relationship {?rel} in view has endpoint {?endpoint} of type {?endpointType} not in viewpoint {?vp} palette."@en ;
+        sh:select   """
+            SELECT $this ?vp ?rel ?endpoint ?endpointType
+            WHERE {
+                $this arch:viewConformsToViewpoint ?vp .
+                ?rel arch:inView $this .
+                ?rel a/rdfs:subClassOf* arch:QualifiedRelationship .
+
+                { ?rel arch:source ?endpoint . }
+                UNION
+                { ?rel arch:target ?endpoint . }
+
+                ?endpoint rdf:type ?endpointType .
+                ?endpointType rdfs:subClassOf* arch:Element .
+                FILTER(?endpointType != arch:Element)
+
+                FILTER EXISTS { ?vp arch:includesConcept ?anyConcept . }
+
+                # MINUS, not FILTER NOT EXISTS: the same results (?endpoint and ?vp are bound
+                # above), and much faster on a large model.
+                MINUS {
+                    ?endpoint rdf:type/rdfs:subClassOf* ?allowedType .
+                    ?vp arch:includesConcept ?allowedType .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+#################################################################
+# 5. Viewpoint completeness
+#
+# A viewpoint should say which concepts it admits, which concerns it
+# frames and which kinds of view realise it. A viewpoint that frames
+# no concern is not a viewpoint in the ISO 42010 sense. Not errors —
+# an incomplete viewpoint definition, which is why this is sh:Info.
+#################################################################
+
+:ViewpointCompletenessShape
+    a              sh:NodeShape ;
+    sh:targetClass arch:Viewpoint ;
+    sh:severity    sh:Info ;
+    sh:property [
+        sh:path     arch:includesConcept ;
+        sh:minCount 1 ;
+        sh:message  "Viewpoint should declare at least one arch:includesConcept."@en ;
+        sh:severity sh:Info ;
+    ] ;
+    sh:property [
+        sh:path     arch:viewpointFramesConcern ;
+        sh:minCount 1 ;
+        sh:message  "Viewpoint should declare at least one arch:viewpointFramesConcern."@en ;
+        sh:severity sh:Info ;
+    ] ;
+    sh:property [
+        sh:path     arch:viewType ;
+        sh:minCount 1 ;
+        sh:message  "Viewpoint should declare at least one arch:viewType."@en ;
+        sh:severity sh:Info ;
+    ] ;
+.
+
+
+#################################################################
+# NAMES PER PRESENTATION CONTEXT (core 0.5.0)
+#
+# An element's canonical name is its skos:prefLabel (the labelling contract
+# above). A name for one audience is a SKOS-XL label — a resource, so that it
+# can say which presentation context it is for — given as skosxl:altLabel, its
+# literal form also the element's skos:altLabel. See DD-34.
+#################################################################
+
+:PresentationNameShape
+    a                  sh:NodeShape ;
+    sh:targetClass     skosxl:Label ;
+    sh:targetObjectsOf skosxl:altLabel ;
+    rdfs:label         "Name for a presentation context shape"@en ;
+    sh:property [
+        sh:path     skosxl:literalForm ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "A SKOS-XL label has exactly one skosxl:literalForm, language tagged: \"pgw-svc\"@en."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:inPresentationContext ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "A name is for at most one presentation context (arch:inPresentationContext); with none, for every one."@en ;
+    ] ;
+.
+
+:CanonicalNameForEveryContextShape
+    a                  sh:NodeShape ;
+    sh:targetObjectsOf skosxl:prefLabel ;
+    rdfs:label         "Preferred SKOS-XL label shape"@en ;
+    sh:property [
+        sh:path     arch:inPresentationContext ;
+        sh:maxCount 0 ;
+        sh:message  '''A name for one presentation context is a skosxl:altLabel. A skosxl:prefLabel is also the
+element's skos:prefLabel — its canonical name, one per language — so it cannot be one audience's.'''@en ;
+    ] ;
+.
+
+:OneNamePerContextShape
+    a                   sh:NodeShape ;
+    sh:targetSubjectsOf skosxl:altLabel ;
+    rdfs:label          "One name per presentation context shape"@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/core-shapes#> ;
+        sh:message  "{$this} has {?count} names for presentation context {?context} in language \"{?language}\": it may have one."@en ;
+        sh:select   """
+            SELECT $this ?context ?language (COUNT(DISTINCT ?name) AS ?count)
+            WHERE {
+                $this skosxl:altLabel ?name .
+                ?name arch:inPresentationContext ?context ;
+                      skosxl:literalForm ?form .
+                BIND(LANG(?form) AS ?language)
+            }
+            GROUP BY $this ?context ?language
+            HAVING (COUNT(DISTINCT ?name) > 1)
+        """ ;
+    ] ;
+.
+
+:PresentationNameAlsoPlainShape
+    a                   sh:NodeShape ;
+    sh:targetSubjectsOf skosxl:altLabel ;
+    rdfs:label          "Name also a plain SKOS label shape"@en ;
+    sh:severity         sh:Warning ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/core-shapes#> ;
+        sh:message  "{$this}'s name {?form} is not also its skos:altLabel: tools that read plain SKOS do not see it."@en ;
+        sh:select   """
+            SELECT $this ?form
+            WHERE {
+                $this skosxl:altLabel ?name .
+                ?name skosxl:literalForm ?form .
+                FILTER NOT EXISTS { $this skos:altLabel ?form }
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+# PICTURES PER PRESENTATION CONTEXT (core 0.5.0)
+#
+# An element's canonical picture is its arch:prefVisNotation; one for an
+# audience is an arch:altVisNotation whose value is a schema:ImageObject with
+# its schema:contentUrl and arch:inPresentationContext — as a name for an
+# audience is a SKOS-XL label. See DD-34.
+#################################################################
+
+:PictureShape
+    a                  sh:NodeShape ;
+    sh:targetClass     schema:ImageObject ;
+    sh:targetObjectsOf arch:altVisNotation ;
+    rdfs:label         "Picture shape"@en ;
+    sh:property [
+        sh:path     schema:contentUrl ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:anyURI ;
+        sh:message  "A picture has at most one schema:contentUrl, an xsd:anyURI: an http(s) URL or a data: URI of an image."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:inPresentationContext ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "A picture is for at most one presentation context (arch:inPresentationContext); with none, for every one."@en ;
+    ] ;
+.
+
+:CanonicalPictureShape
+    a                  sh:NodeShape ;
+    sh:targetObjectsOf arch:prefVisNotation ;
+    rdfs:label         "Canonical picture shape"@en ;
+    sh:property [
+        sh:path     arch:inPresentationContext ;
+        sh:maxCount 0 ;
+        sh:message  "An element's arch:prefVisNotation is its picture for every audience; one for an audience is an arch:altVisNotation."@en ;
+    ] ;
+.
+
+:PictureForAudienceShape
+    a                   sh:NodeShape ;
+    sh:targetSubjectsOf arch:altVisNotation ;
+    rdfs:label          "Pictures per presentation context shape"@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/core-shapes#> ;
+        sh:message  "{$this}'s picture {?picture} is for presentation context {?context} but has no schema:contentUrl."@en ;
+        sh:select   """
+            SELECT $this ?picture ?context
+            WHERE {
+                $this arch:altVisNotation ?picture .
+                ?picture arch:inPresentationContext ?context .
+                FILTER NOT EXISTS { ?picture schema:contentUrl ?url }
+            }
+        """ ;
+    ] ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/core-shapes#> ;
+        sh:message  "{$this} has {?count} pictures for presentation context {?context}: it may have one."@en ;
+        sh:select   """
+            SELECT $this ?context (COUNT(DISTINCT ?picture) AS ?count)
+            WHERE {
+                $this arch:altVisNotation ?picture .
+                ?picture arch:inPresentationContext ?context .
+            }
+            GROUP BY $this ?context
+            HAVING (COUNT(DISTINCT ?picture) > 1)
+        """ ;
+    ] ;
+.

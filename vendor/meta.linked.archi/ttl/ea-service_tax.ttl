@@ -1,0 +1,243 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix easvc:   <https://meta.linked.archi/ea-service/onto#> .
+@prefix :        <https://meta.linked.archi/ea-service/tax#> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/ea-service/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "EA-as-a-Service Concept Scheme"@en ;
+    dcterms:description  "Classification of EA service concepts by service type, engagement duration, stakeholder type, and maturity level."@en ;
+    skos:hasTopConcept :ByServiceType, :ByEngagementDuration, :ByStakeholderType, :ByMaturityLevel,
+                       :ElementKind ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ea-service/tax#" ;
+    vann:preferredNamespacePrefix "easvctax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EA-as-a-Service Taxonomy"@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en .
+
+
+#################################################################
+# Element types
+#
+# The other groupings classify the values an EA service takes. This
+# one classifies the element types themselves: what a modelling tool
+# lists in its palette.
+#################################################################
+
+:ElementKind
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ea-service/tax#> ;
+    skos:prefLabel       "Element Kind"@en ;
+    skos:definition      "The EA-as-a-Service element types, by what they record."@en ;
+    skos:inScheme        <https://meta.linked.archi/ea-service/tax#> ;
+.
+
+:Services
+    a skos:Concept ; skos:broader :ElementKind ;
+    skos:prefLabel "Services"@en ;
+    skos:definition "The services an EA practice offers."@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> ;
+    skos:narrower easvc:EAService ;
+.
+
+
+#################################################################
+# By Service Type
+#################################################################
+
+:ByServiceType
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ea-service/tax#> ;
+    skos:prefLabel       "By Service Type"@en ;
+    skos:inScheme        <https://meta.linked.archi/ea-service/tax#> ;
+.
+
+:AdvisoryServices
+    a skos:Concept ; skos:broader :ByServiceType ;
+    skos:prefLabel "Advisory Services"@en ;
+    skos:definition "Services providing guidance, review, and consultation."@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:ArchitectureReviewConcept
+    a skos:Concept ; skos:broader :AdvisoryServices ;
+    skos:prefLabel "Architecture Review"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:StandardsGuidanceConcept
+    a skos:Concept ; skos:broader :AdvisoryServices ;
+    skos:prefLabel "Standards Guidance"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:OnboardingConsultationConcept
+    a skos:Concept ; skos:broader :AdvisoryServices ;
+    skos:prefLabel "Onboarding Consultation"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:AssessmentServices
+    a skos:Concept ; skos:broader :ByServiceType ;
+    skos:prefLabel "Assessment Services"@en ;
+    skos:definition "Services evaluating current state and identifying gaps."@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:PortfolioAssessmentConcept
+    a skos:Concept ; skos:broader :AssessmentServices ;
+    skos:prefLabel "Portfolio Assessment"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:ImpactAnalysisConcept
+    a skos:Concept ; skos:broader :AssessmentServices ;
+    skos:prefLabel "Impact Analysis"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:AIReadinessConcept
+    a skos:Concept ; skos:broader :AssessmentServices ;
+    skos:prefLabel "AI Readiness Assessment"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:ComplianceValidationConcept
+    a skos:Concept ; skos:broader :AssessmentServices ;
+    skos:prefLabel "Compliance Validation"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:DesignServices
+    a skos:Concept ; skos:broader :ByServiceType ;
+    skos:prefLabel "Design Services"@en ;
+    skos:definition "Services creating or refining architecture."@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:TargetStateDesignConcept
+    a skos:Concept ; skos:broader :DesignServices ;
+    skos:prefLabel "Target State Design"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:ModernizationPlanningConcept
+    a skos:Concept ; skos:broader :DesignServices ;
+    skos:prefLabel "Modernization Planning"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:IntelligenceServices
+    a skos:Concept ; skos:broader :ByServiceType ;
+    skos:prefLabel "Intelligence Services"@en ;
+    skos:definition "Services providing technology intelligence and trend analysis."@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:TechnologyRadarConcept
+    a skos:Concept ; skos:broader :IntelligenceServices ;
+    skos:prefLabel "Technology Radar"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+#################################################################
+# By Engagement Duration
+#################################################################
+
+:ByEngagementDuration
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ea-service/tax#> ;
+    skos:prefLabel       "By Engagement Duration"@en ;
+    skos:inScheme        <https://meta.linked.archi/ea-service/tax#> ;
+.
+
+:QuickConsultation
+    a skos:Concept ; skos:broader :ByEngagementDuration ;
+    skos:prefLabel "Quick Consultation (< 1 week)"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:StandardEngagement
+    a skos:Concept ; skos:broader :ByEngagementDuration ;
+    skos:prefLabel "Standard Engagement (1-4 weeks)"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:StrategicInitiative
+    a skos:Concept ; skos:broader :ByEngagementDuration ;
+    skos:prefLabel "Strategic Initiative (> 4 weeks)"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+#################################################################
+# By Stakeholder Type
+#################################################################
+
+:ByStakeholderType
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ea-service/tax#> ;
+    skos:prefLabel       "By Stakeholder Type"@en ;
+    skos:inScheme        <https://meta.linked.archi/ea-service/tax#> ;
+.
+
+:ExecutiveLeadership
+    a skos:Concept ; skos:broader :ByStakeholderType ;
+    skos:prefLabel "Executive Leadership"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:ProductTeams
+    a skos:Concept ; skos:broader :ByStakeholderType ;
+    skos:prefLabel "Product Teams"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:PlatformTeams
+    a skos:Concept ; skos:broader :ByStakeholderType ;
+    skos:prefLabel "Platform Teams"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:DeliveryTeams
+    a skos:Concept ; skos:broader :ByStakeholderType ;
+    skos:prefLabel "Delivery Teams"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:GovernanceBodies
+    a skos:Concept ; skos:broader :ByStakeholderType ;
+    skos:prefLabel "Governance Bodies"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+#################################################################
+# By Maturity Level
+#################################################################
+
+:ByMaturityLevel
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ea-service/tax#> ;
+    skos:prefLabel       "By Maturity Level"@en ;
+    skos:inScheme        <https://meta.linked.archi/ea-service/tax#> ;
+.
+
+:Level1Concept
+    a skos:Concept ; skos:broader :ByMaturityLevel ;
+    skos:prefLabel "Level 1 — Initial"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:Level2Concept
+    a skos:Concept ; skos:broader :ByMaturityLevel ;
+    skos:prefLabel "Level 2 — Developing"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:Level3Concept
+    a skos:Concept ; skos:broader :ByMaturityLevel ;
+    skos:prefLabel "Level 3 — Defined"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:Level4Concept
+    a skos:Concept ; skos:broader :ByMaturityLevel ;
+    skos:prefLabel "Level 4 — Managed"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .
+
+:Level5Concept
+    a skos:Concept ; skos:broader :ByMaturityLevel ;
+    skos:prefLabel "Level 5 — Optimizing"@en ;
+    skos:inScheme <https://meta.linked.archi/ea-service/tax#> .

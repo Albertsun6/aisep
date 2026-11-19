@@ -1,0 +1,205 @@
+@prefix owl:       <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:       <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms:   <http://purl.org/dc/terms/> .
+@prefix bibo:      <http://purl.org/ontology/bibo/> .
+@prefix vann:      <http://purl.org/vocab/vann/> .
+@prefix prov:      <http://www.w3.org/ns/prov#> .
+@prefix cc:        <http://creativecommons.org/ns#> .
+@prefix skos:      <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:    <http://schema.org/> .
+
+@prefix arch:      <https://meta.linked.archi/core#> .
+@prefix :          <https://meta.linked.archi/leanix/v3/onto#> .
+
+#################################################################
+# Ontology header – LeanIX Meta Model v3
+#################################################################
+
+<https://meta.linked.archi/leanix/v3/onto#>
+    a                             owl:Ontology ;
+    cc:license                    <http://creativecommons.org/licenses/by/4.0/> ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/leanix/v3/onto#" ;
+    vann:preferredNamespacePrefix "lmm3" ;
+    dcterms:title                      "Linked.Archi LeanIX Meta Model v3 Ontology"@en ;
+    dcterms:description                '''Ontology representation of SAP LeanIX Meta Model v3 fact sheets and relations.
+This is not an official SAP document.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-04-12"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    bibo:status                   "deprecated" ;
+    owl:deprecated                true ;
+    dcterms:isReplacedBy          <https://meta.linked.archi/leanix/onto#> ;
+    skos:historyNote              '''Namespace set to leanix/v3/onto# to distinguish from the v4 ontology
+at leanix/onto#. Status set to deprecated — v4 supersedes v3.'''@en ;
+    owl:versionIRI                <https://meta.linked.archi/leanix/v3/onto/3.0.0#> ;
+    owl:versionInfo               "3"@en ;
+    skos:scopeNote                "Describes the LeanIX Meta Model v3 as used before the introduction of Meta Model v4."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/meta-model>,
+            <https://help.sap.com/docs/leanix/ea/modeling-guidelines-v3>
+.
+
+#################################################################
+# Core abstract concept
+#################################################################
+
+:FactSheet
+    a                    owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf      arch:Element ;
+    skos:prefLabel       "Fact Sheet"@en ;
+    skos:definition      "Abstract supertype for all LeanIX fact sheet instances in Meta Model v3."@en ;
+    skos:example         "Any Application, Project, User Group or IT Component fact sheet is also an instance of :FactSheet."@en ;
+    skos:scopeNote       "Abstract supertype for all LeanIX Meta Model v3 fact sheet instances."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/modeling-guidelines-v3>
+.
+
+#################################################################
+# Selected v3 Fact Sheet types (only those relevant for v4 changes)
+#################################################################
+
+:Application
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "Application"@en ;
+    skos:definition      "Application fact sheet representing business or technical application systems in Meta Model v3, without the explicit v4 subtypes."@en ;
+    skos:example         "\"CRM Core\", \"Data Warehouse\" or \"Intranet Portal\" modeled as Application fact sheets in v3."@en ;
+    skos:scopeNote       "Meta Model v3 Application fact sheet type, used for business applications, systems and services without formal subtypes."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/modeling-guidelines-v3>,
+            <https://help.sap.com/docs/leanix/ea/application-vs-it-component-v3>
+.
+
+:BusinessCapability
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "Business Capability"@en ;
+    skos:definition      "Business capability concept in v3 describing what the organization does or can do; typically reused when migrating to v4."@en ;
+    skos:example         "Capabilities such as \"Order Management\", \"Customer Billing\" or \"Supplier Management\"."@en ;
+    skos:scopeNote       "Capabilities in the LeanIX v3 meta model; structure is later reused in v4 without major semantic change."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/business-capabilities-modeling-v3>
+.
+
+:UserGroup
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "User Group"@en ;
+    skos:definition      "Grouping of users or stakeholders that consume applications or participate in processes, modeled as User Groups in v3."@en ;
+    skos:example         "\"Finance Users Germany\" or \"Global Sales Users\" modeled as UserGroup fact sheets."@en ;
+    skos:scopeNote       "Organizational groupings of users or stakeholders consuming applications and capabilities."@en ;
+    skos:changeNote      "In Meta Model v4 this concept is reworked and renamed as the Organization fact sheet type with clearer subtypes (e.g. Business Unit, Location)."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/user-group-modeling-v3>
+.
+
+:Project
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "Project"@en ;
+    skos:definition      "Project‑like change initiative in v3 that delivers scope such as new applications, process changes or technology rollouts."@en ;
+    skos:example         "\"CRM Replacement 2025\" or \"Data Center Exit\" projects."@en ;
+    skos:scopeNote       "Project-like change initiatives that impact applications, capabilities and technologies in v3."@en ;
+    skos:changeNote      "In Meta Model v4 this role is covered by the Initiative fact sheet type, with expanded scope for programs, epics, and other change efforts."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/project-modeling-v3>,
+            <https://help.sap.com/docs/leanix/ea/objectives-and-transformations-items-v3>
+.
+
+:Process
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "Process"@en ;
+    skos:definition      "Top‑level process fact sheet in v3 describing business processes before the introduction of the Business Context concept in v4."@en ;
+    skos:example         "Processes such as \"Order to Cash\", \"Hire to Retire\" or \"Record to Report\"."@en ;
+    skos:scopeNote       "Dedicated fact sheet type for business processes in v3."@en ;
+    skos:changeNote      "In v4, processes are modeled as a subtype of the Business Context fact sheet type rather than as their own fact sheet type."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/process-modeling-v3>
+.
+
+:Product
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "Product"@en ;
+    skos:definition      "Product or service offering fact sheet in v3; later treated as a subtype of Business Context in v4."@en ;
+    skos:example         "\"Gold Credit Card\", \"Standard Current Account\" or \"Premium Support Package\" products."@en ;
+    skos:scopeNote       "Business products represented directly as fact sheets in v3; in v4 they are grouped as a Business Context subtype."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/modeling-guidelines-v3>
+.
+
+:ITComponent
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "IT Component"@en ;
+    skos:definition      "Technical component such as a software product, runtime, database or infrastructure element used by applications in v3."@en ;
+    skos:example         "\"Oracle Database 19c\", \"Windows Server 2022\" or \"Apache Kafka Cluster\" as IT Components."@en ;
+    skos:scopeNote       "Technologies (software, hardware, cloud services) supporting applications. The basic semantics remain stable in v4."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/application-vs-it-component-v3>
+.
+
+:TechCategory
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "Tech Category"@en ;
+    skos:definition      "Category used to group IT Components into coherent sets for classification and reporting in v3."@en ;
+    skos:example         "Categories like \"Database\", \"Middleware\", \"Operating System\" or \"Network Equipment\"."@en ;
+    skos:scopeNote       "Grouping of IT Components into categories (e.g. database, middleware, operating system)."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/tech-category-modeling-v3>
+.
+
+:TechPlatform
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "Tech Platform"@en ;
+    skos:definition      "Optional v3 fact sheet type representing a technical platform composed of multiple IT Components."@en ;
+    skos:example         "\"Integration Platform\" grouping ESB, API gateway and messaging infrastructure as a TechPlatform."@en ;
+    skos:scopeNote       "Optional fact sheet type used in v3 to represent technical platforms composed of IT components."@en ;
+    skos:changeNote      "Reworked in Meta Model v4 as the Platform fact sheet type with an expanded focus on business capabilities, applications and technologies."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/tech-platform-fact-sheet-v3>
+.
+
+:Interface
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "Interface"@en ;
+    skos:definition      "Integration link or interface fact sheet in v3 that connects source and target applications and exchanges data."@en ;
+    skos:example         "A nightly \"File transfer from CRM to ERP\" interface or a near‑real‑time \"Customer API\" interface."@en ;
+    skos:scopeNote       "Integration endpoints or data flows between applications; the core idea remains in v4."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/interfaces-modeling-v3>
+.
+
+:DataObject
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "Data Object"@en ;
+    skos:definition      "Logical data entity fact sheet in v3 that is shared across applications and processes."@en ;
+    skos:example         "Data objects such as \"Customer\", \"Invoice\", \"Product\" or \"Payment\"."@en ;
+    skos:scopeNote       "Logical data entities exchanged by applications and processes; scope is reused in v4."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/modeling-guidelines-v3>,
+            <https://help.sap.com/docs/leanix/ea/data-object-modeling-guidelines>
+
+.
+
+:Provider
+    a                    owl:Class ;
+    rdfs:subClassOf      :FactSheet ;
+    skos:prefLabel       "Provider"@en ;
+    skos:definition      "Vendor or provider that supplies IT Components or SaaS Applications in v3."@en ;
+    skos:example         "Providers such as \"SAP\", \"Microsoft Azure\", \"AWS\" or an internal IT shared‑services organization."@en ;
+    skos:scopeNote       "Vendors / external providers of applications and IT components."@en ;
+    rdfs:seeAlso
+            <https://help.sap.com/docs/leanix/ea/modeling-guidelines-v3>,
+            <https://help.sap.com/docs/leanix/ea/provider-modeling-guidelines>
+.

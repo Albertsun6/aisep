@@ -1,0 +1,180 @@
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix bs:      <https://meta.linked.archi/backstage/onto#> .
+@prefix am:      <https://meta.linked.archi/archimate3/onto#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+
+<https://meta.linked.archi/backstage/crossmappings#>
+    a                owl:Ontology ;
+    owl:imports      <https://meta.linked.archi/backstage/onto#> ;
+    cc:license       "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/backstage/crossmappings#" ;
+    vann:preferredNamespacePrefix "bsxm" ;
+    dcterms:creator  "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title    "Linked.Archi Backstage Cross-Language Mappings"@en ;
+    dcterms:description '''Cross-language SKOS mappings between Backstage Software Catalog kinds and
+relations and ArchiMate modeling language concepts, for both ArchiMate 3.2 and
+ArchiMate 4.0.
+
+These mappings are editorial. Backstage documents its catalog model without
+reference to ArchiMate, and the ArchiMate specification does not mention
+developer portals. The assertions here express semantic proximity based on the
+kind definitions in the Backstage catalog model and the concept definitions in
+the ArchiMate specifications.
+
+The catalog describes software as it is owned and operated: what is deployed,
+who owns it, which APIs it exposes, what infrastructure it needs. ArchiMate
+describes the same estate at an architectural grain. The closest fit is at the
+application layer — a Backstage System and an ArchiMate application component
+are both the unit that architects and owners reason about — so that pair is
+skos:closeMatch. Elsewhere the kinds are deliberately broad (a Resource can be a
+database, a bucket, a server or a cluster; a Domain is any grouping) and the mappings are
+skos:relatedMatch, fanning out to each ArchiMate concept a modeller might choose.
+
+These are type-level statements. They do not say that any particular catalog
+entity corresponds to any particular ArchiMate element; instance-level
+correspondence is asserted in the catalog itself, through the Linked.Archi
+catalog index (skos:exactMatch and friends against a shared id namespace).
+
+Not mapped, deliberately: bs:Template and bs:Scaffolding (they describe how
+entities are created, not the architecture), bs:TechDocsDelegation (documentation
+ownership), and the enumerations for lifecycle, component type and API type,
+which are reference data rather than concepts.'''@en ;
+    dcterms:issued   "2026-09-25"^^xsd:date ;
+    dcterms:modified "2026-09-25"^^xsd:date ;
+    owl:versionInfo  "0.1.0"@en ;
+    dcterms:source   <https://backstage.io/docs/features/software-catalog/system-model>,
+                     <https://backstage.io/docs/features/software-catalog/descriptor-format>,
+                     <https://pubs.opengroup.org/architecture/archimate3-doc/>,
+                     <https://pubs.opengroup.org/architecture/archimate4-doc/> ;
+    rdfs:seeAlso     <https://backstage.io/docs/features/software-catalog/well-known-relations> ;
+.
+
+
+#################################################################
+# Backstage ↔ ArchiMate 3.2
+#################################################################
+#
+# Editorial mappings — no official cross-notation specification
+# exists. These express semantic proximity based on the Backstage
+# catalog model and the ArchiMate 3.2 specification.
+
+## Application structure
+#  A System is a set of components and resources that together provide value
+#  and are owned as one — the grain of an ArchiMate application component in
+#  most landscapes. closeMatch rather than exactMatch because a System also
+#  gathers infrastructure (Resources) that ArchiMate places in the technology
+#  layer. A Component is a deployable unit, library or website: it may be a
+#  whole application or a part of one, so the correspondence is weaker.
+bs:System                    skos:closeMatch    am:ApplicationComponent .
+bs:Component                 skos:relatedMatch  am:ApplicationComponent .
+bs:Component                 skos:relatedMatch  am:Artifact .
+
+## Interfaces and services
+#  A Backstage API is a contract between components — the access point, which
+#  is what an ArchiMate application interface is. The behaviour offered through
+#  the API is the application service, a weaker match.
+bs:API                       skos:closeMatch    am:ApplicationInterface .
+bs:API                       skos:relatedMatch  am:ApplicationService .
+
+## Infrastructure
+#  Resource is intentionally open: databases, queues, buckets, servers, clusters. Each of
+#  these lands on a different ArchiMate concept, so the kind maps to all of
+#  them, weakly, and the modeller chooses per entity through spec.type.
+bs:Resource                  skos:relatedMatch  am:Node .
+bs:Resource                  skos:relatedMatch  am:Device .
+bs:Resource                  skos:relatedMatch  am:SystemSoftware .
+bs:Resource                  skos:relatedMatch  am:TechnologyService .
+bs:Resource                  skos:relatedMatch  am:DataObject .
+
+## Grouping
+#  A Domain groups systems by business area. ArchiMate has no domain concept;
+#  grouping is the construct for an arbitrary aggregation.
+bs:Domain                    skos:relatedMatch  am:Grouping .
+
+## Organisation
+#  A Group is a team or department that owns things — an organisational unit,
+#  which ArchiMate models as a business actor. A User is a person, also a
+#  business actor, and the role they play is a weaker correspondence.
+bs:Group                     skos:closeMatch    am:BusinessActor .
+bs:User                      skos:closeMatch    am:BusinessActor .
+bs:User                      skos:relatedMatch  am:BusinessRole .
+
+## Relationships
+#  Membership and composition are part-whole relations. SystemMembership is
+#  aggregation rather than composition because a component can be moved between
+#  systems without ceasing to exist.
+bs:SystemMembership          skos:closeMatch    am:Aggregation .
+bs:ComponentComposition      skos:closeMatch    am:Composition .
+bs:DomainMembership          skos:relatedMatch  am:Aggregation .
+bs:DomainHierarchy           skos:relatedMatch  am:Aggregation .
+bs:GroupMembership           skos:relatedMatch  am:Aggregation .
+bs:GroupParentage            skos:relatedMatch  am:Composition .
+#  Providing an API: the component owns the interface (composition in ArchiMate)
+#  and realises the service behind it. Consuming an API is being served by it.
+bs:APIProvision              skos:relatedMatch  am:Composition .
+bs:APIProvision              skos:relatedMatch  am:Realization .
+bs:APIConsumption            skos:closeMatch    am:Serving .
+#  dependsOn is untyped in Backstage; serving is the nearest ArchiMate reading
+#  but the direction is reversed (A dependsOn B ≈ B serves A).
+bs:Dependency                skos:relatedMatch  am:Serving .
+bs:ResourceUsage             skos:relatedMatch  am:Serving .
+bs:ResourceUsage             skos:relatedMatch  am:Access .
+#  Ownership is accountability, which ArchiMate does not model directly;
+#  assignment of an actor to the thing is the common approximation.
+bs:Ownership                 skos:relatedMatch  am:Assignment .
+
+
+#################################################################
+# Backstage ↔ ArchiMate 4.0
+#################################################################
+#
+# Editorial mappings, as above. ArchiMate 4.0 drops the layer prefix from
+# behaviour and role concepts, so the service and role targets change even
+# where the correspondence does not.
+
+## Application structure
+bs:System                    skos:closeMatch    am4:ApplicationComponent .
+bs:Component                 skos:relatedMatch  am4:ApplicationComponent .
+bs:Component                 skos:relatedMatch  am4:Artifact .
+
+## Interfaces and services
+bs:API                       skos:closeMatch    am4:ApplicationInterface .
+bs:API                       skos:relatedMatch  am4:Service .
+
+## Infrastructure
+bs:Resource                  skos:relatedMatch  am4:Node .
+bs:Resource                  skos:relatedMatch  am4:Device .
+bs:Resource                  skos:relatedMatch  am4:SystemSoftware .
+bs:Resource                  skos:relatedMatch  am4:Service .
+bs:Resource                  skos:relatedMatch  am4:DataObject .
+
+## Grouping
+bs:Domain                    skos:relatedMatch  am4:Grouping .
+
+## Organisation
+bs:Group                     skos:closeMatch    am4:BusinessActor .
+bs:User                      skos:closeMatch    am4:BusinessActor .
+bs:User                      skos:relatedMatch  am4:Role .
+
+## Relationships
+bs:SystemMembership          skos:closeMatch    am4:Aggregation .
+bs:ComponentComposition      skos:closeMatch    am4:Composition .
+bs:DomainMembership          skos:relatedMatch  am4:Aggregation .
+bs:DomainHierarchy           skos:relatedMatch  am4:Aggregation .
+bs:GroupMembership           skos:relatedMatch  am4:Aggregation .
+bs:GroupParentage            skos:relatedMatch  am4:Composition .
+bs:APIProvision              skos:relatedMatch  am4:Composition .
+bs:APIProvision              skos:relatedMatch  am4:Realization .
+bs:APIConsumption            skos:closeMatch    am4:Serving .
+bs:Dependency                skos:relatedMatch  am4:Serving .
+bs:ResourceUsage             skos:relatedMatch  am4:Serving .
+bs:ResourceUsage             skos:relatedMatch  am4:Access .
+bs:Ownership                 skos:relatedMatch  am4:Assignment .

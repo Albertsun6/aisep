@@ -1,0 +1,167 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix cp:      <https://meta.linked.archi/examples/cloudplatform/onto#> .
+@prefix :        <https://meta.linked.archi/examples/cloudplatform/shapes#> .
+
+<https://meta.linked.archi/examples/cloudplatform/shapes#>
+    a owl:Ontology ;
+    owl:imports <https://meta.linked.archi/core-shapes#> ;
+    cc:license "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri "https://meta.linked.archi/examples/cloudplatform/shapes#" ;
+    vann:preferredNamespacePrefix "cpsh" ;
+    dcterms:title "Cloud Platform SHACL Shapes"@en ;
+    dcterms:description "Validation rules for the Cloud Platform Architecture metamodel."@en ;
+    dcterms:created "2026-05-03"^^xsd:date ;
+    owl:versionInfo "0.1.0"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Microservice validation
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:MicroserviceShape
+    a sh:NodeShape ;
+    sh:targetClass cp:Microservice ;
+    sh:property [
+        sh:path skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:message "Every Microservice must have a name (skos:prefLabel)."@en ;
+    ] ;
+    sh:property [
+        sh:path cp:resilienceLevel ;
+        sh:minCount 1 ;
+        sh:in ( "critical" "high" "medium" "low" ) ;
+        sh:message "Microservice must have a resilienceLevel: critical, high, medium, or low."@en ;
+    ] ;
+    sh:property [
+        sh:path cp:deploymentStrategy ;
+        sh:maxCount 1 ;
+        sh:in ( "blue-green" "canary" "rolling" "recreate" ) ;
+        sh:message "deploymentStrategy must be: blue-green, canary, rolling, or recreate."@en ;
+    ] ;
+    sh:property [
+        sh:path cp:serviceTier ;
+        sh:maxCount 1 ;
+        sh:in ( "tier-1" "tier-2" "tier-3" ) ;
+        sh:message "serviceTier must be: tier-1, tier-2, or tier-3."@en ;
+    ] ;
+.
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Container validation
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ContainerShape
+    a sh:NodeShape ;
+    sh:targetClass cp:Container ;
+    sh:property [
+        sh:path cp:containerImage ;
+        sh:minCount 1 ;
+        sh:message "Every Container must have a containerImage."@en ;
+    ] ;
+    sh:property [
+        sh:path cp:replicaCount ;
+        sh:minCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:message "replicaCount must be a positive integer."@en ;
+    ] ;
+.
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Relationship validation
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:PublishingShape
+    a sh:NodeShape ;
+    sh:targetClass cp:Publishing ;
+    sh:property [
+        sh:path arch:source ;
+        sh:class cp:Microservice ;
+        sh:message "Publishing source must be a Microservice."@en ;
+    ] ;
+    sh:property [
+        sh:path arch:target ;
+        sh:class cp:EventTopic ;
+        sh:message "Publishing target must be an EventTopic."@en ;
+    ] ;
+.
+
+:SubscriptionShape
+    a sh:NodeShape ;
+    sh:targetClass cp:Subscription ;
+    sh:property [
+        sh:path arch:source ;
+        sh:class cp:Microservice ;
+        sh:message "Subscription source must be a Microservice."@en ;
+    ] ;
+    sh:property [
+        sh:path arch:target ;
+        sh:class cp:EventTopic ;
+        sh:message "Subscription target must be an EventTopic."@en ;
+    ] ;
+.
+
+:DeploymentShape
+    a sh:NodeShape ;
+    sh:targetClass cp:Deployment ;
+    sh:property [
+        sh:path arch:source ;
+        sh:class cp:Container ;
+        sh:message "Deployment source must be a Container."@en ;
+    ] ;
+    sh:property [
+        sh:path arch:target ;
+        sh:class cp:KubernetesCluster ;
+        sh:message "Deployment target must be a KubernetesCluster."@en ;
+    ] ;
+.
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Governance principles
+## ═══════════════════════════════════════════════════════════════════════════════
+
+## Critical microservices must have tier-1 SLA
+:CriticalServiceTierShape
+    a sh:NodeShape ;
+    sh:targetClass cp:Microservice ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        sh:message "Critical microservices should have tier-1 SLA."@en ;
+        sh:select """
+            SELECT $this WHERE {
+                $this <https://meta.linked.archi/examples/cloudplatform/onto#resilienceLevel> "critical" .
+                $this <https://meta.linked.archi/examples/cloudplatform/onto#serviceTier> ?tier .
+                FILTER(?tier != "tier-1")
+            }
+        """ ;
+    ] ;
+.
+
+## Every microservice should have at least one container
+:MicroserviceDeploymentShape
+    a sh:NodeShape ;
+    sh:targetClass cp:Microservice ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        sh:message "Microservice has no container deployment."@en ;
+        sh:select """
+            SELECT $this WHERE {
+                $this a <https://meta.linked.archi/examples/cloudplatform/onto#Microservice> .
+                FILTER NOT EXISTS {
+                    ?container <https://meta.linked.archi/archimate4/onto#assignedTo> $this .
+                    ?container a <https://meta.linked.archi/examples/cloudplatform/onto#Container> .
+                }
+            }
+        """ ;
+    ] ;
+.
+

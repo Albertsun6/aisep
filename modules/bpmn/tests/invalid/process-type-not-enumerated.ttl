@@ -1,0 +1,10 @@
+# expect: Literal("Secret") not in list
+# Invalid per bpmn_onto-shapes :ProcessShape — bpmn:processType must be one of "None" "Public" "Private".
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix :     <https://aisep.example/model/bpmn-bad/> .
+
+:model a arch:Model ; skos:prefLabel "BPMN 负例"@zh .
+
+:proc a bpmn:Process ; arch:inModel :model ; skos:prefLabel "报价审批流程"@zh ; bpmn:processType "Secret" .

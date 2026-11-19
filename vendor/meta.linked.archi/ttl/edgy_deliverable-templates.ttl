@@ -1,0 +1,113 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix edgy:    <https://meta.linked.archi/edgy/onto#> .
+@prefix edgyvp:  <https://meta.linked.archi/edgy/viewpoints#> .
+@prefix :        <https://meta.linked.archi/edgy/deliverable-templates#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/edgy/deliverable-templates#>
+    a                             owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by-sa/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/edgy/deliverable-templates#" ;
+    vann:preferredNamespacePrefix "edgydt" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi EDGY 23 Deliverable Templates"@en ;
+    dcterms:description           '''Deliverable template definitions for EDGY 23 enterprise design.
+Defines document templates for enterprise design outputs — capability maps,
+journey maps, service blueprints, enterprise overviews, and identity documents.'''@en ;
+    dcterms:created               "2025-06-27"^^xsd:date ;
+    dcterms:modified              "2026-04-17"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/edgy/deliverable-templates/23#> ;
+    owl:versionInfo               "23"@en ;
+    dcterms:source  <https://enterprise.design/wiki/Enterprise_Elements>,
+                    <https://hosiaisluoma.fi/design/enterprise-design-with-edgy-cookbook/> ;
+    prov:wasDerivedFrom <https://enterprise.design/wiki/Enterprise_Elements>,
+                        <https://hosiaisluoma.fi/design/enterprise-design-with-edgy-cookbook/> ;
+.
+
+
+#################################################################
+# Deliverable Templates
+#################################################################
+
+:EnterpriseDesignOverview
+    a                        arch:DeliverableTemplate ;
+    skos:prefLabel           "Enterprise Design Overview"@en ;
+    dcterms:description      '''A holistic one-page overview of the enterprise covering all three facets
+(Identity, Architecture, Experience) and their intersections. Shows purpose, capabilities,
+products, organisation, brand, and key customer tasks.'''@en ;
+    arch:templateHasFormat   "text/markdown" ;
+    arch:templateRequiresViewpoint edgyvp:FullEnterpriseMap ;
+.
+
+:CapabilityMapDocument
+    a                        arch:DeliverableTemplate ;
+    skos:prefLabel           "Capability Map Document"@en ;
+    dcterms:description      '''Documents the enterprise's capability map — all capabilities organised by
+level and group, with their processes, assets, and organisation ownership. Includes
+capability maturity assessment and heat map data.'''@en ;
+    arch:templateHasFormat   "text/markdown" ;
+    arch:templateRequiresViewpoint edgyvp:CapabilityMap ;
+.
+
+:CustomerJourneyDocument
+    a                        arch:DeliverableTemplate ;
+    skos:prefLabel           "Customer Journey Document"@en ;
+    dcterms:description      '''Documents a customer journey — the sequence of tasks, touchpoints, channels,
+and products experienced by a customer segment. Includes journey steps, emotions,
+pain points, and opportunities.'''@en ;
+    arch:templateHasFormat   "text/markdown" ;
+    arch:templateRequiresViewpoint edgyvp:JourneyMap ;
+.
+
+:ServiceBlueprintDocument
+    a                        arch:DeliverableTemplate ;
+    skos:prefLabel           "Service Blueprint Document"@en ;
+    dcterms:description      '''A service blueprint combining the customer journey (frontstage) with
+organisational processes, capabilities, and assets (backstage). Shows the full
+stack from customer actions to supporting systems.'''@en ;
+    arch:templateHasFormat   "text/markdown" ;
+    arch:templateRequiresViewpoint edgyvp:ExperienceMap ;
+.
+
+:IdentityDocument
+    a                        arch:DeliverableTemplate ;
+    skos:prefLabel           "Enterprise Identity Document"@en ;
+    dcterms:description      '''Documents the enterprise identity — purpose, mission, vision, values,
+story, content strategy, and brand architecture. Covers the Identity facet
+and its intersections with Organisation and Brand.'''@en ;
+    arch:templateHasFormat   "text/markdown" ;
+    arch:templateRequiresViewpoint edgyvp:IdentityMap ;
+.
+
+:ProductPortfolioDocument
+    a                        arch:DeliverableTemplate ;
+    skos:prefLabel           "Product Portfolio Document"@en ;
+    dcterms:description      '''Documents the enterprise's product and service portfolio — what is offered,
+which capabilities produce them, which tasks they serve, and their brand associations.'''@en ;
+    arch:templateHasFormat   "text/markdown" ;
+    arch:templateRequiresViewpoint edgyvp:ProductMap ;
+.
+
+:OrganisationDesignDocument
+    a                        arch:DeliverableTemplate ;
+    skos:prefLabel           "Organisation Design Document"@en ;
+    dcterms:description      '''Documents the organisation structure — units, teams, roles, their
+capabilities, processes, and alignment with enterprise purpose and brand.'''@en ;
+    arch:templateHasFormat   "text/markdown" ;
+    arch:templateRequiresViewpoint edgyvp:OrganisationMap ;
+.

@@ -1,0 +1,101 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/shapes/ext-verification#> .
+
+# L3 shapes for the verification extension (spec §6.5). SHACL Core only.
+# Each message starts with a rule id (EV1..EV10); every rule has a valid and an invalid fixture in tests/.
+# Shapes read the qualified relationship resources (arch:source/arch:target), never the generated direct
+# triples, so they give the same answer before and after `aisep build`.
+
+:TestCaseShape a sh:NodeShape ;
+    sh:targetClass aisep:TestCase ;
+    sh:property [
+        sh:path [ sh:inversePath arch:source ] ;
+        sh:qualifiedValueShape [ sh:class aisep:Verification ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "EV1: a TestCase must verify at least one model concept (be the arch:source of an aisep:Verification)." ;
+        sh:severity sh:Violation ;
+    ] .
+
+:VerificationShape a sh:NodeShape ;
+    sh:targetClass aisep:Verification ;
+    sh:property [
+        sh:path arch:source ;
+        sh:class aisep:TestCase ;
+        sh:message "EV2: the source of an aisep:Verification must be an aisep:TestCase." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path arch:target ;
+        sh:class arch:ModelConcept ;
+        sh:message "EV3: the target of an aisep:Verification must be a model concept (typed by a class under arch:ModelConcept)." ;
+        sh:severity sh:Violation ;
+    ] .
+
+:TestResultShape a sh:NodeShape ;
+    sh:targetClass aisep:TestResult ;
+    sh:property [
+        sh:path aisep:resultOf ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:class aisep:TestCase ;
+        sh:message "EV4: a TestResult must have exactly one aisep:resultOf, pointing to an aisep:TestCase." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:verdict ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( aisep:VerdictPassed aisep:VerdictFailed aisep:VerdictBlocked aisep:VerdictSkipped aisep:VerdictError ) ;
+        sh:message "EV5: a TestResult must have exactly one aisep:verdict from aisep:VerdictScheme (VerdictPassed|VerdictFailed|VerdictBlocked|VerdictSkipped|VerdictError)." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path prov:generatedAtTime ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:dateTime ;
+        sh:message "EV6: a TestResult must have exactly one prov:generatedAtTime typed xsd:dateTime." ;
+        sh:severity sh:Violation ;
+    ] .
+
+:AcceptanceCriterionShape a sh:NodeShape ;
+    sh:targetClass aisep:AcceptanceCriterion ;
+    sh:property [
+        sh:path [ sh:inversePath arch:target ] ;
+        sh:qualifiedValueShape [
+            sh:class am4:Aggregation ;
+            sh:property [ sh:path arch:source ; sh:minCount 1 ; sh:class am4:Requirement ] ;
+        ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "EV7: an AcceptanceCriterion must be aggregated by a parent requirement (target of an am4:Aggregation whose source is an am4:Requirement)." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:gherkin ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "EV8: aisep:gherkin is optional, at most one, and a plain xsd:string." ;
+        sh:severity sh:Violation ;
+    ] .
+
+# ---- MoSCoW priority (spec v0.2 §6.5) ----
+# Targets am4:Requirement and therefore aisep:AcceptanceCriterion (⊑ am4:Requirement in onto.ttl).
+:PriorityShape a sh:NodeShape ;
+    sh:targetClass am4:Requirement ;
+    sh:property [
+        sh:path aisep:priority ;
+        sh:maxCount 1 ;
+        sh:in ( aisep:Must aisep:Should aisep:Could aisep:Wont ) ;
+        sh:message "EV9: aisep:priority is optional, at most one value from aisep:Priorities (Must|Should|Could|Wont)." ;
+        sh:severity sh:Violation ;
+    ] .
+
+# Priority is a requirement attribute: anything else carrying it is a modelling error.
+:PriorityDomainShape a sh:NodeShape ;
+    sh:targetSubjectsOf aisep:priority ;
+    sh:class am4:Requirement ;
+    sh:message "EV10: aisep:priority may only be stated on an am4:Requirement or aisep:AcceptanceCriterion." ;
+    sh:severity sh:Violation .

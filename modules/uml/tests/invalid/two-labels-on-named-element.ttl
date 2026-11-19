@@ -1,0 +1,10 @@
+# expect: carries at most one skos:prefLabel
+# Invalid per uml_shapes :NamedElementShape (sh:maxCount 1 on skos:prefLabel). NOTE: the AISEP authoring
+# profile allows one label per language (@zh + @en); upstream UML forbids a second label. Recorded as an open issue.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix :     <https://aisep.example/model/uml-bad/> .
+
+:model a arch:Model ; skos:prefLabel "UML 负例"@zh .
+:Quotation a uml:Class ; arch:inModel :model ; skos:prefLabel "报价单"@zh , "Quotation"@en .

@@ -1,0 +1,21 @@
+# expect: triple about the module/upstream term am4:Serving
+# R1 (audit a19): a model file must not annotate an upstream class (here: exempting every am4:Serving from the derived-only warning).
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix ddd:  <https://aisep.example/ont/ddd#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+am4:Serving aisep:assertedShortcut true .
+:ac a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "组件"@zh .

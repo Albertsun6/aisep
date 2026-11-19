@@ -1,0 +1,212 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix dc: <https://meta.linked.archi/bpmn/dc#> .
+@prefix archvis: <https://meta.linked.archi/core-vis#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix bpmndi: <https://meta.linked.archi/bpmn/di#> .
+@prefix :       <https://meta.linked.archi/bpmn/di#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix di: <https://meta.linked.archi/bpmn/di-core#> .
+
+
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+
+<https://meta.linked.archi/bpmn/di#>
+    a owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/di#" ;
+    vann:preferredNamespacePrefix "bpmndi" ;
+    dcterms:title "Linked.Archi BPMN DI 2.0.2 Ontology"@en ;
+    dcterms:description               '''OWL mapping of the OMG BPMN 2.0.2 Diagram Interchange (BPMNDI) package.'''@en ;
+    rdfs:comment """Maps the OMG BPMN 2.0.2 Diagram Interchange (BPMNDI) package.
+Source: BPMNDI.cmof — concrete DI classes for BPMN diagrams.
+
+Cross-package inheritance (via <superClass href="..."> child elements in CMOF):
+  BPMNDiagram   → di:Diagram       → arch:Diagram → arch:View → arch:ModelConcept
+  BPMNPlane     → di:Plane          → di:Node → di:DiagramElement → archvis:DiagElement
+  BPMNShape     → di:LabeledShape   → di:Shape → di:Node → archvis:ArchNode
+  BPMNEdge      → di:LabeledEdge    → di:Edge  → di:DiagramElement → archvis:Link
+  BPMNLabel     → di:Label          → di:Node → archvis:LabelNode
+  BPMNLabelStyle → di:Style         → archvis:Style
+
+Key cross-package property types:
+  bpmnElement → bpmn:BaseElement (via <type href="BPMN20.cmof#BaseElement"/>)
+  sourceElement, targetElement → di:DiagramElement
+  label → BPMNLabel (composite, subsets di:ownedLabel)
+  BPMNShape inherits di:Shape.bounds : dc:Bounds
+  BPMNLabel inherits di:Label.bounds : dc:Bounds [0..1]
+  BPMNEdge inherits di:Edge.waypoint : dc:Point [2..*]
+  BPMNPlane inherits di:Plane.planeElement : di:DiagramElement [0..*]"""@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    dcterms:modified              "2026-05-06"^^xsd:date ;
+    dcterms:publisher                 "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source  <https://www.omg.org/spec/BPMN/2.0.2/About-BPMN/> ;
+    rdfs:seeAlso <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    dcterms:references <https://www.omg.org/spec/BPMN/2.0.2/PDF> ;
+    rdfs:comment """Validated against:
+  • BPMNDI.xsd — BPMNDiagram, BPMNPlane, BPMNShape, BPMNEdge, BPMNLabel, BPMNLabelStyle
+  • BPMNDI.cmof — cross-package inheritance and property types
+Source: BPMN 2.0.2 (OMG formal/13-12-09), https://www.omg.org/spec/BPMN/20100501/BPMNDI.xsd"""@en ;
+    owl:imports <https://meta.linked.archi/bpmn/onto#> ;
+    owl:imports <https://meta.linked.archi/core-vis#> ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    owl:imports <https://meta.linked.archi/bpmn/dc#> ;
+    owl:imports <https://meta.linked.archi/bpmn/di-core#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+# ── Classes with cross-package superclasses from BPMNDI.cmof ──
+
+bpmndi:BPMNDiagram a owl:Class ;
+    skos:prefLabel "BPMNDiagram"@en ;
+    skos:definition "CMOF: BPMNDiagram → di:Diagram. Owns a BPMNPlane (redefines Diagram.rootElement) and BPMNLabelStyle instances."@en ;
+    rdfs:subClassOf di:Diagram ;
+.
+
+bpmndi:BPMNPlane a owl:Class ;
+    skos:prefLabel "BPMNPlane"@en ;
+    skos:definition "CMOF: BPMNPlane → di:Plane (→ Node → DiagramElement). Inherits planeElement [0..*]. bpmnElement redefines DiagramElement.modelElement."@en ;
+    rdfs:subClassOf di:Plane ;
+.
+
+bpmndi:BPMNShape a owl:Class ;
+    skos:prefLabel "BPMNShape"@en ;
+    skos:definition "CMOF: BPMNShape → di:LabeledShape (→ Shape → Node → DiagramElement). Inherits bounds : dc:Bounds from Shape. Owns label : BPMNLabel (subsets LabeledShape.ownedLabel)."@en ;
+    rdfs:subClassOf di:LabeledShape ;
+.
+
+bpmndi:BPMNEdge a owl:Class ;
+    skos:prefLabel "BPMNEdge"@en ;
+    skos:definition "CMOF: BPMNEdge → di:LabeledEdge (→ Edge → DiagramElement). Inherits waypoint : dc:Point [2..*] from Edge. Owns label : BPMNLabel (subsets LabeledEdge.ownedLabel)."@en ;
+    rdfs:subClassOf di:LabeledEdge ;
+.
+
+bpmndi:BPMNLabel a owl:Class ;
+    skos:prefLabel "BPMNLabel"@en ;
+    skos:definition "CMOF: BPMNLabel → di:Label (→ Node → DiagramElement). Inherits bounds : dc:Bounds [0..1] from Label."@en ;
+    rdfs:subClassOf di:Label ;
+.
+
+bpmndi:BPMNLabelStyle a owl:Class ;
+    skos:prefLabel "BPMNLabelStyle"@en ;
+    skos:definition "CMOF: BPMNLabelStyle → di:Style. Has font : dc:Font."@en ;
+    rdfs:subClassOf di:Style ;
+.
+
+# ── Enumerations ──
+
+bpmndi:MessageVisibleKind a owl:Class ; skos:prefLabel "MessageVisibleKind"@en .
+
+bpmndi:MessageVisibleKind_initiating a bpmndi:MessageVisibleKind ; skos:prefLabel "initiating"@en .
+bpmndi:MessageVisibleKind_non_initiating a bpmndi:MessageVisibleKind ; skos:prefLabel "non_initiating"@en .
+
+bpmndi:ParticipantBandKind a owl:Class ; skos:prefLabel "ParticipantBandKind"@en .
+
+bpmndi:ParticipantBandKind_top_initiating a bpmndi:ParticipantBandKind ; skos:prefLabel "top_initiating"@en .
+bpmndi:ParticipantBandKind_middle_initiating a bpmndi:ParticipantBandKind ; skos:prefLabel "middle_initiating"@en .
+bpmndi:ParticipantBandKind_bottom_initiating a bpmndi:ParticipantBandKind ; skos:prefLabel "bottom_initiating"@en .
+bpmndi:ParticipantBandKind_top_non_initiating a bpmndi:ParticipantBandKind ; skos:prefLabel "top_non_initiating"@en .
+bpmndi:ParticipantBandKind_middle_non_initiating a bpmndi:ParticipantBandKind ; skos:prefLabel "middle_non_initiating"@en .
+bpmndi:ParticipantBandKind_bottom_non_initiating a bpmndi:ParticipantBandKind ; skos:prefLabel "bottom_non_initiating"@en .
+
+# ── Object properties ──
+
+bpmndi:bpmnElement a owl:ObjectProperty ;
+    skos:prefLabel "bpmnElement"@en ;
+    skos:definition "Redefines di:modelElement. Range is bpmn:BaseElement (cross-package type from BPMN20.cmof). For shapes, aligns with archvis:archElement; for edges, aligns with archvis:archRelationship."@en ;
+    rdfs:subPropertyOf di:modelElement ;
+    rdfs:range bpmn:BaseElement ;
+.
+
+bpmndi:plane a owl:ObjectProperty ;
+    skos:prefLabel "plane"@en ;
+    skos:definition "BPMNDiagram.plane [1..1] composite. Redefines Diagram.rootElement."@en ;
+    rdfs:domain bpmndi:BPMNDiagram ;
+    rdfs:range bpmndi:BPMNPlane ;
+.
+
+bpmndi:label a owl:ObjectProperty ;
+    skos:prefLabel "label"@en ;
+    skos:definition "BPMNShape.label / BPMNEdge.label [0..1] composite. Subsets ownedLabel. Aligns with archvis:label."@en ;
+    rdfs:subPropertyOf archvis:label ;
+    rdfs:range bpmndi:BPMNLabel ;
+.
+
+bpmndi:labelStyle a owl:ObjectProperty ;
+    skos:prefLabel "labelStyle"@en ;
+    skos:definition "BPMNLabel.labelStyle (redefines DiagramElement.style) and BPMNDiagram.labelStyle [0..*] composite."@en ;
+    rdfs:range bpmndi:BPMNLabelStyle ;
+.
+
+bpmndi:sourceElement a owl:ObjectProperty ;
+    skos:prefLabel "sourceElement"@en ;
+    skos:definition "BPMNEdge.sourceElement [0..1]. Redefines Edge.source. Aligns with archvis:source."@en ;
+    rdfs:subPropertyOf di:source ;
+    rdfs:domain bpmndi:BPMNEdge ;
+    rdfs:range di:DiagramElement ;
+.
+
+bpmndi:targetElement a owl:ObjectProperty ;
+    skos:prefLabel "targetElement"@en ;
+    skos:definition "BPMNEdge.targetElement [0..1]. Redefines Edge.target. Aligns with archvis:target."@en ;
+    rdfs:subPropertyOf di:target ;
+    rdfs:domain bpmndi:BPMNEdge ;
+    rdfs:range di:DiagramElement ;
+.
+
+bpmndi:choreographyActivityShape a owl:ObjectProperty ;
+    skos:prefLabel "choreographyActivityShape"@en ;
+    rdfs:domain bpmndi:BPMNShape ;
+    rdfs:range bpmndi:BPMNShape ;
+.
+
+bpmndi:font a owl:ObjectProperty ;
+    skos:prefLabel "font"@en ;
+    skos:definition "BPMNLabelStyle.font — value is dc:Font (DataType)."@en ;
+    rdfs:domain bpmndi:BPMNLabelStyle ;
+    rdfs:range dc:Font ;
+.
+
+# ── Datatype properties ──
+
+bpmndi:isExpanded a owl:DatatypeProperty ;
+    skos:prefLabel "isExpanded"@en ;
+    rdfs:domain bpmndi:BPMNShape ;
+    rdfs:range xsd:boolean ;
+.
+
+bpmndi:isHorizontal a owl:DatatypeProperty ;
+    skos:prefLabel "isHorizontal"@en ;
+    rdfs:domain bpmndi:BPMNShape ;
+    rdfs:range xsd:boolean ;
+.
+
+bpmndi:isMarkerVisible a owl:DatatypeProperty ;
+    skos:prefLabel "isMarkerVisible"@en ;
+    rdfs:domain bpmndi:BPMNShape ;
+    rdfs:range xsd:boolean ;
+.
+
+bpmndi:isMessageVisible a owl:DatatypeProperty ;
+    skos:prefLabel "isMessageVisible"@en ;
+    rdfs:domain bpmndi:BPMNShape ;
+    rdfs:range xsd:boolean ;
+.
+
+bpmndi:messageVisibleKind a owl:DatatypeProperty ;
+    skos:prefLabel "messageVisibleKind"@en ;
+    rdfs:domain bpmndi:BPMNEdge ;
+.
+
+bpmndi:participantBandKind a owl:DatatypeProperty ;
+    skos:prefLabel "participantBandKind"@en ;
+    rdfs:domain bpmndi:BPMNShape ;
+.

@@ -1,0 +1,256 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix easvc:   <https://meta.linked.archi/ea-service/onto#> .
+@prefix :        <https://meta.linked.archi/ea-service/shapes#> .
+
+<https://meta.linked.archi/ea-service/shapes#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ea-service/shapes#" ;
+    vann:preferredNamespacePrefix "easvcsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EA-as-a-Service SHACL Shapes"@en ;
+    dcterms:description                '''SHACL shapes for validating EA-as-a-Service models. Enforces
+governance rules: every service must declare required capabilities, every
+engagement must have an assigned architect and status, and every EA service
+must have a label.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ea-service/shapes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+#################################################################
+# EA Service Shape
+#################################################################
+
+:EAServiceShape
+    a               sh:NodeShape ;
+    sh:targetClass  easvc:EAService ;
+    skos:prefLabel  "EA Service Shape"@en ;
+    skos:definition "Validates that EA services have required metadata."@en ;
+
+    sh:property [
+        sh:path        skos:prefLabel ;
+        sh:minCount    1 ;
+        sh:message     "Every EA service must have a human-readable label." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        easvc:serviceType ;
+        sh:minCount    1 ;
+        sh:class       easvc:EAServiceType ;
+        sh:message     "Every EA service must declare its service type." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        easvc:requiredCapability ;
+        sh:minCount    1 ;
+        sh:message     "Every EA service must declare the capabilities required to deliver it." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Service Engagement Shape
+#################################################################
+
+:ServiceEngagementShape
+    a               sh:NodeShape ;
+    sh:targetClass  easvc:ServiceEngagement ;
+    skos:prefLabel  "Service Engagement Shape"@en ;
+    skos:definition "Validates that service engagements have required metadata."@en ;
+
+    sh:property [
+        sh:path        skos:prefLabel ;
+        sh:minCount    1 ;
+        sh:message     "Every service engagement must have a human-readable label." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        easvc:assignedArchitect ;
+        sh:minCount    1 ;
+        sh:message     "Every service engagement must have an assigned architect." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        easvc:engagementStatus ;
+        sh:minCount    1 ;
+        sh:maxCount    1 ;
+        sh:class       easvc:EngagementStatus ;
+        sh:message     "Every service engagement must have exactly one status." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        easvc:engagementFor ;
+        sh:minCount    1 ;
+        sh:message     "Every service engagement should specify what it serves." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Service Request Shape
+#################################################################
+
+:ServiceRequestShape
+    a               sh:NodeShape ;
+    sh:targetClass  easvc:ServiceRequest ;
+    skos:prefLabel  "Service Request Shape"@en ;
+    skos:definition "Validates that service requests have required metadata."@en ;
+
+    sh:property [
+        sh:path        easvc:requestedBy ;
+        sh:minCount    1 ;
+        sh:message     "Every service request must identify who requested it." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        easvc:requestDate ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:date ;
+        sh:message     "Every service request must have a date." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        easvc:requestForService ;
+        sh:minCount    1 ;
+        sh:message     "Every service request must specify which service is being requested." ;
+        sh:severity    sh:Violation ;
+    ] ;
+.
+
+
+#################################################################
+# Service Outcome Shape
+#################################################################
+
+:ServiceOutcomeShape
+    a               sh:NodeShape ;
+    sh:targetClass  easvc:ServiceOutcome ;
+    skos:prefLabel  "Service Outcome Shape"@en ;
+    skos:definition "Validates that service outcomes have required metadata."@en ;
+
+    sh:property [
+        sh:path        easvc:outcomeDescription ;
+        sh:minCount    1 ;
+        sh:message     "Every service outcome must describe the value delivered." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Satisfaction Assessment Shape
+#################################################################
+
+:SatisfactionAssessmentShape
+    a               sh:NodeShape ;
+    sh:targetClass  easvc:SatisfactionAssessment ;
+    skos:prefLabel  "Satisfaction Assessment Shape"@en ;
+    skos:definition "Validates that satisfaction assessments have required metadata."@en ;
+
+    sh:property [
+        sh:path        easvc:hasSatisfactionScore ;
+        sh:minCount    1 ;
+        sh:maxCount    1 ;
+        sh:datatype    xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 5 ;
+        sh:message     "Satisfaction score must be an integer between 1 and 5." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        easvc:satisfactionDate ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:date ;
+        sh:message     "Every satisfaction assessment must have a date." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# EA Maturity Assessment Shape
+#################################################################
+
+:EAMaturityAssessmentShape
+    a               sh:NodeShape ;
+    sh:targetClass  easvc:EAMaturityAssessment ;
+    skos:prefLabel  "EA Maturity Assessment Shape"@en ;
+    skos:definition "Validates that maturity assessments have required metadata."@en ;
+
+    sh:property [
+        sh:path        easvc:maturityLevel ;
+        sh:minCount    1 ;
+        sh:maxCount    1 ;
+        sh:class       easvc:MaturityLevel ;
+        sh:message     "Every maturity assessment must assign exactly one maturity level." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        easvc:maturityAssessmentDate ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:date ;
+        sh:message     "Every maturity assessment must have a date." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path        easvc:maturityFindings ;
+        sh:minCount    1 ;
+        sh:message     "Every maturity assessment should include findings and recommendations." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Service Catalog Shape
+#################################################################
+
+:ServiceCatalogShape
+    a               sh:NodeShape ;
+    sh:targetClass  easvc:ServiceCatalog ;
+    skos:prefLabel  "Service Catalog Shape"@en ;
+    skos:definition "Validates that service catalogs have required metadata."@en ;
+
+    sh:property [
+        sh:path        skos:prefLabel ;
+        sh:minCount    1 ;
+        sh:message     "Every service catalog must have a human-readable label." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        easvc:offersService ;
+        sh:minCount    1 ;
+        sh:message     "A service catalog must offer at least one service." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.

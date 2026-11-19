@@ -1,0 +1,131 @@
+@prefix :         <https://meta.linked.archi/tech-radar/shapes#> .
+@prefix radar:    <https://meta.linked.archi/tech-radar/onto#> .
+@prefix radartax: <https://meta.linked.archi/tech-radar/tax#> .
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix sh:       <http://www.w3.org/ns/shacl#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+@prefix bibo:     <http://purl.org/ontology/bibo/> .
+
+
+<https://meta.linked.archi/tech-radar/shapes#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core-shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/tech-radar/shapes#" ;
+    vann:preferredNamespacePrefix "radarsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Technology Radar SHACL Shapes"@en ;
+    dcterms:description           '''SHACL shapes for validating Technology Radar model data.
+Ensures technologies have required metadata, assessments are complete,
+and controlled vocabulary values are valid.'''@en ;
+    dcterms:created               "2026-06-22"^^xsd:date ;
+    dcterms:modified              "2026-06-22"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/tech-radar/shapes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+## ─── Technology Shape ───────────────────────────────────────────────────────
+
+:TechnologyShape
+    a               sh:NodeShape ;
+    sh:targetClass  radar:Technology ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message  "Technology must have a name (skos:prefLabel)."@en ;
+    ] ;
+    sh:property [
+        sh:path     radar:quadrant ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    radar:Quadrant ;
+        sh:severity sh:Violation ;
+        sh:message  "Technology must belong to exactly one quadrant."@en ;
+    ] ;
+    sh:property [
+        sh:path     radar:hasAssessment ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message  "Technology should have at least one radar assessment."@en ;
+    ] ;
+    sh:property [
+        sh:path     skos:definition ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:message  "Technology should have a description."@en ;
+    ] ;
+.
+
+
+## ─── Radar Assessment Shape ─────────────────────────────────────────────────
+
+:RadarAssessmentShape
+    a               sh:NodeShape ;
+    sh:targetClass  radar:RadarAssessment ;
+    sh:property [
+        sh:path     radar:ring ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in       ( radar:Adopt radar:Trial radar:Assess radar:Hold radar:Retire ) ;
+        sh:severity sh:Violation ;
+        sh:message  "Every assessment must have a ring: Adopt, Trial, Assess, Hold, or Retire."@en ;
+    ] ;
+    sh:property [
+        sh:path     radar:assessedTechnology ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    radar:Technology ;
+        sh:severity sh:Violation ;
+        sh:message  "Assessment must reference exactly one technology."@en ;
+    ] ;
+    sh:property [
+        sh:path     radar:assessmentDate ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:severity sh:Violation ;
+        sh:message  "Assessment must have a date."@en ;
+    ] ;
+    sh:property [
+        sh:path     radar:rationale ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message  "Assessment should include a rationale for the ring placement."@en ;
+    ] ;
+    sh:property [
+        sh:path     radar:movement ;
+        sh:maxCount 1 ;
+        sh:severity sh:Info ;
+        sh:message  "Assessment may indicate movement direction."@en ;
+    ] ;
+.
+
+
+## ─── Radar Publication Shape ────────────────────────────────────────────────
+
+:RadarShape
+    a               sh:NodeShape ;
+    sh:targetClass  radar:Radar ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message  "Radar publication must have a name."@en ;
+    ] ;
+    sh:property [
+        sh:path     radar:publicationDate ;
+        sh:minCount 1 ;
+        sh:datatype xsd:date ;
+        sh:severity sh:Violation ;
+        sh:message  "Radar publication must have a publication date."@en ;
+    ] ;
+.

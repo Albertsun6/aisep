@@ -1,0 +1,11 @@
+# expect: Generalization source (specific) must be a Classifier.
+# Invalid per uml_shapes :GeneralizationShape — a Package cannot be the specific end of a Generalization.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix :     <https://aisep.example/model/uml-bad/> .
+
+:model a arch:Model ; skos:prefLabel "UML 负例"@zh .
+:Document a uml:Class ; arch:inModel :model ; skos:prefLabel "单据"@zh .
+:pkg a uml:Package ; arch:inModel :model ; skos:prefLabel "采购包"@zh .
+:gen1 a uml:Generalization ; arch:inModel :model ; arch:source :pkg ; arch:target :Document .

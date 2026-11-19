@@ -1,0 +1,739 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:     <http://purl.org/ontology/bibo/> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+@prefix iso-thes: <http://purl.org/iso25964/skos-thes#> .
+
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix am4:      <https://meta.linked.archi/archimate4/onto#> .
+@prefix :         <https://meta.linked.archi/archimate4/tax#> .
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/archimate4/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "ArchiMate 4.0 Concept Scheme"@en ;
+    dcterms:description  "Classification of ArchiMate 4.0 elements by domain and by aspect, of its relationships by category, and of its junctions, with the order of the domains, of the aspects and of the relationship categories, the order of strength the derivation rules apply, the order in which a modelling tool proposes them, the grouping of a palette and the order of the domains a diagram keeps in bands."@en ;
+    skos:hasTopConcept :Domain, :Aspect, :Relationship, :Junction ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate4/tax#" ;
+    vann:preferredNamespacePrefix "am4tax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ArchiMate 4.0 Taxonomy"@en ;
+    skos:editorialNote            '''This taxonomy and the OWL abstract classes in archimate4-onto.ttl
+serve complementary purposes and are NOT duplicates:
+
+  SKOS concepts (this file)          OWL classes (onto file)
+  ─────────────────────────          ──────────────────────────
+  am4tax:ActiveStructureAspect       am4:ActiveStructureElement
+  am4tax:CommonDomain                am4:CommonDomainElement
+
+  Purpose: navigation, palette       Purpose: formal semantics,
+  generation, UI filtering,          SHACL constraint checking,
+  SKOS visualization tools           SPARQL reasoning
+
+  Example: a modeling tool reads     Example: a SHACL shape checks
+  skos:narrower to populate the      rdf:type/rdfs:subClassOf*
+  element palette grouped by         am4:BehaviorElement to enforce
+  domain and aspect.                 "triggering can only connect
+                                     behavior elements".
+
+The two are linked via rdfs:seeAlso on each SKOS concept pointing
+to its corresponding OWL class.
+
+Each hierarchical link carries its ISO 25964 type
+(http://purl.org/iso25964/skos-thes#) next to the SKOS one. A
+domain, an aspect, a sub-aspect or a relationship category is a
+kind of its broader concept (iso-thes:broaderGeneric). An element
+type is part of its domain and of its aspect
+(iso-thes:narrowerPartitive); what kind of element it is, the
+ontology says (rdfs:subClassOf). A relationship type is a kind of
+its category, and an and- or or-junction a kind of junction
+(iso-thes:narrowerGeneric).'''@en ;
+    dcterms:created               "2026-04-19"^^xsd:date ;
+    dcterms:modified              "2026-04-29"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "4.0"@en ;
+    dcterms:source  <https://pubs.opengroup.org/architecture/archimate4-doc/> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/architecture/archimate4-doc/> .
+
+
+
+#################################################################
+# Elements by Domain
+#################################################################
+
+:Domain
+    a                 skos:Concept ;
+    skos:prefLabel    "Domain"@en ;
+    skos:altLabel     "Element by Domain"@en ;
+    skos:definition   "A part of the ArchiMate 4.0 language for modelling particular characteristics of an enterprise and its architecture: business, application, technology, common, strategy, motivation, and implementation and migration. Each narrower concept is a domain, and its narrower concepts are the element types that are part of it."@en ;
+    skos:editorialNote "Each domain concept's skos:narrower list must match the concrete OWL classes in archimate4-onto.ttl that have the corresponding DomainElement as a superclass."@en ;
+    skos:topConceptOf <https://meta.linked.archi/archimate4/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source    <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Domain>, <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Domains-of-the-ArchiMate-Language> ;
+.
+
+:DomainOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    skos:prefLabel         "Domains in Order"@en ;
+    skos:definition        "The domains of ArchiMate 4.0 in order: common, business, application, technology, strategy, motivation, and implementation and migration."@en ;
+    skos:scopeNote         "Linked.Archi modelling guidance, not the specification. A tool that lists the domains, as a palette lists its sections, lists them in this order."@en ;
+    skos:editorialNote     '''An ISO 25964 thesaurus array (http://purl.org/iso25964/skos-thes#): the order of the
+domains, kept apart from their classification.
+• A collection is not a concept. A skos:Collection or skos:OrderedCollection groups concepts and can put them in
+  order, but it has no place in the concept hierarchy: it takes no skos:broader, is no top concept of a scheme,
+  and SKOS has no property that says whose narrower concepts it lists.
+• The array gives it that place. iso-thes:ThesaurusArray, a kind of skos:Collection, is a group of sibling
+  concepts, and iso-thes:superOrdinate attaches it under the concept they are narrower than, here :Domain.
+• Each keeps one job. The classification stays in skos:broader, each domain narrower than :Domain, and
+  holds for a tool that never reads this array. The array adds only the order, in skos:memberList:
+  iso-thes:ThesaurusArray is unordered, so the order comes from skos:OrderedCollection.
+• The two stay in step. The array lists each concept narrower than :Domain once and nothing else; the CI
+  run checks it.'''@en ;
+    iso-thes:superOrdinate :Domain ;
+    skos:memberList        ( :CommonDomain :BusinessDomain :ApplicationDomain :TechnologyDomain
+                             :StrategyDomain :MotivationDomain :ImplementationAndMigrationDomain ) ;
+.
+
+:CommonDomain
+    a              skos:Concept ;
+    skos:prefLabel "Common Domain"@en ;
+    skos:definition "The common domain: the generic elements the business, application and technology domains share — the behaviour elements (Process, Function, Event, Service), the generic active structure elements (Role, Collaboration, Path) and the composite elements Grouping and Location."@en ;
+    skos:scopeNote "The Common Domain is the major structural change in ArchiMate 4.0. Process, Function, Event, and Service are now single cross-domain elements — use domain-specific assignment to indicate which domain they belong to in a given context. Role and Collaboration are also generic. When migrating from 3.2, map BusinessProcess/ApplicationProcess/TechnologyProcess to Process, and similarly for Function, Event, and Service."@en ;
+    skos:changeNote "4.0: New domain. Merges per-layer behavior elements into cross-domain concepts: BusinessProcess/ApplicationProcess/TechnologyProcess → Process, BusinessFunction/ApplicationFunction/TechnologyFunction → Function, BusinessEvent/ApplicationEvent/TechnologyEvent/ImplementationEvent → Event, BusinessService/ApplicationService/TechnologyService → Service. Merges per-layer active structure: BusinessRole → Role, BusinessCollaboration/ApplicationCollaboration/TechnologyCollaboration → Collaboration. Path moved here from Technology Layer. Grouping and Location moved here from generic metamodel."@en ;
+    skos:editorialNote "This is the largest domain. When adding elements, verify they are genuinely cross-domain. Domain-specific elements belong in their respective domain concepts."@en ;
+    skos:broader   :Domain ;
+    iso-thes:broaderGeneric :Domain ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#chap04> ;
+    rdfs:seeAlso   am4:CommonDomainElement ;
+    skos:narrower  am4:Role, am4:Collaboration, am4:Path,
+                   am4:Service, am4:Process, am4:Function, am4:Event,
+                   am4:Grouping, am4:Location ;
+    iso-thes:narrowerPartitive am4:Role, am4:Collaboration, am4:Path,
+                               am4:Service, am4:Process, am4:Function, am4:Event,
+                               am4:Grouping, am4:Location ;
+.
+
+:CommonDomainOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    skos:prefLabel         "Common Domain Elements in Order"@en ;
+    skos:definition        "The element types of the Common Domain in order: process, function, service, event, role, collaboration, path, grouping, location."@en ;
+    skos:scopeNote         "Linked.Archi modelling guidance, not the specification. The behaviour the Common Domain was made for comes first, then the active structure that performs it, then the composite elements. A tool that lists the domain's element types, as a palette lists its section, lists them in this order, rather than by aspect and name."@en ;
+    skos:editorialNote     "An ISO 25964 thesaurus array (http://purl.org/iso25964/skos-thes#) under :CommonDomain: the order of the element types that are part of it, kept apart from their classification, as :DomainOrder orders the domains. It lists each of them once and nothing else; the CI run checks it."@en ;
+    iso-thes:superOrdinate :CommonDomain ;
+    skos:memberList        ( am4:Process am4:Function am4:Service am4:Event am4:Role am4:Collaboration am4:Path
+                             am4:Grouping am4:Location ) ;
+.
+
+:BusinessDomain
+    a              skos:Concept ;
+    skos:prefLabel "Business Domain"@en ;
+    skos:definition "The business domain: the elements specific to the business — actors, interfaces, objects and products. Its behaviour is modelled with the elements of the Common Domain."@en ;
+    skos:scopeNote "In 4.0, the Business Domain retains only domain-specific active and passive structure: actors (who performs), interfaces (channels), objects (information), and products (offerings). Behavior is modeled using Common Domain elements (Process, Function, Service) assigned to business actors."@en ;
+    skos:changeNote "4.0: BusinessRole, BusinessCollaboration moved to Common Domain as generic Role and Collaboration. BusinessProcess, BusinessFunction, BusinessInteraction, BusinessEvent, BusinessService moved to Common Domain as generic elements. Contract removed (replace with specialization of BusinessObject). Representation removed (replace with specialization of DataObject, Artifact, or Material)."@en ;
+    skos:broader   :Domain ;
+    iso-thes:broaderGeneric :Domain ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#chap08> ;
+    rdfs:seeAlso   am4:BusinessDomainElement ;
+    skos:narrower  am4:BusinessActor, am4:BusinessInterface,
+                   am4:BusinessObject, am4:Product ;
+    iso-thes:narrowerPartitive am4:BusinessActor, am4:BusinessInterface,
+                               am4:BusinessObject, am4:Product ;
+.
+
+:ApplicationDomain
+    a              skos:Concept ;
+    skos:prefLabel "Application Domain"@en ;
+    skos:definition "The application domain: the elements specific to software applications — components, interfaces and data objects. Its behaviour is modelled with the elements of the Common Domain."@en ;
+    skos:scopeNote "Model the software landscape: components represent deployable software units, interfaces represent APIs and integration points, and data objects represent structured data. Behavior is modeled using Common Domain elements (Process, Function, Service) assigned to application components."@en ;
+    skos:changeNote "4.0: ApplicationCollaboration, ApplicationFunction, ApplicationInteraction, ApplicationProcess, ApplicationEvent, ApplicationService moved to Common Domain as generic elements."@en ;
+    skos:broader   :Domain ;
+    iso-thes:broaderGeneric :Domain ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#chap09> ;
+    rdfs:seeAlso   am4:ApplicationDomainElement ;
+    skos:narrower  am4:ApplicationComponent, am4:ApplicationInterface,
+                   am4:DataObject ;
+    iso-thes:narrowerPartitive am4:ApplicationComponent, am4:ApplicationInterface,
+                               am4:DataObject ;
+.
+
+:TechnologyDomain
+    a              skos:Concept ;
+    skos:prefLabel "Technology Domain"@en ;
+    skos:definition "The technology domain, physical technology included: nodes, devices, system software, networks, equipment, facilities, artifacts and materials."@en ;
+    skos:scopeNote "Model infrastructure and physical assets in a single domain. Nodes represent compute resources, devices represent hardware, system software represents platforms, and equipment/facilities represent physical assets. The 3.x Physical layer elements are now part of this domain."@en ;
+    skos:changeNote "4.0: The physical elements, an extension of the 3.2 Technology Layer, are part of the Technology Domain. TechnologyCollaboration, TechnologyFunction, TechnologyProcess, TechnologyInteraction, TechnologyEvent, TechnologyService moved to Common Domain as generic elements. Path moved to Common Domain. Aggregation from Path to technology internal active structure element replaced by realization from active structure element to Path. Relationships can now have multiplicity."@en ;
+    skos:broader   :Domain ;
+    iso-thes:broaderGeneric :Domain ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#chap10> ;
+    rdfs:seeAlso   am4:TechnologyDomainElement ;
+    skos:narrower  am4:Node, am4:Device, am4:SystemSoftware,
+                   am4:TechnologyInterface, am4:CommunicationNetwork,
+                   am4:DistributionNetwork, am4:Equipment, am4:Facility,
+                   am4:Artifact, am4:Material ;
+    iso-thes:narrowerPartitive am4:Node, am4:Device, am4:SystemSoftware,
+                               am4:TechnologyInterface, am4:CommunicationNetwork,
+                               am4:DistributionNetwork, am4:Equipment, am4:Facility,
+                               am4:Artifact, am4:Material ;
+.
+
+:StrategyDomain
+    a              skos:Concept ;
+    skos:prefLabel "Strategy Domain"@en ;
+    skos:definition "The strategy domain: resources, capabilities, value streams and courses of action."@en ;
+    skos:scopeNote "Use Strategy elements for capability-based planning and strategic alignment. Capabilities describe what the organization can do, value streams describe how value flows to stakeholders, and courses of action describe the plans to achieve goals. Strategy elements are realized by elements from other domains."@en ;
+    skos:broader   :Domain ;
+    iso-thes:broaderGeneric :Domain ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#chap07> ;
+    rdfs:seeAlso   am4:StrategyElement ;
+    skos:narrower  am4:Resource, am4:Capability, am4:ValueStream, am4:CourseOfAction ;
+    iso-thes:narrowerPartitive am4:Resource, am4:Capability, am4:ValueStream, am4:CourseOfAction ;
+.
+
+:MotivationDomain
+    a              skos:Concept ;
+    skos:prefLabel "Motivation Domain"@en ;
+    skos:definition "The motivation domain: the context of and reasons behind the architecture — stakeholders, drivers, goals, requirements, principles and values."@en ;
+    skos:scopeNote "Capture the 'why' behind architecture decisions. Stakeholders have concerns, drivers motivate change, assessments analyze the current state, goals define desired outcomes, and requirements constrain the solution. Influence relationships connect motivation elements to each other and to elements in other domains."@en ;
+    skos:broader   :Domain ;
+    iso-thes:broaderGeneric :Domain ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#chap06> ;
+    rdfs:seeAlso   am4:MotivationElement ;
+    skos:narrower  am4:Stakeholder, am4:Driver, am4:Assessment, am4:Goal,
+                   am4:Outcome, am4:Principle, am4:Requirement,
+                   am4:Meaning, am4:Value ;
+    iso-thes:narrowerPartitive am4:Stakeholder, am4:Driver, am4:Assessment, am4:Goal,
+                               am4:Outcome, am4:Principle, am4:Requirement,
+                               am4:Meaning, am4:Value ;
+.
+
+:ImplementationAndMigrationDomain
+    a              skos:Concept ;
+    skos:prefLabel "Implementation and Migration Domain"@en ;
+    skos:definition "The implementation and migration domain: planning and carrying out changes to the architecture — work packages, deliverables and plateaus."@en ;
+    skos:scopeNote "Use for roadmapping and transition planning. Plateaus represent stable architecture states (baseline, target), and work packages represent the projects that transition between them. Note: Gap and ImplementationEvent from 3.x have been removed in 4.0."@en ;
+    skos:changeNote "4.0: Gap removed (replace with specialization of Assessment or Deliverable). ImplementationEvent removed (replaced by generic Event in Common Domain). Constraint removed (replace with specialization of Requirement)."@en ;
+    skos:broader   :Domain ;
+    iso-thes:broaderGeneric :Domain ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#chap12> ;
+    rdfs:seeAlso   am4:ImplementationAndMigrationDomainElement ;
+    skos:narrower  am4:WorkPackage, am4:Deliverable, am4:Plateau ;
+    iso-thes:narrowerPartitive am4:WorkPackage, am4:Deliverable, am4:Plateau ;
+.
+
+
+#################################################################
+# Elements by Aspect
+#################################################################
+
+:Aspect
+    a                 skos:Concept ;
+    skos:prefLabel    "Aspect"@en ;
+    skos:altLabel     "Element by Aspect"@en ;
+    skos:definition   "What an element of ArchiMate 4.0 represents, whatever its domain — a characteristic related to the concerns of different stakeholders: structure, behaviour, a composite or motivation. Each narrower concept is an aspect, and its narrower concepts are its sub-aspects and the element types that are part of it."@en ;
+    skos:editorialNote "Aspect concepts group elements from multiple OWL superclasses. When the abstract class hierarchy in archimate4-onto.ttl changes, update the narrower lists here accordingly."@en ;
+    skos:topConceptOf <https://meta.linked.archi/archimate4/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source    <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Aspect>, <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Aspects-of-the-ArchiMate-Language> ;
+.
+
+:AspectOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    skos:prefLabel         "Aspects in Order"@en ;
+    skos:definition        "The aspects of ArchiMate 4.0 in order: structure, behaviour, composite and motivation."@en ;
+    skos:scopeNote         "Linked.Archi modelling guidance, not the specification. A tool that lists the aspects, as a palette lists the element types of a section, lists them in this order."@en ;
+    skos:editorialNote     '''An ISO 25964 thesaurus array (http://purl.org/iso25964/skos-thes#): the order of the
+aspects, kept apart from their classification.
+• A collection is not a concept. A skos:Collection or skos:OrderedCollection groups concepts and can put them in
+  order, but it has no place in the concept hierarchy: it takes no skos:broader, is no top concept of a scheme,
+  and SKOS has no property that says whose narrower concepts it lists.
+• The array gives it that place. iso-thes:ThesaurusArray, a kind of skos:Collection, is a group of sibling
+  concepts, and iso-thes:superOrdinate attaches it under the concept they are narrower than, here :Aspect.
+• Each keeps one job. The classification stays in skos:broader, each aspect narrower than :Aspect, and
+  holds for a tool that never reads this array. The array adds only the order, in skos:memberList:
+  iso-thes:ThesaurusArray is unordered, so the order comes from skos:OrderedCollection.
+• The two stay in step. The array lists each concept narrower than :Aspect once and nothing else; the CI
+  run checks it.'''@en ;
+    iso-thes:superOrdinate :Aspect ;
+    skos:memberList        ( :StructureAspect :BehaviorAspect :CompositeAspect :MotivationAspect ) ;
+.
+
+:StructureAspect
+    a              skos:Concept ;
+    skos:prefLabel "Structure"@en ;
+    skos:definition "The structure aspect: the entities that exist, active or passive. It divides into Active Structure, the performers, and Passive Structure, the objects acted upon."@en ;
+    skos:broader   :Aspect ;
+    iso-thes:broaderGeneric :Aspect ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Behavior-and-Structure-Elements>, <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Structure-Elements> ;
+    skos:narrower  am4:Resource ;
+    iso-thes:narrowerPartitive am4:Resource ;
+.
+
+:ActiveStructureAspect
+    a              skos:Concept ;
+    skos:prefLabel "Active Structure"@en ;
+    skos:definition "The active structure aspect: the entities that can perform behaviour, the subjects of activity — actors, components, nodes, roles, collaborations and their interfaces."@en ;
+    skos:scopeNote "Active structure elements are the 'who' or 'what' that performs behavior. Internal active structure (actors, components, nodes, roles, collaborations) can be assigned to behavior. External active structure (interfaces) exposes services to the environment. In 4.0, Role and Collaboration are generic Common Domain elements usable across all domains."@en ;
+    skos:editorialNote "Direct narrower list contains only elements that are ActiveStructureElement but not InternalActiveStructureElement or ExternalActiveStructureElement (i.e., Path, CommunicationNetwork, DistributionNetwork). Internal and external sub-concepts carry the rest."@en ;
+    skos:broader   :StructureAspect ;
+    iso-thes:broaderGeneric :StructureAspect ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Active-Structure-Elements> ;
+    rdfs:seeAlso   am4:ActiveStructureElement ;
+    skos:narrower  am4:Path, am4:CommunicationNetwork, am4:DistributionNetwork ;
+    iso-thes:narrowerPartitive am4:Path, am4:CommunicationNetwork, am4:DistributionNetwork ;
+.
+
+:InternalActiveStructure
+    a              skos:Concept ;
+    skos:prefLabel "Internal Active Structure"@en ;
+    skos:definition "The internal active structure aspect: the entities that perform behaviour — actors, roles, collaborations, components, nodes, devices, system software, equipment and facilities."@en ;
+    skos:scopeNote "The performers — connected to behavior via assignment. In 4.0, Role and Collaboration are generic Common Domain elements. Can be composed of or aggregated with other internal active structure elements."@en ;
+    skos:broader   :ActiveStructureAspect ;
+    iso-thes:broaderGeneric :ActiveStructureAspect ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Active-Structure-Elements> ;
+    rdfs:seeAlso   am4:InternalActiveStructureElement ;
+    skos:narrower  am4:Role, am4:Collaboration,
+                   am4:BusinessActor,
+                   am4:ApplicationComponent,
+                   am4:Node, am4:Device, am4:SystemSoftware,
+                   am4:Equipment, am4:Facility ;
+    iso-thes:narrowerPartitive am4:Role, am4:Collaboration,
+                               am4:BusinessActor,
+                               am4:ApplicationComponent,
+                               am4:Node, am4:Device, am4:SystemSoftware,
+                               am4:Equipment, am4:Facility ;
+.
+
+:ExternalActiveStructure
+    a              skos:Concept ;
+    skos:prefLabel "External Active Structure"@en ;
+    skos:definition "The external active structure aspect: the interfaces, points of access where services are exposed to the environment."@en ;
+    skos:scopeNote "Interfaces expose services and hide internal complexity. Typically composed by the internal active structure element they belong to. Assigned to the services they expose."@en ;
+    skos:broader   :ActiveStructureAspect ;
+    iso-thes:broaderGeneric :ActiveStructureAspect ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Active-Structure-Elements> ;
+    rdfs:seeAlso   am4:ExternalActiveStructureElement ;
+    skos:narrower  am4:BusinessInterface, am4:ApplicationInterface,
+                   am4:TechnologyInterface ;
+    iso-thes:narrowerPartitive am4:BusinessInterface, am4:ApplicationInterface,
+                               am4:TechnologyInterface ;
+.
+
+:BehaviorAspect
+    a              skos:Concept ;
+    skos:prefLabel "Behavior"@en ;
+    skos:definition "The behaviour aspect: dynamic behaviour — processes, functions, events, services, capabilities, value streams, courses of action and work packages."@en ;
+    skos:scopeNote "Behavior elements describe the 'how'. In 4.0, Process, Function, Event, and Service are cross-domain — they belong to the Common Domain and are assigned to domain-specific active structure elements. Use serving relationships to connect services to their consumers."@en ;
+    skos:editorialNote "Direct narrower list contains only elements that are BehaviorElement but not in the InternalBehavior, ExternalBehavior, or Event sub-concepts (i.e., Capability, ValueStream, CourseOfAction, WorkPackage). Sub-concepts carry the rest."@en ;
+    skos:broader   :Aspect ;
+    iso-thes:broaderGeneric :Aspect ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Behavior-Elements> ;
+    rdfs:seeAlso   am4:BehaviorElement ;
+    skos:narrower  am4:Capability, am4:ValueStream, am4:CourseOfAction,
+                   am4:WorkPackage ;
+    iso-thes:narrowerPartitive am4:Capability, am4:ValueStream, am4:CourseOfAction,
+                               am4:WorkPackage ;
+.
+
+:InternalBehavior
+    a              skos:Concept ;
+    skos:prefLabel "Internal Behavior"@en ;
+    skos:definition "The internal behaviour aspect: units of activity — processes and functions."@en ;
+    skos:scopeNote "Internal behavior is what active structure elements actually do. Processes are sequences of steps with a defined outcome. Functions are collections of behavior grouped by criteria. In 4.0, these are cross-domain Common Domain elements assigned to domain-specific active structure. Internal behavior realizes external behavior (services)."@en ;
+    skos:broader   :BehaviorAspect ;
+    iso-thes:broaderGeneric :BehaviorAspect ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Behavior-Elements> ;
+    skos:narrower  am4:Process, am4:Function ;
+    iso-thes:narrowerPartitive am4:Process, am4:Function ;
+.
+
+:ExternalBehavior
+    a              skos:Concept ;
+    skos:prefLabel "External Behavior"@en ;
+    skos:definition "The external behaviour aspect: explicitly defined, exposed behaviour — services."@en ;
+    skos:scopeNote "Services are the externally visible behavior offered to consumers. Realized by internal behavior and exposed through interfaces. In 4.0, Service is a single cross-domain element in the Common Domain. Use serving relationships to connect services to their consumers."@en ;
+    skos:broader   :BehaviorAspect ;
+    iso-thes:broaderGeneric :BehaviorAspect ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Behavior-Elements> ;
+    skos:narrower  am4:Service ;
+    iso-thes:narrowerPartitive am4:Service ;
+.
+
+:EventAspect
+    a              skos:Concept ;
+    skos:prefLabel "Event"@en ;
+    skos:definition "The event aspect: state changes that trigger or are triggered by other behaviour."@en ;
+    skos:scopeNote "Events represent something that happens at a point in time. Use triggering relationships to connect events to the behavior they initiate or that produces them. In 4.0, Event is a single cross-domain element in the Common Domain."@en ;
+    skos:broader   :BehaviorAspect ;
+    iso-thes:broaderGeneric :BehaviorAspect ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Behavior-Elements> ;
+    skos:narrower  am4:Event ;
+    iso-thes:narrowerPartitive am4:Event ;
+.
+
+:PassiveStructureAspect
+    a              skos:Concept ;
+    skos:prefLabel "Passive Structure"@en ;
+    skos:definition "The passive structure aspect: what behaviour is performed on — objects, artifacts, materials, deliverables and resources."@en ;
+    skos:scopeNote "Passive structure elements are the 'what' that behavior acts upon — business objects, data objects, artifacts, materials, deliverables, and resources. They are connected to behavior via access relationships (read, write, read-write)."@en ;
+    skos:editorialNote "Includes Resource (Strategy) and Deliverable (Implementation and Migration) which have dual classification by aspect and by domain."@en ;
+    skos:broader   :StructureAspect ;
+    iso-thes:broaderGeneric :StructureAspect ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Passive-Structure-Elements> ;
+    rdfs:seeAlso   am4:PassiveStructureElement ;
+    skos:narrower  am4:BusinessObject, am4:DataObject,
+                   am4:Artifact, am4:Material,
+                   am4:Deliverable ;
+    iso-thes:narrowerPartitive am4:BusinessObject, am4:DataObject,
+                               am4:Artifact, am4:Material,
+                               am4:Deliverable ;
+.
+
+:CompositeAspect
+    a              skos:Concept ;
+    skos:prefLabel "Composite"@en ;
+    skos:definition "The composite aspect: elements that may combine several aspects or domains — products, groupings, locations and plateaus."@en ;
+    skos:scopeNote "Composite elements cross aspect boundaries. Products bundle services and passive structure into a customer-facing offering. Groupings are generic containers for organizing any set of elements. Locations represent physical or logical places where elements reside or behavior occurs. Plateaus represent stable architecture states used in transition planning."@en ;
+    skos:broader   :Aspect ;
+    iso-thes:broaderGeneric :Aspect ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Composite_Element>, <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Composite-Elements> ;
+    rdfs:seeAlso   am4:CompositeElement ;
+    skos:narrower  am4:Product, am4:Grouping, am4:Location, am4:Plateau ;
+    iso-thes:narrowerPartitive am4:Product, am4:Grouping, am4:Location, am4:Plateau ;
+.
+
+:MotivationAspect
+    a              skos:Concept ;
+    skos:prefLabel "Motivation"@en ;
+    skos:definition "The motivation aspect: the context of and reasons behind the architecture — stakeholders, drivers, goals, requirements, principles and values."@en ;
+    skos:scopeNote "Use Motivation elements to capture the 'why' behind architecture decisions. Stakeholders have concerns, drivers motivate change, assessments analyze the current state, goals define desired outcomes, and requirements constrain the solution. Influence relationships connect motivation elements to each other and to elements in other domains."@en ;
+    skos:broader   :Aspect ;
+    iso-thes:broaderGeneric :Aspect ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Motivation-Elements> ;
+    rdfs:seeAlso   am4:MotivationElement ;
+    skos:narrower  am4:Stakeholder, am4:Driver, am4:Assessment, am4:Goal,
+                   am4:Outcome, am4:Principle, am4:Requirement,
+                   am4:Meaning, am4:Value ;
+    iso-thes:narrowerPartitive am4:Stakeholder, am4:Driver, am4:Assessment, am4:Goal,
+                               am4:Outcome, am4:Principle, am4:Requirement,
+                               am4:Meaning, am4:Value ;
+.
+
+
+#################################################################
+# Relationships by Category
+#################################################################
+
+:Relationship
+    a                 skos:Concept ;
+    skos:prefLabel    "Relationship"@en ;
+    skos:altLabel     "Relationship by Category"@en ;
+    skos:definition   "An ArchiMate 4.0 relationship type. Its narrower concepts are the four categories of Chapter 5, structural, dependency, dynamic and other, each a kind of relationship whose narrower concepts are the relationship types of that category."@en ;
+    skos:editorialNote "Narrower lists reference the qualified relationship classes (am4:Composition), not the unqualified predicates (am4:composedOf). A kind of relationship — am4:ReadAccess, am4:DirectedAssociation — is classified through its superclass. Keep in sync with the relationship type declarations in archimate4-onto.ttl."@en ;
+    skos:topConceptOf <https://meta.linked.archi/archimate4/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source    <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Relationship>, <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#chap05> ;
+.
+
+:RelationshipOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    skos:prefLabel         "Relationship Categories in Order"@en ;
+    skos:definition        "The categories of the ArchiMate 4.0 relationships in order: structural, dependency, dynamic and other."@en ;
+    skos:scopeNote         "The specification's order, that of its Chapter 5. A tool that lists the relationship types by category, as a palette does, lists the categories in this order."@en ;
+    skos:editorialNote     '''An ISO 25964 thesaurus array (http://purl.org/iso25964/skos-thes#): the order of the
+relationship categories, kept apart from their classification.
+• A collection is not a concept. A skos:Collection or skos:OrderedCollection groups concepts and can put them in
+  order, but it has no place in the concept hierarchy: it takes no skos:broader, is no top concept of a scheme,
+  and SKOS has no property that says whose narrower concepts it lists.
+• The array gives it that place. iso-thes:ThesaurusArray, a kind of skos:Collection, is a group of sibling
+  concepts, and iso-thes:superOrdinate attaches it under the concept they are narrower than, here :Relationship.
+• Each keeps one job. The classification stays in skos:broader, each category narrower than :Relationship, and
+  holds for a tool that never reads this array. The array adds only the order, in skos:memberList:
+  iso-thes:ThesaurusArray is unordered, so the order comes from skos:OrderedCollection.
+• The two stay in step. The array lists each concept narrower than :Relationship once and nothing else; the CI
+  run checks it.'''@en ;
+    iso-thes:superOrdinate :Relationship ;
+    skos:memberList        ( :StructuralRelationship :DependencyRelationship :DynamicRelationship :OtherRelationship ) ;
+.
+
+:StructuralRelationship
+    a              skos:Concept ;
+    skos:prefLabel "Structural Relationship"@en ;
+    skos:definition "Relationships that model the static construction or composition of concepts: composition, aggregation, assignment and realization."@en ;
+    skos:scopeNote "Composition is a kind of aggregation that adds existence dependency. Assignment allocates responsibility, performance of behaviour, storage or execution; realization relates a more abstract element to one that implements or creates it. Ordered by strength in :StructuralStrength."@en ;
+    skos:broader   :Relationship ;
+    iso-thes:broaderGeneric :Relationship ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    rdfs:seeAlso   :StructuralStrength ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Structural-Relationships> ;
+    skos:narrower  am4:Composition, am4:Aggregation, am4:Assignment, am4:Realization ;
+    iso-thes:narrowerGeneric am4:Composition, am4:Aggregation, am4:Assignment, am4:Realization ;
+.
+
+:StructuralRelationshipOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    skos:prefLabel         "Structural Relationships in Order"@en ;
+    skos:definition        "The structural relationships of ArchiMate 4.0 in order, strongest first: composition, aggregation, assignment, realization — the order of the specification, and the reverse of :StructuralStrength."@en ;
+    skos:scopeNote         "A tool that lists these relationship types, as a palette lists a category, lists them in this order."@en ;
+    skos:editorialNote     "An ISO 25964 thesaurus array (http://purl.org/iso25964/skos-thes#) under :StructuralRelationship: the order of the relationship types narrower than it, kept apart from their classification, as :RelationshipOrder orders the categories. It lists each of them once and nothing else; the CI run checks it."@en ;
+    iso-thes:superOrdinate :StructuralRelationship ;
+    skos:memberList        ( am4:Composition am4:Aggregation am4:Assignment am4:Realization ) ;
+.
+
+:DependencyRelationship
+    a              skos:Concept ;
+    skos:prefLabel "Dependency Relationship"@en ;
+    skos:definition "Relationships that model how elements are used by or depend on other elements: serving, access, influence and association."@en ;
+    skos:scopeNote "Association is a dependency relationship in the specification (5.2.4): the weakest of them, used where no other relationship is appropriate. Ordered by strength in :DependencyStrength."@en ;
+    skos:broader   :Relationship ;
+    iso-thes:broaderGeneric :Relationship ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    rdfs:seeAlso   :DependencyStrength ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#Dependency_Relationships> ;
+    skos:narrower  am4:Serving, am4:Access, am4:Influence, am4:Association ;
+    iso-thes:narrowerGeneric am4:Serving, am4:Access, am4:Influence, am4:Association ;
+.
+
+:DependencyRelationshipOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    skos:prefLabel         "Dependency Relationships in Order"@en ;
+    skos:definition        "The dependency relationships of ArchiMate 4.0 in order, strongest first: serving, access, influence, association — the order of the specification, and the reverse of :DependencyStrength."@en ;
+    skos:scopeNote         "A tool that lists these relationship types, as a palette lists a category, lists them in this order."@en ;
+    skos:editorialNote     "An ISO 25964 thesaurus array (http://purl.org/iso25964/skos-thes#) under :DependencyRelationship: the order of the relationship types narrower than it, kept apart from their classification, as :RelationshipOrder orders the categories. It lists each of them once and nothing else; the CI run checks it."@en ;
+    iso-thes:superOrdinate :DependencyRelationship ;
+    skos:memberList        ( am4:Serving am4:Access am4:Influence am4:Association ) ;
+.
+
+:DynamicRelationship
+    a              skos:Concept ;
+    skos:prefLabel "Dynamic Relationship"@en ;
+    skos:definition "Relationships that model behavioural dependencies between elements: triggering and flow."@en ;
+    skos:broader   :Relationship ;
+    iso-thes:broaderGeneric :Relationship ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Dynamic-Relationships> ;
+    skos:narrower  am4:Triggering, am4:Flow ;
+    iso-thes:narrowerGeneric am4:Triggering, am4:Flow ;
+.
+
+:DynamicRelationshipOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    skos:prefLabel         "Dynamic Relationships in Order"@en ;
+    skos:definition        "The dynamic relationships of ArchiMate 4.0 in the order of the specification: triggering, then flow. The specification ranks them by no strength."@en ;
+    skos:scopeNote         "A tool that lists these relationship types, as a palette lists a category, lists them in this order."@en ;
+    skos:editorialNote     "An ISO 25964 thesaurus array (http://purl.org/iso25964/skos-thes#) under :DynamicRelationship: the order of the relationship types narrower than it, kept apart from their classification, as :RelationshipOrder orders the categories. It lists each of them once and nothing else; the CI run checks it."@en ;
+    iso-thes:superOrdinate :DynamicRelationship ;
+    skos:memberList        ( am4:Triggering am4:Flow ) ;
+.
+
+:OtherRelationship
+    a              skos:Concept ;
+    skos:prefLabel "Other Relationship"@en ;
+    skos:definition "The relationship that falls in none of the other categories: specialization."@en ;
+    skos:broader   :Relationship ;
+    iso-thes:broaderGeneric :Relationship ;
+    skos:inScheme  <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Other-Relationships> ;
+    skos:narrower  am4:Specialization ;
+    iso-thes:narrowerGeneric am4:Specialization ;
+.
+
+
+#################################################################
+# Junctions
+#################################################################
+
+:Junction
+    a                 skos:Concept ;
+    skos:prefLabel    "Junction"@en ;
+    skos:definition   "A connector between relationships of ArchiMate 4.0, not itself a relationship: it connects two or more relationships of the same type. Its narrower concepts are the and-junction and the or-junction."@en ;
+    skos:scopeNote    "A junction is a concept of the language beside the elements and the relationships; it belongs to no domain and no aspect."@en ;
+    skos:topConceptOf <https://meta.linked.archi/archimate4/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/archimate4/tax#> ;
+    dcterms:source    <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Junction>, <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Top-Level-Language-Structure> ;
+    skos:narrower     am4:AndJunction, am4:OrJunction ;
+    iso-thes:narrowerGeneric am4:AndJunction, am4:OrJunction ;
+.
+
+
+#################################################################
+# Palette grouping and diagram group order
+#
+# Linked.Archi modelling guidance, not the specification: the
+# classification dimensions a palette groups element types by, and
+# the groups a diagram keeps in bands, top band first. A metamodel
+# manifest points to them (arch:paletteGrouping,
+# arch:diagramGroupOrder).
+#################################################################
+
+:PaletteGrouping
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Palette Grouping"@en ;
+    skos:definition "The classification dimensions a palette groups element types by: a section for each domain, in the order of :DomainOrder, its element types in the order of their aspects, :AspectOrder."@en ;
+    skos:memberList ( :Domain :Aspect ) ;
+.
+
+:DiagramGroupOrder
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Diagram Group Order"@en ;
+    skos:definition "The domains a diagram keeps in bands, top band first: motivation, strategy, business, application, technology, and implementation and migration."@en ;
+    skos:scopeNote  "The Common Domain is not listed: its elements are used in every domain, so each is placed by the elements it is related to."@en ;
+    skos:memberList ( :MotivationDomain :StrategyDomain :BusinessDomain :ApplicationDomain :TechnologyDomain
+                      :ImplementationAndMigrationDomain ) ;
+.
+
+#################################################################
+# Order of strength
+#
+# Weakest first. Two relationships of a category in line derive the
+# weaker of the two, which is what the derivation rules
+# (archimate4-derivation-rules.ttl) apply; the CI run checks that
+# their order and this one agree.
+#################################################################
+
+:StructuralStrength
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Structural Relationships by Strength"@en ;
+    skos:definition "The structural relationships ordered by strength, weakest first: realization, assignment, aggregation, composition. Two structural relationships in line derive the weaker of the two (DR 2)."@en ;
+    skos:memberList ( am4:Realization am4:Assignment am4:Aggregation am4:Composition ) ;
+    dcterms:source  <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Valid-Derivations-for-Structural-Relationships> ;
+.
+
+:DependencyStrength
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Dependency Relationships by Strength"@en ;
+    skos:definition "The dependency relationships ordered by strength, weakest first: association, influence, access, serving. Two dependency relationships in line may derive the weaker of the two (PDR 7)."@en ;
+    skos:memberList ( am4:Association am4:Influence am4:Access am4:Serving ) ;
+    dcterms:source  <https://pubs.opengroup.org/architecture/archimate4-doc.singlepage/#sec-Potential-Derivation-for-Dependency-Relationships> ;
+.
+
+
+#################################################################
+# Order of proposal
+#
+# Linked.Archi modelling guidance, not the specification: the order
+# in which a modelling tool proposes the relationships the tables
+# permit between two elements. The manifest names these collections
+# (arch:relationshipProposalOrder), and core's definition of that
+# property gives the rule: what a modeller may draw directly first,
+# then what only a derivation gives, then association; within each,
+# a relationship takes the place the most specific collection that
+# lists it gives it. :ProposalOrder applies to every pair. The
+# others name, with arch:domainIncludes and arch:rangeIncludes, the
+# kinds of element they apply to — by the abstract classes of the
+# ontology — and a few the element types a kind's order does not
+# fit. The relationship tables decide what is permitted; a
+# collection only orders it, so one listing a relationship the
+# tables do not permit for a pair leaves it out there. The same as
+# ArchiMate 3.2's.
+#################################################################
+
+:ProposalOrder
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Relationships in Order of Proposal"@en ;
+    skos:definition "The order in which a modelling tool proposes the relationships the language permits between two elements where no more specific order applies, and those a more specific one does not list, the strongest first: composition, aggregation, assignment, realization, serving, access, influence, triggering, flow, specialization, association."@en ;
+    skos:scopeNote  "The specification's order of the relationship categories and of the relationships in each, strongest first (:RelationshipOrder, :StructuralRelationshipOrder, :DependencyRelationshipOrder, :DynamicRelationshipOrder), with specialization after them and association — the weakest, and the one to use where no other fits — last; the CI run checks that it is. Linked.Archi modelling guidance, not part of the specification."@en ;
+    skos:memberList ( am4:Composition am4:Aggregation am4:Assignment am4:Realization am4:Serving
+                      am4:Access am4:Influence am4:Triggering am4:Flow am4:Specialization
+                      am4:Association ) ;
+.
+
+:BehaviorProposalOrder
+    a                   skos:OrderedCollection ;
+    skos:prefLabel      "Order of Proposal between Behaviour Elements"@en ;
+    skos:definition     "Between two behaviour elements, triggering and flow are proposed first — one behaviour causing the next, or passing something to it — then composition and aggregation, which decompose a behaviour, then serving and specialization."@en ;
+    skos:scopeNote      "Services, events and work packages are behaviour elements too. From internal behaviour to a service (:BehaviorServiceProposalOrder) and between strategy behaviour elements (:StrategyBehaviorProposalOrder) a more specific order applies."@en ;
+    arch:domainIncludes am4:BehaviorElement ;
+    arch:rangeIncludes  am4:BehaviorElement ;
+    skos:memberList     ( am4:Triggering am4:Flow am4:Composition am4:Aggregation am4:Serving
+                          am4:Specialization ) ;
+.
+
+:BehaviorServiceProposalOrder
+    a                   skos:OrderedCollection ;
+    skos:prefLabel      "Order of Proposal from Internal Behaviour to a Service"@en ;
+    skos:definition     "From a process or function to a service, realization is proposed first — the behaviour that provides the service — then serving, triggering and flow."@en ;
+    arch:domainIncludes am4:InternalBehaviorElement ;
+    arch:rangeIncludes  am4:ExternalBehaviorElement ;
+    skos:memberList     ( am4:Realization am4:Serving am4:Triggering am4:Flow ) ;
+.
+
+:StrategyBehaviorProposalOrder
+    a                   skos:OrderedCollection ;
+    skos:prefLabel      "Order of Proposal between Strategy Behaviour Elements"@en ;
+    skos:definition     "Between capabilities, value streams and courses of action, realization is proposed first — a capability realizing a course of action — then serving — a capability serving a value stream — then triggering and flow, composition and aggregation, and specialization."@en ;
+    arch:domainIncludes am4:StrategyBehaviorElement ;
+    arch:rangeIncludes  am4:StrategyBehaviorElement ;
+    skos:memberList     ( am4:Realization am4:Serving am4:Triggering am4:Flow am4:Composition
+                          am4:Aggregation am4:Specialization ) ;
+.
+
+:CapabilityProposalOrder
+    a                   skos:OrderedCollection ;
+    skos:prefLabel      "Order of Proposal between Capabilities"@en ;
+    skos:definition     "Between two capabilities, composition is proposed first — decomposing a capability into the capabilities it consists of — and then :StrategyBehaviorProposalOrder."@en ;
+    arch:domainIncludes am4:Capability ;
+    arch:rangeIncludes  am4:Capability ;
+    skos:memberList     ( am4:Composition ) ;
+.
+
+:CollaborationProposalOrder
+    a                   skos:OrderedCollection ;
+    skos:prefLabel      "Order of Proposal from a Collaboration"@en ;
+    skos:definition     "From a collaboration to an internal active structure element, aggregation is proposed first: a collaboration is an aggregate of the elements that work together in it."@en ;
+    arch:domainIncludes am4:Collaboration ;
+    arch:rangeIncludes  am4:InternalActiveStructureElement ;
+    skos:memberList     ( am4:Aggregation ) ;
+.
+
+:MotivationProposalOrder
+    a                   skos:OrderedCollection ;
+    skos:prefLabel      "Order of Proposal between Motivation Elements"@en ;
+    skos:definition     "Between two motivation elements, realization is proposed first — a requirement realizing an outcome, an outcome a goal — then influence — how one affects the other — then composition, aggregation and specialization."@en ;
+    arch:domainIncludes am4:MotivationElement ;
+    arch:rangeIncludes  am4:MotivationElement ;
+    skos:memberList     ( am4:Realization am4:Influence am4:Composition am4:Aggregation am4:Specialization ) ;
+.
+
+:MeaningValueProposalOrder
+    a                   skos:OrderedCollection ;
+    skos:prefLabel      "Order of Proposal to a Meaning or a Value"@en ;
+    skos:definition     "To a meaning or a value, association is proposed first: the specification associates a meaning or a value with the concept it is the meaning or value of. Between two motivation elements, :MotivationProposalOrder applies."@en ;
+    arch:rangeIncludes  am4:Meaning, am4:Value ;
+    skos:memberList     ( am4:Association ) ;
+.
+
+:CompositeProposalOrder
+    a                   skos:OrderedCollection ;
+    skos:prefLabel      "Order of Proposal from a Composite Element"@en ;
+    skos:definition     "From a grouping, a location, a product or a plateau, aggregation is proposed first — the concepts it brings together — then composition."@en ;
+    arch:domainIncludes am4:CompositeElement ;
+    skos:memberList     ( am4:Aggregation am4:Composition ) ;
+.

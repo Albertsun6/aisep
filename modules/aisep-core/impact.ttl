@@ -1,0 +1,20 @@
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# Default impact directions (spec §9). Loaded via the manifest's aisep:impactFile (spec §5). Subclasses inherit (e.g. am4:Composition ⊑ am4:Aggregation,
+# am4:ReadAccess ⊑ am4:Access, am4:DirectedAssociation ⊑ am4:Association); modules may override on their own classes.
+# aisep:verifies / aisep:implements directions belong to the modules that define those relationship classes.
+
+am4:Serving        aisep:dependency aisep:Forward .   # served depends on server
+am4:Realization    aisep:dependency aisep:Both .
+am4:Access         aisep:dependency aisep:Backward .  # behaviour depends on the data it accesses
+am4:Assignment     aisep:dependency aisep:Both .
+am4:Composition    aisep:dependency aisep:Both .      # v0.2: part's existence depends on whole, whole's structure on part
+am4:Aggregation    aisep:dependency aisep:Backward .
+am4:Triggering     aisep:dependency aisep:Forward .
+am4:Flow           aisep:dependency aisep:Forward .
+am4:Influence      aisep:dependency aisep:Forward .
+am4:Specialization aisep:dependency aisep:Backward .  # specialisation depends on generalisation
+am4:Association    aisep:dependency aisep:None .
+arch:Refines       aisep:dependency aisep:Backward .  # refiner depends on refined

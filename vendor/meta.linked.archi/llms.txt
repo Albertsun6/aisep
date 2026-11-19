@@ -1,0 +1,519 @@
+# Linked.Archi — Semantic Assets for Enterprise Architecture
+
+> Ontologies, metamodels, taxonomies, and SHACL shapes for building architectural knowledge graphs.
+
+This site publishes RDF vocabularies (OWL/SHACL/SKOS) with full HTTP content negotiation.
+All namespace URIs are dereferenceable — request `text/turtle`, `application/ld+json`,
+`application/rdf+xml`, or `application/n-triples` via the Accept header.
+
+## Disclaimer
+
+Linked.Archi is an independent, unofficial project. It is NOT affiliated with, endorsed by,
+or produced by The Open Group, OMG, ISO, Spotify, SAP, or any other standards body or vendor.
+Trademarked names (ArchiMate, TOGAF, BPMN, UML, Backstage, LeanIX, etc.) are property of
+their respective owners. The ontologies here are interpretive formalizations of published
+specifications — they represent one possible OWL/SHACL encoding, not an authoritative
+normative definition. Always refer to the original specifications for definitive semantics.
+
+## Key Entry Points
+
+- [Ontology Catalog](https://meta.linked.archi/): Interactive index of all semantic assets
+- [Documentation](https://meta.linked.archi/docs/): Guides, design decisions, and quick start
+- [Full LLM Map](https://meta.linked.archi/llms-full.txt): Complete resource listing with descriptions
+
+## Canonical Namespaces and Current Versions
+
+| Prefix | Namespace | Version | Modified |
+|--------|-----------|---------|----------|
+| fourplus1: | https://meta.linked.archi/4plus1# | 0.1.0 | 2026-05-06 |
+| fourplus1dt: | https://meta.linked.archi/4plus1/deliverable-templates# | 0.1.0 | 2026-05-06 |
+| fourplus1mm: | https://meta.linked.archi/4plus1/metamodel# | 0.1.0 | 2026-05-06 |
+| fourplus1vp: | https://meta.linked.archi/4plus1/viewpoints# | 0.1.0 | 2026-05-06 |
+| admitmm: | https://meta.linked.archi/admit/metamodel# | 0.1.0 | 2026-05-02 |
+| admit: | https://meta.linked.archi/admit/onto# | 0.1.0 | 2026-05-02 |
+| admittax: | https://meta.linked.archi/admit/tax# | 0.1.0 | 2026-05-02 |
+| aigovmm: | https://meta.linked.archi/ai-governance/metamodel# | 0.1.0 | 2026-05-03 |
+| aigov: | https://meta.linked.archi/ai-governance/onto# | 0.1.0 | 2026-05-03 |
+| aigovrd: | https://meta.linked.archi/ai-governance/reference-data# | 0.1.0 | 2026-05-03 |
+| aigovsh: | https://meta.linked.archi/ai-governance/shapes# | 0.1.0 | 2026-05-03 |
+| aigovtax: | https://meta.linked.archi/ai-governance/tax# | 0.1.0 | 2026-05-03 |
+| admm: | https://meta.linked.archi/arch-decision/metamodel# | 0.1.0 | 2026-11-16 |
+| ad: | https://meta.linked.archi/arch-decision# | 0.0.9 | 2026-11-17 |
+| adsh: | https://meta.linked.archi/arch-decision-shapes# | 0.2.0 | 2026-08-20 |
+| adtax: | https://meta.linked.archi/arch-decision/tax# | — | 2026-11-17 |
+| amdt: | https://meta.linked.archi/archimate3/deliverable-templates# | 3.2 | — |
+| amderiv: | https://meta.linked.archi/archimate3/derivation# | 3.2 | 2026-10-16 |
+| amelsh: | https://meta.linked.archi/archimate3/element-shapes# | 3.2 | 2026-11-06 |
+| ammm: | https://meta.linked.archi/archimate3/metamodel# | 3.2 | 2025-12-01 |
+| archimate3not: | https://meta.linked.archi/archimate3/notation# | 3.2 | 2026-11-07 |
+| am30: | https://meta.linked.archi/archimate3/onto/3.0# | 3.0 | 2019-11-17 |
+| amate: | https://meta.linked.archi/archimate3/onto/3.1# | 3.1 | 2020-07-27 |
+| am: | https://meta.linked.archi/archimate3/onto# | 3.2 | 2026-10-10 |
+| ampc: | https://meta.linked.archi/archimate3/presentation-contexts# | 3.2 | — |
+| ampsh: | https://meta.linked.archi/archimate3/principle-shapes# | 0.1.0 | 2026-11-06 |
+| amq: | https://meta.linked.archi/archimate3/questions# | 0.1.0 | 2026-10-27 |
+| amrd: | https://meta.linked.archi/archimate3/reference-data# | 3.2 | — |
+| amrm: | https://meta.linked.archi/archimate3/reference-models# | 3.2 | — |
+| amrt: | https://meta.linked.archi/archimate3/relationship-tables# | 3.2 | 2026-10-16 |
+| amsh: | https://meta.linked.archi/archimate3/shapes# | 3.2.0 | 2026-10-11 |
+| amtax30: | https://meta.linked.archi/archimate3/tax/3.0# | 3.0 | 2019-03-17 |
+| amtax31: | https://meta.linked.archi/archimate3/tax/3.1# | 3.1 | 2020-07-27 |
+| amtax: | https://meta.linked.archi/archimate3/tax# | 3.2 | 2025-12-01 |
+| amvp: | https://meta.linked.archi/archimate3/viewpoints# | 3.2 | 2026-10-17 |
+| amvpsh: | https://meta.linked.archi/archimate3/viewpoint-shapes# | 3.2 | 2026-11-06 |
+| am4dt: | https://meta.linked.archi/archimate4/deliverable-templates# | 4.0 | — |
+| am4deriv: | https://meta.linked.archi/archimate4/derivation# | 4.0 | 2026-10-14 |
+| am4elsh: | https://meta.linked.archi/archimate4/element-shapes# | 4.0 | 2026-11-06 |
+| am4mm: | https://meta.linked.archi/archimate4/metamodel# | 4.0 | 2026-04-29 |
+| archimate4not: | https://meta.linked.archi/archimate4/notation# | 4.0 | 2026-11-07 |
+| am4: | https://meta.linked.archi/archimate4/onto# | 4.0 | 2026-10-10 |
+| am4pc: | https://meta.linked.archi/archimate4/presentation-contexts# | 4.0 | — |
+| am4psh: | https://meta.linked.archi/archimate4/principle-shapes# | 4.0 | 2026-11-06 |
+| am4q: | https://meta.linked.archi/archimate4/questions# | 0.1.0 | 2026-10-27 |
+| am4rd: | https://meta.linked.archi/archimate4/reference-data# | 4.0 | — |
+| am4rm: | https://meta.linked.archi/archimate4/reference-models# | 4.0 | — |
+| am4rt: | https://meta.linked.archi/archimate4/relationship-tables# | 4.0 | 2026-10-15 |
+| am4sh: | https://meta.linked.archi/archimate4/shapes# | 4.0 | 2026-10-11 |
+| am4tax: | https://meta.linked.archi/archimate4/tax# | 4.0 | 2026-04-29 |
+| am4vp: | https://meta.linked.archi/archimate4/viewpoints# | 4.0 | 2026-10-11 |
+| am4vpsh: | https://meta.linked.archi/archimate4/viewpoint-shapes# | 4.0 | 2026-11-06 |
+| amfw: | https://meta.linked.archi/archimate/framework# | 0.1.0 | 2026-08-13 |
+| apmm: | https://meta.linked.archi/arch-processes/metamodel# | 0.1.0 | 2026-11-16 |
+| ap: | https://meta.linked.archi/arch-processes# | 0.4.0 | 2026-11-17 |
+| apsh: | https://meta.linked.archi/arch-processes-shapes# | 0.1.0 | 2026-08-10 |
+| aptax: | https://meta.linked.archi/arch-processes/tax# | 0.1.0 | 2026-11-17 |
+| atammm: | https://meta.linked.archi/atam/metamodel# | 0.1.0 | 2026-05-03 |
+| atam: | https://meta.linked.archi/atam/onto# | 0.2.0 | 2026-11-16 |
+| atamsh: | https://meta.linked.archi/atam/shapes# | 0.1.0 | 2026-08-04 |
+| atamtax: | https://meta.linked.archi/atam/tax# | 0.1.0 | 2026-11-16 |
+| bsxm: | https://meta.linked.archi/backstage/crossmappings# | 0.1.0 | 2026-09-25 |
+| bsdt: | https://meta.linked.archi/backstage/deliverable-templates# | 0.1.0 | — |
+| bsmm: | https://meta.linked.archi/backstage/metamodel# | 0.2.0 | 2026-08-24 |
+| bsnot: | https://meta.linked.archi/backstage/notation# | 0.2.0 | 2026-10-10 |
+| bs: | https://meta.linked.archi/backstage/onto# | 0.5.0 | 2026-08-24 |
+| bspc: | https://meta.linked.archi/backstage/presentation-contexts# | 0.1.0 | — |
+| bsrd: | https://meta.linked.archi/backstage/reference-data# | 0.1.0 | — |
+| bssh: | https://meta.linked.archi/backstage/shapes# | 0.2.0 | 2026-08-24 |
+| bstax: | https://meta.linked.archi/backstage/tax# | 0.2.0 | 2026-08-24 |
+| bsvp: | https://meta.linked.archi/backstage/viewpoints# | 0.1.0 | 2026-04-16 |
+| basicmm: | https://meta.linked.archi/basic/metamodel# | 0.1.0 | 2026-10-06 |
+| basicnot: | https://meta.linked.archi/basic/notation# | 0.1.0 | 2026-10-06 |
+| basicnotbubble: | https://meta.linked.archi/basic/notation-bubble# | 0.1.0 | 2026-10-06 |
+| basic: | https://meta.linked.archi/basic# | 0.1.0 | 2026-10-05 |
+| basicpc: | https://meta.linked.archi/basic/presentation-contexts# | 0.1.0 | 2026-10-05 |
+| basictax: | https://meta.linked.archi/basic/tax# | 0.1.0 | 2026-10-05 |
+| bmcmm: | https://meta.linked.archi/bmc/metamodel# | 0.1.0 | 2026-04-16 |
+| bmc: | https://meta.linked.archi/bmc/onto# | 0.2.0 | 2026-04-12 |
+| bpmnxm: | https://meta.linked.archi/bpmn/crossmappings# | 0.1.0 | 2026-09-05 |
+| dc: | https://meta.linked.archi/bpmn/dc# | 2.0.2 | 2026-07-25 |
+| dcsh: | https://meta.linked.archi/bpmn/dc-shapes# | 2.0.2 | 2026-07-25 |
+| bpmndt: | https://meta.linked.archi/bpmn/deliverable-templates# | 0.1.0 | — |
+| di: | https://meta.linked.archi/bpmn/di-core# | 2.0.2 | 2026-05-06 |
+| dish: | https://meta.linked.archi/bpmn/di-core-shapes# | 2.0.2 | 2026-07-25 |
+| bpmndi: | https://meta.linked.archi/bpmn/di# | 2.0.2 | 2026-05-06 |
+| bpmndish: | https://meta.linked.archi/bpmn/di-shapes# | 2.0.2 | 2026-07-25 |
+| infra: | https://meta.linked.archi/bpmn/infra# | 2.0.2 | 2026-05-06 |
+| infrash: | https://meta.linked.archi/bpmn/infra-shapes# | 2.0.2 | 2026-07-25 |
+| bpmnlmm: | https://meta.linked.archi/bpmn-lite/metamodel# | 0.1.0 | 2026-05-06 |
+| bpmnlnot: | https://meta.linked.archi/bpmn-lite/notation# | 0.1.0 | 2026-10-10 |
+| bpmnl: | https://meta.linked.archi/bpmn-lite/onto# | 0.1.0 | 2026-05-06 |
+| bpmnls: | https://meta.linked.archi/bpmn-lite/shapes# | 0.1.0 | 2026-08-04 |
+| bpmnltax: | https://meta.linked.archi/bpmn-lite/tax# | — | — |
+| bpmnmm: | https://meta.linked.archi/bpmn/metamodel# | 0.1.0 | 2026-09-05 |
+| bpmnnot: | https://meta.linked.archi/bpmn/notation# | 0.1.0 | 2026-10-10 |
+| bpmn: | https://meta.linked.archi/bpmn/onto# | 2.0.2 | 2026-05-06 |
+| bpmnsh: | https://meta.linked.archi/bpmn/onto-shapes# | 2.0.2 | 2026-08-04 |
+| bpmnsuite: | https://meta.linked.archi/bpmn/suite# | 2.0.2 | — |
+| bpmnsuitesh: | https://meta.linked.archi/bpmn/suite-shapes# | 2.0.2 | 2026-07-25 |
+| bpmntax: | https://meta.linked.archi/bpmn/tax# | — | — |
+| bpmnvp: | https://meta.linked.archi/bpmn/viewpoints# | 0.1.0 | 2026-04-16 |
+| c4dt: | https://meta.linked.archi/c4/deliverable-templates# | 0.1.0 | — |
+| c4mm: | https://meta.linked.archi/c4/metamodel# | 0.1.0 | 2026-04-16 |
+| c4not: | https://meta.linked.archi/c4/notation# | 0.1.0 | 2026-10-11 |
+| c4: | https://meta.linked.archi/c4/onto# | 0.3.0 | 2026-10-10 |
+| c4pc: | https://meta.linked.archi/c4/presentation-contexts# | 0.1.0 | — |
+| c4rd: | https://meta.linked.archi/c4/reference-data# | 0.1.0 | — |
+| c4sh: | https://meta.linked.archi/c4/shapes# | 0.2.0 | 2026-10-10 |
+| structurizr: | https://meta.linked.archi/c4/structurizr# | 0.1.0 | 2026-10-10 |
+| structsh: | https://meta.linked.archi/c4/structurizr-shapes# | 0.1.0 | 2026-10-10 |
+| c4tax: | https://meta.linked.archi/c4/tax# | — | — |
+| c4vp: | https://meta.linked.archi/c4/viewpoints# | 0.1.0 | 2026-10-10 |
+| cs: | https://meta.linked.archi/cloud-services/onto# | 0.1.0 | 2026-11-14 |
+| cstax: | https://meta.linked.archi/cloud-services/tax# | 0.1.0 | 2026-11-14 |
+| cnc: | https://meta.linked.archi/CnC# | 0.0.1 | 2021-05-18 |
+| cncv: | https://meta.linked.archi/CnC-variant# | 0.0.1 | 2021-05-05 |
+| archdt: | https://meta.linked.archi/core-deliverable-templates# | 0.1.0 | 2026-04-15 |
+| arch: | https://meta.linked.archi/core# | 0.6.0 | 2026-11-16 |
+| archq: | https://meta.linked.archi/core-questions# | 0.1.0 | 2026-10-27 |
+| archsh: | https://meta.linked.archi/core-shapes# | 0.4.0 | 2026-11-08 |
+| archvp: | https://meta.linked.archi/core-viewpoints# | 0.1.0 | 2026-04-15 |
+| arch-vis: | https://meta.linked.archi/core-vis# | 0.8 | 2026-11-09 |
+| archvissh: | https://meta.linked.archi/core-vis-shapes# | 0.4.0 | 2026-11-09 |
+| dodafmm: | https://meta.linked.archi/dodaf/metamodel# | 2.02 | 2026-05-03 |
+| dodaf: | https://meta.linked.archi/dodaf/onto# | 2.02 | 2026-05-03 |
+| dodafsh: | https://meta.linked.archi/dodaf/shapes# | 0.1.0 | 2026-08-04 |
+| dodaftax: | https://meta.linked.archi/dodaf/tax# | 2.02 | 2026-05-03 |
+| dodafvp: | https://meta.linked.archi/dodaf/viewpoints# | 2.02 | 2026-05-03 |
+| eaopdt: | https://meta.linked.archi/eaonapage/deliverable-templates# | 0.1.0 | 2026-05-03 |
+| eaopmm: | https://meta.linked.archi/eaonapage/metamodel# | 0.3.0 | 2026-06-15 |
+| eaop: | https://meta.linked.archi/eaonapage/onto# | 0.1.0 | 2026-05-03 |
+| eaopsh: | https://meta.linked.archi/eaonapage/shapes# | 0.1.0 | 2026-05-03 |
+| eaoptax: | https://meta.linked.archi/eaonapage/tax# | 0.3.0 | 2026-06-15 |
+| eaopvp: | https://meta.linked.archi/eaonapage/viewpoints# | 0.1.0 | 2026-05-03 |
+| easvcmm: | https://meta.linked.archi/ea-service/metamodel# | 0.1.0 | 2026-05-03 |
+| easvc: | https://meta.linked.archi/ea-service/onto# | 0.1.0 | 2026-05-03 |
+| easvcrd: | https://meta.linked.archi/ea-service/reference-data# | 0.1.0 | 2026-05-03 |
+| easvcsh: | https://meta.linked.archi/ea-service/shapes# | 0.1.0 | 2026-05-03 |
+| easvctax: | https://meta.linked.archi/ea-service/tax# | 0.1.0 | 2026-05-03 |
+| edgydt: | https://meta.linked.archi/edgy/deliverable-templates# | 23 | 2026-04-17 |
+| edgymm: | https://meta.linked.archi/edgy/metamodel# | 23 | 2026-10-06 |
+| edgynot: | https://meta.linked.archi/edgy/notation# | 23 updated draft | 2026-10-10 |
+| edgynotv1: | https://meta.linked.archi/edgy/notation-v1# | 23 | 2026-10-06 |
+| edgy: | https://meta.linked.archi/edgy/onto# | 23 | 2026-04-17 |
+| edgypc: | https://meta.linked.archi/edgy/presentation-contexts# | 23 | 2026-10-05 |
+| edgyrd: | https://meta.linked.archi/edgy/reference-data# | 23 | 2026-04-17 |
+| edgysh: | https://meta.linked.archi/edgy/shapes# | 23 | 2026-04-17 |
+| edgytax: | https://meta.linked.archi/edgy/tax# | 23 | 2026-05-17 |
+| edgyvp: | https://meta.linked.archi/edgy/viewpoints# | 23 | 2026-04-17 |
+| atlasbank: | https://meta.linked.archi/examples/atlas-bank/ | — | — |
+| cpdt: | https://meta.linked.archi/examples/cloudplatform/deliverable-templates# | 0.1.0 | — |
+| cpmm: | https://meta.linked.archi/examples/cloudplatform/metamodel# | 0.1.0 | — |
+| cloudplatform: | https://meta.linked.archi/examples/cloudplatform/model/ | — | — |
+| cp: | https://meta.linked.archi/examples/cloudplatform/onto# | 0.1.0 | 2026-05-03 |
+| cpref: | https://meta.linked.archi/examples/cloudplatform/reference-data# | 0.1.0 | — |
+| cpsh: | https://meta.linked.archi/examples/cloudplatform/shapes# | 0.1.0 | — |
+| cptax: | https://meta.linked.archi/examples/cloudplatform/tax# | 0.1.0 | — |
+| cpvp: | https://meta.linked.archi/examples/cloudplatform/viewpoints# | 0.1.0 | — |
+| lxdoc: | https://meta.linked.archi/examples/leanix-docs-example/ | 0.2.0 | 2026-11-16 |
+| meridian: | https://meta.linked.archi/examples/meridian/ | — | — |
+| nordfreight: | https://meta.linked.archi/examples/nordfreight/ | — | 2026-10-11 |
+| payflow: | https://meta.linked.archi/examples/payflow/ | — | — |
+| finamm: | https://meta.linked.archi/financial-architecture/metamodel# | 0.1.0 | 2026-05-03 |
+| fina: | https://meta.linked.archi/financial-architecture/onto# | 0.1.0 | 2026-05-03 |
+| finard: | https://meta.linked.archi/financial-architecture/reference-data# | 0.1.0 | 2026-05-03 |
+| finash: | https://meta.linked.archi/financial-architecture/shapes# | 0.1.0 | 2026-05-03 |
+| finatax: | https://meta.linked.archi/financial-architecture/tax# | 0.1.0 | 2026-05-03 |
+| iso12207: | https://meta.linked.archi/iso12207# | 0.1.0 | 2020-07-27 |
+| iso15288: | https://meta.linked.archi/iso15288# | 0.1.0 | 2020-07-27 |
+| iso25010: | https://meta.linked.archi/iso25010# | 0.2.0 | 2026-05-02 |
+| iso25011: | https://meta.linked.archi/iso25011# | 0.2.0 | 2026-05-02 |
+| iso25012: | https://meta.linked.archi/iso25012# | 0.2.0 | 2026-05-02 |
+| iso42010: | https://meta.linked.archi/iso42010# | 0.1.0 | 2019-03-17 |
+| iso42020: | https://meta.linked.archi/iso42020# | 0.2.0 | 2026-07-16 |
+| lmmxm: | https://meta.linked.archi/leanix/crossmappings# | 0.2.0 | 2026-11-16 |
+| leanixdt: | https://meta.linked.archi/leanix/deliverable-templates# | 0.1.0 | — |
+| lmmmm: | https://meta.linked.archi/leanix/metamodel# | 0.2.0 | 2026-11-16 |
+| lmmnot: | https://meta.linked.archi/leanix/notation# | 0.2.0 | 2026-11-16 |
+| lmm: | https://meta.linked.archi/leanix/onto# | 4.2.0 | 2026-11-16 |
+| lmmsh: | https://meta.linked.archi/leanix/shapes# | 0.3.0 | 2026-11-16 |
+| lmmtax: | https://meta.linked.archi/leanix/tax# | — | 2026-11-16 |
+| lmm3mm: | https://meta.linked.archi/leanix/v3/metamodel# | 0.1.0 | 2026-08-16 |
+| lmm3not: | https://meta.linked.archi/leanix/v3/notation# | 0.1.0 | 2026-11-16 |
+| lmm3: | https://meta.linked.archi/leanix/v3/onto# | 3 | 2026-04-12 |
+| lmm3tax: | https://meta.linked.archi/leanix/v3/tax# | — | 2026-11-16 |
+| lmmvp: | https://meta.linked.archi/leanix/viewpoints# | 0.2.0 | 2026-11-16 |
+| mlsysmm: | https://meta.linked.archi/ml-systems/metamodel# | 0.1.0 | 2026-05-03 |
+| mlsys: | https://meta.linked.archi/ml-systems/onto# | 0.1.0 | 2026-05-03 |
+| mlqa: | https://meta.linked.archi/ml-systems/quality-attributes# | 0.1.0 | 2026-05-03 |
+| mlsyssh: | https://meta.linked.archi/ml-systems/shapes# | 0.1.0 | 2026-05-03 |
+| mlsystax: | https://meta.linked.archi/ml-systems/tax# | 0.1.0 | 2026-05-03 |
+| platd: | https://meta.linked.archi/platform-design# | 0.2.0 | 2026-05-02 |
+| qa: | https://meta.linked.archi/quality-attributes# | 0.1.0 | 2026-04-16 |
+| refamm: | https://meta.linked.archi/ref-arch/metamodel# | 0.1.0 | 2026-11-16 |
+| refa: | https://meta.linked.archi/ref-arch# | 0.0.5 | 2026-04-16 |
+| refatax: | https://meta.linked.archi/ref-arch/tax# | 0.1.0 | 2026-11-16 |
+| tac: | https://meta.linked.archi/tactics# | 0.1.0 | 2026-04-16 |
+| tactax: | https://meta.linked.archi/tactics/tax# | 0.1.0 | 2026-11-16 |
+| radarmm: | https://meta.linked.archi/tech-radar/metamodel# | 0.1.0 | 2026-06-22 |
+| radar: | https://meta.linked.archi/tech-radar/onto# | 0.1.0 | 2026-06-22 |
+| radarsh: | https://meta.linked.archi/tech-radar/shapes# | 0.1.0 | 2026-06-22 |
+| radartax: | https://meta.linked.archi/tech-radar/tax# | 0.1.0 | 2026-06-22 |
+| timexm: | https://meta.linked.archi/time-framework/crossmappings# | 0.1.0 | 2026-10-11 |
+| timederiv: | https://meta.linked.archi/time-framework/derivation# | 0.1.0 | 2026-05-05 |
+| timemm: | https://meta.linked.archi/time-framework/metamodel# | 0.2.0 | 2026-05-02 |
+| timefw: | https://meta.linked.archi/time-framework/onto# | 0.2.0 | 2026-05-02 |
+| timesh: | https://meta.linked.archi/time-framework/shapes# | 0.2.0 | 2026-05-03 |
+| timetax: | https://meta.linked.archi/time-framework/tax# | 0.2.0 | 2026-05-03 |
+| togaf9: | https://meta.linked.archi/togaf9/onto# | 9.2 | 2026-04-29 |
+| togaf9tax: | https://meta.linked.archi/togaf9/tax# | 9.2 | 2026-04-24 |
+| togafxm: | https://meta.linked.archi/togaf/crossmappings# | 0.1.0 | 2026-05-05 |
+| togafdt: | https://meta.linked.archi/togaf/deliverable-templates# | 10.0 | — |
+| togafmm: | https://meta.linked.archi/togaf/metamodel# | 10.0 | 2026-04-24 |
+| togaf: | https://meta.linked.archi/togaf/onto# | 10.0 | 2026-05-11 |
+| togafsh: | https://meta.linked.archi/togaf/shapes# | 0.1.0 | 2026-08-04 |
+| togaftax: | https://meta.linked.archi/togaf/tax# | 10.0 | 2026-05-11 |
+| togvp: | https://meta.linked.archi/togaf/viewpoints# | 10.0 | 2026-04-24 |
+| uafxm: | https://meta.linked.archi/uaf/crossmappings# | 0.2.0 | 2026-05-05 |
+| uafmm: | https://meta.linked.archi/uaf/metamodel# | 1.2 | 2026-02-01 |
+| uaf: | https://meta.linked.archi/uaf/onto# | 1.2 | 2026-02-01 |
+| uafsh: | https://meta.linked.archi/uaf/shapes# | 1.2 | 2026-08-04 |
+| uaftax: | https://meta.linked.archi/uaf/tax# | 1.2 | 2026-02-01 |
+| uafvp: | https://meta.linked.archi/uaf/viewpoints# | 1.2 | 2026-02-01 |
+| umlmm: | https://meta.linked.archi/uml/metamodel# | 0.1.0 | 2026-02-01 |
+| umlnot: | https://meta.linked.archi/uml/notation# | 0.1.0 | 2026-10-10 |
+| uml: | https://meta.linked.archi/uml/onto# | 0.3.0 | 2026-08-13 |
+| umlpubsh: | https://meta.linked.archi/uml/publication-shapes# | 0.1.0 | 2026-08-13 |
+| umlsh: | https://meta.linked.archi/uml/shapes# | 0.3.0 | 2026-08-13 |
+| umltax: | https://meta.linked.archi/uml/tax# | — | — |
+| umlvp: | https://meta.linked.archi/uml/viewpoints# | 0.1.0 | 2026-02-01 |
+| zachdt: | https://meta.linked.archi/zachman/deliverable-templates# | 0.3.0 | 2026-02-17 |
+| zachmm: | https://meta.linked.archi/zachman/metamodel# | 0.3.0 | 2026-02-17 |
+| zach: | https://meta.linked.archi/zachman/onto# | 0.3.0 | 2026-02-17 |
+| zachsh: | https://meta.linked.archi/zachman/shapes# | 0.3.0 | 2026-02-17 |
+| zachtax: | https://meta.linked.archi/zachman/tax# | 0.3.0 | 2026-02-17 |
+| zachvp: | https://meta.linked.archi/zachman/viewpoints# | 0.3.0 | 2026-02-17 |
+
+Turtle is the canonical serialization. All source files are authored in Turtle.
+
+## Published Ontologies
+
+- [4+1 View Model Taxonomy](https://meta.linked.archi/4plus1): Classification scheme based on Philippe Kruchten's 4+1 View Model (IEEE Software, 1995).
+- [4+1 View Model Deliverable Templates](https://meta.linked.archi/4plus1/deliverable-templates): Deliverable templates for the 4+1 Architectural View Model.
+- [4+1 View Model Metamodel Manifest](https://meta.linked.archi/4plus1/metamodel): Metamodel manifest for the 4+1 Architectural View Model.
+- [4+1 View Model Viewpoints](https://meta.linked.archi/4plus1/viewpoints): Viewpoint definitions for the 4+1 Architectural View Model.
+- [Linked.Archi ADMIT Metamodel Definition](https://meta.linked.archi/admit/metamodel): Metamodel manifest for ADMIT.
+- [Linked.Archi ADMIT Design Forces Ontology](https://meta.linked.archi/admit/onto): The ADMIT Design Forces Ontology contains the 20 ADMIT architecture design forces as OWL classes extending ad:Force.
+- [Linked.Archi ADMIT Framework Taxonomy](https://meta.linked.archi/admit/tax): Classification of architecture concepts from the ADMIT framework.
+- [Linked.Archi AI Ethics & Governance Metamodel Definition](https://meta.linked.archi/ai-governance/metamodel): Metamodel manifest for the AI Ethics & Governance extension.
+- [Linked.Archi AI Ethics & Governance Extension](https://meta.linked.archi/ai-governance/onto): Extension ontology for AI ethics and governance.
+- [Linked.Archi AI Governance Reference Data](https://meta.linked.archi/ai-governance/reference-data): Reference data for AI governance — EU AI Act risk levels, OECD AI Principles, human oversight modes, and assessment statuses.
+- [Linked.Archi AI Governance SHACL Shapes](https://meta.linked.archi/ai-governance/shapes): SHACL shapes for validating AI governance models.
+- [Linked.Archi AI Governance Taxonomy](https://meta.linked.archi/ai-governance/tax): Classification of AI governance concepts by risk level, principle, lifecycle phase, and assessment type.
+- [Linked.Archi Architecture Decisions Metamodel Definition](https://meta.linked.archi/arch-decision/metamodel): Metamodel manifest for the Architecture Decisions extension.
+- [Linked.Archi Architecture Decision Ontology](https://meta.linked.archi/arch-decision): Extension ontology for modeling architecture decisions, the issues that trigger them, candidate options, influencing forces (requirements, constraints, trends), the rationale linking forces to chosen 
+- [Linked.Archi Architecture Decision SHACL Shapes](https://meta.linked.archi/arch-decision-shapes): SHACL shapes for validating architecture decision records built with the Linked.Archi architecture decision extension.
+- [Linked.Archi Architecture Decision Taxonomy](https://meta.linked.archi/arch-decision/tax): Classification of the Architecture Decision element types — the decision record and the forces on it — and of the relationship types that draw its links.
+- [Linked.Archi ArchiMate 3.2 Deliverable Templates](https://meta.linked.archi/archimate3/deliverable-templates): Deliverable template definitions for generating architecture documents from ArchiMate 3.2 models: each section answers the concerns it names by asking model questions of the model.
+- [Linked.Archi ArchiMate 3.2 Derivation Rules](https://meta.linked.archi/archimate3/derivation): SHACL rules (sh:SPARQLRule) implementing the ArchiMate 3.2 derivation rules of Appendix B: DR1–DR8, whose derived relationships are valid in any model, and PDR1–PDR12, whose derived relationships 
+- [Linked.Archi ArchiMate 3.2 Element & Metamodel Shapes](https://meta.linked.archi/archimate3/element-shapes): SHACL shapes for validating ArchiMate 3.2 element instances and the metamodel patterns the relationship tables cannot express: element names, self-loops and cycles of composition and aggregation, a pa
+- [Linked.Archi ArchiMate 3.2 Metamodel Definition](https://meta.linked.archi/archimate3/metamodel): Metamodel manifest for ArchiMate 3.2.
+- [Linked.Archi ArchiMate 3.2 Visual Notation Set](https://meta.linked.archi/archimate3/notation): Visual notation descriptors for ArchiMate 3.2 elements and relationships.
+- [Linked.Archi ArchiMate 3.0 Ontology](https://meta.linked.archi/archimate3/onto/3.0): OWL ontology defining ArchiMate 3.0 element types and relationships for Linked.Archi.
+- [Linked.Archi ArchiMate 3.1 Ontology](https://meta.linked.archi/archimate3/onto/3.1): Linked.Archi ArchiMate 3.1 Ontology.
+- [Linked.Archi ArchiMate 3.2 Ontology](https://meta.linked.archi/archimate3/onto): Linked.Archi ArchiMate ontology aligned to the ArchiMate 3.2 specification, modernized to conform to Linked.Archi core ontology conventions, the qualified relationship pattern, and RDF 1.2.
+- [Linked.Archi ArchiMate 3.2 Presentation Contexts](https://meta.linked.archi/archimate3/presentation-contexts): Stakeholder-specific presentation themes for ArchiMate views.
+- [Linked.Archi Architecture Principle Shapes](https://meta.linked.archi/archimate3/principle-shapes): SHACL shapes encoding common enterprise architecture principles and best practices as executable constraints.
+- [Linked.Archi ArchiMate 3.2 Questions](https://meta.linked.archi/archimate3/questions): Questions ArchiMate 3.2 stakeholders ask of a model — impact of change, application dependencies, data access, responsibilities, realisation and traceability — and the findings that show where a c
+- [Linked.Archi ArchiMate 3.2 Reference Data](https://meta.linked.archi/archimate3/reference-data): Controlled vocabularies and reference data for ArchiMate 3.2 models, used for classifying and annotating architecture elements.
+- [Linked.Archi ArchiMate 3.2 Reference Models](https://meta.linked.archi/archimate3/reference-models): Catalog of reference architectures, patterns, and building blocks that can be used as starting points for ArchiMate models.
+- [Linked.Archi ArchiMate 3.2 Relationship Tables](https://meta.linked.archi/archimate3/relationship-tables): The relationship tables of ArchiMate 3.2 (Appendix B.5) as lookups: for each element type, the types each relationship may go to — directly, or as the result of a derivation — as annotations on th
+- [Linked.Archi ArchiMate 3.2 SHACL Shapes](https://meta.linked.archi/archimate3/shapes): SHACL shapes for validating ArchiMate 3.2 model data.
+- [Linked.Archi ArchiMate 3.0 Taxonomy](https://meta.linked.archi/archimate3/tax/3.0): SKOS taxonomy classifying ArchiMate 3.0 elements by layer and aspect, and relationship types by category.
+- [Linked.Archi ArchiMate 3.1 Taxonomy](https://meta.linked.archi/archimate3/tax/3.1): SKOS taxonomy classifying ArchiMate 3.1 elements by layer and aspect, and relationship types by category.
+- [Linked.Archi ArchiMate 3.2 Taxonomy](https://meta.linked.archi/archimate3/tax): Classification of ArchiMate elements by layer and aspect, and relationship types by category, with the order of the layers, of the aspects and of the relationship categories, the grouping of a palette
+- [Linked.Archi ArchiMate 3.2 Example Viewpoints](https://meta.linked.archi/archimate3/viewpoints): The ArchiMate 3.2 example viewpoints of Appendix C as arch:Viewpoint individuals.
+- [Linked.Archi ArchiMate 3.2 Viewpoint Conformance Shapes](https://meta.linked.archi/archimate3/viewpoint-shapes): Viewpoint conformance for ArchiMate 3.2 models.
+- [Linked.Archi ArchiMate 4.0 Deliverable Templates](https://meta.linked.archi/archimate4/deliverable-templates): Deliverable template definitions for generating architecture documents from ArchiMate 4.0 models: each section answers the concerns it names by asking model questions of the model.
+- [Linked.Archi ArchiMate 4.0 Derivation Rules](https://meta.linked.archi/archimate4/derivation): SHACL rules (sh:SPARQLRule) implementing the ArchiMate 4.0 derivation rules of Appendix B: DR1–DR8, whose derived relationships are valid in any model, and PDR1–PDR12, whose derived relationships 
+- [Linked.Archi ArchiMate 4.0 Element & Metamodel Shapes](https://meta.linked.archi/archimate4/element-shapes): SHACL shapes for validating ArchiMate 4.0 element instances and the metamodel patterns the relationship tables cannot express: element names, self-loops and cycles of composition and aggregation, a pa
+- [Linked.Archi ArchiMate 4.0 Metamodel Definition](https://meta.linked.archi/archimate4/metamodel): Metamodel manifest for ArchiMate 4.0.
+- [Linked.Archi ArchiMate 4.0 Visual Notation Set](https://meta.linked.archi/archimate4/notation): Visual notation descriptors for ArchiMate 4.0 elements and relationships.
+- [Linked.Archi ArchiMate 4.0 Ontology](https://meta.linked.archi/archimate4/onto): Linked.Archi ArchiMate ontology aligned to the ArchiMate 4.0 specification (the "Hexagonion").
+- [Linked.Archi ArchiMate 4.0 Presentation Contexts](https://meta.linked.archi/archimate4/presentation-contexts): Stakeholder-specific presentation themes for ArchiMate 4.0 views.
+- [Linked.Archi ArchiMate 4.0 Architecture Principle Shapes](https://meta.linked.archi/archimate4/principle-shapes): SHACL shapes encoding common enterprise architecture principles as executable constraints.
+- [Linked.Archi ArchiMate 4.0 Questions](https://meta.linked.archi/archimate4/questions): Questions ArchiMate 4.0 stakeholders ask of a model — impact of change, application dependencies, data access, responsibilities, realisation and traceability — and the findings that show where a c
+- [Linked.Archi ArchiMate 4.0 Reference Data](https://meta.linked.archi/archimate4/reference-data): Controlled vocabularies and reference data for ArchiMate 4.0 architecture models.
+- [Linked.Archi ArchiMate 4.0 Reference Models](https://meta.linked.archi/archimate4/reference-models): Catalog of reference architectures and patterns for ArchiMate 4.0 models.
+- [Linked.Archi ArchiMate 4.0 Relationship Tables](https://meta.linked.archi/archimate4/relationship-tables): The relationship tables of ArchiMate 4.0 (Appendix B.5) as lookups: for each element type, the types each relationship may go to — directly, or as the result of a derivation — as annotations on th
+- [Linked.Archi ArchiMate 4.0 SHACL Shapes](https://meta.linked.archi/archimate4/shapes): SHACL shapes for validating ArchiMate 4.0 model data.
+- [Linked.Archi ArchiMate 4.0 Taxonomy](https://meta.linked.archi/archimate4/tax): Classification of ArchiMate 4.0 elements by domain and by aspect, of its relationships by category, and of its junctions, with the order of the domains, of the aspects and of the relationship categori
+- [Linked.Archi ArchiMate 4.0 Viewpoints](https://meta.linked.archi/archimate4/viewpoints): The ArchiMate 4.0 example viewpoints of Appendix C as arch:Viewpoint individuals.
+- [Linked.Archi ArchiMate 4.0 Viewpoint Conformance Shapes](https://meta.linked.archi/archimate4/viewpoint-shapes): Viewpoint conformance for ArchiMate 4.0 models.
+- [ArchiMate — Version-Neutral Framework Identity](https://meta.linked.archi/archimate/framework): The single arch:Framework individual for ArchiMate the language, as distinct from ArchiMate 3.2 and ArchiMate 4.0 the releases.
+- [Linked.Archi Architecture Processes Metamodel Definition](https://meta.linked.archi/arch-processes/metamodel): Metamodel manifest for the Architecture Processes extension.
+- [Linked.Archi Architecture Processes Extension](https://meta.linked.archi/arch-processes): Extension ontology describing architecture governance processes, activities, tasks, and their inputs and outputs.
+- [Linked.Archi Architecture Processes SHACL Shapes](https://meta.linked.archi/arch-processes-shapes): SHACL shapes for the lifecycle concepts in the Architecture Processes extension.
+- [Linked.Archi Architecture Processes Taxonomy](https://meta.linked.archi/arch-processes/tax): Classification of the Architecture Processes element types — the structure of a process, its deliverables and its roles — and of the relationship types that draw its links.
+- [Linked.Archi ATAM Metamodel Definition](https://meta.linked.archi/atam/metamodel): Metamodel manifest for ATAM.
+- [Linked.Archi ATAM Ontology](https://meta.linked.archi/atam/onto): Ontology for the Architecture Tradeoff Analysis Method (ATAM) from the Software Engineering Institute (SEI) at Carnegie Mellon University.
+- [Linked.Archi ATAM SHACL Shapes](https://meta.linked.archi/atam/shapes): SHACL shapes for validating ATAM (Architecture Tradeoff Analysis Method) evaluation records — utility trees, risks, non-risks, sensitivity points and tradeoff points.
+- [Linked.Archi ATAM Taxonomy](https://meta.linked.archi/atam/tax): Classification of the ATAM element types — the evaluation, the utility tree it builds and the findings it produces — and of the relationship types that draw its links.
+- [Linked.Archi Backstage Cross-Language Mappings](https://meta.linked.archi/backstage/crossmappings): Cross-language SKOS mappings between Backstage Software Catalog kinds and relations and ArchiMate modeling language concepts, for both ArchiMate 3.2 and ArchiMate 4.0.
+- [Linked.Archi Backstage Deliverable Templates](https://meta.linked.archi/backstage/deliverable-templates): Catalogue of deliverable templates for generating architecture documents from Backstage catalog models — a service catalog, a system architecture document, and an organization structure document.
+- [Linked.Archi Backstage Metamodel Definition](https://meta.linked.archi/backstage/metamodel): Metamodel manifest for the Backstage Software Catalog.
+- [Linked.Archi Backstage Visual Notation Set](https://meta.linked.archi/backstage/notation): Visual notation descriptors for Backstage Software Catalog entity types.
+- [Linked.Archi Backstage Metamodel Ontology](https://meta.linked.archi/backstage/onto): An RDF/OWL ontology for Backstage catalog entities and their relationships, extending the Linked.Archi core ontology.
+- [Linked.Archi Backstage Presentation Contexts](https://meta.linked.archi/backstage/presentation-contexts): Stakeholder-specific presentation contexts for Backstage catalog views.
+- [Linked.Archi Backstage Reference Data](https://meta.linked.archi/backstage/reference-data): Controlled vocabularies and reference data for Backstage catalog models.
+- [Linked.Archi Backstage SHACL Shapes](https://meta.linked.archi/backstage/shapes): SHACL shapes for validating Backstage catalog data.
+- [Linked.Archi Backstage Taxonomy](https://meta.linked.archi/backstage/tax): Classification of Backstage Software Catalog entities and relationships.
+- [Linked.Archi Backstage Viewpoints](https://meta.linked.archi/backstage/viewpoints): Backstage Software Catalog viewpoints for visualizing service ownership, system dependencies, API landscapes, domain organization, organizational structure, and lifecycle portfolio.
+- [Linked.Archi Basic Metamodel Definition](https://meta.linked.archi/basic/metamodel): Metamodel manifest for Basic, a minimal Linked.Archi modelling language.
+- [Linked.Archi Basic Visual Notation Set (rectangle)](https://meta.linked.archi/basic/notation): Default visual notation set of the Linked.Archi Basic asset set, named by the manifest https://meta.linked.archi/basic/metamodel#Basic with arch:notationSet.
+- [Linked.Archi Basic Visual Notation Set (bubble)](https://meta.linked.archi/basic/notation-bubble): Alternative, circle-based (bubble) visual notation set of the Linked.Archi Basic asset set.
+- [Linked.Archi Basic Ontology](https://meta.linked.archi/basic): Concept ontology of the Linked.Archi Basic asset set: three element types (Node, SpecialNode, GroupNode) and three qualified relationship types (Association, Aggregation, Connection), built directly o
+- [Linked.Archi Basic Presentation Contexts](https://meta.linked.archi/basic/presentation-contexts): Audiences for Basic diagrams.
+- [Linked.Archi Basic Taxonomy](https://meta.linked.archi/basic/tax): Classification of the Basic language's concepts.
+- [Linked.Archi Business Model Canvas Metamodel Definition](https://meta.linked.archi/bmc/metamodel): Metamodel manifest for the Business Model Canvas.
+- [Linked.Archi Business Model Canvas Vocabulary](https://meta.linked.archi/bmc/onto): SKOS vocabulary representing the nine building blocks of the Business Model Canvas by Alexander Osterwalder.
+- [Linked.Archi BPMN Cross-Language Mappings](https://meta.linked.archi/bpmn/crossmappings): Cross-language SKOS mappings between BPMN 2.0.2 concepts and ArchiMate modeling language concepts, for both ArchiMate 3.2 and ArchiMate 4.0.
+- [Linked.Archi DC Ontology (OMG DD/DC)](https://meta.linked.archi/bpmn/dc): OWL mapping of the OMG DD Diagram Common (DC) datatypes.
+- [Linked.Archi DC SHACL Shapes (OMG DD/DC)](https://meta.linked.archi/bpmn/dc-shapes): SHACL shapes validating OMG Diagram Common (DC) value types — Bounds, Point, and Font.
+- [Linked.Archi BPMN Deliverable Templates](https://meta.linked.archi/bpmn/deliverable-templates): Deliverable template definitions for generating process documentation from BPMN models.
+- [Linked.Archi DI Ontology (OMG DD/DI)](https://meta.linked.archi/bpmn/di-core): OWL mapping of the OMG DD Diagram Interchange (DI) abstract classes.
+- [Linked.Archi DI SHACL Shapes (OMG DD/DI)](https://meta.linked.archi/bpmn/di-core-shapes): SHACL shapes validating OMG Diagram Interchange (DI) abstract classes — Diagram, DiagramElement, Shape, Edge, Label, and Style.
+- [Linked.Archi BPMN DI 2.0.2 Ontology](https://meta.linked.archi/bpmn/di): OWL mapping of the OMG BPMN 2.0.2 Diagram Interchange (BPMNDI) package.
+- [Linked.Archi BPMNDI SHACL Shapes](https://meta.linked.archi/bpmn/di-shapes): SHACL shapes validating BPMN 2.0.2 Diagram Interchange classes — BPMNDiagram, BPMNPlane, BPMNShape, BPMNEdge, and BPMNLabel.
+- [Linked.Archi BPMN Infrastructure Ontology](https://meta.linked.archi/bpmn/infra): OWL mapping of the BPMN 2.0.2 infrastructure package (Definitions, Import).
+- [Linked.Archi BPMN Infrastructure SHACL Shapes](https://meta.linked.archi/bpmn/infra-shapes): SHACL shapes validating BPMN 2.0.2 infrastructure classes — Definitions container and Import elements.
+- [Linked.Archi BPMN Lite Metamodel Definition](https://meta.linked.archi/bpmn-lite/metamodel): Metamodel manifest for BPMN Lite — a simplified BPMN profile for enterprise architecture reasoning.
+- [Linked.Archi BPMN Lite Visual Notation Set](https://meta.linked.archi/bpmn-lite/notation): Visual notation descriptors for BPMN Lite elements and relationships, following the BPMN 2.0.2 standard visual appearance.
+- [Linked.Archi BPMN Lite Ontology](https://meta.linked.archi/bpmn-lite/onto): A simplified BPMN ontology for enterprise architecture use cases.
+- [Linked.Archi BPMN Lite SHACL Shapes](https://meta.linked.archi/bpmn-lite/shapes): SHACL validation shapes for the BPMN Lite ontology.
+- [Linked.Archi BPMN Lite Taxonomy](https://meta.linked.archi/bpmn-lite/tax): Classification of BPMN Lite elements by BPMN category — flow objects, connecting objects, swim lanes, and data.
+- [Linked.Archi BPMN Metamodel Definition](https://meta.linked.archi/bpmn/metamodel): Metamodel manifest for BPMN 2.0.2.
+- [Linked.Archi BPMN 2.0.2 Visual Notation Set](https://meta.linked.archi/bpmn/notation): Visual notation descriptors for BPMN 2.0.2 elements and relationships, following the standard BPMN visual appearance defined by the OMG specification.
+- [Linked.Archi BPMN 2.0.2 Ontology](https://meta.linked.archi/bpmn/onto): OWL mapping of the OMG BPMN 2.0.2 semantic model.
+- [Linked.Archi BPMN SHACL Shapes](https://meta.linked.archi/bpmn/onto-shapes): SHACL shapes validating BPMN 2.0.2 core semantic classes — activities, events, gateways, flows, data objects, and their structural constraints.
+- [Linked.Archi BPMN Suite Imports (draft)](https://meta.linked.archi/bpmn/suite): Import aggregator that pulls together all five BPMN ontology packages (Core, Infrastructure, BPMNDI, DI, DC) into a single importable unit.
+- [Linked.Archi BPMN Suite Shapes Imports (draft)](https://meta.linked.archi/bpmn/suite-shapes): Shape aggregator that pulls together all SHACL shape modules for the BPMN suite (Core, Infrastructure, BPMNDI, DI, DC) into a single importable unit.
+- [Linked.Archi BPMN 2.0.2 Taxonomy](https://meta.linked.archi/bpmn/tax): Classification of BPMN 2.0.2 metaclasses by BPMN category — flow objects, connecting objects, swim lanes, artifacts, and collaborations.
+- [Linked.Archi BPMN 2.0.2 Viewpoints](https://meta.linked.archi/bpmn/viewpoints): BPMN 2.0.2 viewpoints corresponding to the four diagram types defined by the OMG specification: Process, Collaboration, Choreography, and Conversation.
+- [Linked.Archi C4 Deliverable Templates](https://meta.linked.archi/c4/deliverable-templates): Deliverable template definitions for generating architecture documents from C4 models.
+- [Linked.Archi C4 Model Metamodel Definition](https://meta.linked.archi/c4/metamodel): Metamodel manifest for the C4 model.
+- [Linked.Archi C4 Model Visual Notation Set](https://meta.linked.archi/c4/notation): Visual notation descriptors for C4 model elements and relationships.
+- [Linked.Archi C4 Model Ontology](https://meta.linked.archi/c4/onto): An RDF/OWL ontology for the C4 model — the abstract, notation-independent software architecture visualization model created by Simon Brown.
+- [Linked.Archi C4 Presentation Contexts](https://meta.linked.archi/c4/presentation-contexts): Stakeholder-specific rendering themes for C4 diagrams.
+- [Linked.Archi C4 Reference Data](https://meta.linked.archi/c4/reference-data): Controlled vocabularies and reference data for annotating C4 architecture model elements.
+- [Linked.Archi C4 Model SHACL Shapes](https://meta.linked.archi/c4/shapes): SHACL shapes for validating C4 model data.
+- [Linked.Archi Structurizr Extension Ontology](https://meta.linked.archi/c4/structurizr): Structurizr-specific extensions to the C4 model ontology.
+- [Linked.Archi Structurizr SHACL Shapes](https://meta.linked.archi/c4/structurizr-shapes): SHACL shapes for validating Structurizr deployment model data.
+- [Linked.Archi C4 Model Taxonomy](https://meta.linked.archi/c4/tax): Classification of C4 model elements by abstraction level.
+- [Linked.Archi C4 Model Viewpoints](https://meta.linked.archi/c4/viewpoints): C4 model viewpoints corresponding to the four abstraction levels defined by Simon Brown.
+- [Linked.Archi Cloud Services Extension](https://meta.linked.archi/cloud-services/onto): Classifies the elements of any model that stand for concrete cloud products and services — a managed database, an object store, a container platform — by a classification common to the cloud provi
+- [Linked.Archi Cloud Services Taxonomy](https://meta.linked.archi/cloud-services/tax): Classification of concrete cloud products and services, common to the cloud providers: the service categories — compute, storage, databases and so on — and the service models, infrastructure, plat
+- [Component and Connector Example Ontology](https://meta.linked.archi/CnC): Component and Connector Example Ontology based on Linked.Archi Core Ontology.
+- [Component and Connector Example Ontology (Variant)](https://meta.linked.archi/CnC-variant): Component and Connector Example Ontology based on Linked.Archi Core Ontology.
+- [Linked.Archi Core Deliverable Templates](https://meta.linked.archi/core-deliverable-templates): Framework-agnostic deliverable templates of common architecture documents, produced from a model in any language: each section answers the concerns it names by asking the core model questions.
+- [Core Linked.Archi Ontology](https://meta.linked.archi/core): Core Linked.Archi Ontology for Enterprise and IT Architecture modeling.
+- [Linked.Archi Core Questions](https://meta.linked.archi/core-questions): The questions any Linked.Archi model answers, whatever its modelling language: what it contains, what an element is related to, which views show what, and how sound the description is.
+- [Linked.Archi Core SHACL Shapes](https://meta.linked.archi/core-shapes): Base SHACL shapes for the Linked.Archi core ontology.
+- [Linked.Archi Core Viewpoints](https://meta.linked.archi/core-viewpoints): Framework-agnostic architecture viewpoints derived from ISO/IEC/IEEE 42010 and common architecture practice.
+- [Core Linked.Archi Ontology for Diagrams and Visual Notation](https://meta.linked.archi/core-vis): Core Linked.Archi Ontology for Diagrams and Visual Notation.
+- [Linked.Archi Core Visual Notation SHACL Shapes](https://meta.linked.archi/core-vis-shapes): SHACL shapes for the Linked.Archi diagram and visual notation layer (core-vis).
+- [Linked.Archi DoDAF Metamodel Definition](https://meta.linked.archi/dodaf/metamodel): Metamodel manifest for DoDAF 2.02.
+- [Linked.Archi DoDAF Ontology](https://meta.linked.archi/dodaf/onto): Linked.Archi ontology aligned to the U.S.
+- [Linked.Archi DoDAF SHACL Shapes](https://meta.linked.archi/dodaf/shapes): SHACL shapes for validating DoDAF 2.02 model data.
+- [Linked.Archi DoDAF Taxonomy](https://meta.linked.archi/dodaf/tax): Classification of DoDAF 2.02 entities by viewpoint.
+- [DoDAF 2.02 Architecture Viewpoints (DoDAF-described Models)](https://meta.linked.archi/dodaf/viewpoints): DoDAF 2.02 viewpoints modeled as arch:Viewpoint individuals.
+- [Linked.Archi EA on a Page Deliverable Templates](https://meta.linked.archi/eaonapage/deliverable-templates): Deliverable templates for the EA on a Page framework.
+- [Linked.Archi EA on a Page Metamodel Definition](https://meta.linked.archi/eaonapage/metamodel): Metamodel manifest for EA on a Page.
+- [Linked.Archi EA on a Page Ontology](https://meta.linked.archi/eaonapage/onto): Ontology for the Enterprise Architecture on a Page framework by Svyatoslav Kotusev.
+- [Linked.Archi EA on a Page SHACL Shapes](https://meta.linked.archi/eaonapage/shapes): SHACL validation shapes for the EA on a Page framework.
+- [Linked.Archi EA on a Page Taxonomy](https://meta.linked.archi/eaonapage/tax): Unified classification scheme for the EA on a Page framework.
+- [Linked.Archi EA on a Page Viewpoints](https://meta.linked.archi/eaonapage/viewpoints): Viewpoints for the EA on a Page framework.
+- [Linked.Archi EA-as-a-Service Metamodel Definition](https://meta.linked.archi/ea-service/metamodel): Metamodel manifest for the EA-as-a-Service extension.
+- [Linked.Archi EA-as-a-Service Extension](https://meta.linked.archi/ea-service/onto): Extension ontology for modeling the EA function as an internal management consultancy.
+- [Linked.Archi EA-as-a-Service Reference Data](https://meta.linked.archi/ea-service/reference-data): Reference data for EA-as-a-Service — service types, engagement statuses, and maturity levels.
+- [Linked.Archi EA-as-a-Service SHACL Shapes](https://meta.linked.archi/ea-service/shapes): SHACL shapes for validating EA-as-a-Service models.
+- [Linked.Archi EA-as-a-Service Taxonomy](https://meta.linked.archi/ea-service/tax): Classification of EA service concepts by service type, engagement duration, stakeholder type, and maturity level.
+- [Linked.Archi EDGY 23 Deliverable Templates](https://meta.linked.archi/edgy/deliverable-templates): Deliverable template definitions for EDGY 23 enterprise design.
+- [Linked.Archi EDGY 23 Metamodel Definition](https://meta.linked.archi/edgy/metamodel): Metamodel manifest for EDGY 23 — the Enterprise Design language by Intersection Group.
+- [Linked.Archi EDGY 23 Visual Notation Set](https://meta.linked.archi/edgy/notation): Updated visual notation descriptors for EDGY 23 enterprise design elements, relationships, and labels.
+- [Linked.Archi EDGY 23 Visual Notation Set (v1, circle-based)](https://meta.linked.archi/edgy/notation-v1): Visual notation descriptors for EDGY 23 enterprise design elements and relationships.
+- [Linked.Archi EDGY 23 Ontology](https://meta.linked.archi/edgy/onto): OWL ontology for the EDGY 23 Enterprise Design language by Intersection Group.
+- [Linked.Archi EDGY 23 Presentation Contexts](https://meta.linked.archi/edgy/presentation-contexts): Audiences for EDGY 23 maps.
+- [Linked.Archi EDGY 23 Reference Data](https://meta.linked.archi/edgy/reference-data): Reference data for EDGY 23 enterprise design models — pre-defined tag types for asset classification, metric categories, capability maturity levels, and other enumerated values commonly used in EDGY
+- [Linked.Archi EDGY 23 SHACL Shapes](https://meta.linked.archi/edgy/shapes): SHACL validation shapes for EDGY 23 enterprise design models.
+- [Linked.Archi EDGY 23 Taxonomy](https://meta.linked.archi/edgy/tax): Classification of EDGY 23 enterprise elements into base elements, facet elements (by facet category), intersection elements, relationships, and labels.
+- [Linked.Archi EDGY 23 Viewpoints](https://meta.linked.archi/edgy/viewpoints): Viewpoint definitions for EDGY 23 enterprise design models.
+- [Atlas Global Bank — Enterprise Architecture Model](https://meta.linked.archi/examples/atlas-bank): TOGAF 10 enterprise architecture model for Atlas Global Bank — a multinational financial services group executing a cloud-first digital transformation.
+- [Cloud Platform Deliverable Templates](https://meta.linked.archi/examples/cloudplatform/deliverable-templates): Deliverable template definitions for generating architecture documents from Custom Metamodel models.
+- [Cloud Platform Architecture Metamodel](https://meta.linked.archi/examples/cloudplatform/metamodel): Metamodel manifest for the Cloud Platform Architecture example.
+- [Payment Platform](https://meta.linked.archi/examples/cloudplatform/model): Example architecture model of a payment platform using the Cloud Platform metamodel.
+- [Cloud Platform Architecture Ontology](https://meta.linked.archi/examples/cloudplatform/onto): Example custom metamodel extending ArchiMate 4.0 with cloud platform concepts — microservices, containers, message brokers, API gateways, and observability components.
+- [Cloud Platform Reference Data](https://meta.linked.archi/examples/cloudplatform/reference-data): Controlled vocabularies and reference data for Custom Metamodel architecture models.
+- [Cloud Platform SHACL Shapes](https://meta.linked.archi/examples/cloudplatform/shapes): Validation rules for the Cloud Platform Architecture metamodel.
+- [Cloud Platform Taxonomy](https://meta.linked.archi/examples/cloudplatform/tax): SKOS taxonomy providing a hierarchical classification of Custom Metamodel concepts.
+- [Cloud Platform Viewpoints](https://meta.linked.archi/examples/cloudplatform/viewpoints): Architecture viewpoint definitions for Custom Metamodel.
+- [SAP LeanIX Meta Model v4 — Documentation Example Landscape](https://meta.linked.archi/examples/leanix-docs-example): A small LeanIX workspace assembled from the examples SAP's own LeanIX documentation gives for each fact sheet type, wired together with a selection of Meta Model v4 relationships and carrying the fact
+- [Meridian Insurance Group — Enterprise Design Model](https://meta.linked.archi/examples/meridian): EDGY 23 enterprise design model for Meridian Insurance Group — a multinational P&C insurer operating across 12 European markets.
+- [NordFreight Logistics — Architecture Model](https://meta.linked.archi/examples/nordfreight): ArchiMate 4.0 architecture model for NordFreight Logistics — a Scandinavian freight company modernising its tracking platform.
+- [PayFlow — Backstage Catalog Model](https://meta.linked.archi/examples/payflow): Backstage software catalog model for PayFlow — a fintech platform providing payment processing, merchant onboarding, and financial reporting.
+- [Linked.Archi Financial Architecture Metamodel Definition](https://meta.linked.archi/financial-architecture/metamodel): Metamodel manifest for the Financial Architecture extension.
+- [Linked.Archi Financial Architecture Extension](https://meta.linked.archi/financial-architecture/onto): Extension ontology for financial aspects of enterprise architecture.
+- [Linked.Archi Financial Architecture Reference Data](https://meta.linked.archi/financial-architecture/reference-data): Reference data for financial architecture — cost categories, investment types, and cost periods.
+- [Linked.Archi Financial Architecture SHACL Shapes](https://meta.linked.archi/financial-architecture/shapes): SHACL shapes for validating financial architecture models.
+- [Linked.Archi Financial Architecture Taxonomy](https://meta.linked.archi/financial-architecture/tax): Classification of financial architecture concepts by cost type, investment type, and analysis type.
+- [Linked.Archi ISO/IEC/IEEE 12207 Software Lifecycle Processes](https://meta.linked.archi/iso12207): SKOS taxonomy and OWL classes for software lifecycle processes from ISO/IEC/IEEE 12207:2017.
+- [Linked.Archi ISO/IEC/IEEE 15288 System Lifecycle Processes](https://meta.linked.archi/iso15288): SKOS taxonomy and OWL classes for system lifecycle processes from ISO/IEC/IEEE 15288:2023.
+- [Linked.Archi ISO/IEC 25010 Software Product Quality Model](https://meta.linked.archi/iso25010): Ontology of software product quality characteristics from ISO/IEC 25010:2023.
+- [Linked.Archi ISO/IEC 25011 IT Service Quality Model](https://meta.linked.archi/iso25011): Ontology of IT service quality characteristics from ISO/IEC 25011.
+- [Linked.Archi ISO/IEC 25012 Data Quality Model](https://meta.linked.archi/iso25012): Ontology of data quality characteristics from ISO/IEC 25012.
+- [Linked.Archi ISO/IEC/IEEE 42010 Architecture Description Concepts](https://meta.linked.archi/iso42010): SKOS taxonomy of architecture description concepts from ISO/IEC/IEEE 42010:2022.
+- [Linked.Archi ISO/IEC/IEEE 42020 Architecture Governance Processes](https://meta.linked.archi/iso42020): SKOS taxonomy and OWL classes for architecture governance processes from ISO/IEC/IEEE 42020:2019.
+- [Linked.Archi LeanIX Cross-Language Mappings](https://meta.linked.archi/leanix/crossmappings): Cross-language SKOS mappings between SAP LeanIX Meta Model v4 fact sheet types and relations and ArchiMate modeling language concepts, for both ArchiMate 3.2 and ArchiMate 4.0.
+- [Linked.Archi LeanIX Deliverable Templates](https://meta.linked.archi/leanix/deliverable-templates): Deliverable template definitions for generating architecture documents from LeanIX models.
+- [Linked.Archi LeanIX Meta Model Metamodel Definition](https://meta.linked.archi/leanix/metamodel): Metamodel manifest for the SAP LeanIX Meta Model v4.
+- [Linked.Archi LeanIX Visual Notation Set](https://meta.linked.archi/leanix/notation): Visual notation descriptors for LeanIX Meta Model v4 fact sheet types.
+- [Linked.Archi LeanIX Meta Model v4 Ontology](https://meta.linked.archi/leanix/onto): OWL ontology representing the SAP LeanIX Meta Model v4 — the fact sheet types and relationships used by SAP LeanIX for enterprise architecture management.
+- [Linked.Archi LeanIX SHACL Shapes](https://meta.linked.archi/leanix/shapes): SHACL shapes for validating SAP LeanIX Meta Model fact sheet data.
+- [Linked.Archi LeanIX Taxonomy](https://meta.linked.archi/leanix/tax): Classification of SAP LeanIX types and subtypes by architecture layer, with separate availability collections.
+- [Linked.Archi LeanIX Meta Model v3 Metamodel Definition](https://meta.linked.archi/leanix/v3/metamodel): Metamodel manifest for the SAP LeanIX Meta Model v3.
+- [Linked.Archi LeanIX Meta Model v3 Visual Notation Set](https://meta.linked.archi/leanix/v3/notation): Visual notation descriptors for LeanIX Meta Model v3 fact sheet types.
+- [Linked.Archi LeanIX Meta Model v3 Ontology](https://meta.linked.archi/leanix/v3/onto): Ontology representation of SAP LeanIX Meta Model v3 fact sheets and relations.
+- [Linked.Archi LeanIX Meta Model v3 Taxonomy](https://meta.linked.archi/leanix/v3/tax): Classification of the LeanIX Meta Model v3 fact sheet types by architecture layer.
+- [Linked.Archi LeanIX Viewpoints](https://meta.linked.archi/leanix/viewpoints): Viewpoints for the SAP LeanIX Meta Model v4, covering application portfolio management, technology landscape, interface mapping, capability mapping, and transformation roadmaps.
+- [Linked.Archi ML-Enabled Systems Metamodel Definition](https://meta.linked.archi/ml-systems/metamodel): Metamodel manifest for the ML-Enabled Systems extension.
+- [Linked.Archi ML-Enabled Systems Extension](https://meta.linked.archi/ml-systems/onto): Extension ontology for modeling ML-enabled system architectures.
+- [Linked.Archi ML-Specific Quality Attributes](https://meta.linked.archi/ml-systems/quality-attributes): Quality attribute individuals specific to ML-enabled systems.
+- [Linked.Archi ML-Enabled Systems SHACL Shapes](https://meta.linked.archi/ml-systems/shapes): SHACL shapes for validating ML-enabled system architecture models.
+- [Linked.Archi ML-Enabled Systems Taxonomy](https://meta.linked.archi/ml-systems/tax): Classification of ML-enabled system concepts by lifecycle phase and component role.
+- [Linked.Archi Platform Design Taxonomy](https://meta.linked.archi/platform-design): SKOS taxonomy for platform design concepts based on the Platform Design Toolkit methodology.
+- [Linked.Archi Quality Attributes Extension](https://meta.linked.archi/quality-attributes): Extension providing named quality-attribute individuals (beyond ISO 25010) for use in architecture decision evaluation, tactic mapping, and quality-attribute scenario modeling.
+- [Linked.Archi Reference Architecture Metamodel Definition](https://meta.linked.archi/ref-arch/metamodel): Metamodel manifest for the Reference Architecture extension with the Tactics extension.
+- [Linked.Archi Reference Architecture Ontology](https://meta.linked.archi/ref-arch): Extension ontology for modeling reference architectures, reference models, architectural patterns, tactics, and building blocks (ABB/SBB).
+- [Linked.Archi Reference Architecture Taxonomy](https://meta.linked.archi/ref-arch/tax): Classification of the Reference Architecture element types: building blocks, standards and tactics.
+- [Simple Example Ontology](https://meta.linked.archi/simple-example): Simplest possible Linked.Archi metamodel example demonstrating a minimal element type and relationship definition.
+- [Linked.Archi Tactics Extension Ontology](https://meta.linked.archi/tactics): Extension ontology providing a taxonomy of architectural tactics organized by quality attribute (availability, interoperability, modifiability, performance, security).
+- [Linked.Archi Tactics Taxonomy](https://meta.linked.archi/tactics/tax): Classification of the architectural tactics by the quality attribute they serve.
+- [Linked.Archi Technology Radar Metamodel Definition](https://meta.linked.archi/tech-radar/metamodel): Metamodel manifest for the Technology Radar framework.
+- [Linked.Archi Technology Radar Ontology](https://meta.linked.archi/tech-radar/onto): Ontology for representing technology governance decisions using the Technology Radar model.
+- [Linked.Archi Technology Radar SHACL Shapes](https://meta.linked.archi/tech-radar/shapes): SHACL shapes for validating Technology Radar model data.
+- [Linked.Archi Technology Radar Taxonomy](https://meta.linked.archi/tech-radar/tax): Classification of Technology Radar controlled vocabularies: rings, quadrants, and movement directions.
+- [Linked.Archi TIME Framework Cross-Language Mappings](https://meta.linked.archi/time-framework/crossmappings): Cross-language SKOS mappings between TIME framework concepts and other Linked.Archi modeling languages.
+- [Linked.Archi TIME Framework Derivation Rules](https://meta.linked.archi/time-framework/derivation): SHACL Rules (sh:SPARQLRule) implementing disposition movement derivation for the TIME framework.
+- [Linked.Archi TIME Framework Metamodel Definition](https://meta.linked.archi/time-framework/metamodel): Metamodel manifest for the TIME (Tolerate, Invest, Migrate, Eliminate) framework.
+- [Linked.Archi TIME Framework Ontology](https://meta.linked.archi/time-framework/onto): Ontology for representing application portfolio fit assessments and Gartner TIME dispositions (Tolerate, Invest, Migrate, Eliminate), including functional fit, technical fit, and cost fitness dimensio
+- [Linked.Archi TIME Framework SHACL Shapes](https://meta.linked.archi/time-framework/shapes): SHACL shapes for validating TIME framework model data.
+- [Linked.Archi TIME Framework Taxonomy](https://meta.linked.archi/time-framework/tax): Classification of TIME framework controlled vocabularies: dispositions, fit ratings, fit dimensions, assessment statuses, evidence types, and lifecycle states.
+- [Linked.Archi TOGAF 9.2 Content Metamodel](https://meta.linked.archi/togaf9/onto): Linked.Archi ontology aligned to the TOGAF Content Metamodel as defined in TOGAF 9.2 (Chapter 30).
+- [Linked.Archi TOGAF 9.2 Taxonomy](https://meta.linked.archi/togaf9/tax): Classification of TOGAF entities by architecture domain.
+- [Linked.Archi TOGAF Cross-Language Mappings](https://meta.linked.archi/togaf/crossmappings): Cross-language SKOS mappings between TOGAF Content Metamodel concepts and ArchiMate modeling language concepts.
+- [Linked.Archi TOGAF Deliverable Templates](https://meta.linked.archi/togaf/deliverable-templates): Deliverable template definitions for generating architecture documents from TOGAF models.
+- [Linked.Archi TOGAF Metamodel Definition](https://meta.linked.archi/togaf/metamodel): Metamodel manifest for TOGAF.
+- [Linked.Archi TOGAF 10 Enterprise Metamodel](https://meta.linked.archi/togaf/onto): Linked.Archi ontology aligned to the TOGAF Enterprise Metamodel as defined in TOGAF 10 (Architecture Content, Chapter 2).
+- [Linked.Archi TOGAF SHACL Shapes](https://meta.linked.archi/togaf/shapes): SHACL shapes for validating TOGAF Content Metamodel data.
+- [Linked.Archi TOGAF 10 Taxonomy](https://meta.linked.archi/togaf/tax): Classification of TOGAF 10 entities by architecture domain.
+- [TOGAF Architecture Viewpoints (Catalogs, Matrices, Diagrams)](https://meta.linked.archi/togaf/viewpoints): TOGAF architecture viewpoints organized by ADM phase.
+- [Linked.Archi UAF Cross-Language Mappings](https://meta.linked.archi/uaf/crossmappings): Cross-language SKOS mappings between UAF 1.2 concepts and other modeling languages in the Linked.Archi knowledge graph.
+- [Linked.Archi UAF Metamodel Definition](https://meta.linked.archi/uaf/metamodel): Metamodel manifest for the Unified Architecture Framework (UAF) 1.2.
+- [Linked.Archi UAF Ontology](https://meta.linked.archi/uaf/onto): Linked.Archi ontology aligned to the Unified Architecture Framework (UAF) version 1.2, an OMG standard (formal/2025-10-01 through formal/2025-10-07).
+- [Linked.Archi UAF SHACL Shapes](https://meta.linked.archi/uaf/shapes): SHACL shapes for validating UAF 1.2 model data.
+- [Linked.Archi UAF Taxonomy](https://meta.linked.archi/uaf/tax): Classification of UAF 1.2 metaclasses by viewpoint and aspect.
+- [UAF 1.2 Architecture Viewpoints](https://meta.linked.archi/uaf/viewpoints): UAF 1.2 viewpoints modeled as arch:Viewpoint individuals.
+- [Linked.Archi UML 2.5.1 Metamodel Definition](https://meta.linked.archi/uml/metamodel): Metamodel manifest for UML 2.5.1.
+- [Linked.Archi UML 2.5.1 Visual Notation Set](https://meta.linked.archi/uml/notation): Visual notation descriptors for UML 2.5.1 concrete metaclasses, following the standard UML notation.
+- [Linked.Archi UML 2.5.1 Ontology](https://meta.linked.archi/uml/onto): RDF/OWL formalization of the OMG Unified Modeling Language (UML) 2.5.1 metamodel for use in the Linked.Archi architecture knowledge graph.
+- [Linked.Archi UML Publication SHACL Shapes](https://meta.linked.archi/uml/publication-shapes): Opt-in SHACL shapes for UML models that are going to be read by someone.
+- [Linked.Archi UML 2.5.1 SHACL Shapes](https://meta.linked.archi/uml/shapes): SHACL shapes for validating UML model data in the Linked.Archi knowledge graph.
+- [Linked.Archi UML 2.5.1 Taxonomy](https://meta.linked.archi/uml/tax): Classification of UML metaclasses by diagram type and by metaclass category, plus the enumeration value sets, aligned to the UML 2.5.1 specification structure.
+- [Linked.Archi UML 2.5.1 Viewpoints](https://meta.linked.archi/uml/viewpoints): UML 2.5.1 diagram types formalized as Linked.Archi viewpoints.
+- [Zachman Framework Deliverable Templates](https://meta.linked.archi/zachman/deliverable-templates): Deliverable templates for the Zachman Framework.
+- [Zachman Framework Metamodel Manifest](https://meta.linked.archi/zachman/metamodel): Metamodel manifest for the Zachman Framework.
+- [Linked.Archi Zachman Framework Ontology](https://meta.linked.archi/zachman/onto): OWL ontology for the Zachman Framework for Enterprise Architecture.
+- [Zachman Framework SHACL Shapes](https://meta.linked.archi/zachman/shapes): SHACL validation shapes for viewpoints classified using the Zachman Framework taxonomy.
+- [Linked.Archi Zachman Framework Taxonomy](https://meta.linked.archi/zachman/tax): Classification of enterprise architecture descriptions using the Zachman Framework 6x6 matrix.
+- [Zachman Framework Viewpoints](https://meta.linked.archi/zachman/viewpoints): Viewpoint definitions for the Zachman Framework.
+
+## Namespace Convention
+
+All ontologies use `https://meta.linked.archi/` as the base namespace.
+Append `#` for hash-namespace ontologies (e.g., `https://meta.linked.archi/core#`).
+
+## How to Use
+
+1. Dereference any namespace URI with an RDF-aware client (e.g., `curl -H "Accept: text/turtle" https://meta.linked.archi/core`)
+2. Browse the [Ontology Catalog](https://meta.linked.archi/) for interactive HTML documentation
+3. Read the [Quick Start Guide](https://meta.linked.archi/docs/guide/quick-start/) for authoring models
+4. Use SHACL shapes for validation (every metamodel ships with constraint shapes)

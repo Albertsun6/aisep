@@ -1,0 +1,177 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix bpmndi: <https://meta.linked.archi/bpmn/di#> .
+@prefix archvis: <https://meta.linked.archi/core-vis#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix dc: <https://meta.linked.archi/bpmn/dc#> .
+@prefix di: <https://meta.linked.archi/bpmn/di-core#> .
+@prefix infra: <https://meta.linked.archi/bpmn/infra#> .
+@prefix : <https://meta.linked.archi/bpmn/di-shapes#> .
+
+#################################################################
+# Shapes Graph Declaration
+#
+# Scope note — inherited DI properties
+#
+# Constraints on properties inherited from the abstract DI classes (di:bounds,
+# di:waypoint, di:planeElement) are asserted once in the DI shape document
+# (https://meta.linked.archi/bpmn/di-core-shapes) against di:Shape, di:Label,
+# di:Edge and di:Plane. Every BPMNDI class is a subclass of one of those
+# (BPMNShape → di:LabeledShape → di:Shape, BPMNEdge → di:LabeledEdge → di:Edge,
+# BPMNLabel → di:Label, BPMNPlane → di:Plane), so sh:targetClass reaches them
+# through rdfs:subClassOf* and this document does not repeat them. Load
+# di-core-shapes alongside this document when validating raw DI geometry.
+#################################################################
+
+<https://meta.linked.archi/bpmn/di-shapes#>
+    a owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/di-shapes#" ;
+    vann:preferredNamespacePrefix "bpmndish" ;
+    dcterms:title "Linked.Archi BPMNDI SHACL Shapes"@en ;
+    dcterms:description '''SHACL shapes validating BPMN 2.0.2 Diagram Interchange classes —
+BPMNDiagram, BPMNPlane, BPMNShape, BPMNEdge, and BPMNLabel.'''@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    dcterms:modified "2026-07-25"^^xsd:date ;
+    dcterms:publisher "Linked.Archi"@en, <https://linked.archi> ;
+    owl:imports <https://meta.linked.archi/bpmn/infra#> ;
+    owl:imports <https://meta.linked.archi/bpmn/onto#> ;
+    owl:imports <https://meta.linked.archi/bpmn/di#> ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    owl:imports <https://meta.linked.archi/bpmn/dc#> ;
+    owl:imports <https://meta.linked.archi/bpmn/di-core#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+:BPMNDiagramShape a sh:NodeShape ;
+    rdfs:comment "BPMNDiagram → di:Diagram. plane redefines Diagram.rootElement."@en ;
+    sh:targetClass bpmndi:BPMNDiagram ;
+    sh:property [
+        sh:path bpmndi:plane ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class bpmndi:BPMNPlane ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:labelStyle ;
+        sh:class bpmndi:BPMNLabelStyle ;
+    ] ;
+.
+
+:BPMNEdgeShape a sh:NodeShape ;
+    rdfs:comment '''BPMNEdge → di:LabeledEdge → di:Edge → di:DiagramElement.
+di:waypoint [2..*] : dc:Point is constrained by di-core-shapes:EdgeShape.'''@en ;
+    sh:targetClass bpmndi:BPMNEdge ;
+    sh:property [
+        sh:path bpmndi:label ;
+        sh:maxCount 1 ;
+        sh:class bpmndi:BPMNLabel ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:bpmnElement ;
+        sh:maxCount 1 ;
+        sh:class bpmn:BaseElement ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:sourceElement ;
+        sh:maxCount 1 ;
+        sh:class di:DiagramElement ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:targetElement ;
+        sh:maxCount 1 ;
+        sh:class di:DiagramElement ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:messageVisibleKind ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "initiating" "non_initiating" ) ;
+    ] ;
+.
+
+:BPMNLabelShape a sh:NodeShape ;
+    rdfs:comment '''BPMNLabel → di:Label → di:Node → di:DiagramElement.
+di:bounds [0..1] : dc:Bounds is constrained by di-core-shapes:LabelShape.'''@en ;
+    sh:targetClass bpmndi:BPMNLabel ;
+    sh:property [
+        sh:path bpmndi:labelStyle ;
+        sh:maxCount 1 ;
+        sh:class bpmndi:BPMNLabelStyle ;
+    ] ;
+.
+
+:BPMNLabelStyleShape a sh:NodeShape ;
+    sh:targetClass bpmndi:BPMNLabelStyle ;
+    sh:property [
+        sh:path bpmndi:font ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class dc:Font ;
+    ] ;
+.
+
+:BPMNPlaneShape a sh:NodeShape ;
+    rdfs:comment '''BPMNPlane → di:Plane → di:Node → di:DiagramElement.
+di:planeElement [0..*] : di:DiagramElement is constrained by di-core-shapes:PlaneShape.'''@en ;
+    sh:targetClass bpmndi:BPMNPlane ;
+    sh:property [
+        sh:path bpmndi:bpmnElement ;
+        sh:maxCount 1 ;
+        sh:class bpmn:BaseElement ;
+    ] ;
+.
+
+:BPMNShapeShape a sh:NodeShape ;
+    rdfs:comment '''BPMNShape → di:LabeledShape → di:Shape → di:Node → di:DiagramElement.
+di:bounds [1..1] : dc:Bounds is constrained by di-core-shapes:ShapeShape.'''@en ;
+    sh:targetClass bpmndi:BPMNShape ;
+    sh:property [
+        sh:path bpmndi:bpmnElement ;
+        sh:maxCount 1 ;
+        sh:class bpmn:BaseElement ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:isHorizontal ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:isExpanded ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:isMarkerVisible ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:label ;
+        sh:maxCount 1 ;
+        sh:class bpmndi:BPMNLabel ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:isMessageVisible ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:participantBandKind ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "top_initiating" "middle_initiating" "bottom_initiating" "top_non_initiating" "middle_non_initiating" "bottom_non_initiating" ) ;
+    ] ;
+    sh:property [
+        sh:path bpmndi:choreographyActivityShape ;
+        sh:maxCount 1 ;
+        sh:class bpmndi:BPMNShape ;
+    ] ;
+.

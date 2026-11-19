@@ -1,0 +1,98 @@
+@prefix :         <https://meta.linked.archi/tech-radar/tax#> .
+@prefix radartax: <https://meta.linked.archi/tech-radar/tax#> .
+@prefix radar:    <https://meta.linked.archi/tech-radar/onto#> .
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+@prefix bibo:     <http://purl.org/ontology/bibo/> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/tech-radar/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "Technology Radar Concept Scheme"@en ;
+    dcterms:description "Classification of Technology Radar controlled vocabularies: rings, quadrants, and movement directions."@en ;
+    skos:hasTopConcept
+        radartax:Rings ,
+        radartax:Quadrants ,
+        radartax:Movements ,
+        radartax:ElementKind ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespacePrefix "radartax" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/tech-radar/tax#" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Technology Radar Taxonomy"@en ;
+    dcterms:abstract              "SKOS taxonomy for Technology Radar controlled vocabularies."@en ;
+    dcterms:created               "2026-06-22"^^xsd:date ;
+    dcterms:modified              "2026-06-22"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+#################################################################
+# Top-Level Groupings
+#################################################################
+
+radartax:Rings
+    a                 skos:Concept ;
+    skos:prefLabel    "Rings"@en ;
+    skos:definition   "Governance recommendation levels on the Technology Radar."@en ;
+    skos:topConceptOf <https://meta.linked.archi/tech-radar/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/tech-radar/tax#> ;
+    skos:narrower     radar:Adopt, radar:Trial, radar:Assess, radar:Hold, radar:Retire ;
+    skos:scopeNote    "Ordered from innermost (highest confidence) to outermost (lowest confidence / end-of-life)."@en ;
+.
+
+radartax:Quadrants
+    a                 skos:Concept ;
+    skos:prefLabel    "Quadrants"@en ;
+    skos:definition   "Technology domain groupings on the radar."@en ;
+    skos:topConceptOf <https://meta.linked.archi/tech-radar/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/tech-radar/tax#> ;
+    skos:narrower     radar:Techniques, radar:Platforms, radar:Tools, radar:LanguagesAndFrameworks ;
+    skos:scopeNote    "These are the standard ThoughtWorks quadrants. Organizations often customize quadrant names."@en ;
+.
+
+radartax:Movements
+    a                 skos:Concept ;
+    skos:prefLabel    "Movements"@en ;
+    skos:definition   "Direction of change since the previous radar publication."@en ;
+    skos:topConceptOf <https://meta.linked.archi/tech-radar/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/tech-radar/tax#> ;
+    skos:narrower     radar:New, radar:MovedIn, radar:MovedOut, radar:NoChange ;
+.
+
+
+#################################################################
+# Element types
+#
+# The groupings above classify the values a radar entry takes. This
+# one classifies the element types themselves: what a modelling tool
+# lists in its palette.
+#################################################################
+
+radartax:ElementKind
+    a                 skos:Concept ;
+    skos:prefLabel    "Element Kind"@en ;
+    skos:definition   "The Technology Radar element types, by what they record."@en ;
+    skos:topConceptOf <https://meta.linked.archi/tech-radar/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/tech-radar/tax#> ;
+.
+
+radartax:RadarEntries
+    a                 skos:Concept ;
+    skos:broader      radartax:ElementKind ;
+    skos:prefLabel    "Radar Entries"@en ;
+    skos:definition   "What is placed on the radar: the technologies it tracks."@en ;
+    skos:inScheme     <https://meta.linked.archi/tech-radar/tax#> ;
+    skos:narrower     radar:Technology ;
+.

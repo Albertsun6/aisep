@@ -1,0 +1,146 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix archvis: <https://meta.linked.archi/core-vis#> .
+@prefix :   <https://meta.linked.archi/bpmn/dc#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+
+
+<https://meta.linked.archi/bpmn/dc#>
+    a owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/dc#" ;
+    vann:preferredNamespacePrefix "dc" ;
+    dcterms:title "Linked.Archi DC Ontology (OMG DD/DC)"@en ;
+    dcterms:description           '''OWL mapping of the OMG DD Diagram Common (DC) datatypes.'''@en ;
+    rdfs:comment """Maps the OMG DD Diagram Common (DC) package.
+Source: DC.cmof — defines primitive types (Boolean, Integer, Real, String)
+and DataTypes (Bounds, Point, Font) used by the DI and BPMNDI packages.
+Bounds and Point carry coordinate properties typed as Real (xsd:double).
+Font carries name (String), size (Real), and boolean flags.
+
+CMOF models Bounds, Point and Font as cmof:DataType. They are declared here as
+owl:Class rather than rdfs:Datatype because BPMN DI serializes them as nested
+elements with their own attributes, so in RDF they are nodes carrying properties
+— which is also how bpmn2linkedarchi emits them and how the SHACL shapes
+(https://meta.linked.archi/bpmn/dc-shapes) target them."""@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    dcterms:modified              "2026-07-25"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source  <https://www.omg.org/spec/DD/20100524/DC> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/DD/20100524/DC> ;
+    rdfs:seeAlso <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    dcterms:references <https://www.omg.org/spec/BPMN/2.0.2/PDF> ;
+    rdfs:comment """Validated against:
+  • DC.xsd — Bounds, Point, Font datatypes and their attributes
+Source: BPMN 2.0.2 (OMG formal/13-12-09), https://www.omg.org/spec/BPMN/20100501/DC.xsd"""@en ;
+    owl:imports <https://meta.linked.archi/core-vis#> ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+# ── DC value types (cmof:DataType in DC.cmof, nodes in RDF — see header note) ──
+
+:Bounds a owl:Class ;
+    skos:prefLabel "Bounds"@en ;
+    skos:definition "Rectangle defined by x, y, width, height. CMOF DataType from DC.cmof."@en ;
+    dcterms:source <https://www.omg.org/spec/DD/20100524/DC> ;
+    prov:wasQuotedFrom <https://www.omg.org/spec/DD/20100524/DC> ;
+.
+
+:Point a owl:Class ;
+    skos:prefLabel "Point"@en ;
+    skos:definition "2D coordinate (x, y). CMOF DataType from DC.cmof."@en ;
+    dcterms:source <https://www.omg.org/spec/DD/20100524/DC> ;
+    prov:wasQuotedFrom <https://www.omg.org/spec/DD/20100524/DC> ;
+.
+
+:Font a owl:Class ;
+    skos:prefLabel "Font"@en ;
+    skos:definition "Font descriptor with name, size, and style flags. CMOF DataType from DC.cmof."@en ;
+    dcterms:source <https://www.omg.org/spec/DD/20100524/DC> ;
+    prov:wasQuotedFrom <https://www.omg.org/spec/DD/20100524/DC> ;
+.
+
+# ── Bounds and Point properties (all Real → xsd:double) ──
+
+:x a owl:DatatypeProperty ;
+    skos:prefLabel "x"@en ;
+    skos:definition "Horizontal coordinate of a Bounds or Point."@en ;
+    arch:domainIncludes :Bounds, :Point ;
+    rdfs:range xsd:double ;
+.
+
+:y a owl:DatatypeProperty ;
+    skos:prefLabel "y"@en ;
+    skos:definition "Vertical coordinate of a Bounds or Point."@en ;
+    arch:domainIncludes :Bounds, :Point ;
+    rdfs:range xsd:double ;
+.
+
+:width a owl:DatatypeProperty ;
+    skos:prefLabel "width"@en ;
+    skos:definition "Horizontal extent of a Bounds."@en ;
+    arch:domainIncludes :Bounds ;
+    rdfs:range xsd:double ;
+.
+
+:height a owl:DatatypeProperty ;
+    skos:prefLabel "height"@en ;
+    skos:definition "Vertical extent of a Bounds."@en ;
+    arch:domainIncludes :Bounds ;
+    rdfs:range xsd:double ;
+.
+
+# ── Font properties ──
+
+:name a owl:DatatypeProperty ;
+    skos:prefLabel "name"@en ;
+    skos:definition "Font family name."@en ;
+    arch:domainIncludes :Font ;
+    rdfs:range xsd:string ;
+.
+
+:size a owl:DatatypeProperty ;
+    skos:prefLabel "size"@en ;
+    skos:definition "Font size."@en ;
+    arch:domainIncludes :Font ;
+    rdfs:range xsd:double ;
+.
+
+:isBold a owl:DatatypeProperty ;
+    skos:prefLabel "isBold"@en ;
+    skos:definition "Whether the font is rendered bold."@en ;
+    arch:domainIncludes :Font ;
+    rdfs:range xsd:boolean ;
+.
+
+:isItalic a owl:DatatypeProperty ;
+    skos:prefLabel "isItalic"@en ;
+    skos:definition "Whether the font is rendered italic."@en ;
+    arch:domainIncludes :Font ;
+    rdfs:range xsd:boolean ;
+.
+
+:isUnderline a owl:DatatypeProperty ;
+    skos:prefLabel "isUnderline"@en ;
+    skos:definition "Whether the font is rendered underlined."@en ;
+    arch:domainIncludes :Font ;
+    rdfs:range xsd:boolean ;
+.
+
+:isStrikeThrough a owl:DatatypeProperty ;
+    skos:prefLabel "isStrikeThrough"@en ;
+    skos:definition "Whether the font is rendered struck through."@en ;
+    arch:domainIncludes :Font ;
+    rdfs:range xsd:boolean ;
+.

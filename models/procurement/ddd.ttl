@@ -1,0 +1,52 @@
+# Procurement example — DDD part (inheritsHubRules=true: judged by the am4 matrix through ddd/align.ttl).
+# Subdomain 'Procurement' (⊑ Capability, D2) is realized by the am4 approval process (spec §7.1) and implemented
+# (derived Realization, D2) by the bounded context 'Quotation' (⊑ ApplicationComponent, D1), which owns the
+# aggregate 'Quotation' (⊑ DataObject) with its root entity. The aggregate realizes the am4 business object 报价单.
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix ddd:   <https://aisep.example/ont/ddd#> .
+@prefix :      <https://aisep.example/model/procurement/> .
+
+:procurementSubdomain a ddd:Subdomain ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "采购"@zh ; skos:altLabel "Procurement"@en ;
+    ddd:subdomainType ddd:Core .
+
+:quotationBC a ddd:BoundedContext ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "报价上下文"@zh ; skos:altLabel "Quotation"@en ;
+    ddd:contextType ddd:Application .
+
+:quotationAggregate a ddd:Aggregate ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "报价单聚合"@zh ; skos:altLabel "Quotation"@en .
+
+:quotationRoot a ddd:Entity ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "报价单实体"@zh ; skos:altLabel "Quotation (root)"@en .
+
+:rel-quotationBC-owns-quotationAggregate a ddd:Ownership ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :quotationBC ; arch:target :quotationAggregate .
+
+:rel-quotationAggregate-root-quotationRoot a ddd:RootContainment ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :quotationAggregate ; arch:target :quotationRoot .
+
+:rel-quotationBC-implements-procurementSubdomain a ddd:SubdomainImplementation ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :quotationBC ; arch:target :procurementSubdomain .
+
+# Cross-notation links into the am4 hub (plain am4 relationships, legal by the matrix via ddd/align.ttl)
+:rel-quoteApproval-realizes-procurementSubdomain a am4:Realization ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :quoteApproval ; arch:target :procurementSubdomain .
+
+:rel-quotationAggregate-realizes-quotation a am4:Realization ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :quotationAggregate ; arch:target :quotation .
+
+:rel-procurementSystem-composedOf-quotationBC a am4:Composition ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :procurementSystem ; arch:target :quotationBC .

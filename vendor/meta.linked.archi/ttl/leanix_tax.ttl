@@ -1,0 +1,514 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+
+@prefix lmm:    <https://meta.linked.archi/leanix/onto#> .
+@prefix aptax:  <https://meta.linked.archi/arch-processes/tax#> .
+@prefix :       <https://meta.linked.archi/leanix/tax#> .
+
+
+<https://meta.linked.archi/leanix/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "LeanIX Meta Model v4 Concept Scheme"@en ;
+    dcterms:description  "Classification of SAP LeanIX types and subtypes by architecture layer, with separate availability collections."@en ;
+    skos:hasTopConcept :FactSheetType, :RelationshipType ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/leanix/tax#" ;
+    vann:preferredNamespacePrefix "lmmtax" ;
+    dcterms:title                      "Linked.Archi LeanIX Taxonomy"@en ;
+    dcterms:created               "2026-04-16"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    prov:wasDerivedFrom <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    rdfs:seeAlso                  <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+
+
+#################################################################
+# Top-level concepts
+#################################################################
+
+:FactSheetType
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/leanix/tax#> ;
+    skos:prefLabel "Fact Sheet Type"@en ;
+    skos:definition "The 12 default and three optional fact sheet types, with their documented subtypes, in SAP LeanIX Meta Model v4."@en ;
+    skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+.
+
+:RelationshipType
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/leanix/tax#> ;
+    skos:prefLabel "Relationship Type"@en ;
+    skos:definition "Relationship types connecting LeanIX fact sheets."@en ;
+    skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+.
+
+
+#################################################################
+# Strategy & Transformation Layer
+#################################################################
+
+:StrategyTransformationLayer
+    a skos:Concept ; skos:broader :FactSheetType ;
+    skos:prefLabel "Strategy & Transformation"@en ;
+    skos:definition "Fact sheets for strategic planning and transformation management."@en ;
+    skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    skos:narrower lmm:Objective, lmm:Platform, lmm:Initiative, lmm:Epic, lmm:Idea, lmm:Program, lmm:Project ;
+.
+
+:ObjectiveConcept       a skos:Concept ; skos:prefLabel "Objective"@en ;
+    skos:broader :StrategyTransformationLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Objective .
+
+:InitiativeConcept      a skos:Concept ; skos:prefLabel "Initiative"@en ;
+    skos:broader :StrategyTransformationLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Initiative .
+
+
+#################################################################
+# Business Layer
+#################################################################
+
+:BusinessLayer
+    a skos:Concept ; skos:broader :FactSheetType ;
+    skos:prefLabel "Business"@en ;
+    skos:definition "Fact sheets representing business capabilities, organizations, and business contexts."@en ;
+    skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    skos:narrower lmm:Organization, lmm:BusinessUnit, lmm:Customer, lmm:LegalEntity, lmm:Region, lmm:Team,
+                        lmm:BusinessCapability, lmm:BusinessContext, lmm:CustomerJourney, lmm:ESGCapability,
+                        lmm:Process, lmm:Product, lmm:ValueStream ;
+.
+
+:BusinessCapabilityConcept a skos:Concept ; skos:prefLabel "Business Capability"@en ;
+    skos:broader :BusinessLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:BusinessCapability .
+
+:OrganizationConcept    a skos:Concept ; skos:prefLabel "Organization"@en ;
+    skos:broader :BusinessLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Organization .
+
+:BusinessContextConcept a skos:Concept ; skos:prefLabel "Business Context"@en ;
+    skos:broader :BusinessLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:BusinessContext .
+
+:ProductConcept         a skos:Concept ; skos:prefLabel "Business Product"@en ; skos:altLabel "Product"@en ;
+    skos:broader :BusinessContextConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Product .
+
+:ValueStreamConcept     a skos:Concept ; skos:prefLabel "Value Stream"@en ;
+    skos:broader :BusinessContextConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:ValueStream .
+
+:ProcessConcept         a skos:Concept ; skos:prefLabel "Process"@en ;
+    skos:broader :BusinessContextConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Process .
+
+:ESGCapabilityConcept   a skos:Concept ; skos:prefLabel "ESG Capability"@en ;
+    skos:broader :BusinessContextConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:ESGCapability .
+
+
+#################################################################
+# Application & Data Layer
+#################################################################
+
+:ApplicationDataLayer
+    a skos:Concept ; skos:broader :FactSheetType ;
+    skos:prefLabel "Application & Data"@en ;
+    skos:definition "Fact sheets for applications, interfaces, and data objects."@en ;
+    skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    skos:narrower lmm:DataObject, lmm:Application, lmm:AIAgent, lmm:BusinessApplication, lmm:Extension,
+                        lmm:Microservice, lmm:Interface, lmm:API, lmm:LogicalInterface, lmm:MCPServer,
+                        lmm:DataProduct, lmm:Contract ;
+.
+
+:ApplicationConcept     a skos:Concept ; skos:prefLabel "Application"@en ;
+    skos:broader :ApplicationDataLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Application .
+
+:BusinessApplicationConcept a skos:Concept ; skos:prefLabel "Business Application"@en ;
+    skos:broader :ApplicationConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:BusinessApplication .
+
+:MicroserviceConcept    a skos:Concept ; skos:prefLabel "Microservice"@en ;
+    skos:broader :ApplicationConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Microservice .
+
+:InterfaceConcept       a skos:Concept ; skos:prefLabel "Interface"@en ;
+    skos:broader :ApplicationDataLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Interface .
+
+:DataObjectConcept      a skos:Concept ; skos:prefLabel "Data Object"@en ;
+    skos:broader :ApplicationDataLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:DataObject .
+
+
+#################################################################
+# Technical Layer
+#################################################################
+
+:TechnicalLayer
+    a skos:Concept ; skos:broader :FactSheetType ;
+    skos:prefLabel "Technical"@en ;
+    skos:definition "Fact sheets for IT components, technology categories, systems, and providers."@en ;
+    skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    skos:narrower lmm:Provider, lmm:ITComponent, lmm:AIModel, lmm:Hardware, lmm:IaaS, lmm:PaaS, lmm:SaaS,
+                        lmm:Service, lmm:Software, lmm:TechCategory, lmm:System ;
+.
+
+:ITComponentConcept     a skos:Concept ; skos:prefLabel "IT Component"@en ;
+    skos:broader :TechnicalLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:ITComponent .
+
+:TechCategoryConcept    a skos:Concept ; skos:prefLabel "Tech Category"@en ;
+    skos:broader :TechnicalLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:TechCategory .
+
+:PlatformConcept        a skos:Concept ; skos:prefLabel "Platform"@en ;
+    skos:broader :StrategyTransformationLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Platform .
+
+:ProviderConcept        a skos:Concept ; skos:prefLabel "Provider"@en ;
+    skos:broader :TechnicalLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Provider .
+
+
+#################################################################
+# Optional types (classified by architecture layer)
+#################################################################
+
+:SystemConcept          a skos:Concept ; skos:prefLabel "System"@en ;
+    skos:broader :TechnicalLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:System .
+
+:DataProductConcept     a skos:Concept ; skos:prefLabel "Data Product"@en ;
+    skos:broader :ApplicationDataLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:DataProduct .
+
+:ContractConcept        a skos:Concept ; skos:prefLabel "Contract"@en ;
+    skos:broader :ApplicationDataLayer ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Contract .
+
+
+#################################################################
+# Documented subtypes
+#################################################################
+
+:AIAgentConcept a skos:Concept ; skos:prefLabel "AI Agent"@en ;
+    skos:broader :ApplicationConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:AIAgent .
+
+:ExtensionConcept a skos:Concept ; skos:prefLabel "Extension"@en ;
+    skos:broader :ApplicationConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Extension .
+
+:CustomerJourneyConcept a skos:Concept ; skos:prefLabel "Customer Journey"@en ;
+    skos:broader :BusinessContextConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:CustomerJourney .
+
+:IdeaConcept a skos:Concept ; skos:prefLabel "Idea"@en ;
+    skos:broader :InitiativeConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Idea .
+
+:ProgramConcept a skos:Concept ; skos:prefLabel "Program"@en ;
+    skos:broader :InitiativeConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Program .
+
+:ProjectConcept a skos:Concept ; skos:prefLabel "Project"@en ;
+    skos:broader :InitiativeConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Project .
+
+:EpicConcept a skos:Concept ; skos:prefLabel "Epic"@en ;
+    skos:broader :InitiativeConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Epic .
+
+:LogicalInterfaceConcept a skos:Concept ; skos:prefLabel "Logical Interface"@en ;
+    skos:broader :InterfaceConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:LogicalInterface .
+
+:APIConcept a skos:Concept ; skos:prefLabel "API"@en ;
+    skos:broader :InterfaceConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:API .
+
+:MCPServerConcept a skos:Concept ; skos:prefLabel "MCP Server"@en ;
+    skos:broader :InterfaceConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:MCPServer .
+
+:SaaSConcept a skos:Concept ; skos:prefLabel "SaaS"@en ;
+    skos:broader :ITComponentConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:SaaS .
+
+:PaaSConcept a skos:Concept ; skos:prefLabel "PaaS"@en ;
+    skos:broader :ITComponentConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:PaaS .
+
+:IaaSConcept a skos:Concept ; skos:prefLabel "IaaS"@en ;
+    skos:broader :ITComponentConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:IaaS .
+
+:SoftwareConcept a skos:Concept ; skos:prefLabel "Software"@en ;
+    skos:broader :ITComponentConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Software .
+
+:HardwareConcept a skos:Concept ; skos:prefLabel "Hardware"@en ;
+    skos:broader :ITComponentConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Hardware .
+
+:ServiceConcept a skos:Concept ; skos:prefLabel "Service"@en ;
+    skos:broader :ITComponentConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Service .
+
+:AIModelConcept a skos:Concept ; skos:prefLabel "AI Model"@en ;
+    skos:broader :ITComponentConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:AIModel .
+
+:BusinessUnitConcept a skos:Concept ; skos:prefLabel "Business Unit"@en ;
+    skos:broader :OrganizationConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:BusinessUnit .
+
+:RegionConcept a skos:Concept ; skos:prefLabel "Region"@en ;
+    skos:broader :OrganizationConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Region .
+
+:LegalEntityConcept a skos:Concept ; skos:prefLabel "Legal Entity"@en ;
+    skos:broader :OrganizationConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:LegalEntity .
+
+:TeamConcept a skos:Concept ; skos:prefLabel "Team"@en ;
+    skos:broader :OrganizationConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Team .
+
+:CustomerConcept a skos:Concept ; skos:prefLabel "Customer"@en ;
+    skos:broader :OrganizationConcept ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Customer .
+
+#################################################################
+# Relationships — one concept each for the relations of SAP's meta
+# model diagram, as it labels them, and the hierarchy
+#################################################################
+
+:SupportsConcept a skos:Concept ; skos:prefLabel "Supports"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Supports .
+
+:UsesConcept a skos:Concept ; skos:prefLabel "Uses"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Uses .
+
+:OwnsConcept a skos:Concept ; skos:prefLabel "Owns"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Owns .
+
+:AffectsConcept a skos:Concept ; skos:prefLabel "Affects"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Affects .
+
+:ImprovesConcept a skos:Concept ; skos:prefLabel "Improves"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Improves .
+
+:ProvidesConcept a skos:Concept ; skos:prefLabel "Provides"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    skos:related :ConsumesConcept ;
+    rdfs:seeAlso lmm:Provides .
+
+:ConsumesConcept a skos:Concept ; skos:prefLabel "Consumes"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    skos:related :ProvidesConcept ;
+    rdfs:seeAlso lmm:Consumes .
+
+:CrudConcept a skos:Concept ; skos:prefLabel "CRUD"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Crud .
+
+:TransfersConcept a skos:Concept ; skos:prefLabel "Transfers"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Transfers .
+
+:OffersConcept a skos:Concept ; skos:prefLabel "Offers"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Offers .
+
+:BelongsToConcept a skos:Concept ; skos:prefLabel "Belongs To"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:BelongsTo .
+
+:ImplementsConcept a skos:Concept ; skos:prefLabel "Implements"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Implements .
+
+:RunsConcept a skos:Concept ; skos:prefLabel "Runs"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Runs .
+
+:RunsOnConcept a skos:Concept ; skos:prefLabel "Runs On"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:RunsOn .
+
+:IsAssociatedWithConcept a skos:Concept ; skos:prefLabel "Is Associated With"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:IsAssociatedWith .
+
+:ProducesConcept a skos:Concept ; skos:prefLabel "Produces"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Produces .
+
+:RealizesConcept a skos:Concept ; skos:prefLabel "Realizes"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Realizes .
+
+:DerivesFromConcept a skos:Concept ; skos:prefLabel "Derives From"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:DerivesFrom .
+
+:IsAttachedToConcept a skos:Concept ; skos:prefLabel "Is Attached To"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:IsAttachedTo .
+
+:FactSheetHierarchyConcept a skos:Concept ; skos:prefLabel "Fact Sheet Hierarchy"@en ;
+    skos:definition "The parent-child relation every fact sheet type carries, exported by LeanIX as relToParent and relToChild."@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:FactSheetHierarchy .
+
+
+#################################################################
+# Palette grouping
+#
+# Linked.Archi modelling guidance, not the meta model: the
+# classification dimensions a palette groups element types by. The
+# metamodel manifest points to it (arch:paletteGrouping).
+#################################################################
+
+:PaletteGrouping
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Palette Grouping"@en ;
+    skos:definition "The classification dimensions a palette groups element types by: a section for each layer of fact sheet types, then the process types of the Architecture Processes extension, which the ontology imports for its lifecycle stages."@en ;
+    skos:memberList ( :FactSheetType aptax:ElementKind ) ;
+.
+
+
+:PowersConcept a skos:Concept ; skos:prefLabel "Powers"@en ;
+    skos:broader :RelationshipType ; skos:inScheme <https://meta.linked.archi/leanix/tax#> ;
+    rdfs:seeAlso lmm:Powers .
+
+:ApplicationConcept skos:narrower lmm:AIAgent, lmm:BusinessApplication, lmm:Extension, lmm:Microservice .
+
+:BusinessContextConcept skos:narrower lmm:CustomerJourney, lmm:ESGCapability, lmm:Process, lmm:Product, lmm:ValueStream .
+
+
+:ITComponentConcept skos:narrower lmm:AIModel, lmm:Hardware, lmm:IaaS, lmm:PaaS, lmm:SaaS, lmm:Service, lmm:Software .
+
+:InitiativeConcept skos:narrower lmm:Epic, lmm:Idea, lmm:Program, lmm:Project .
+
+:InterfaceConcept skos:narrower lmm:API, lmm:LogicalInterface, lmm:MCPServer .
+
+:OrganizationConcept skos:narrower lmm:BusinessUnit, lmm:Customer, lmm:LegalEntity, lmm:Region, lmm:Team .
+lmm:Objective rdfs:seeAlso :ObjectiveConcept .
+lmm:Platform rdfs:seeAlso :PlatformConcept .
+lmm:Initiative rdfs:seeAlso :InitiativeConcept .
+lmm:Idea rdfs:seeAlso :IdeaConcept .
+lmm:Program rdfs:seeAlso :ProgramConcept .
+lmm:Project rdfs:seeAlso :ProjectConcept .
+lmm:Epic rdfs:seeAlso :EpicConcept .
+lmm:BusinessCapability rdfs:seeAlso :BusinessCapabilityConcept .
+lmm:Organization rdfs:seeAlso :OrganizationConcept .
+lmm:BusinessUnit rdfs:seeAlso :BusinessUnitConcept .
+lmm:Region rdfs:seeAlso :RegionConcept .
+lmm:LegalEntity rdfs:seeAlso :LegalEntityConcept .
+lmm:Team rdfs:seeAlso :TeamConcept .
+lmm:Customer rdfs:seeAlso :CustomerConcept .
+lmm:BusinessContext rdfs:seeAlso :BusinessContextConcept .
+lmm:CustomerJourney rdfs:seeAlso :CustomerJourneyConcept .
+lmm:Product rdfs:seeAlso :ProductConcept .
+lmm:ValueStream rdfs:seeAlso :ValueStreamConcept .
+lmm:Process rdfs:seeAlso :ProcessConcept .
+lmm:Application rdfs:seeAlso :ApplicationConcept .
+lmm:AIAgent rdfs:seeAlso :AIAgentConcept .
+lmm:Extension rdfs:seeAlso :ExtensionConcept .
+lmm:BusinessApplication rdfs:seeAlso :BusinessApplicationConcept .
+lmm:Microservice rdfs:seeAlso :MicroserviceConcept .
+lmm:Interface rdfs:seeAlso :InterfaceConcept .
+lmm:LogicalInterface rdfs:seeAlso :LogicalInterfaceConcept .
+lmm:API rdfs:seeAlso :APIConcept .
+lmm:MCPServer rdfs:seeAlso :MCPServerConcept .
+lmm:DataObject rdfs:seeAlso :DataObjectConcept .
+lmm:ITComponent rdfs:seeAlso :ITComponentConcept .
+lmm:SaaS rdfs:seeAlso :SaaSConcept .
+lmm:PaaS rdfs:seeAlso :PaaSConcept .
+lmm:IaaS rdfs:seeAlso :IaaSConcept .
+lmm:Software rdfs:seeAlso :SoftwareConcept .
+lmm:Hardware rdfs:seeAlso :HardwareConcept .
+lmm:Service rdfs:seeAlso :ServiceConcept .
+lmm:AIModel rdfs:seeAlso :AIModelConcept .
+lmm:TechCategory rdfs:seeAlso :TechCategoryConcept .
+lmm:Provider rdfs:seeAlso :ProviderConcept .
+lmm:System rdfs:seeAlso :SystemConcept .
+lmm:DataProduct rdfs:seeAlso :DataProductConcept .
+lmm:Contract rdfs:seeAlso :ContractConcept .
+lmm:ESGCapability rdfs:seeAlso :ESGCapabilityConcept .
+lmm:Supports rdfs:seeAlso :SupportsConcept .
+lmm:Uses rdfs:seeAlso :UsesConcept .
+lmm:Owns rdfs:seeAlso :OwnsConcept .
+lmm:Affects rdfs:seeAlso :AffectsConcept .
+lmm:Improves rdfs:seeAlso :ImprovesConcept .
+lmm:Provides rdfs:seeAlso :ProvidesConcept .
+lmm:Consumes rdfs:seeAlso :ConsumesConcept .
+lmm:Crud rdfs:seeAlso :CrudConcept .
+lmm:Transfers rdfs:seeAlso :TransfersConcept .
+lmm:Offers rdfs:seeAlso :OffersConcept .
+lmm:BelongsTo rdfs:seeAlso :BelongsToConcept .
+lmm:Implements rdfs:seeAlso :ImplementsConcept .
+lmm:Runs rdfs:seeAlso :RunsConcept .
+lmm:RunsOn rdfs:seeAlso :RunsOnConcept .
+lmm:IsAssociatedWith rdfs:seeAlso :IsAssociatedWithConcept .
+lmm:Produces rdfs:seeAlso :ProducesConcept .
+lmm:Realizes rdfs:seeAlso :RealizesConcept .
+lmm:DerivesFrom rdfs:seeAlso :DerivesFromConcept .
+lmm:IsAttachedTo rdfs:seeAlso :IsAttachedToConcept .
+lmm:Powers rdfs:seeAlso :PowersConcept .
+lmm:FactSheetHierarchy rdfs:seeAlso :FactSheetHierarchyConcept .
+
+#################################################################
+# Availability, independent of architecture layer
+#################################################################
+
+:DefaultFactSheetTypes
+    a skos:Collection ;
+    skos:prefLabel "Default Fact Sheet Types"@en ;
+    skos:scopeNote "The twelve predefined fact sheet types."@en ;
+    skos:member :ApplicationConcept, :BusinessCapabilityConcept, :BusinessContextConcept, :DataObjectConcept,
+                        :ITComponentConcept, :InitiativeConcept, :InterfaceConcept, :ObjectiveConcept,
+                        :OrganizationConcept, :PlatformConcept, :ProviderConcept, :TechCategoryConcept ;
+.
+
+:OptionalFactSheetTypes
+    a skos:Collection ;
+    skos:prefLabel "Optional Fact Sheet Types"@en ;
+    skos:scopeNote "Types enabled through workspace extensions; this is not an architecture layer."@en ;
+    skos:member :SystemConcept, :DataProductConcept, :ContractConcept ;
+.
+
+:DefaultFactSheetSubtypes
+    a skos:Collection ;
+    skos:prefLabel "Default Fact Sheet Subtypes"@en ;
+    skos:scopeNote "Defaults follow the current SAP documentation. Business Application, AI Agent and MCP Server are default only in new workspaces created after May 11, 2026; AI Model after October 29, 2025."@en ;
+    skos:member :AIAgentConcept, :AIModelConcept, :APIConcept, :BusinessApplicationConcept,
+                        :BusinessUnitConcept, :CustomerConcept, :CustomerJourneyConcept, :EpicConcept,
+                        :HardwareConcept, :IaaSConcept, :IdeaConcept, :LegalEntityConcept,
+                        :LogicalInterfaceConcept, :MCPServerConcept, :PaaSConcept, :ProcessConcept,
+                        :ProductConcept, :ProgramConcept, :ProjectConcept, :RegionConcept, :SaaSConcept,
+                        :ServiceConcept, :SoftwareConcept, :TeamConcept, :ValueStreamConcept ;
+.
+
+:OptionalFactSheetSubtypes
+    a skos:Collection ;
+    skos:prefLabel "Optional Fact Sheet Subtypes"@en ;
+    skos:scopeNote "Subtypes added through optional features or integrations."@en ;
+    skos:member :MicroserviceConcept, :ExtensionConcept, :ESGCapabilityConcept ;
+.

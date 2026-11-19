@@ -1,0 +1,55 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix :        <https://meta.linked.archi/archimate4/viewpoint-shapes#> .
+
+<https://meta.linked.archi/archimate4/viewpoint-shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/core-shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate4/viewpoint-shapes#" ;
+    vann:preferredNamespacePrefix "am4vpsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi ArchiMate 4.0 Viewpoint Conformance Shapes"@en ;
+    dcterms:description           '''Viewpoint conformance for ArchiMate 4.0 models. The rules are in the core
+shapes, which this document imports, and it adds none of its own:
+
+1. Viewpoint declaration — every View declares exactly one viewpoint, as an
+   arch:Viewpoint individual rather than a literal.
+2. View type conformance — a View's rdf:type must match one of the viewpoint's
+   arch:viewType values (Diagram, Catalog, Matrix).
+3. Element conformance — elements presented in a View, linked by arch:inView,
+   must be instances of types the viewpoint's arch:includesConcept allows.
+4. Relationship endpoint conformance — the endpoints of a relationship drawn on
+   a View should themselves be in the viewpoint's palette.
+5. Viewpoint completeness — a viewpoint should declare what it admits, the
+   concerns it frames and which kinds of view realise it.
+
+They read the viewpoint definitions from the loaded graph rather than naming any
+viewpoint, and use no ArchiMate term, so core states them once for every language:
+the published 4.0 catalogue, custom viewpoints and other frameworks' alike. A rule
+that only ArchiMate 4.0 viewpoints need would go here.
+
+Usage: load the core shapes with the 4.0 viewpoint catalogue and the model.
+core-onto.ttl and the 4.0 ontology go in the shapes graph and the data: the shapes
+target arch:View and arch:Viewpoint, and their SPARQL walks rdfs:subClassOf* in
+the data.'''@en ;
+    dcterms:created               "2026-04-19"^^xsd:date ;
+    dcterms:modified              "2026-11-06"^^xsd:date ;
+    skos:historyNote              '''2026-11-06 — the five shapes moved to the core shapes, under the same
+names (archsh:ViewDeclaresViewpointShape, archsh:ViewTypeConformanceShape,
+archsh:ViewElementConformanceShape, archsh:RelationshipEndpointConformanceShape,
+archsh:ViewpointCompletenessShape). The 3.2 viewpoint shapes had the same rules, so a model
+loading both languages had each finding twice.'''@en ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/archimate4/viewpoint-shapes/4.0#> ;
+    owl:versionInfo               "4.0"@en ;
+.

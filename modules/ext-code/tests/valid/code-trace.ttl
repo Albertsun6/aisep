@@ -1,0 +1,51 @@
+# Valid: a CodeLocation with all fields (EC1-EC4) implements an application component (EC5, EC6);
+# a minimal CodeLocation (repository + path only) implements the same component;
+# a Deployable with a purl (EC7) realizes it (am4 Artifact -> ApplicationComponent Realization, direct in B.5).
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix arch:   <https://meta.linked.archi/core#> .
+@prefix am4:    <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep:  <https://aisep.example/ont/aisep#> .
+@prefix :       <https://aisep.example/model/ext-code-test/> .
+
+:model a arch:Model ;
+    skos:prefLabel "代码追溯测试模型"@zh .
+
+:quoteSvc a am4:ApplicationComponent ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务"@zh .
+
+:loc a aisep:CodeLocation ;
+    arch:inModel :model ;
+    skos:prefLabel "报价审批代码"@zh ;
+    schema:codeRepository <https://git.example.com/acme/quote-service> ;
+    aisep:path "src/quote/approval.py" ;
+    aisep:symbol "quote.approval.ApprovalService.approve" ;
+    aisep:swhid "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d;origin=https://git.example.com/acme/quote-service" .
+
+:impl a aisep:Implementation ;
+    arch:inModel :model ;
+    arch:source :loc ;
+    arch:target :quoteSvc .
+
+:locMin a aisep:CodeLocation ;
+    arch:inModel :model ;
+    skos:prefLabel "报价审批代码"@zh ;
+    schema:codeRepository <https://git.example.com/acme/quote-service> ;
+    aisep:path "src/quote/__init__.py" .
+
+:implMin a aisep:Implementation ;
+    arch:inModel :model ;
+    arch:source :locMin ;
+    arch:target :quoteSvc .
+
+:pkg a aisep:Deployable ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务发布包"@zh ;
+    aisep:packageUrl "pkg:pypi/quote-service@1.4.0" .
+
+:real a am4:Realization ;
+    arch:inModel :model ;
+    arch:source :pkg ;
+    arch:target :quoteSvc .

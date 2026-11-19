@@ -1,0 +1,609 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix schema:  <http://schema.org/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix togaf:   <https://meta.linked.archi/togaf9/onto#> .
+@prefix :        <https://meta.linked.archi/togaf9/onto#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/togaf9/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/togaf9/onto#" ;
+    vann:preferredNamespacePrefix "togaf9" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi TOGAF 9.2 Content Metamodel"@en ;
+    dcterms:description                '''Linked.Archi ontology aligned to the TOGAF Content Metamodel as defined in
+TOGAF 9.2 (Chapter 30). Models the entity types and relationships of the Content
+Metamodel as OWL classes and properties, conforming to Linked.Archi core ontology
+conventions. This is not an official Open Group document.'''@en ;
+    dcterms:abstract              '''OWL representation of the TOGAF Content Metamodel entity types and
+relationships. Entity classes are organized into a domain-based hierarchy following
+the TOGAF Content Framework structure: Motivation (Principles/Vision/Requirements),
+Business Architecture, Data Architecture, Application Architecture, Technology
+Architecture, and Implementation & Migration. Relationship properties follow the
+Linked.Archi convention using arch:domainIncludes / arch:rangeIncludes.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:issued                "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-04-29"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source  <https://pubs.opengroup.org/architecture/togaf9-doc/arch/chap30.html> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/architecture/togaf9-doc/arch/chap30.html> ;
+    owl:versionIRI                <https://meta.linked.archi/togaf9/9.2#> ;
+    owl:versionInfo               "9.2"@en ;
+    schema:citation               "Linked.Archi TOGAF 9.2 Content Metamodel" ;
+.
+
+#################################################################
+# Abstract Domain Hierarchy
+#################################################################
+
+:MotivationElement
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "MotivationElement"@en ;
+    skos:definition '''Abstract superclass for architecture principles, vision, requirements,
+and related governance elements. Corresponds to the "Architecture Principles,
+Vision, and Requirements" area of the TOGAF Content Framework.'''@en ;
+    skos:scopeNote  '''Superclass for elements that capture the surrounding context of formal
+architecture models: principles, strategic context, requirements, constraints,
+assumptions, and gaps. SHACL shapes use this class to enforce that governance
+relationships originate from motivation elements.'''@en ;
+.
+
+:BusinessArchitectureElement
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "BusinessArchitectureElement"@en ;
+    skos:definition '''Abstract superclass for business architecture entities. Corresponds to
+the "Business Architecture" area of the TOGAF Content Framework — entities that
+capture organizational structure, business functions, processes, services, and
+products.'''@en ;
+    skos:scopeNote  '''Superclass for entities modeling how the enterprise is organizationally
+structured and what functional capabilities it has. Business architecture elements
+are supported by application architecture elements.'''@en ;
+.
+
+:DataArchitectureElement
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "DataArchitectureElement"@en ;
+    skos:definition '''Abstract superclass for data architecture entities. Corresponds to the
+"Information Systems Architecture — Data" area of the TOGAF Content Framework.'''@en ;
+    skos:scopeNote  '''Superclass for entities modeling data concepts: data entities and their
+logical/physical encapsulations. Data architecture elements are accessed by
+business processes and hosted in application components.'''@en ;
+.
+
+:ApplicationArchitectureElement
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "ApplicationArchitectureElement"@en ;
+    skos:definition '''Abstract superclass for application architecture entities. Corresponds to
+the "Information Systems Architecture — Application" area of the TOGAF Content
+Framework.'''@en ;
+    skos:scopeNote  '''Superclass for entities modeling application components, services, and
+interfaces. Application architecture elements realize business services and are
+deployed onto technology components.'''@en ;
+.
+
+:TechnologyArchitectureElement
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "TechnologyArchitectureElement"@en ;
+    skos:definition '''Abstract superclass for technology architecture entities. Corresponds to
+the "Technology Architecture" area of the TOGAF Content Framework.'''@en ;
+    skos:scopeNote  '''Superclass for entities modeling procured technology assets used to
+implement and realize information system solutions. Technology architecture
+elements host application components.'''@en ;
+.
+
+:ImplementationElement
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "ImplementationElement"@en ;
+    skos:definition '''Abstract superclass for implementation and migration entities. Corresponds
+to the "Architecture Realization" area of the TOGAF Content Framework — entities
+that capture change roadmaps and transition states.'''@en ;
+    skos:scopeNote  '''Superclass for entities modeling work packages, deliverables, plateaus,
+and capabilities that define the transition from baseline to target
+architecture.'''@en ;
+.
+
+#################################################################
+# Motivation (Principles, Vision & Requirements)
+#################################################################
+
+:Principle
+    a               owl:Class ;
+    rdfs:subClassOf :MotivationElement ;
+    skos:prefLabel  "Principle"@en ;
+    skos:definition '''A qualitative statement of intent that should be met by the architecture.
+Principles define the underlying general rules and guidelines for the use and deployment
+of all IT resources and assets across the enterprise.'''@en ;
+.
+
+:Vision
+    a               owl:Class ;
+    rdfs:subClassOf :MotivationElement ;
+    skos:prefLabel  "Vision"@en ;
+    skos:definition '''A high-level, aspirational view of the target architecture that outlines
+the strategic direction and key objectives of the architecture engagement.'''@en ;
+.
+
+:Requirement
+    a               owl:Class ;
+    rdfs:subClassOf :MotivationElement ;
+    skos:prefLabel  "Requirement"@en ;
+    skos:definition '''A quantitative statement of business need that must be met by a particular
+architecture or work package. Requirements may be functional, non-functional,
+or architectural in nature.'''@en ;
+.
+
+:Constraint
+    a               owl:Class ;
+    rdfs:subClassOf :MotivationElement ;
+    skos:prefLabel  "Constraint"@en ;
+    skos:definition '''An external factor that prevents an organization from pursuing particular
+approaches to meet its goals. Constraints narrow the solution space and must be
+accommodated by the architecture.'''@en ;
+.
+
+:Assumption
+    a               owl:Class ;
+    rdfs:subClassOf :MotivationElement ;
+    skos:prefLabel  "Assumption"@en ;
+    skos:definition '''A statement of belief about the future state of the environment or
+enterprise that is taken as true for the purposes of architecture development.
+Assumptions carry risk and should be validated.'''@en ;
+.
+
+:Gap
+    a               owl:Class ;
+    rdfs:subClassOf :MotivationElement ;
+    skos:prefLabel  "Gap"@en ;
+    skos:definition '''A statement of difference between two states — typically the baseline and
+target architectures. Gaps are identified through gap analysis and drive the
+definition of work packages.'''@en ;
+.
+
+:Driver
+    a               owl:Class ;
+    rdfs:subClassOf :MotivationElement ;
+    skos:prefLabel  "Driver"@en ;
+    skos:definition '''An external or internal condition that motivates the organization to
+define its goals and implement changes. Drivers create the context for
+architecture work.'''@en ;
+.
+
+:Goal
+    a               owl:Class ;
+    rdfs:subClassOf :MotivationElement ;
+    skos:prefLabel  "Goal"@en ;
+    skos:definition '''A high-level statement of intent or direction for the organization.
+Goals are typically qualitative and long-term, providing the context for
+objectives and measures.'''@en ;
+.
+
+:Objective
+    a               owl:Class ;
+    rdfs:subClassOf :MotivationElement ;
+    skos:prefLabel  "Objective"@en ;
+    skos:definition '''A time-bounded, measurable target that supports the achievement of a
+goal. Objectives are typically quantitative and have defined success
+criteria.'''@en ;
+.
+
+:Measure
+    a               owl:Class ;
+    rdfs:subClassOf :MotivationElement ;
+    skos:prefLabel  "Measure"@en ;
+    skos:definition '''An indicator or factor that can be tracked, usually on an ongoing basis,
+to determine success or alignment with objectives. Measures are associated
+with goals and objectives.'''@en ;
+.
+
+#################################################################
+# Business Architecture Entities
+#################################################################
+
+:Organization
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessArchitectureElement ;
+    skos:prefLabel  "Organization"@en ;
+    skos:definition '''A self-contained unit of resources with goals, objectives, and measures.
+Organizations may be decomposed into sub-organizations and may participate in
+business functions and services.'''@en ;
+    rdfs:seeAlso    <https://www.businessarchitectureguild.org/page/002> ;
+.
+
+:Actor
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessArchitectureElement ;
+    skos:prefLabel  "Actor"@en ;
+    skos:definition '''A person, organization, or system that has behavior — such as performing
+business functions, using application services, or consuming technology
+services. An actor may be assigned to one or more roles.'''@en ;
+.
+
+:Role
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessArchitectureElement ;
+    skos:prefLabel  "Role"@en ;
+    skos:definition '''An actor assumes a role to perform a task. Roles are used to distinguish
+the different responsibilities and authorities that actors may have within
+the organization.'''@en ;
+.
+
+:BusinessService
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessArchitectureElement ;
+    skos:prefLabel  "Business Service"@en ;
+    skos:definition '''An externally visible unit of business functionality that is meaningful
+to the consumer and supports business capabilities. Business services are
+supported by business processes and may be consumed by actors or other
+organizations.'''@en ;
+.
+
+:BusinessFunction
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessArchitectureElement ;
+    skos:prefLabel  "Business Function"@en ;
+    skos:definition '''A unit of internal business capability that delivers business value.
+Business functions are typically aligned to an organization but may span
+multiple organizational units.'''@en ;
+.
+
+:BusinessProcess
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessArchitectureElement ;
+    skos:prefLabel  "Business Process"@en ;
+    skos:definition '''A sequence of activities that produces a defined outcome. Business
+processes may decompose into sub-processes and are orchestrated by business
+events.'''@en ;
+.
+
+:BusinessEvent
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessArchitectureElement ;
+    skos:prefLabel  "Business Event"@en ;
+    skos:definition '''An organizational state change that triggers or constrains business
+processes. Events may be external (market change) or internal (threshold
+reached).'''@en ;
+.
+
+:Product
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessArchitectureElement ;
+    skos:prefLabel  "Product"@en ;
+    skos:definition '''A coherent collection of services, accompanied by a contract or set of
+agreements, that is offered as a whole to a (type of) consumer. A product
+bundles business services and technology services.'''@en ;
+.
+
+:Contract
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessArchitectureElement ;
+    skos:prefLabel  "Contract"@en ;
+    skos:definition '''An agreement between a service provider and a consumer that specifies
+the terms, conditions, and service levels under which a service is
+delivered.'''@en ;
+.
+
+:Location
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessArchitectureElement ;
+    skos:prefLabel  "Location"@en ;
+    skos:definition '''A place where business activity takes place and can be hierarchically
+decomposed. Locations are used to describe the geographical distribution
+of business and technology elements.'''@en ;
+.
+
+#################################################################
+# Data Architecture Entities
+#################################################################
+
+:DataEntity
+    a               owl:Class ;
+    rdfs:subClassOf :DataArchitectureElement ;
+    skos:prefLabel  "Data Entity"@en ;
+    skos:definition '''An encapsulation of data that is recognized by a business domain expert
+as a discrete concept. Data entities can be bound to any number of logical
+and physical data components.'''@en ;
+.
+
+:LogicalDataComponent
+    a               owl:Class ;
+    rdfs:subClassOf :DataArchitectureElement ;
+    skos:prefLabel  "Logical Data Component"@en ;
+    skos:definition '''A boundary zone that encapsulates related data entities to form a
+logical location to be held. Logical data components are technology- and
+implementation-independent.'''@en ;
+.
+
+:PhysicalDataComponent
+    a               owl:Class ;
+    rdfs:subClassOf :DataArchitectureElement ;
+    skos:prefLabel  "Physical Data Component"@en ;
+    skos:definition '''A boundary zone that encapsulates related data entities to form a
+physical location to be held. Physical data components are bound to
+specific technology and implementation choices.'''@en ;
+.
+
+#################################################################
+# Application Architecture Entities
+#################################################################
+
+:LogicalApplicationComponent
+    a               owl:Class ;
+    rdfs:subClassOf :ApplicationArchitectureElement ;
+    skos:prefLabel  "Logical Application Component"@en ;
+    skos:definition '''An encapsulation of application functionality that is independent of a
+particular implementation. Logical application components are used to
+describe the required application capabilities.'''@en ;
+.
+
+:PhysicalApplicationComponent
+    a               owl:Class ;
+    rdfs:subClassOf :ApplicationArchitectureElement ;
+    skos:prefLabel  "Physical Application Component"@en ;
+    skos:definition '''An application, application module, application service, or other
+deployable component of functionality. Physical application components
+realize logical application components.'''@en ;
+.
+
+:InformationSystemService
+    a               owl:Class ;
+    rdfs:subClassOf :ApplicationArchitectureElement ;
+    skos:prefLabel  "Information System Service"@en ;
+    skos:altLabel   "Application Service"@en ;
+    skos:definition '''An externally visible unit of application functionality provided by one
+or more application components. Also known as Application Service in some
+TOGAF references.'''@en ;
+.
+
+:ApplicationInterface
+    a               owl:Class ;
+    rdfs:subClassOf :ApplicationArchitectureElement ;
+    skos:prefLabel  "Application Interface"@en ;
+    skos:definition '''A point of access where application services are made available to a
+user, another application component, or a business process. Defines the
+boundary and protocol for interaction.'''@en ;
+.
+
+#################################################################
+# Technology Architecture Entities
+#################################################################
+
+:LogicalTechnologyComponent
+    a               owl:Class ;
+    rdfs:subClassOf :TechnologyArchitectureElement ;
+    skos:prefLabel  "Logical Technology Component"@en ;
+    skos:definition '''An encapsulation of technology infrastructure that is independent of a
+particular product or vendor. Represents a category of technology required
+to support the application architecture.'''@en ;
+.
+
+:PhysicalTechnologyComponent
+    a               owl:Class ;
+    rdfs:subClassOf :TechnologyArchitectureElement ;
+    skos:prefLabel  "Physical Technology Component"@en ;
+    skos:definition '''A specific technology infrastructure product or component used to
+implement part of the technology architecture. Physical technology
+components realize logical technology components.'''@en ;
+.
+
+:TechnologyService
+    a               owl:Class ;
+    rdfs:subClassOf :TechnologyArchitectureElement ;
+    skos:prefLabel  "Technology Service"@en ;
+    skos:altLabel   "Platform Service"@en ;
+    skos:definition '''An externally visible unit of technology functionality provided by one
+or more technology components. Technology services support application
+components and information system services.'''@en ;
+.
+
+:TechnologyInterface
+    a               owl:Class ;
+    rdfs:subClassOf :TechnologyArchitectureElement ;
+    skos:prefLabel  "Technology Interface"@en ;
+    skos:definition '''A point of access where technology services are made available. Defines
+the boundary, protocol, and format for interaction with technology
+components.'''@en ;
+.
+
+:Platform
+    a               owl:Class ;
+    rdfs:subClassOf :TechnologyArchitectureElement ;
+    skos:prefLabel  "Platform"@en ;
+    skos:definition '''A combination of technology infrastructure and software that provides
+the environment in which application components are deployed and
+executed.'''@en ;
+.
+
+#################################################################
+# Implementation and Migration Entities
+#################################################################
+
+:WorkPackage
+    a               owl:Class ;
+    rdfs:subClassOf :ImplementationElement ;
+    skos:prefLabel  "Work Package"@en ;
+    skos:definition '''A set of actions identified to achieve one or more objectives for the
+business. A work package can be a part of a project, a complete project,
+or a program.'''@en ;
+.
+
+:Deliverable
+    a               owl:Class ;
+    rdfs:subClassOf :ImplementationElement ;
+    skos:prefLabel  "Deliverable"@en ;
+    skos:definition '''An architecturally significant work product that is contractually
+specified and delivered as part of a work package. Deliverables may be
+documentation, models, or other artifacts.'''@en ;
+.
+
+:Plateau
+    a               owl:Class ;
+    rdfs:subClassOf :ImplementationElement ;
+    skos:prefLabel  "Plateau"@en ;
+    skos:definition '''A relatively stable state of the architecture that exists for a defined
+period of time. Plateaus represent intermediate target architectures on
+the migration roadmap between baseline and target states.'''@en ;
+.
+
+:Capability
+    a               owl:Class ;
+    rdfs:subClassOf :ImplementationElement ;
+    skos:prefLabel  "Capability"@en ;
+    skos:definition '''An ability that an organization, person, or system possesses. Capabilities
+are typically expressed in general and high-level terms and require a
+combination of organization, people, processes, and technology to
+achieve.'''@en ;
+    rdfs:seeAlso    <https://pubs.opengroup.org/togaf-standard/business-architecture/business-capabilities.html>,
+                    <https://www.businessarchitectureguild.org/page/002> ;
+.
+
+#################################################################
+# Relationships (owl:ObjectProperty)
+#################################################################
+
+:supports
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "supports"@en ;
+    skos:definition     '''Indicates that one element provides support for another — for example,
+a business function supports a business service, or a technology service
+supports an application component.'''@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  arch:Element ;
+.
+
+:realizes
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "realizes"@en ;
+    skos:definition     '''Indicates that a physical component or implementation element realizes
+a logical or abstract element — for example, a physical application
+component realizes a logical application component.'''@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  arch:Element ;
+.
+
+:governs
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "governs"@en ;
+    skos:definition     '''Indicates that a principle, constraint, or requirement governs the
+design or behavior of an architecture element.'''@en ;
+    arch:domainIncludes :MotivationElement ;
+    arch:rangeIncludes  arch:Element ;
+.
+
+:usedBy
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "used by"@en ;
+    skos:definition     '''Indicates that an element is used by another element — for example,
+a data entity is used by a business process, or a technology service
+is used by an application component.'''@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  arch:Element ;
+.
+
+:accesses
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "accesses"@en ;
+    skos:definition     '''Indicates that a process, function, or service accesses a data entity
+or data component — for reading, writing, or both.'''@en ;
+    arch:domainIncludes :BusinessArchitectureElement ;
+    arch:rangeIncludes  :DataArchitectureElement ;
+.
+
+:communicatesWith
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "communicates with"@en ;
+    skos:definition     '''Indicates a communication or data exchange relationship between two
+elements — typically between application components or technology
+components.'''@en ;
+    arch:domainIncludes :ApplicationArchitectureElement ;
+    arch:rangeIncludes  :ApplicationArchitectureElement ;
+.
+
+:decomposesInto
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "decomposes into"@en ;
+    skos:definition     '''Indicates that an element is decomposed into finer-grained elements
+of the same or related type — for example, a business function
+decomposes into sub-functions.'''@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  arch:Element ;
+.
+
+:dependsOn
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "depends on"@en ;
+    skos:definition     '''Indicates that one element depends on another for its correct
+functioning or delivery — for example, a work package depends on
+another work package.'''@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  arch:Element ;
+.
+
+:tracks
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "tracks"@en ;
+    skos:definition     '''Indicates that a measure or objective tracks the progress or
+achievement of a goal, capability, or other target element.'''@en ;
+    arch:domainIncludes :MotivationElement ;
+    arch:rangeIncludes  arch:Element ;
+.
+
+:migratesFrom
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "migrates from"@en ;
+    skos:definition     '''Indicates the source plateau or baseline state from which a migration
+path originates. Used in transition architecture planning.'''@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  :Plateau ;
+.
+
+:migratesTo
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "migrates to"@en ;
+    skos:definition     '''Indicates the target plateau or state to which a migration path leads.
+Used in transition architecture planning.'''@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  :Plateau ;
+.
+
+:contains
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "contains"@en ;
+    skos:definition     '''Indicates a containment relationship where one element wholly contains
+another — for example, a location contains organizations, or a plateau
+contains architecture elements.'''@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  arch:Element ;
+.
+
+:isRealizedThrough
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "is realized through"@en ;
+    skos:definition     '''Indicates that an abstract or logical element is realized through a
+physical or implementation element — the inverse perspective of the
+realizes relationship.'''@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  arch:Element ;
+.

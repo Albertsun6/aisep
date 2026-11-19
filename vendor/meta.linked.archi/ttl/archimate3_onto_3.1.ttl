@@ -1,0 +1,1682 @@
+@prefix owl:       <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:       <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix adms:      <http://www.w3.org/ns/adms#> .
+@prefix dcterms:   <http://purl.org/dc/terms/> .
+@prefix bibo:      <http://purl.org/ontology/bibo/> .
+@prefix vaem:      <http://www.linkedmodel.org/schema/vaem> .
+@prefix vann:      <http://purl.org/vocab/vann/> .
+@prefix pav:       <http://purl.org/pav/> .
+@prefix prov:      <http://www.w3.org/ns/prov#> .
+@prefix cc:        <http://creativecommons.org/ns#> .
+
+@prefix skos:      <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:    <http://schema.org/> .
+@prefix arch:      <https://meta.linked.archi/core#> .
+@prefix ameta:     <https://meta.linked.archi/archimate3/abstracts#> .
+@prefix :          <https://meta.linked.archi/archimate3/onto/3.1#> .
+
+<https://meta.linked.archi/archimate3/onto/3.1#>
+    a                             owl:Ontology ;
+#    owl:imports                   ameta: ;
+    cc:license                    <http://creativecommons.org/licenses/by/4.0/> ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate3/onto/3.1#" ;
+    vann:preferredNamespacePrefix "amate" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ArchiMate 3.1 Ontology"@en ;
+    dcterms:description                '''Linked.Archi ArchiMate 3.1 Ontology. based on ArchiMate 3.1 specification
+    '''@en ;
+    dcterms:abstract              '''
+     Linked.Archi ArchiMate 3.1 Ontology. based on ArchiMate 3.1 specification. This is not an official and
+     supported The Open Group document. This is an example how to represent ArchiMate language and concepts using RDF
+      and
+     OWL. In future it would be preferred that such a standard ontology is supported by TheOpenGroup®
+    '''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:issued                "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2020-07-27"^^xsd:date ;
+    dcterms:publisher                  "https://linked.archi",
+                                  "Linked.Archi"@en ;
+    bibo:status                   "draft" ;
+    dcterms:source  <https://pubs.opengroup.org/architecture/archimate31-doc>,
+                                  <http://www.opengroup.org/xsd/archimate/3.1/archimate3_Model.xsd> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/architecture/archimate31-doc>,
+                                  <http://www.opengroup.org/xsd/archimate/3.1/archimate3_Model.xsd> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/architecture/archimate31-doc> ;
+    owl:versionInfo               "3.1"@en ;
+    owl:priorVersion              <https://meta.linked.archi/archimate3/onto/3.0#> ;
+    schema:citation               "Linked.Archi ArchiMate Ontology" ;
+.
+
+# Real Element Classes the ones that can be used in models and specializations
+
+:Stakeholder
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:MotivationElement ;
+    skos:prefLabel       "Stakeholder"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap06.html#_Toc489946012" ;
+    skos:definition
+                         '''A stakeholder is the role of an individual, team, or organization (or classes thereof) that
+            represents their interests in the outcome of the architecture.'''@en ;
+    skos:scopeNote       '''
+This definition is based on the definition in the TOGAF framework. A stakeholder has one or more interests in, or
+concerns about, the organization and its Enterprise Architecture. In order to direct efforts to these interests and
+concerns, stakeholders change, set, and emphasize goals. Stakeholders may also influence each other. Examples of
+stakeholders are the CEO, the board of directors, shareholders, customers, business and application architects, but
+also legislative authorities. The name of a stakeholder should preferably be a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/mot_stakeholder.svg" ;
+.
+
+:Driver
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:MotivationElement ;
+    skos:prefLabel       "Driver"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap06.html#_Toc489946013" ;
+    skos:definition
+                         '''A driver represents an external or internal condition that motivates an organization to
+            define its goals and implement the changes necessary to achieve them.'''@en ;
+    skos:scopeNote       '''
+Drivers may be internal, in which case they are usually associated with a stakeholder, and are often called
+“concerns”. Stakeholder concerns are defined in the TOGAF framework [4] as ”the key interests that are crucially
+important to the stakeholders in a system, and determine the acceptability of the system. Concerns may pertain to any
+ aspect of the function, development, or operation of the system, including considerations such as performance,
+ reliability, security, distribution, and evolvability.” Examples of internal drivers are Customer satisfaction and
+ Profitability. Drivers of change may also be external; e.g., economic changes or changing legislation. The name of a
+  driver should preferably be a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/mot_driver.svg" ;
+.
+
+:Assessment
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:MotivationElement ;
+    skos:prefLabel       "Assessment"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap06.html#_Toc489946014" ;
+    skos:definition
+                         '''An assessment represents the result of an analysis of the state of affairs of the
+            enterprise with respect to some driver.'''@en ;
+    skos:scopeNote       '''
+An assessment may reveal strengths, weaknesses, opportunities, or threats for some area of interest. These need to be
+ addressed by adjusting existing goals or setting new ones, which may trigger changes to the Enterprise Architecture.
+
+Strengths and weaknesses are internal to the organization. Opportunities and threats are external to the organization
+. Weaknesses and threats can be considered as problems that need to be addressed by goals that “negate” the
+weaknesses and threats. Strengths and opportunities may be translated directly into goals. For example, the weakness
+“Customers complain about the helpdesk” can be addressed by defining the goal “Improve helpdesk”. Or, the opportunity
+ “Customers favor insurances that can be managed online” can be addressed by the goal “Introduce online portfolio
+ management”. The name of an assessment should preferably be a noun or a (very) short sentence.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/mot_assesment.svg" ;
+.
+
+:Goal
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:MotivationElement ;
+    skos:prefLabel       "Goal"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap06.html#_Toc489946017" ;
+    skos:definition
+                         '''A goal represents a high-level statement of intent, direction, or desired end state for an
+            organization and its stakeholders.'''@en ;
+    skos:scopeNote       '''
+In principle, a goal can represent anything a stakeholder may desire, such as a state of affairs, or a produced value
+. Examples of goals are: to increase profit, to reduce waiting times at the helpdesk, or to introduce online
+portfolio management. Goals are typically used to measure success of an organization.
+
+Goals are generally expressed using qualitative words; e.g., “increase”, “improve”, or “easier”. Goals can also be
+decomposed; e.g., Increase profit can be decomposed into the goals Reduce cost and Increase sales. However, it is
+also very common to associate concrete outcomes with goals, which can be used to describe both the quantitative and
+time-related results that are essential to describe the desired state, and when it should be achieved.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/mot_goal.svg" ;
+.
+
+:Outcome
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:MotivationElement ;
+    skos:prefLabel       "Outcome"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap06.html#_Toc489946018" ;
+    skos:definition      '''An outcome represents an end result that has been achieved.'''@en ;
+    skos:scopeNote       '''
+Outcomes are high-level, business-oriented results produced by capabilities of an organization, and by inference by
+the core elements of its architecture that realize these capabilities. Outcomes are tangible, possibly quantitative,
+and time-related, and can be associated with assessments. An outcome may have a different value for different
+stakeholders.
+
+The notion of outcome is important in business outcome-driven approaches to Enterprise Architecture and in
+capability-based planning. Outcomes are closely related to requirements, goals, and other intentions. Outcomes are
+the end results, and goals or requirements are often formulated in terms of outcomes that should be realized.
+Capabilities are designed to achieve such outcomes.
+
+Outcome names should unambiguously identify end results that have been achieved in order to avoid confusion with
+actions or goals. At a minimum, outcome names should consist of a noun identifying the end result followed by a
+past-tense verb or adjective indicating that the result has been achieved. Examples include “First-place ranking
+achieved” and “Key supplier partnerships in place”. Outcome names can also be more specific; e.g., “2015 quarterly
+profits rose 10% year over year beginning in Q3”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/mot_outcome.svg" ;
+.
+
+:Principle
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:MotivationElement ;
+    skos:prefLabel       "Principle"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap06.html#_Toc489946019" ;
+    skos:definition
+                         '''A principle represents a qualitative statement of intent that should be met by the
+            architecture.'''@en ;
+    skos:scopeNote       '''
+Principles are strongly related to goals and requirements. Similar to requirements, principles define intended
+properties of systems. However, in contrast to requirements, principles are broader in scope and more abstract than
+requirements. A principle defines a general property that applies to any system in a certain context. A requirement
+defines a property that applies to a specific system as described by an architecture.
+
+A principle needs to be made specific for a given system by means of one or more requirements, in order to enforce
+that the system conforms to the principle. For example, the principle “Information management processes comply with
+all relevant laws, policies, and regulations” is realized by the requirements that are imposed by the actual laws,
+policies, and regulations that apply to the specific system under design.
+
+A principle is motivated by some goal or driver. For example, the aforementioned principle may be motivated by the
+goal to maintain a good reputation and/or the goal to avoid penalties. The principle provides a means to realize its
+motivating goal, which is generally formulated as a guideline. This guideline constrains the design of all systems in
+ a given context by stating the general properties that are required from any system in this context to realize the
+ goal. Principles are intended to be more stable than requirements in the sense that they do not change as quickly as
+  requirements may do. Organizational values, best practices, and design knowledge may be reflected and made
+  applicable in terms of principles.
+
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/mot_principle.svg" ;
+.
+
+:Requirement
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:MotivationElement ;
+    skos:prefLabel       "Requirement"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap06.html#_Toc489946020" ;
+    skos:definition      '''A requirement represents a statement of need that must be met by the architecture.'''@en ;
+    skos:scopeNote       '''
+In the end, a business goal must be realized by a plan or concrete change goal, which may or may not require a new
+system or changes to an existing system.
+
+The term “system” is used in its general meaning; i.e., as a group of (functionally) related elements, where each
+element may be considered as a system again. Therefore, a system may refer to any active structural element, behavior
+ element, or passive structural element of some organization, such as a business actor, application component,
+ business process, application service, business object, or data object.
+
+Requirements model the properties of these elements that are needed to achieve the “ends” that are modeled by the
+goals. In this respect, requirements represent the “means” to realize goals.
+
+During the design process, goals may be decomposed until the resulting sub-goals are sufficiently detailed to enable
+their realization by properties that can be exhibited by systems. At this point, goals can be realized by
+requirements that demand these properties from the systems.
+
+For example, one may identify two alternative requirements to realize the goal to improve portfolio management:
+
+•  By assigning a personal assistant to each customer, or
+
+•  By introducing online portfolio management
+
+The former requirement can be realized by a human actor and the latter by a software application. These requirements
+can be decomposed further to define the requirements on the human actor and the software application in more detail.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/mot_requirement.svg" ;
+.
+
+:Constraint
+    a                    owl:Class ;
+    rdfs:subClassOf      :Requirement ;
+    skos:prefLabel       "Constraint"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap06.html#_Toc489946021" ;
+    skos:definition
+                         '''A constraint represents a factor that prevents or obstructs the realization of goals
+                         .'''@en ;
+    skos:scopeNote       '''
+In contrast to a requirement, a constraint does not prescribe some intended functionality of the system to be
+realized, but imposes a restriction on the way it operates or may be realized. This may be a restriction on the
+implementation of the system (e.g., specific technology that is to be used), a restriction on the implementation
+process (e.g., time or budget constraints), or a restriction on the functioning of the system (e.g., legal constraints).
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/mot_constraint.svg" ;
+.
+
+:Meaning
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:MotivationElement ;
+    skos:prefLabel       "Meaning"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap06.html#_Toc489946024" ;
+    skos:definition
+                         '''Meaning represents the knowledge or expertise present in, or the interpretation given to, a
+            core element in a particular context.'''@en ;
+    skos:scopeNote       '''
+A meaning represents the interpretation of an element of the architecture. In particular, this is used to describe
+the meaning of passive structure elements (for example, a document, message). It is a description that expresses the
+intent of that element; i.e., how it informs the external user.
+
+It is possible that different users view the informative functionality of an element differently. For example, what
+may be a “registration confirmation” for a client could be a “client mutation” for a CRM department (assuming for the
+ sake of argument that it is modeled as an external user). Also, various different representations may carry
+ essentially the same meaning. For example, various different documents (a web document, a filled-in paper form, a
+ “client contact” report from the call center) may essentially carry the same meaning.
+
+A meaning can be associated with any core element. To denote that a meaning is specific to a particular stakeholder,
+this stakeholder can also be associated to the meaning. The name of a meaning should preferably be a noun or noun
+phrase.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/mot_meaning.svg" ;
+.
+
+:Value
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:MotivationElement ;
+    skos:prefLabel       "Value"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap06.html#_Toc489946025" ;
+    skos:definition
+                         '''Value represents the relative worth, utility, or importance of a core element or an outcome
+    .'''@en ;
+    skos:scopeNote       '''
+Value may apply to what a party gets by selling or making available some product or service, or it may apply to what
+a party gets by buying or obtaining access to it. Value is often expressed in terms of money, but it has long since
+been recognized that non-monetary value is also essential to business; for example, practical/functional value
+(including the right to use a service), and the value of information or knowledge. Though value can hold internally
+for some system or organizational unit, it is most typically applied to external appreciation of goods, services,
+information, knowledge, or money, normally as part of some sort of customer-provider relationship.
+
+A value can be associated with all core elements of an architecture as well as with outcomes. To model the
+stakeholder for whom this value applies, this stakeholder can also be associated with that value. Although the name
+of a value can be expressed in many different ways (including amounts, objects), where the “functional” value of an
+architecture element is concerned it is recommended to try and express it as an action or state that can be performed
+ or reached as a result of the corresponding element being available.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/mot_value.svg" ;
+.
+
+# TODO check questions
+:Resource
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:StructureElement,
+                         ameta:StrategyLayerElement ; # not strictly mention as such
+    skos:prefLabel       "Resource"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap07.html#_Toc489946032" ;
+    skos:definition      '''A resource represents an asset owned or controlled by an individual or organization.'''@en ;
+    skos:scopeNote       '''
+Resources are a central concept in the field of strategic management, economics, computer science, portfolio
+management, and more. They are often considered, together with capabilities, to be sources of competitive advantage
+for organizations. Resources are analyzed in terms of strengths and weaknesses, and they are considered when
+implementing strategies. Due to resources being limited, they can often be a deciding factor for choosing which
+strategy, goal, and project to implement and in which order. Resources can be classified into tangible assets –
+financial assets (e.g., cash, securities, borrowing capacity), physical assets (e.g., plant, equipment, land, mineral
+ reserves), intangible assets (technology; e.g., patents, copyrights, trade secrets; reputation; e.g., brand,
+ relationships; culture), and human assets (skills/know-how, capacity for communication and collaboration, motivation).
+
+Resources are realized by active and passive structure elements. The name of a resource should preferably be a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/stategy_resource.svg" ;
+.
+
+:Capability
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:BehaviorElement,
+                         ameta:StrategyLayerElement ;
+    skos:prefLabel       "Capability"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap07.html#_Toc489946034" ;
+    skos:definition
+                         '''A capability represents an ability that an active structure element, such as an
+            organization, person, or system, possesses.'''@en ;
+    skos:scopeNote       '''
+In the field of business, strategic thinking and planning delivers strategies and high-level goals that are often not
+ directly implementable in the architecture of an organization. These long-term or generic plans need to be specified
+  and made actionable in a way that both business leaders and Enterprise Architects can relate to, and at a
+  relatively high abstraction level.
+
+Capabilities help to reduce this gap by focusing on business outcomes. On the one hand, they provide a high-level
+view of the current and desired abilities of an organization, in relation to its strategy and its environment. On the
+ other hand, they are realized by various elements (people, processes, systems, and so on) that can be described,
+ designed, and implemented using Enterprise Architecture approaches. Capabilities may also have serving
+ relationships; for example, to denote that one capability contributes to another.
+
+Capabilities are expressed in general and high-level terms and are typically realized by a combination of
+organization, people, processes, information, and technology. For example, marketing, customer contact, or outbound
+telemarketing [4].
+
+Capabilities are typically aimed at achieving some goal or delivering value by realizing an outcome. Capabilities are
+ themselves realized by core elements. To denote that a set of core elements together realizes a capability, grouping
+  can be used.
+
+Capabilities are often used for capability-based planning, to describe their evolution over time. To model such
+so-called capability increments, the specialization relationship can be used to denote that a certain capability
+increment is a specific version of that capability. Aggregating those increments and the core elements that realize
+them in plateaus (see Section 13.2.4) can be used to model the evolution of the capabilities.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/strategy_capability.svg" ;
+.
+
+:ValueStream
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:BehaviorElement,
+                         ameta:StrategyLayerElement ;
+    skos:prefLabel       "ValueStream"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap07.html#_Toc10045360" ;
+    skos:definition
+                         '''A value stream represents a sequence of activities that create an overall result for a
+            customer, stakeholder, or end user.'''@en ;
+    skos:scopeNote       '''A value stream describes how an enterprise organizes its activities to create value. As
+    described in the TOGAF Series Guide: Value Streams [17], a key principle of value streams is that value is always
+     defined from the perspective of the stakeholder – the customer, end user, or recipient of the product, service,
+     or deliverable produced by the work. The value obtained is in the eye of the beholder; it depends more on the
+     stakeholder’s perception of the worth of the product, service, outcome, or deliverable than on its intrinsic
+     value; i.e., the cost to produce. This is modeled in the ArchiMate language using the value element. This, in
+     turn, is associated on the one hand with the result being produced, and on the other hand may be associated with
+      the stakeholder.
+
+Value streams may be defined at different levels of the organization; e.g., at the enterprise level, business unit
+level, or department level. Value streams can be a composition or aggregation of value-adding activities. These are
+also modeled with the value stream element and are known as value (stream) stages, each of which creates and adds
+incremental value from one stage to the next. These stages are typically related using flow relationships to model
+the flow of value between them. Resources can be assigned to value streams and capabilities can serve (i.e., enable)
+a value stream.
+
+Importantly, value streams and business processes may seem alike, but they are defined at different abstraction
+levels and serve separate purposes. A business process describes the (time-ordered) sequence of behaviors required to
+ create some result for an individual case, and it may describe alternative paths and decision points (modeled with
+ junctions). In contrast, a value stream focuses on the overall value-creating behavior from the perspective of the
+ importance, worth, or usefulness of what is produced, and is not a description of time-ordered tasks for individual
+ cases. Value streams (and capabilities) reflect an organization’s business model and value proposition, whereas
+ business processes (and business functions) reflect its operating model. At their respective abstraction levels,
+ value streams and business processes both represent the “enterprise in motion”, whereas capabilities and business
+ functions both describe the “enterprise at rest”.
+
+Value streams are typically realized by business processes and possibly other core behavior elements. The stages in a
+ value stream provide a framework for organizing and defining business processes, but different parts of the
+ organization may have their own implementations of business processes that realize the same value stream stage.
+ Conversely, one business process may realize multiple stages in a value stream.
+
+It is recommended that the name of a value stream be expressed using a verb-noun construct in the active tense; e.g.,
+ “Acquire Insurance Product”.
+         '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/strategy_value_stream.svg" ;
+.
+
+# TODO check questions
+:CourseOfAction
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:BehaviorElement,
+                         ameta:StrategyLayerElement ; # not strictly mentioned as such
+    skos:prefLabel       "CourseOfAction"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap07.html#_Toc489946035" ;
+    skos:definition
+                         '''A course of action is an approach or plan for configuring some capabilities and resources
+            of the enterprise, undertaken to achieve a goal.'''@en ;
+    skos:scopeNote       '''
+A course of action represents what an enterprise has decided to do. Courses of action can be categorized as
+strategies and tactics. It is not possible to make a hard distinction between the two, but strategies tend to be
+long-term and fairly broad in scope, while tactics tend to be shorter-term and narrower in scope.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/strategy_course_of_action.svg" ;
+.
+
+
+:BusinessActor
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalActiveStructureElement,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "BusinessActor"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946042" ;
+    skos:definition      '''A business actor is a business entity that is capable of performing behavior.'''@en ;
+    skos:scopeNote       '''A business actor is a business entity as opposed to a technical entity; i.e., it belongs
+    to the Business Layer. Actors may, however, include entities outside the actual organization; e.g., customers and
+     partners. A business actor can represent such business entities at different levels of detail, and may
+     correspond to both an actor and an organizational unit in the TOGAF framework [4]. Examples of business actors
+     are humans, departments, and business units.
+        A business actor may be assigned to one or more business roles. It can then perform the behavior to which
+        these business roles are assigned. A business actor can be aggregated in a location. The name of a business
+        actor should preferably be a noun. Business actors may be specific individuals or organizations; e.g., “John
+        Smith” or “ABC Corporation”, or they may be generic; e.g., “Customer” or “Supplier”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_actor.svg" ;
+.
+
+:BusinessRole
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalActiveStructureElement,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "BusinessRole"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946043" ;
+    skos:definition      '''A business actor is a business entity that is capable of performing behavior.'''@en ;
+    skos:scopeNote       '''
+A business actor is a business entity as opposed to a technical entity; i.e., it belongs to the Business Layer.
+Actors may, however, include entities outside the actual organization; e.g., customers and partners. A business actor
+ can represent such business entities at different levels of detail, and may correspond to both an actor and an
+ organizational unit in the TOGAF framework . Examples of business actors are humans, departments, and business units.
+
+A business actor may be assigned to one or more business roles. It can then perform the behavior to which these
+business roles are assigned. A business actor can be aggregated in a location. The name of a business actor should
+preferably be a noun. Business actors may be specific individuals or organizations; e.g., “John Smith” or “ABC
+Corporation”, or they may be generic; e.g., “Customer” or “Supplier”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_role.svg" ;
+.
+
+:BusinessCollaboration
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalActiveStructureElement,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "BusinessCollaboration"@en ;
+    dcterms:source            "" ;
+    skos:definition      '''A business collaboration is an aggregate of two or more business internal active structure
+        elements that work together to perform collective behavior.'''@en ;
+    skos:scopeNote       '''
+A business process or function may be interpreted as the internal behavior of a single business role. In some cases,
+behavior is the collective effort of more than one business role; in fact, a collaboration of two or more business
+roles results in collective behavior which may be more than simply the sum of the behavior of the separate roles.
+Business collaborations represent this collective effort. Business interactions are used to describe the internal
+behavior that takes place within business collaboration. A collaboration is a (possibly temporary) collection of
+business roles or actors within an organization, which perform collaborative behavior (interactions). Unlike a
+department, which may also group roles, a business collaboration need not have an official (permanent) status within
+the organization; it is specifically aimed at a specific interaction or set of interactions between roles. It is
+especially useful in modeling B2B interactions between different organizations such as provider networks, and also
+for describing social networks.
+
+A business collaboration may aggregate a number of business roles or actors, and may be assigned to one or more
+business interactions or other business internal behavior elements. A business interface or an application interface
+may serve a business collaboration, while a business collaboration may have business interfaces (through composition,
+ and also through aggregation via derived relationships). The name of a business collaboration should preferably be a
+  noun. It is also rather common to leave a business collaboration unnamed.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_collaboration.svg" ;
+.
+
+:BusinessInterface
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:ExternalBehaviorElement,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "BusinessInterface"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946045" ;
+    skos:definition
+                         '''A business interface is a point of access where a business service is made available to the
+            environment.'''@en ;
+    skos:scopeNote       '''
+A business interface exposes the functionality of a business service to other business roles or actors. It is often
+referred to as a channel (telephone, Internet, local office, etc.). The same business service may be exposed through
+different interfaces.
+
+A business interface may be part of a business role or actor through a composition relationship, and a business
+interface may serve a business role. A business interface may be assigned to one or more business services, which
+means that these services are exposed by the interface. The name of a business interface should preferably be a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_interface.svg" ;
+.
+
+:BusinessProcess
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalBehaviorElement,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "BusinessProcess"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946048s" ;
+    skos:definition
+                         '''A business process represents a sequence of business behaviors that achieves a specific
+            outcome such as a defined set of products or business services.'''@en ;
+    skos:scopeNote       '''
+A business process describes the internal behavior performed by a business role that is required to produce a set of
+products and services. For a consumer, the products and services are relevant and the required behavior is merely a
+black box, hence the designation “internal”.
+
+A complex business process may be an aggregation of other, finer-grained processes. To each of these, finer-grained
+roles may be assigned.
+
+There is a potential many-to-many relationship between business processes and business functions. Informally
+speaking, processes describe some kind of “flow” of activities, whereas functions group activities according to
+required skills, knowledge, resources, etc.
+
+A business process may be triggered by, or trigger, any other business behavior element (e.g., business event,
+business process, business function, or business interaction). A business process may access business objects. A
+business process may realize one or more business services and may use (internal) business services or application
+services. A business role may be assigned to a business process to perform this process manually. An automated
+business process can be realized by an application process. The name of a business process should clearly indicate a
+predefined sequence of actions, and may include the word “process”. Examples are “adjudicate claim”, “employee
+on-boarding”, “approval process”, or “financial reporting”.
+
+In an ArchiMate model, the existence of business processes is depicted. High-level business, end-to-end processes,
+macro flows, and workflows can all be expressed with the same business process element in the ArchiMate language. It
+does not, however, list the flow of activities in detail. This is typically done during business process modeling,
+where a business process can be expanded using a business process design language; e.g., BPMN
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_process.svg" ;
+.
+
+:BusinessFunction
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalBehaviorElement,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "BusinessFunction"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946049" ;
+    skos:definition
+                         '''A business function is a collection of business behavior based on a chosen set of criteria
+    (typically required business resources and/or competencies), closely aligned to an organization, but not
+    necessarily explicitly governed by the organization.'''@en ;
+    skos:scopeNote       '''
+Just like a business process, a business function also describes internal behavior performed by a business role.
+However, while a business process groups behavior based on a sequence or flow of activities that is needed to realize
+ a product or service, a business function typically groups behavior based on required business resources, skills,
+ competencies, knowledge, etc.
+
+There is a potential many-to-many relation between business processes and business functions. Complex processes in
+general involve activities that offer various functions. In this sense a business process forms a string of business
+functions. In general, a business function delivers added value from a business point of view. Organizational units
+or applications may coincide with business functions due to their specific grouping of business activities.
+
+A business function may be triggered by, or trigger, any other business behavior element (business event, business
+process, business function, or business interaction). A business function may access business objects. A business
+function may realize one or more business services and may be served by business, application, or technology services
+. A business role may be assigned to a business function. The name of a business function should clearly indicate a
+well-defined behavior. Examples are customer management, claims administration, member services, recycling, or
+payment processing.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_function.svg" ;
+.
+
+:BusinessInteraction
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalBehaviorElement,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "BusinessInteraction"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946050" ;
+    skos:definition
+                         '''A business interaction is a unit of collective business behavior performed by (a
+            collaboration of) two or more business roles.'''@en ;
+    skos:scopeNote       '''
+A business interaction is similar to a business process/function, but while a process/function may be performed by a
+single role, an interaction is performed by a collaboration of multiple roles. The roles in the collaboration share
+the responsibility for performing the interaction.
+
+A business interaction may be triggered by, or trigger, any other business behavior element (business event, business
+ process, business function, or business interaction). A business interaction may access business objects. A business
+  interaction may realize one or more business services and may use (internal) business services or application
+  services. A business collaboration may be assigned to a business interaction. The name of a business interaction
+  should preferably be a verb in the simple present tense.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_interaction.svg" ;
+.
+
+:BusinessEvent
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:Event,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "BusinessEvent"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946051" ;
+    skos:definition
+                         '''A business event is a business behavior element that denotes an organizational state change
+    . It may originate from and be resolved inside or outside the organization.'''@en ;
+    skos:scopeNote       '''
+Business processes and other business behavior may be triggered or interrupted by a business event. Also, business
+processes may raise events that trigger other business processes, functions, or interactions. Unlike business
+processes, functions, and interactions, a business event is instantaneous: it does not have duration. Events may
+originate from the environment of the organization (e.g., from a customer), but also internal events may occur
+generated by, for example, other processes within the organization.
+
+A business event may have a time attribute that denotes the moment or moments at which the event happens. For
+example, this can be used to model time schedules; e.g., to model an event that triggers a recurring business process
+ to execute every first Monday of the month.
+
+A business event may trigger or be triggered (raised) by a business process, business function, or business
+interaction. A business event may access a business object and may be composed of other business events. The name of
+a business event should preferably be a verb in the perfect tense; e.g., claim received.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_event.svg" ;
+.
+
+:BusinessService
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:ExternalBehaviorElement,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "BusinessService"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946052" ;
+    skos:definition      '''A business service represents an explicitly defined exposed business behavior.'''@en ;
+    skos:scopeNote       '''
+A business service exposes the functionality of business roles or collaborations to their environment. This
+functionality is accessed through one or more business interfaces.
+
+A business service should provide a unit of behavior that is meaningful from the point of view of the environment. It
+ has a purpose, which states this utility. The environment includes the (behavior of) users from outside as well as
+ inside the organization. Business services can be external, customer-facing services (e.g., a travel insurance
+ service) or internal support services (e.g., a resource management service).
+
+A business service is associated with a value. A business service may serve a business process, business function, or
+ business interaction. A business process, business function, or business interaction may realize a business service.
+  A business interface may be assigned to a business service. A business service may access business objects. The
+  name of a business service should preferably be a verb ending with “ing”; e.g., transaction processing. Also, a
+  name explicitly containing the word “service” may be used.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_service.svg" ;
+.
+
+:BusinessObject
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:PassiveStructureElement,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "BusinessObject"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946055" ;
+    skos:definition      '''A business object represents a concept used within a particular business domain.'''@en ;
+    skos:scopeNote       '''
+As explained in Section 3.6, the ArchiMate language in general focuses on the modeling of types, not instances, since
+ this is the most relevant at the Enterprise Architecture level of description. Hence a business object typically
+ models an object type (cf. a UML class) of which multiple instances may exist in operations. Only occasionally,
+ business objects represent actual instances of information produced and consumed by behavior elements such as
+ business processes. This is in particular the case for singleton types; i.e., types that have only one instance.
+
+A wide variety of types of business objects can be defined. Business objects are passive in the sense that they do
+not trigger or perform processes. A business object could be used to represent information assets that are relevant
+from a business point of view and can be realized by data objects.
+
+Business objects may be accessed (e.g., in the case of information objects, they may be created, read, written) by a
+business process, function, business interaction, business event, or business service. A business object may have
+association, specialization, aggregation, or composition relationships with other business objects. A business object
+ may be realized by a representation or by a data object (or both). The name of a business object should preferably
+ be a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_object.svg" ;
+.
+
+:Contract
+    a                    owl:Class ;
+    rdfs:subClassOf      :BusinessObject ;
+    skos:prefLabel       "Contract"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946056" ;
+    skos:definition
+                         '''A contract represents a formal or informal specification of an agreement between a provider
+            and a consumer that specifies the rights and obligations associated with a product and establishes
+            functional and non-functional parameters for interaction.'''@en ;
+    skos:scopeNote       '''
+The contract element may be used to model a contract in the legal sense, but also a more informal agreement
+associated with a product. It may also be or include a Service-Level Agreement (SLA), describing an agreement about
+the functionality and quality of the services that are part of a product. A contract is a specialization of a
+business object.
+
+The relationships that apply to a business object also apply to a contract. In addition, a contract may have an
+aggregation relationship with a product. The name of a contract is preferably a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_contract.svg" ;
+.
+
+:Representation
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:PassiveStructureElement,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "Representation"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946057" ;
+    skos:definition
+                         '''A representation represents a perceptible form of the information carried by a business
+            object.'''@en ;
+    skos:scopeNote       '''
+Representations (for example, messages or documents) are the perceptible carriers of information that are related to
+business objects. If relevant, representations can be classified in various ways; for example, in terms of medium
+(electronic, paper, audio, etc.) or format (HTML, ASCII, PDF, RTF, etc.). A single business object can have a number
+of different representations. Also, a single representation can realize one or more specific business objects.
+
+A meaning can be associated with a representation that carries this meaning. The name of a representation is
+preferably a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_representation.svg" ;
+.
+
+:Product
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:CompositeElement,
+                         ameta:BusinessLayerElement ;
+    skos:prefLabel       "Product"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap08.html#_Toc489946060" ;
+    skos:definition
+                         '''A product represents a coherent collection of services and/or passive structure elements,
+            accompanied by a contract/set of agreements, which is offered as a whole to (internal or external)
+            customers.'''@en ;
+    skos:scopeNote       '''
+This definition covers both intangible, services-based, or information products that are common in
+information-intensive organizations, and tangible, physical products. A financial or information product consists of
+a collection of services, and a contract that specifies the characteristics, rights, and requirements associated with
+ the product. “Buying” a product gives the customer the right to use the associated services.
+
+Generally, the product element is used to specify a product type. The number of product types in an organization is
+typically relatively stable compared to, for example, the processes that realize or support the products. “Buying” is
+ usually one of the services associated with a product, which results in a new instance of that product (belonging to
+  a specific customer). Similarly, there may be services to modify or destroy a product.
+
+A product may aggregate or compose business services, application services, and technology services, business
+objects, data objects, and technology objects, as well as a contract. Hence a product may aggregate or compose
+elements from other layers than the Business Layer.
+
+A value may be associated with a product. The name of a product is usually the name which is used in the
+communication with customers, or possibly a more generic noun (e.g., “travel insurance”).
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/business_product.svg" ;
+.
+
+:ApplicationComponent
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalActiveStructureElement,
+                         ameta:ApplicationLayerElement ;
+    skos:prefLabel       "ApplicationComponent"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap09.html#_Toc489946066" ;
+    skos:definition
+                         '''An application component represents an encapsulation of application functionality aligned
+            to implementation structure, which is modular and replaceable. It encapsulates its behavior and data,
+            exposes services, and makes them available through interfaces.'''@en ;
+    skos:scopeNote       '''
+An application component is a self-contained unit. As such, it is independently deployable, re-usable, and
+replaceable. An application component performs one or more application functions. It encapsulates its contents: its
+functionality is only accessible through a set of application interfaces. Cooperating application components are
+connected via application collaborations.
+
+An application component may be assigned to one or more application functions. An application component has one or
+more application interfaces, which expose its functionality. Application interfaces of other application components
+may serve an application component. The name of an application component should preferably be a noun.
+
+The application component element is used to model entire applications (i.e., deployed and operational IT systems, as
+ defined by the TOGAF framework [4]) and individual parts of such applications, at all relevant levels of detail.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/app_component.svg" ;
+.
+
+:ApplicationCollaboration
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalActiveStructureElement,
+                         ameta:ApplicationLayerElement ;
+    skos:prefLabel       "ApplicationCollaboration"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap09.html#_Toc489946067" ;
+    skos:definition
+                         '''An application collaboration represents an aggregate of two or more application components
+            that work together to perform collective application behavior.'''@en ;
+    skos:scopeNote       '''
+An application collaboration specifies which components cooperate to perform some task. The collaborative behavior,
+including, for example, the communication pattern of these components, is modeled by an application interaction. An
+application collaboration typically models a logical or temporary collaboration of application components, and does
+not exist as a separate entity in the enterprise.
+
+Application collaboration is a specialization of component, and aggregates two or more (cooperating) application
+components. An application collaboration is an active structure element that may be assigned to one or more
+application interactions or other application internal behavior elements, which model the associated behavior. An
+application interface may serve an application collaboration, and an application collaboration may be composed of
+application interfaces. The name of an application collaboration should preferably be a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/app_collaboration.svg" ;
+.
+
+:ApplicationInterface
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:ExternalActiveStructureElement,
+                         ameta:ApplicationLayerElement ;
+    skos:prefLabel       "ApplicationInterface"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap09.html#_Toc489946068" ;
+    skos:definition
+                         '''An application interface represents a point of access where application services are made
+            available to a user, another application component, or a node.'''@en ;
+    skos:scopeNote       '''
+An application interface specifies how the functionality of a component can be accessed by other elements. An
+application interface exposes application services to the environment. The same application service may be exposed
+through different interfaces, and the same interface may expose multiple services.
+
+In a sense, an application interface specifies a kind of contract that a component exposing this interface must
+fulfill. This may include parameters, protocols used, pre- and post-conditions, and data formats.
+
+An application interface may be part of an application component through composition, which means that these
+interfaces are provided by that component, and can serve other application components. An application interface can
+be assigned to application services, which means that the interface exposes these services to the environment. The
+name of an application interface should preferably be a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/app_interface.svg" ;
+.
+
+:ApplicationFunction
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalBehaviorElement,
+                         ameta:ApplicationLayerElement ;
+    skos:prefLabel       "ApplicationFunction"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap09.html#_Toc489946071" ;
+    skos:definition
+                         '''An application function represents automated behavior that can be performed by an
+            application component.'''@en ;
+    skos:scopeNote       '''
+An application function describes the internal behavior of an application component. If this behavior is exposed
+externally, this is done through one or more services. An application function abstracts from the way it is
+implemented. Only the necessary behavior is specified.
+
+An application function may realize one or more application services. Application services of other application
+functions and technology services may serve an application function. An application function may access data objects.
+ An application component may be assigned to an application function (which means that the application component
+ performs the application function). The name of an application function should preferably be a verb ending with
+ “ing”; e.g., “accounting”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/app_function.svg" ;
+.
+
+:ApplicationInteraction
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalBehaviorElement,
+                         ameta:ApplicationLayerElement ;
+    skos:prefLabel       "ApplicationInteraction"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap09.html#_Toc489946072" ;
+    skos:definition
+                         '''An application interaction represents a unit of collective application behavior performed
+            by (a collaboration of) two or more application components.'''@en ;
+    skos:scopeNote       '''
+An application interaction describes the collective behavior that is performed by the components that participate in
+an application collaboration. This may, for example, include the communication pattern between these components. An
+application interaction can also specify the externally visible behavior needed to realize an application service.
+The details of the interaction between the application components involved in an application interaction can be
+expressed during the detailed application design using, for example, a UML interaction diagram.
+
+An application collaboration may be assigned to an application interaction. An application interaction may realize an
+ application service. Application services and technology services may serve an application interaction. An
+ application interaction may access data objects. The name of an application interaction should clearly identify a
+ series of application behaviors; e.g., “Client profile creation” or “Update customer records”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/app_interaction.svg" ;
+.
+
+:ApplicationProcess
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalBehaviorElement,
+                         ameta:ApplicationLayerElement ;
+    skos:prefLabel       "ApplicationProcess"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap09.html#_Toc489946073" ;
+    skos:definition
+                         '''An application process represents a sequence of application behaviors that achieves a
+            specific outcome.'''@en ;
+    skos:scopeNote       '''
+An application process describes the internal behavior performed by an application component that is required to
+realize a set of services. For a (human or automated) consumer the services are relevant and the required behavior is
+ merely a black box, hence the designation “internal”.
+
+An application process may realize application services. Other application services may serve (be used by) an
+application process. An application process may access data objects. An application component may be assigned to an
+application process (which means that this component performs the process). The name of an application process should
+ clearly identify a series of application behaviors; e.g., “Claims adjudication process”, or “General ledger update
+ job”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/app_process.svg" ;
+.
+
+:ApplicationEvent
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:Event,
+                         ameta:ApplicationLayerElement ;
+    skos:prefLabel       "ApplicationEvent"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap09.html#_Toc489946074" ;
+    skos:definition      '''An application event is an application behavior element that denotes a state change.'''@en ;
+    skos:scopeNote       '''
+Application functions and other application behavior may be triggered or interrupted by an application event. Also,
+application behavior may raise events that trigger other application behavior. Unlike processes, functions, and
+interactions, an event is instantaneous; it does not have duration. Events may originate from the environment of the
+organization (e.g., from an external application), but also internal events may occur generated by, for example,
+other applications within the organization.
+
+An application event may have a time attribute that denotes the moment or moments at which the event happens. For
+example, this can be used to model time schedules; e.g., an event that triggers a daily batch process.
+
+An application event may trigger or be triggered (raised) by an application function, process, or interaction. An
+application event may access a data object and may be composed of other application events. The name of an
+application event should preferably be a verb in the perfect tense; e.g., “claim received”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/app_event.svg" ;
+.
+
+:ApplicationService
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:ExternalBehaviorElement,
+                         ameta:ApplicationLayerElement ;
+    skos:prefLabel       "ApplicationService"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap09.html#_Toc489946075" ;
+    skos:definition
+                         '''An application service represents an explicitly defined exposed application behavior
+                         .'''@en ;
+    skos:scopeNote       '''
+An application service exposes the functionality of components to their environment. This functionality is accessed
+through one or more application interfaces. An application service is realized by one or more application functions
+that are performed by the component. It may require, use, and produce data objects.
+
+An application service should be meaningful from the point of view of the environment; it should provide a unit of
+behavior that is, in itself, useful to its users. It has a purpose, which states this utility to the environment.
+This means, for example, that if this environment includes business processes, application services should have
+business relevance.
+
+A purpose may be associated with an application service. An application service may serve business processes,
+business functions, business interactions, or application functions. An application function may realize an
+application service. An application interface may be assigned to an application service. An application service may
+access data objects. The name of an application service should preferably be a verb ending with “ing”; e.g.,
+“transaction processing”. Also, a name explicitly containing the word “service” may be used.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/app_service.svg" ;
+.
+
+:DataObject
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:PassiveStructureElement,
+                         ameta:ApplicationLayerElement ;
+    skos:prefLabel       "DataObject"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap09.html#_Toc489946078" ;
+    skos:definition      '''A data object represents data structured for automated processing.'''@en ;
+    skos:scopeNote       '''
+A data object should be a self-contained piece of information with a clear meaning to the business, not just to the
+application level. Typical examples of data objects are a customer record, a client database, or an insurance claim.
+
+As explained in Section 3.6, the ArchiMate language in general focuses on the modeling of types, not instances, since
+ this is the most relevant at the Enterprise Architecture level of description. Hence a data object typically models
+ an object type (cf. a UML class) of which multiple instances may exist in operational applications. An important
+ exception is when a data object is used to model a data collection such as a database, of which only one instance
+ exists.
+
+An application function or process can operate on data objects. A data object may be communicated via interactions
+and used or produced by application services. A data object can be accessed by an application function, application
+interaction, or application service. A data object may realize a business object, and may be realized by an artifact.
+ A data object may have association, specialization, aggregation, or composition relationships with other data
+ objects. The name of a data object should preferably be a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/app_data_object.svg" ;
+.
+
+:Node
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalActiveStructureElement,
+                         ameta:TechnologyLayerElement ;
+    skos:prefLabel       "Node"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946084" ;
+    skos:definition
+                         '''A node represents a computational or physical resource that hosts, manipulates, or
+            interacts with other computational or physical resources.'''@en ;
+    skos:scopeNote       '''
+Nodes are active structure elements that perform technology behavior and execute, store, and process technology
+objects such as artifacts (or materials, as outlined in Chapter 11). For instance, nodes are used to model
+application platforms, defined by the TOGAF framework [4] as: “a collection of technology components of hardware and
+software that provide the services used to support applications”.
+
+Nodes can be interconnected by paths. A node may be assigned to an artifact to model that the artifact is deployed on
+ the node.
+
+The name of a node should preferably be a noun. A node may consist of sub-nodes.
+
+Artifacts deployed on a node may either be drawn inside the node or connected to it with an assignment relationship.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_node.svg" ;
+.
+
+:Device
+    a                    owl:Class ;
+    rdfs:subClassOf      :Node ;
+    skos:prefLabel       "Device"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946085" ;
+    skos:definition
+                         '''A device is a physical IT resource upon which system software and artifacts may be stored
+            or deployed for execution.'''@en ;
+    skos:scopeNote       '''
+A device is a specialization of a node that represents a physical IT resource with processing capability. It is
+typically used to model hardware systems such as mainframes, PCs, or routers. Usually, they are part of a node
+together with system software. Devices may be composite; i.e., consist of sub-devices.
+
+Devices can be interconnected by communication networks. Devices can be assigned to artifacts and to system software,
+ to model that artifacts and system software are deployed on that device. A node can contain one or more devices.
+
+The name of a device should preferably be a noun referring to the type of hardware; e.g., “IBM System z mainframe”.
+
+Different icons may be used to distinguish between different types of devices; e.g., mainframes and PCs.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_device.svg" ;
+.
+
+:SystemSoftware
+    a                    owl:Class ;
+    rdfs:subClassOf      :Node ;
+    skos:prefLabel       "SystemSoftware"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946086" ;
+    skos:definition
+                         '''System software represents software that provides or contributes to an environment for
+            storing, executing, and using software or data deployed within it.'''@en ;
+    skos:scopeNote       '''
+System software is a specialization of a node that is used to model the software environment in which artifacts run.
+This can be, for example, an operating system, a JEE application server, a database system, or a workflow engine.
+Also, system software can be used to represent, for example, communication middleware. Usually, system software is
+combined with a device representing the hardware environment to form a general node.
+
+A device or system software can be assigned to other system software; e.g., to model different layers of software
+running on top of each other. System software can be assigned to artifacts, to model that these artifacts are
+deployed on that software. System software can realize other system software. A node can be composed of system software.
+
+The name of system software should preferably be a noun referring to the type of execution environment; e.g., “JEE
+server”. System software may be composed of other system software; e.g., an operating system containing a database.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_software.svg" ;
+.
+
+:TechnologyCollaboration
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalActiveStructureElement,
+                         ameta:TechnologyLayerElement ;
+    skos:prefLabel       "TechnologyCollaboration"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946087" ;
+    skos:definition
+                         '''A technology collaboration represents an aggregate of two or more nodes that work together
+            to perform collective technology behavior.'''@en ;
+    skos:scopeNote       '''
+A technology collaboration specifies which nodes cooperate to perform some task. The collaborative behavior,
+including, for example, the communication pattern of these nodes, is modeled by a technology interaction. A
+technology collaboration typically models a logical or temporary collaboration of nodes, and does not exist as a
+separate entity in the enterprise.
+
+Technology collaboration is a specialization of node, and aggregates two or more (cooperating) nodes. A technology
+collaboration is an active structure element that may be assigned to one or more technology interactions or other
+technology internal behavior elements, which model the associated behavior. A technology interface may serve a
+technology collaboration, and a technology collaboration may be composed of technology interfaces. The name of a
+technology collaboration should preferably be a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_collaboration.svg" ;
+.
+
+:TechnologyInterface
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:ExternalActiveStructureElement,
+                         ameta:TechnologyLayerElement ;
+    skos:prefLabel       "TechnologyInterface"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946088" ;
+    skos:definition
+                         '''A technology interface represents a point of access where technology services offered by a
+            node can be accessed.'''@en ;
+    skos:scopeNote       '''
+A technology interface specifies how the technology services of a node can be accessed by other nodes. A technology
+interface exposes a technology service to the environment. The same service may be exposed through different interfaces.
+
+In a sense, a technology interface specifies a kind of contract that a component realizing this interface must
+fulfill. This may include, for example, parameters, protocols used, pre- and post-conditions, and data formats.
+
+A technology interface may be part of a node through composition (not shown in the standard notation), which means
+that these interfaces are provided by that node, and can serve other nodes. A technology interface can be assigned to
+ a technology service, to expose that service to the environment.
+
+The name of a technology interface should preferably be a noun.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_interface.svg" ;
+.
+
+:Path
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:ActiveStructureElement,
+                         ameta:TechnologyLayerElement ;
+    skos:prefLabel       "Path"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946089" ;
+    skos:definition
+                         '''A path represents a link between two or more nodes, through which these nodes can exchange
+            data or material.'''@en ;
+    skos:scopeNote       '''
+A path is used to model the logical communication (or distribution) relations between nodes. It is realized by one or
+ more communication networks (or distribution networks when modeling physical elements; see Chapter 11), which
+ represent the physical communication (or distribution) links. The properties (e.g., bandwidth, latency) of a path
+ are usually aggregated from these underlying networks.
+
+A path connects two or more nodes. A path is realized by one or more networks. A path can aggregate nodes.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_path.svg" ;
+.
+
+:CommunicationNetwork
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:ActiveStructureElement,
+                         ameta:TechnologyLayerElement ;
+    skos:prefLabel       "CommunicationNetwork"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946090" ;
+    skos:definition
+                         '''A communication network represents a set of structures that connects computer systems or
+            other electronic devices for transmission, routing, and reception of data or data-based communications
+            such as voice and video.'''@en ;
+    skos:scopeNote       '''
+A communication network represents the physical communication infrastructure. It represents ”a set of products,
+concepts, and services that enable the connection of computer systems or devices for the purpose of transmitting data
+ and other forms (e.g., voice and video) between the systems”, as defined by the TOGAF framework [4].
+
+A communication network connects two or more devices. The most basic communication network is a single link between
+two devices, but it may comprise multiple links and associated network equipment. A network has properties such as
+bandwidth and latency. A communication network realizes one or more paths. It embodies the physical realization of
+the logical path between nodes.
+
+A communication network can consist of sub-networks. It can aggregate devices and system software, for example, to
+model the routers, switches, and firewalls that are part of the network infrastructure.
+
+Note: Formerly, this element was called ‘network’. This usage is still permitted but deprecated, and will be removed
+from a future version of the standard.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_communication_network.svg" ;
+.
+
+:TechnologyFunction
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalBehaviorElement,
+                         ameta:TechnologyLayerElement ;
+    skos:prefLabel       "TechnologyFunction"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946093" ;
+    skos:definition
+                         '''A technology function represents a collection of technology behavior that can be performed
+            by a node.'''@en ;
+    skos:scopeNote       '''
+A technology function describes the internal behavior of a node; for the user of a node that performs a technology
+function, this function is invisible. If its behavior is exposed externally, this is done through one or more
+technology services. A technology function abstracts from the way it is implemented. Only the necessary behavior is
+specified.
+
+A technology function may realize technology services. Technology services of other technology functions may serve
+technology functions. A technology function may access technology objects. A node may be assigned to a technology
+function (which means that the node performs the technology function). The name of a technology function should
+preferably be a verb ending with “ing”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_function.svg" ;
+.
+
+:TechnologyProcess
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalBehaviorElement,
+                         ameta:TechnologyLayerElement ;
+    skos:prefLabel       "TechnologyProcess"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946094" ;
+    skos:definition
+                         '''A technology process represents a sequence of technology behaviors that achieves a specific
+            outcome.'''@en ;
+    skos:scopeNote       '''
+A technology process describes internal behavior of a node; for the user of that node, this process is invisible. If
+its behavior is exposed externally, this is done through one or more technology services. A technology process
+abstracts from the way it is implemented. Only the necessary behavior is specified. It can use technology objects as
+input and use or transform these to produce other technology objects as output.
+
+A technology process may realize technology services. Other technology services may serve (be used by) a technology
+process. A technology process may access technology objects. A node may be assigned to a technology process, which
+means that this node performs the process. The name of a technology process should clearly identify a series of
+technology behaviors; e.g., “System boot sequence” or “Replicate database”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_process.svg" ;
+.
+
+:TechnologyInteraction
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalBehaviorElement,
+                         ameta:TechnologyLayerElement ;
+    skos:prefLabel       "TechnologyInteraction"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946095" ;
+    skos:definition
+                         '''A technology interaction represents a unit of collective technology behavior performed by
+    (a collaboration of) two or more nodes.'''@en ;
+    skos:scopeNote       '''
+A technology interaction describes the collective behavior that is performed by the nodes that participate in a
+technology collaboration. This may, for example, include the communication pattern between these components. A
+technology interaction can also specify the externally visible behavior needed to realize a technology service. The
+details of the interaction between the nodes involved in a technology interaction can be expressed during the
+detailed design using, for example, a UML interaction diagram.
+
+A technology collaboration may be assigned to a technology interaction. A technology interaction may realize a
+technology service. Technology services may serve a technology interaction. A technology interaction may access
+artifacts. The name of a technology interaction should clearly identify a series of technology behaviors; e.g.,
+“Client profile creation” or “Update customer records”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_interaction.svg" ;
+.
+
+:TechnologyEvent
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:Event,
+                         ameta:TechnologyLayerElement ;
+    skos:prefLabel       "TechnologyEvent"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946096" ;
+    skos:definition      '''A technology event is a technology behavior element that denotes a state change.'''@en ;
+    skos:scopeNote       '''
+Technology functions and other technology behavior may be triggered or interrupted by a technology event. Also,
+technology functions may raise events that trigger other infrastructure behavior. Unlike processes, functions, and
+interactions, an event is instantaneous: it does not have duration. Events may originate from the environment of the
+organization, but also internal events may occur generated by, for example, other devices within the organization.
+
+A technology event may have a time attribute that denotes the moment or moments at which the event happens. For
+example, this can be used to model time schedules; e.g., to model an event that triggers a recurring infrastructure
+function such as making a daily backup.
+
+A technology event may trigger or be triggered (raised) by a technology function, process, or interaction. A
+technology event may access a data object and may be composed of other technology events. The name of a technology
+event should preferably be a verb in the perfect tense; e.g., “message received”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_event.svg" ;
+.
+
+:TechnologyService
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:ExternalBehaviorElement,
+                         ameta:TechnologyLayerElement ;
+    skos:prefLabel       "TechnologyService"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946097" ;
+    skos:definition      '''A technology service represents an explicitly defined exposed technology behavior.'''@en ;
+    skos:scopeNote       '''
+A technology service exposes the functionality of a node to its environment. This functionality is accessed through
+one or more technology interfaces. It may require, use, and produce artifacts.
+
+A technology service should be meaningful from the point of view of the environment; it should provide a unit of
+behavior that is, in itself, useful to its users, such as application components and nodes.
+
+Typical technology services may, for example, include messaging, storage, naming, and directory services. It may
+access artifacts; e.g., a file containing a message.
+
+A technology service may serve application components or nodes. A technology service is realized by a technology
+function or process. A technology service is exposed by a node by assigning technology interfaces to it. A technology
+ service may access artifacts. A technology service may consist of sub-services.
+
+The name of a technology service should preferably be a verb ending with “ing”; e.g., “messaging”. Also, a name
+explicitly containing the word “service” may be used.
+
+Note: In previous versions of this standard, this element was called ‘infrastructure service’. This usage is still
+permitted but deprecated, and will be removed from a future version of the standard.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_service.svg" ;
+.
+
+
+:Artifact
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:PassiveStructureElement,
+                         ameta:TechnologyLayerElement ;
+    skos:prefLabel       "Artifact"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap10.html#_Toc489946101" ;
+    skos:definition
+                         '''An artifact represents a piece of data that is used or produced in a software development
+        process, or by deployment and operation of an IT system.'''@en ;
+    skos:scopeNote       '''
+An artifact represents a tangible element in the IT world. Artifact is a specialization of technology object. It is
+typically used to model (software) products such as source files, executables, scripts, database tables, messages,
+documents, specifications, and model files. An instance (copy) of an artifact can be deployed on a node. An artifact
+could be used to represent a physical data component that realizes a data object.
+
+An application component or system software may be realized by one or more artifacts. A data object may be realized
+by one or more artifacts. A node may be assigned to an artifact to model that the artifact is deployed on the node.
+Thus, the two typical ways to use the artifact element are as an execution component or as a data file. In fact,
+these could be defined as specializations of the artifact element.
+
+The name of an artifact should preferably be the name of the file it represents; e.g., “order.jar”. An artifact may
+consist of sub-artifacts.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_artifact.svg" ;
+.
+
+:Equipment
+    a                    owl:Class ;
+    rdfs:subClassOf      :Node,
+                         ameta:PhysicalLayerElement ;
+    skos:prefLabel       "Equipment"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap11.html#_Toc489946107" ;
+    skos:definition
+                         '''Equipment represents one or more physical machines, tools, or instruments that can create,
+            use, store, move, or transform materials.'''@en ;
+    skos:scopeNote       '''
+Equipment comprises all active processing elements that carry out physical processes in which materials (which are a
+special kind of technology object) are used or transformed. Equipment is a specialization of the node element from
+the Technology Layer. Therefore, it is possible to model nodes that are formed by a combination of IT infrastructure
+(devices, system software) and physical infrastructure (equipment); e.g., an MRI scanner at a hospital, a production
+plant with its control systems, etc.
+
+Material can be accessed (e.g., created, used, stored, moved, or transformed) by equipment. Equipment can serve other
+ equipment, and also other active structure elements such as business roles and actors, and facilities can be
+ assigned to equipment. A piece of equipment can be composed of other pieces of equipment. Equipment can be assigned
+ to (i.e., installed and used in or on) a facility and can be aggregated in a location.
+
+The name of a piece of equipment should preferably be a noun.
+
+A useful specialization of equipment is vehicle, for describing, for example, trucks, cars, trains, ships, and
+airplanes.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_equipment.svg" ;
+.
+
+:Facility
+    a                    owl:Class ;
+    rdfs:subClassOf      :Node,
+                         ameta:PhysicalLayerElement ;
+    skos:prefLabel       "Facility"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap11.html#_Toc489946108" ;
+    skos:definition      '''A facility represents a physical structure or environment.'''@en ;
+    skos:scopeNote       '''
+A facility is a specialization of a node. It represents a physical resource that has the capability of facilitating
+(e.g., housing or locating) the use of equipment. It is typically used to model factories, buildings, or outdoor
+constructions that have an important role in production or distribution processes. Examples of facilities include a
+factory, a laboratory, a warehouse, a shopping mall, a cave, or a spaceship. Facilities may be composite; i.e.,
+consist of sub-facilities.
+
+Facilities can be interconnected by distribution networks. A facility can serve other facilities, and also other
+active structure elements such as business roles and actors. A facility can be composed of other facilities and can
+be aggregated in a location.
+
+The name of a facility should preferably be a noun referring to the type of facility; e.g., “Rotterdam harbor oil
+refinery”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_facility.svg" ;
+.
+
+:DistributionNetwork
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:ActiveStructureElement,
+                         ameta:PhysicalLayerElement  ;
+    skos:prefLabel       "DistributionNetwork"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap11.html#_Toc489946109" ;
+    skos:definition
+                         '''A distribution network represents a physical network used to transport materials or energy
+    .'''@en ;
+    skos:scopeNote       '''
+A distribution network represents the physical distribution or transportation infrastructure. It embodies the
+physical realization of the logical paths between nodes.
+
+A distribution network connects two or more nodes. A distribution network may realize one or more paths. A
+distribution network can consist of sub-networks and can aggregate facilities and equipment, for example, to model
+railway stations and trains that are part of a rail network.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_distribution_network.svg" ;
+.
+
+:Material
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:PassiveStructureElement ,
+                         ameta:PhysicalLayerElement  ;
+    skos:prefLabel       "Material"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap11.html#_Toc489946112" ;
+    skos:definition      '''Material represents tangible physical matter or physical elements.'''@en ;
+    skos:scopeNote       '''
+Material represents tangible physical matter, with attributes such as size and weight. It is typically used to model
+raw materials and physical products, and also energy sources such as fuel. Material can be accessed by physical
+processes.
+
+The name of material should be a noun. Pieces of material may be composed of other pieces of material.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/tech_material.svg" ;
+.
+
+:WorkPackage
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:InternalBehaviorElement,
+                         ameta:ImplementationAndMigrationLayerElement  ;
+    skos:prefLabel       "WorkPackage"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap13.html#_Toc489946122" ;
+    skos:definition
+                         '''A work package represents a series of actions identified and designed to achieve specific
+            results within specified time and resource constraints.'''@en ;
+    skos:scopeNote       '''
+The central behavioral element is a work package. A work package is a behavior element that has a clearly defined
+start and end date, and realizes a well-defined set of goals or deliverables. The work package element can be used to
+ model sub-projects or tasks within a project, complete projects, programs, or project portfolios.
+
+Conceptually, a work package is similar to a business process, in that it consists of a set of causally-related
+tasks, aimed at producing a well-defined result. However, a work package is a unique, “one-off” process. Still, a
+work package can be described in a way very similar to the description of a process.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/impl_work_package.svg" ;
+.
+
+:Deliverable
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:PassiveStructureElement,
+                         ameta:ImplementationAndMigrationLayerElement  ;
+    skos:prefLabel       "Deliverable"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap13.html#_Toc489946123" ;
+    skos:definition      '''A deliverable represents a precisely-defined outcome of a work package.'''@en ;
+    skos:scopeNote       '''
+Work packages produce deliverables. These may be results of any kind; e.g., reports, papers, services, software,
+physical products, etc., or intangible results such as organizational change. A deliverable may also be the
+implementation of (a part of) an architecture.
+
+Often, deliverables are contractually specified and in turn formally reviewed, agreed, and signed off by the
+stakeholders as is, for example, prescribed by the TOGAF framework.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/impl_deliverable.svg" ;
+.
+
+:ImplementationEvent
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:Event,
+                         ameta:ImplementationAndMigrationLayerElement  ;
+    skos:prefLabel       "ImplementationEvent"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap13.html#_Toc489946124" ;
+    skos:definition
+                         '''An implementation event is a behavior element that denotes a state change related to
+            implementation or migration.'''@en ;
+    skos:scopeNote       '''
+Work packages may be triggered or interrupted by an implementation event. Also, work packages may raise events that
+trigger other behavior. Unlike a work package, an event is instantaneous: it does not have duration.
+
+An implementation event may have a time attribute that denotes the moment or moments at which the event happens. For
+example, this can be used to model project schedules and milestones; e.g., an event that triggers a work package, an
+event that denotes its completion (with a triggering relationship from the work package to the event), or an event
+that denotes a lifecycle change of a deliverable (via an access relationship to that deliverable).
+
+Implementation events access deliverables to fulfill project objectives. For example, in a project to deliver a
+completely new application along with the technology needed to host it, an implementation event “Release to
+production” could access the deliverables “Final build”, “Staging environment”, and “Production environment”.
+
+An implementation event may trigger or be triggered (raised) by a work package or a plateau. An implementation event
+may access a deliverable and may be composed of other implementation events.
+
+An implementation event may be associated with any core element; e.g., to indicate a lifecycle state change. The name
+ of an implementation event should preferably be a verb in the perfect tense; e.g., “project initiation phase
+ completed”.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/impl_event.svg" ;
+.
+
+:Plateau
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:CompositeElement,
+                         ameta:ImplementationAndMigrationLayerElement  ;
+    skos:prefLabel       "Plateau"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap13.html#_Toc489946125" ;
+    skos:definition
+                         '''A plateau represents a relatively stable state of the architecture that exists during a
+            limited period of time.'''@en ;
+    skos:scopeNote       '''
+An important premise in the TOGAF framework is that the various architectures are described for different stages in
+time. In each of the Phases B, C, and D of the ADM, a Baseline Architecture and Target Architecture are created,
+describing the current situation and the desired future situation. In Phase E (Opportunities and Solutions),
+so-called Transition Architectures are defined, showing the enterprise at incremental states reflecting periods of
+transition between the Baseline and Target Architectures. Transition Architectures are used to allow for individual
+work packages and projects to be grouped into managed portfolios and programs, illustrating the business value at
+each stage.
+
+In order to support this, the plateau element is defined.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/impl_plateau.svg" ;
+.
+
+:Gap
+    a                    owl:Class ;
+    rdfs:subClassOf      ameta:PassiveStructureElement,
+                         ameta:ImplementationAndMigrationLayerElement  ;
+    skos:prefLabel       "Gap"@en ;
+    dcterms:source            "https://pubs.opengroup.org/architecture/archimate31-doc/chap13.html#_Toc489946126" ;
+    skos:definition      '''A gap represents a statement of difference between two plateaus.'''@en ;
+    skos:scopeNote       '''
+The gap element is associated with two plateaus (e.g., Baseline and Target Architectures, or two subsequent
+Transition Architectures), and represents the differences between these plateaus.
+
+In the TOGAF framework, a gap is an important outcome of a gap analysis in Phases B, C, and D of the ADM process, and
+ forms an important input for the subsequent implementation and migration planning.
+        '''@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/impl_gap.svg" ;
+.
+
+
+:Grouping
+    a                     owl:Class ;
+    rdfs:subClassOf       ameta:CompositeElement ;
+    skos:prefLabel        "Grouping"@en ;
+    prov:hadPrimarySource <https://pubs.opengroup.org/architecture/archimate31-doc/chap04.html#_Toc10045308> ;
+    skos:definition       '''
+The grouping element aggregates or composes concepts that belong together based on some common characteristic.
+
+![Grouping Notation](https://pubs.opengroup.org/architecture/archimate31-doc/ts_archimate_3.1-final_files/image031.png)
+
+The grouping element is used to aggregate or compose an arbitrary group of concepts, which can be elements and/or
+relationships of the same or of different types. An aggregation or composition relationship is used to link the
+grouping element to the grouped concepts.
+
+Concepts may be aggregated by multiple (overlapping) groups.
+
+One useful way of employing grouping is for modeling Architecture and Solution Building Blocks (ABBs and SBBs), as
+described in the TOGAF framework [4].
+
+Another useful application of grouping is for modeling domains. For example, the TOGAF framework Glossary of
+Supplementary Definition (Section A.40) defines Information Domain as: “grouping of information (or data entities) by
+ a set of criteria such as security classification, ownership, location, etc. In the context of security, Information
+  Domains are defined as a set of users, their information objects, and a security policy”.
+        '''@en ;
+    skos:scopeNote
+                          '''
+                          The use of grouping is not to be confused with creating views on the architecture (Section
+                          14.3).
+                          Although like a view it comprises concepts that belong together for some reason, it does
+                          not provide a
+                          separate visualization of these concepts. Moreover, groupings are used within architecture
+                          views to
+                          provide additional structure to an architecture model and its visualization.
+                          '''@en,
+                          '''
+                           Grouping does not work with derivation of relationships (Section 5.7). However, its
+                           semantics do imply that a relationship from or to a group should be interpreted as a
+                           collective relationship with the group’s contents. In the example, the implied meaning is
+                           that the contents of the group together, or parts thereof, realize the service. However,
+                           this is not always easily expressed in simple derivable relationships.
+                          '''@en
+        ;
+    arch:prefVisNotation  "https://meta.linked.archi/archimate/v3/img/grouping.svg" ;
+.
+
+
+:Location
+    a                     owl:Class ;
+    rdfs:subClassOf       ameta:CompositeElement ;
+    skos:prefLabel        "Location"@en ;
+    skos:definition       '''
+A location represents a conceptual or physical place or position where concepts are located (e.g., structure
+elements) or performed (e.g., behavior elements).
+
+![Location Notation](https://pubs.opengroup.org/architecture/archimate31-doc/ts_archimate_3.1-final_files/image033.png)
+
+The location element is used to model the places where (active and passive) structure elements such as business
+actors, application components, and devices are located. This is modeled by means of an aggregation relationship from
+ a location to structure element. A location can also aggregate a behavior element, to indicate where the behavior is
+  performed. This element corresponds to the “Where” column of the
+ [Zachman framework](https://www.zachman.com/about-the-zachman-framework).
+        '''@en ;
+    prov:hadPrimarySource <https://pubs.opengroup.org/architecture/archimate31-doc/chap04.html#_Toc10045309> ;
+    arch:prefVisNotation  "https://meta.linked.archi/archimate/v3/img/location.svg" ;
+.
+
+
+# <--- Element Classes
+
+
+# Archimate Relationships
+
+:access
+    a                    ameta:ArchimateRelationship ;
+    skos:prefLabel       "access"@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/rel_access.svg" ;
+    rdfs:domain          arch:Element ;
+    rdfs:range           arch:Element ;
+.
+
+
+:accessType
+    a              owl:DatatypeProperty ;
+    skos:prefLabel "accessType"@en ;
+    rdfs:domain    :access ;
+    rdfs:range     <http://www.opengroup.org/xsd/archimate/3.0/archimate3_Model.xsd#xscd(/type::AccessTypeEnum)> ;
+.
+
+
+:modifier
+    a              owl:DatatypeProperty ;
+    skos:prefLabel "modifier"@en ;
+    rdfs:domain    :influence ;
+    rdfs:range     <http://www.opengroup.org/xsd/archimate/3.0/archimate3_Model.xsd#xscd(/type::InfluenceModifierType)> ;
+.
+
+:isDirected
+    a              owl:DatatypeProperty ;
+    skos:prefLabel "isDirected"@en ;
+    rdfs:domain    arch:Element ;
+    rdfs:range     arch:Element ;
+.
+
+
+:composition
+    a                    ameta:ArchimateRelationship ;
+    skos:prefLabel       "composition"@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/rel_composition.svg" ;
+    rdfs:domain          arch:Element ;
+    rdfs:range           arch:Element ;
+.
+
+:aggregation
+    a                    ameta:ArchimateRelationship ;
+    skos:prefLabel       "aggregation"@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/rel_aggregation.svg" ;
+    rdfs:domain          arch:Element ;
+    rdfs:range           arch:Element ;
+.
+
+:assignment
+    a                    ameta:ArchimateRelationship ;
+    skos:prefLabel       "assignment"@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/rel_assignment.svg" ;
+    rdfs:domain          arch:Element ;
+    rdfs:range           arch:Element ;
+.
+
+:realization
+    a                    ameta:ArchimateRelationship ;
+    skos:prefLabel       "realization"@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/rel_realization.svg" ;
+    rdfs:domain          arch:Element ;
+    rdfs:range           arch:Element ;
+.
+
+:serving
+    a                    ameta:ArchimateRelationship ;
+    skos:prefLabel       "serving"@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/rel_serving.svg" ;
+    rdfs:domain          arch:Element ;
+    rdfs:range           arch:Element ;
+.
+
+:influence
+    a                    ameta:ArchimateRelationship ;
+    skos:prefLabel       "influence"@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/rel_influence.svg" ;
+    rdfs:domain          arch:Element ;
+    rdfs:range           arch:Element ;
+.
+
+:triggering
+    a                    ameta:ArchimateRelationship ;
+    skos:prefLabel       "triggering"@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/rel_triggering.svg" ;
+    rdfs:domain          arch:Element ;
+    rdfs:range           arch:Element ;
+.
+
+:flow
+    a                    ameta:ArchimateRelationship ;
+    skos:prefLabel       "flow"@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/rel_flow.svg" ;
+    rdfs:domain          arch:Element ;
+    rdfs:range           arch:Element ;
+.
+
+:specialization
+    a                    ameta:ArchimateRelationship ;
+    skos:prefLabel       "specialization"@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/rel_specialization.svg" ;
+    rdfs:domain          arch:Element ;
+    rdfs:range           arch:Element ;
+.
+
+:association
+    a                    ameta:ArchimateRelationship ;
+    skos:prefLabel       "association"@en ;
+    arch:prefVisNotation "https://meta.linked.archi/archimate/v3/img/rel_association.svg" ;
+    rdfs:domain          arch:Element ;
+    rdfs:range           arch:Element ;
+.
+

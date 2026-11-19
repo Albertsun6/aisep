@@ -1,0 +1,193 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix easvc:   <https://meta.linked.archi/ea-service/onto#> .
+@prefix :        <https://meta.linked.archi/ea-service/reference-data#> .
+
+<https://meta.linked.archi/ea-service/reference-data#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/ea-service/onto#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ea-service/reference-data#" ;
+    vann:preferredNamespacePrefix "easvcrd" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EA-as-a-Service Reference Data"@en ;
+    dcterms:description                '''Reference data for EA-as-a-Service — service types, engagement
+statuses, and maturity levels.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ea-service/reference-data/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+#################################################################
+# EA Service Types (Starter Catalog)
+#################################################################
+
+:ArchitectureReview
+    a               easvc:EAServiceType ;
+    skos:prefLabel  "Architecture Review"@en ;
+    skos:definition "Review of a proposed architecture against enterprise standards, principles, and quality attributes."@en ;
+.
+
+:TechnologyRadar
+    a               easvc:EAServiceType ;
+    skos:prefLabel  "Technology Radar"@en ;
+    skos:definition "Assessment and communication of technology trends, recommendations, and adoption guidance."@en ;
+.
+
+:PortfolioAssessment
+    a               easvc:EAServiceType ;
+    skos:prefLabel  "Portfolio Assessment"@en ;
+    skos:definition "Application portfolio rationalization — TIME classification, fitness scoring, and modernization recommendations."@en ;
+.
+
+:TargetStateDesign
+    a               easvc:EAServiceType ;
+    skos:prefLabel  "Target State Design"@en ;
+    skos:definition "Design of future-state architecture for a domain, capability, or platform."@en ;
+.
+
+:StandardsGuidance
+    a               easvc:EAServiceType ;
+    skos:prefLabel  "Standards Guidance"@en ;
+    skos:definition "Guidance on technology standards, patterns, reference architectures, and best practices."@en ;
+.
+
+:ImpactAnalysis
+    a               easvc:EAServiceType ;
+    skos:prefLabel  "Impact Analysis"@en ;
+    skos:definition "Analysis of the impact of a proposed change on the architecture landscape — affected systems, dependencies, and risks."@en ;
+.
+
+:ModernizationPlanning
+    a               easvc:EAServiceType ;
+    skos:prefLabel  "Modernization Planning"@en ;
+    skos:definition "Planning for application or platform modernization — migration strategy, phasing, and cost estimation."@en ;
+.
+
+:AIReadinessAssessment
+    a               easvc:EAServiceType ;
+    skos:prefLabel  "AI Readiness Assessment"@en ;
+    skos:definition "Assessment of organizational readiness for AI adoption — data maturity, infrastructure, skills, and governance."@en ;
+.
+
+:ComplianceValidation
+    a               easvc:EAServiceType ;
+    skos:prefLabel  "Compliance Validation"@en ;
+    skos:definition "Validation of architecture against regulatory or governance requirements using SHACL shapes."@en ;
+.
+
+:OnboardingConsultation
+    a               easvc:EAServiceType ;
+    skos:prefLabel  "Onboarding Consultation"@en ;
+    skos:definition "Consultative engagement for new projects or initiatives — architecture context, standards orientation, and integration guidance."@en ;
+.
+
+
+#################################################################
+# Engagement Statuses
+#################################################################
+
+:Requested
+    a               easvc:EngagementStatus ;
+    skos:prefLabel  "Requested"@en ;
+    skos:definition "Service has been requested but not yet accepted by the EA team."@en ;
+    skos:notation   "REQUESTED" ;
+.
+
+:Accepted
+    a               easvc:EngagementStatus ;
+    skos:prefLabel  "Accepted"@en ;
+    skos:definition "EA team has accepted the engagement and assigned an architect."@en ;
+    skos:notation   "ACCEPTED" ;
+.
+
+:InProgress
+    a               easvc:EngagementStatus ;
+    skos:prefLabel  "In Progress"@en ;
+    skos:definition "Service delivery is underway."@en ;
+    skos:notation   "IN_PROGRESS" ;
+.
+
+:Delivered
+    a               easvc:EngagementStatus ;
+    skos:prefLabel  "Delivered"@en ;
+    skos:definition "Deliverables have been provided to the stakeholder."@en ;
+    skos:notation   "DELIVERED" ;
+.
+
+:Closed
+    a               easvc:EngagementStatus ;
+    skos:prefLabel  "Closed"@en ;
+    skos:definition "Engagement is complete and satisfaction has been assessed."@en ;
+    skos:notation   "CLOSED" ;
+.
+
+:Declined
+    a               easvc:EngagementStatus ;
+    skos:prefLabel  "Declined"@en ;
+    skos:definition "Request was declined by the EA team (with rationale)."@en ;
+    skos:notation   "DECLINED" ;
+.
+
+
+#################################################################
+# EA Maturity Levels (Gartner-aligned)
+#################################################################
+
+:Level1_Initial
+    a               easvc:MaturityLevel ;
+    skos:prefLabel  "Level 1 — Initial"@en ;
+    skos:definition '''Ad-hoc, informal, reactive EA practice. No standardized processes.
+Architecture work is project-driven and inconsistent. EA value is not
+measured or communicated.'''@en ;
+    skos:notation   "L1" ;
+.
+
+:Level2_Developing
+    a               easvc:MaturityLevel ;
+    skos:prefLabel  "Level 2 — Developing"@en ;
+    skos:definition '''EA processes are defined but inconsistently applied. Some governance
+exists but is not enforced. Architecture artifacts are produced but
+not widely consumed. EA team is building credibility.'''@en ;
+    skos:notation   "L2" ;
+.
+
+:Level3_Defined
+    a               easvc:MaturityLevel ;
+    skos:prefLabel  "Level 3 — Defined"@en ;
+    skos:definition '''Standardized EA processes and governance are in place. Architecture
+artifacts are produced consistently and consumed by stakeholders.
+EA has a defined service catalog and measurable outcomes.'''@en ;
+    skos:notation   "L3" ;
+.
+
+:Level4_Managed
+    a               easvc:MaturityLevel ;
+    skos:prefLabel  "Level 4 — Managed"@en ;
+    skos:definition '''EA outcomes are measured and continuously improved. Stakeholder
+satisfaction is tracked. EA influences investment decisions and
+technology strategy. The EA function operates as an internal
+consultancy.'''@en ;
+    skos:notation   "L4" ;
+.
+
+:Level5_Optimizing
+    a               easvc:MaturityLevel ;
+    skos:prefLabel  "Level 5 — Optimizing"@en ;
+    skos:definition '''EA drives strategic decisions and is fully integrated with business
+planning. Architecture is a product with backlogs, roadmaps, and KPIs.
+The EA function is recognized as indispensable by executive leadership.'''@en ;
+    skos:notation   "L5" ;
+.

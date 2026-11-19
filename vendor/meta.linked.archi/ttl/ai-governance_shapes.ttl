@@ -1,0 +1,344 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix aigov:   <https://meta.linked.archi/ai-governance/onto#> .
+@prefix :        <https://meta.linked.archi/ai-governance/shapes#> .
+
+<https://meta.linked.archi/ai-governance/shapes#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ai-governance/shapes#" ;
+    vann:preferredNamespacePrefix "aigovsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi AI Governance SHACL Shapes"@en ;
+    dcterms:description                '''SHACL shapes for validating AI governance models. Enforces
+governance rules: every AI system must have a risk classification, high-risk
+systems must have conformity assessments and human oversight plans, and all
+AI systems must have explainability documentation.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ai-governance/shapes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+#################################################################
+# AI System Shape — Core Governance Rules
+#################################################################
+
+:AISystemShape
+    a               sh:NodeShape ;
+    sh:targetClass  aigov:AISystem ;
+    skos:prefLabel  "AI System Governance Shape"@en ;
+    skos:definition "Validates that every AI system has the minimum required governance metadata."@en ;
+
+    sh:property [
+        sh:path        skos:prefLabel ;
+        sh:minCount    1 ;
+        sh:datatype    rdf:langString ;
+        sh:message     "Every AI system must have a human-readable label (skos:prefLabel)." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:hasRiskClassification ;
+        sh:minCount    1 ;
+        sh:message     "Every AI system must have a risk classification." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:governedBy ;
+        sh:minCount    1 ;
+        sh:message     "Every AI system must reference the governance policy that applies to it." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:hasExplainabilityReport ;
+        sh:minCount    1 ;
+        sh:message     "Every AI system must have explainability documentation." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:wrapsMLModel ;
+        sh:minCount    1 ;
+        sh:message     "Every AI system should reference at least one ML model it governs." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# High-Risk AI System Shape — Additional Requirements
+#################################################################
+
+:HighRiskAISystemShape
+    a               sh:NodeShape ;
+    sh:targetClass  aigov:AISystem ;
+    skos:prefLabel  "High-Risk AI System Shape"@en ;
+    skos:definition '''Additional validation for AI systems classified as High Risk.
+These systems must have conformity assessments, human oversight plans,
+bias assessments, and data governance records as required by the
+EU AI Act.'''@en ;
+
+    ## Conformity assessment required for high-risk systems
+    sh:property [
+        sh:path        aigov:hasConformityAssessment ;
+        sh:minCount    1 ;
+        sh:message     "High-risk AI systems must have at least one conformity assessment." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    ## Human oversight plan required for high-risk systems
+    sh:property [
+        sh:path        aigov:hasHumanOversightPlan ;
+        sh:minCount    1 ;
+        sh:message     "High-risk AI systems must have a human oversight plan." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    ## Bias assessment required for high-risk systems
+    sh:property [
+        sh:path        aigov:hasBiasAssessment ;
+        sh:minCount    1 ;
+        sh:message     "High-risk AI systems must have a bias assessment." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    ## Data governance record required for high-risk systems
+    sh:property [
+        sh:path        aigov:hasDataGovernanceRecord ;
+        sh:minCount    1 ;
+        sh:message     "High-risk AI systems must have a data governance record." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    ## Transparency record required for high-risk systems
+    sh:property [
+        sh:path        aigov:hasTransparencyRecord ;
+        sh:minCount    1 ;
+        sh:message     "High-risk AI systems must have a transparency record." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Risk Classification Shape
+#################################################################
+
+:RiskClassificationShape
+    a               sh:NodeShape ;
+    sh:targetClass  aigov:RiskClassification ;
+    skos:prefLabel  "Risk Classification Shape"@en ;
+    skos:definition "Validates that risk classifications have required metadata."@en ;
+
+    sh:property [
+        sh:path        aigov:classifiedAs ;
+        sh:minCount    1 ;
+        sh:maxCount    1 ;
+        sh:class       aigov:RiskLevel ;
+        sh:message     "A risk classification must assign exactly one risk level." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:classificationRationale ;
+        sh:minCount    1 ;
+        sh:message     "A risk classification must include a rationale." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:classificationDate ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:date ;
+        sh:message     "A risk classification must include the date it was performed." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Conformity Assessment Shape
+#################################################################
+
+:ConformityAssessmentShape
+    a               sh:NodeShape ;
+    sh:targetClass  aigov:ConformityAssessment ;
+    skos:prefLabel  "Conformity Assessment Shape"@en ;
+    skos:definition "Validates that conformity assessments have required metadata."@en ;
+
+    sh:property [
+        sh:path        aigov:assessedAgainstPrinciple ;
+        sh:minCount    1 ;
+        sh:message     "A conformity assessment must reference at least one principle assessed." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:assessmentResult ;
+        sh:minCount    1 ;
+        sh:message     "A conformity assessment must have a result (Pass/Fail/Conditional)." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:assessmentDate ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:date ;
+        sh:message     "A conformity assessment must include the date it was performed." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Bias Assessment Shape
+#################################################################
+
+:BiasAssessmentShape
+    a               sh:NodeShape ;
+    sh:targetClass  aigov:BiasAssessment ;
+    skos:prefLabel  "Bias Assessment Shape"@en ;
+    skos:definition "Validates that bias assessments have required metadata."@en ;
+
+    sh:property [
+        sh:path        aigov:assessmentResult ;
+        sh:minCount    1 ;
+        sh:message     "A bias assessment must have a result." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:assessmentDate ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:date ;
+        sh:message     "A bias assessment must include the date it was performed." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:assessmentFindings ;
+        sh:minCount    1 ;
+        sh:message     "A bias assessment should include detailed findings." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Human Oversight Plan Shape
+#################################################################
+
+:HumanOversightPlanShape
+    a               sh:NodeShape ;
+    sh:targetClass  aigov:HumanOversightPlan ;
+    skos:prefLabel  "Human Oversight Plan Shape"@en ;
+    skos:definition "Validates that human oversight plans have required metadata."@en ;
+
+    sh:property [
+        sh:path        aigov:oversightMode ;
+        sh:minCount    1 ;
+        sh:maxCount    1 ;
+        sh:class       aigov:OversightMode ;
+        sh:message     "A human oversight plan must specify exactly one oversight mode." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:oversightResponsible ;
+        sh:minCount    1 ;
+        sh:message     "A human oversight plan must identify the responsible stakeholder." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:escalationProcedure ;
+        sh:minCount    1 ;
+        sh:message     "A human oversight plan should describe the escalation procedure." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# AI Incident Shape
+#################################################################
+
+:AIIncidentShape
+    a               sh:NodeShape ;
+    sh:targetClass  aigov:AIIncident ;
+    skos:prefLabel  "AI Incident Shape"@en ;
+    skos:definition "Validates that AI incidents have required metadata."@en ;
+
+    sh:property [
+        sh:path        aigov:incidentDate ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:date ;
+        sh:message     "An AI incident must have a date." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:incidentDescription ;
+        sh:minCount    1 ;
+        sh:message     "An AI incident must have a description." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:incidentSeverity ;
+        sh:minCount    1 ;
+        sh:message     "An AI incident must have a severity level." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# AI Governance Policy Shape
+#################################################################
+
+:AIGovernancePolicyShape
+    a               sh:NodeShape ;
+    sh:targetClass  aigov:AIGovernancePolicy ;
+    skos:prefLabel  "AI Governance Policy Shape"@en ;
+    skos:definition "Validates that governance policies have required metadata."@en ;
+
+    sh:property [
+        sh:path        skos:prefLabel ;
+        sh:minCount    1 ;
+        sh:message     "Every governance policy must have a human-readable label." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:mandatesPrinciple ;
+        sh:minCount    1 ;
+        sh:message     "A governance policy must mandate at least one AI principle." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path        aigov:policyEffectiveDate ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:date ;
+        sh:message     "A governance policy should have an effective date." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.

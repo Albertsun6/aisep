@@ -1,0 +1,299 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix arch-vis: <https://meta.linked.archi/core-vis#> .
+@prefix uml:      <https://meta.linked.archi/uml/onto#> .
+@prefix :         <https://meta.linked.archi/uml/notation#> .
+
+<https://meta.linked.archi/uml/notation#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/core-vis#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uml/notation#" ;
+    vann:preferredNamespacePrefix "umlnot" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi UML 2.5.1 Visual Notation Set"@en ;
+    dcterms:description           "Visual notation descriptors for UML 2.5.1 concrete metaclasses, following the standard UML notation."@en ;
+    dcterms:created               "2026-06-05"^^xsd:date ;
+    dcterms:modified              "2026-10-10"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://www.omg.org/spec/UML/2.5.1/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UML/2.5.1/> ;
+    rdfs:seeAlso    <https://www.omg.org/spec/UML/2.5.1/>,
+                    <https://www.omg.org/spec/UML/2.5.1/PDF> ;
+    skos:editorialNote '''Visual shapes derived from OMG UML 2.5.1 specification,
+Chapter 12 (Packages), Chapter 11 (Structured Classifiers), Chapter 18 (Use Cases),
+Chapter 19 (Deployments), Chapter 15 (Activities), Chapter 14 (State Machines),
+and Chapter 17 (Interactions). Notation conventions follow Annex A (Diagrams)
+and Annex B (UML Diagram Interchange).'''@en .
+
+
+#################################################################
+# Notation Set
+#################################################################
+
+:UMLStandardNotation
+    a               arch-vis:NotationSet ;
+    skos:prefLabel  "UML 2.5.1 Standard Notation"@en ;
+    skos:definition "The standard visual notation defined by the UML 2.5.1 specification."@en .
+
+
+#################################################################
+# Structural Classifiers
+#################################################################
+
+:ClassNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Class ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#FFFFCC" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/uml/icons/glyphs/class.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] .
+
+:InterfaceNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Interface ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#FFFFCC" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/uml/icons/glyphs/interface.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] .
+
+:DataTypeNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:DataType ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#FFFFCC" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/uml/icons/glyphs/datatype.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+:EnumerationNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Enumeration ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#FFFFCC" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/uml/icons/glyphs/enumeration.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] .
+
+:ComponentNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Component ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/uml/icons/glyphs/component.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "140.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] .
+
+:PackageNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Package ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/uml/icons/glyphs/package.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "180.0"^^xsd:double ;
+        arch-vis:defaultHeight "120.0"^^xsd:double ;
+    ] .
+
+
+#################################################################
+# Use Cases
+#################################################################
+
+:ActorNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Actor ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Ellipse ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:IconCentric ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/uml/icons/glyphs/actor.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "40.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] .
+
+:UseCaseNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:UseCase ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Ellipse ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "140.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+
+#################################################################
+# Deployment
+#################################################################
+
+:NodeNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Node ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E3F2FD" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/uml/icons/glyphs/node.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "160.0"^^xsd:double ;
+        arch-vis:defaultHeight "100.0"^^xsd:double ;
+    ] .
+
+:ArtifactNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Artifact ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/uml/icons/glyphs/artifact.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "100.0"^^xsd:double ;
+        arch-vis:defaultHeight "70.0"^^xsd:double ;
+    ] .
+
+
+#################################################################
+# Behaviour
+#################################################################
+
+:ActivityNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Activity ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF3E0" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "160.0"^^xsd:double ;
+        arch-vis:defaultHeight "100.0"^^xsd:double ;
+    ] .
+
+:StateMachineNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:StateMachine ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FCE4EC" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "160.0"^^xsd:double ;
+        arch-vis:defaultHeight "100.0"^^xsd:double ;
+    ] .
+
+:InteractionNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Interaction ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#F3E5F5" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/uml/icons/glyphs/interaction.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "200.0"^^xsd:double ;
+        arch-vis:defaultHeight "140.0"^^xsd:double ;
+    ] .
+
+:CollaborationNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Collaboration ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Ellipse ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "140.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] .
+
+:SignalNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor uml:Signal ;
+    arch-vis:inNotationSet :UMLStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#FFFFCC" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/uml/icons/glyphs/signal.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .

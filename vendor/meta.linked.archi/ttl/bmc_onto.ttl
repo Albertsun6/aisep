@@ -1,0 +1,131 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix :        <https://meta.linked.archi/bmc/onto#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/bmc/onto#>
+    rdf:type                      owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bmc/onto#" ;
+    vann:preferredNamespacePrefix "bmc" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Business Model Canvas Vocabulary"@en ;
+    dcterms:description                '''SKOS vocabulary representing the nine building blocks of the
+Business Model Canvas by Alexander Osterwalder.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-04-12"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/bmc/onto/0.2.0#> ;
+    owl:versionInfo               "0.2.0"@en ;
+    rdfs:seeAlso                  <https://www.strategyzer.com/business-model-canvas> ;
+    skos:historyNote              '''0.2.0: Added ontology
+header, ConceptScheme, and definitions for all concepts. Removed redundant rdfs:label.'''@en ;
+.
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+:BMCScheme
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "Business Model Canvas"@en ;
+    dcterms:description  "The nine building blocks of the Business Model Canvas."@en ;
+    skos:hasTopConcept :BMCElement ;
+.
+
+#################################################################
+# Concepts
+#################################################################
+
+:BMCElement
+    a                 skos:Concept ;
+    skos:prefLabel    "BMC Element"@en ;
+    skos:definition   "A building block of the Business Model Canvas."@en ;
+    skos:topConceptOf :BMCScheme ;
+    skos:inScheme     :BMCScheme ;
+.
+
+:CustomerSegments
+    a              skos:Concept ;
+    skos:prefLabel "Customer Segments"@en ;
+    skos:definition "The different groups of people or organizations an enterprise aims to reach and serve."@en ;
+    skos:broader   :BMCElement ;
+    skos:inScheme  :BMCScheme ;
+.
+
+:ValuePropositions
+    a              skos:Concept ;
+    skos:prefLabel "Value Propositions"@en ;
+    skos:definition "The bundle of products and services that create value for a specific customer segment."@en ;
+    skos:broader   :BMCElement ;
+    skos:inScheme  :BMCScheme ;
+.
+
+:Channels
+    a              skos:Concept ;
+    skos:prefLabel "Channels"@en ;
+    skos:definition "How a company communicates with and reaches its customer segments to deliver a value proposition."@en ;
+    skos:broader   :BMCElement ;
+    skos:inScheme  :BMCScheme ;
+.
+
+:CustomerRelationships
+    a              skos:Concept ;
+    skos:prefLabel "Customer Relationships"@en ;
+    skos:definition "The types of relationships a company establishes with specific customer segments."@en ;
+    skos:broader   :BMCElement ;
+    skos:inScheme  :BMCScheme ;
+.
+
+:RevenueStreams
+    a              skos:Concept ;
+    skos:prefLabel "Revenue Streams"@en ;
+    skos:definition "The cash a company generates from each customer segment."@en ;
+    skos:broader   :BMCElement ;
+    skos:inScheme  :BMCScheme ;
+.
+
+:KeyResources
+    a              skos:Concept ;
+    skos:prefLabel "Key Resources"@en ;
+    skos:definition "The most important assets required to make a business model work."@en ;
+    skos:broader   :BMCElement ;
+    skos:inScheme  :BMCScheme ;
+.
+
+:KeyActivities
+    a              skos:Concept ;
+    skos:prefLabel "Key Activities"@en ;
+    skos:definition "The most important things a company must do to make its business model work."@en ;
+    skos:broader   :BMCElement ;
+    skos:inScheme  :BMCScheme ;
+.
+
+:KeyPartners
+    a              skos:Concept ;
+    skos:prefLabel "Key Partners"@en ;
+    skos:definition "The network of suppliers and partners that make the business model work."@en ;
+    skos:broader   :BMCElement ;
+    skos:inScheme  :BMCScheme ;
+.
+
+:CostStructure
+    a              skos:Concept ;
+    skos:prefLabel "Cost Structure"@en ;
+    skos:definition "All costs incurred to operate a business model."@en ;
+    skos:broader   :BMCElement ;
+    skos:inScheme  :BMCScheme ;
+.

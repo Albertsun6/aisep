@@ -1,0 +1,179 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix bibo:     <http://purl.org/ontology/bibo/> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:   <http://schema.org/> .
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix ad:       <https://meta.linked.archi/arch-decision#> .
+@prefix refa:     <https://meta.linked.archi/ref-arch#> .
+@prefix iso25010: <https://meta.linked.archi/iso25010#> .
+@prefix :         <https://meta.linked.archi/quality-attributes#> .
+
+<https://meta.linked.archi/quality-attributes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   ad: ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/quality-attributes#" ;
+    vann:preferredNamespacePrefix "qa" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Quality Attributes Extension"@en ;
+    dcterms:description                '''Extension providing named quality-attribute individuals
+(beyond ISO 25010) for use in architecture decision evaluation,
+tactic mapping, and quality-attribute scenario modeling.
+Use this extension to reference resilience-oriented quality
+attributes such as Safety, Survivability, Longevity,
+and Adaptability that complement the ISO 25010 taxonomy.'''@en ;
+    dcterms:abstract              "Quality attribute individuals for architecture decision evaluation."@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-04-16"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/quality-attributes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    schema:citation               "Linked.Archi quality attributes extension" ;
+    rdfs:seeAlso                  <https://www.iso.org/standard/78176.html> ;
+    dcterms:source  <https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513807> ;
+    prov:wasDerivedFrom <https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513807> ;
+.
+
+:Evolvability
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Evolvability"@en ;
+    skos:definition  '''The degree to which a system can accommodate changes in its
+requirements, environment, or technology over its lifetime
+without degrading other quality attributes.'''@en ;
+    skos:scopeNote   "Not part of ISO 25010 but widely used in practice. Related to ISO 25010 Maintainability and Portability."@en ;
+.
+
+:Safety
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Safety"@en ;
+    skos:definition  '''The degree to which a system avoids harm to people, property,
+or the environment. Includes Accident Tolerance (the ability
+to detect, respond to, and recover from accidents) and Hazard
+Tolerance (the ability to detect and respond to hazards to
+avoid accidents or limit harm).'''@en ;
+    skos:scopeNote   "Aligned with IEC 61508 (Functional Safety) and ISO 26262 (Automotive Safety)."@en ;
+    rdfs:seeAlso     <https://insights.sei.cmu.edu/sei_blog/2019/12/system-resilience-part-2-how-system-resilience-relates-to-other-quality-attributes.html> ;
+.
+
+:Cybersecurity
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Cybersecurity"@en ;
+    skos:definition  '''The degree to which a system protects against cyberattacks.
+Includes Threat Tolerance — the ability to detect and respond
+to cybersecurity threats and vulnerabilities to make a
+successful attack less likely.'''@en ;
+    skos:scopeNote   "Aligned with ISO 25010 Security (confidentiality, integrity, non-repudiation, accountability, authenticity)."@en ;
+.
+
+:Anti-Tamper
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Anti-Tamper"@en ;
+    skos:definition  '''The degree to which a system protects its critical capabilities
+from harm due to tampering (reverse engineering) intended to
+disclose or modify critical program information (CPI).'''@en ;
+.
+
+:Survivability
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Survivability"@en ;
+    skos:definition  '''The degree to which a system protects its critical capabilities
+from harm due to physical attacks or threats, including the
+ability to detect threats and respond appropriately.'''@en ;
+.
+
+:Capacity
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Capacity"@en ;
+    skos:definition  '''The degree to which a system protects its critical capabilities
+from harm due to excessive loads such as transactions,
+commands, and messages.'''@en ;
+.
+
+:Longevity
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Longevity"@en ;
+    skos:definition  '''The degree to which a system maintains its operational
+capability as physical component ages reach or exceed their
+design limits. Longevity controls (e.g., radiation-hardened
+hardware, subsystem hibernation) help avoid disruptions over
+a long operational lifespan.'''@en ;
+.
+
+:Interoperability
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Interoperability"@en ;
+    skos:definition  '''The degree to which a system can exchange and use information
+with other systems. Includes Faulty Communications Tolerance —
+the ability to protect critical capabilities from harm due to
+lost or degraded communication with external systems.'''@en ;
+    skos:scopeNote   "Aligned with ISO 25010 Compatibility > Interoperability subcategory."@en ;
+.
+
+:Adaptability
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Adaptability"@en ;
+    skos:definition  '''The degree to which a system can adapt itself (e.g., by
+restructuring, reconfiguring, load balancing, or spinning up
+additional resources) to changing conditions, enabling it to
+respond to and recover from adverse events.'''@en ;
+.
+
+:Availability
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Availability"@en ;
+    skos:definition  '''The degree to which a system is operational and accessible
+when required for use. A resilient system needs to maintain
+the availability of its critical capabilities during adverse
+conditions.'''@en ;
+    skos:scopeNote   "Aligned with ISO 25010 Reliability > Availability subcategory."@en ;
+    rdfs:seeAlso     <https://www.iso.org/standard/78176.html> ;
+.
+
+:Maintainability
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Maintainability"@en ;
+    skos:definition  '''The degree to which a system can be effectively and
+efficiently modified, corrected, or adapted. A system is more
+resilient if it can repair itself rather than relying on a
+human maintainer.'''@en ;
+    skos:scopeNote   "Aligned with ISO 25010 Maintainability (modularity, reusability, analysability, modifiability, testability)."@en ;
+.
+
+:Performance
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Performance"@en ;
+    skos:definition  '''The degree to which a system meets its timing and throughput
+requirements. High levels of resilience in terms of detection
+may decrease performance in terms of throughput and response
+time.'''@en ;
+    skos:scopeNote   "Aligned with ISO 25010 Performance Efficiency (time behaviour, resource utilization, capacity)."@en ;
+.
+
+:Reliability
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Reliability"@en ;
+    skos:definition  '''The degree to which a system performs its intended functions
+under stated conditions for a specified period. Low reliability
+leads to numerous faults and failures, requiring higher levels
+of resilience for detection, response, and recovery.'''@en ;
+    skos:scopeNote   "Aligned with ISO 25010 Reliability (maturity, availability, fault tolerance, recoverability)."@en ;
+.
+
+:Reparability
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Reparability"@en ;
+    skos:definition  '''The degree to which a system can repair itself (e.g., by
+automatically replacing subsystems or line-replaceable units)
+to recover after an adverse event.'''@en ;
+.

@@ -1,0 +1,215 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix aigov:   <https://meta.linked.archi/ai-governance/onto#> .
+@prefix :        <https://meta.linked.archi/ai-governance/reference-data#> .
+
+<https://meta.linked.archi/ai-governance/reference-data#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/ai-governance/onto#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ai-governance/reference-data#" ;
+    vann:preferredNamespacePrefix "aigovrd" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi AI Governance Reference Data"@en ;
+    dcterms:description                '''Reference data for AI governance — EU AI Act risk levels,
+OECD AI Principles, human oversight modes, and assessment statuses.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ai-governance/reference-data/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+#################################################################
+# EU AI Act Risk Levels
+#################################################################
+
+:UnacceptableRisk
+    a               aigov:RiskLevel ;
+    skos:prefLabel  "Unacceptable Risk"@en ;
+    skos:definition '''AI practices that are prohibited under the EU AI Act (Article 5).
+Includes social scoring by public authorities, real-time remote biometric
+identification in publicly accessible spaces for law enforcement (with
+limited exceptions), exploitation of vulnerabilities of specific groups,
+and subliminal manipulation.'''@en ;
+    skos:notation   "UNACCEPTABLE" ;
+    rdfs:seeAlso    <https://eur-lex.europa.eu/eli/reg/2024/1689/oj> ;
+.
+
+:HighRisk
+    a               aigov:RiskLevel ;
+    skos:prefLabel  "High Risk"@en ;
+    skos:definition '''AI systems listed in Annex III of the EU AI Act that pose significant
+risks to health, safety, or fundamental rights. Includes AI systems used in:
+critical infrastructure, education, employment, essential services, law
+enforcement, migration and border control, and administration of justice.
+Subject to conformity assessment, risk management, data governance,
+transparency, human oversight, and accuracy requirements.'''@en ;
+    skos:notation   "HIGH" ;
+    rdfs:seeAlso    <https://eur-lex.europa.eu/eli/reg/2024/1689/oj> ;
+.
+
+:LimitedRisk
+    a               aigov:RiskLevel ;
+    skos:prefLabel  "Limited Risk"@en ;
+    skos:definition '''AI systems with specific transparency obligations under the EU AI Act.
+Includes AI systems that interact with natural persons (chatbots),
+generate or manipulate content (deepfakes), and emotion recognition
+or biometric categorization systems. Must disclose AI involvement
+to users.'''@en ;
+    skos:notation   "LIMITED" ;
+    rdfs:seeAlso    <https://eur-lex.europa.eu/eli/reg/2024/1689/oj> ;
+.
+
+:MinimalRisk
+    a               aigov:RiskLevel ;
+    skos:prefLabel  "Minimal Risk"@en ;
+    skos:definition '''AI systems with no specific regulatory obligations under the EU AI Act.
+Includes spam filters, AI-enabled video games, and inventory management
+systems. Voluntary codes of conduct may apply.'''@en ;
+    skos:notation   "MINIMAL" ;
+    rdfs:seeAlso    <https://eur-lex.europa.eu/eli/reg/2024/1689/oj> ;
+.
+
+
+#################################################################
+# OECD AI Principles + EU Ethics Guidelines
+#################################################################
+
+:FairnessPrinciple
+    a               aigov:AIPrinciple ;
+    skos:prefLabel  "Fairness"@en ;
+    skos:definition '''AI systems should be designed and operated to avoid unfair bias
+and discrimination. Includes equitable treatment across demographic
+groups and protected attributes.'''@en ;
+    rdfs:seeAlso    <https://oecd.ai/en/ai-principles> ;
+.
+
+:TransparencyPrinciple
+    a               aigov:AIPrinciple ;
+    skos:prefLabel  "Transparency"@en ;
+    skos:definition '''AI systems should operate transparently — stakeholders should be
+informed when they are interacting with AI, and meaningful information
+about the system's logic, capabilities, and limitations should be
+available.'''@en ;
+    rdfs:seeAlso    <https://oecd.ai/en/ai-principles> ;
+.
+
+:AccountabilityPrinciple
+    a               aigov:AIPrinciple ;
+    skos:prefLabel  "Accountability"@en ;
+    skos:definition '''Organizations and individuals developing, deploying, or operating
+AI systems should be accountable for their proper functioning in
+line with applicable regulations and ethical principles.'''@en ;
+    rdfs:seeAlso    <https://oecd.ai/en/ai-principles> ;
+.
+
+:SafetyPrinciple
+    a               aigov:AIPrinciple ;
+    skos:prefLabel  "Safety & Robustness"@en ;
+    skos:definition '''AI systems should be safe, secure, and robust throughout their
+lifecycle. They should be resilient against attempts to alter their
+use or performance, and should function appropriately under
+adversarial conditions.'''@en ;
+    rdfs:seeAlso    <https://oecd.ai/en/ai-principles> ;
+.
+
+:PrivacyPrinciple
+    a               aigov:AIPrinciple ;
+    skos:prefLabel  "Privacy & Data Governance"@en ;
+    skos:definition '''AI systems should respect privacy and data protection throughout
+their lifecycle. Data used for training and operation should be
+collected, used, and stored in compliance with applicable data
+protection regulations (GDPR, CCPA).'''@en ;
+    rdfs:seeAlso    <https://oecd.ai/en/ai-principles> ;
+.
+
+:HumanAgencyPrinciple
+    a               aigov:AIPrinciple ;
+    skos:prefLabel  "Human Agency & Oversight"@en ;
+    skos:definition '''AI systems should support human agency and fundamental rights.
+They should be designed to allow appropriate human oversight,
+including the ability to understand, intervene in, and override
+AI decisions.'''@en ;
+    rdfs:seeAlso    <https://digital-strategy.ec.europa.eu/en/library/ethics-guidelines-trustworthy-ai> ;
+.
+
+:SocialWellbeingPrinciple
+    a               aigov:AIPrinciple ;
+    skos:prefLabel  "Societal & Environmental Wellbeing"@en ;
+    skos:definition '''AI systems should benefit people and the planet. Their broader
+societal and environmental impact should be considered, including
+sustainability, social impact, and democratic values.'''@en ;
+    rdfs:seeAlso    <https://digital-strategy.ec.europa.eu/en/library/ethics-guidelines-trustworthy-ai> ;
+.
+
+
+#################################################################
+# Human Oversight Modes
+#################################################################
+
+:HumanInTheLoop
+    a               aigov:OversightMode ;
+    skos:prefLabel  "Human-in-the-Loop"@en ;
+    skos:definition '''A human reviews and approves every AI decision before it is
+executed. The AI system provides recommendations; the human makes
+the final decision. Highest level of human control.'''@en ;
+    skos:example    "A loan officer reviews every AI credit scoring recommendation before approval."@en ;
+.
+
+:HumanOnTheLoop
+    a               aigov:OversightMode ;
+    skos:prefLabel  "Human-on-the-Loop"@en ;
+    skos:definition '''The AI system operates autonomously but a human monitors its
+decisions and can intervene when anomalies are detected. The human
+does not approve every decision but maintains oversight.'''@en ;
+    skos:example    "A fraud analyst monitors AI-flagged transactions and can override false positives."@en ;
+.
+
+:HumanInCommand
+    a               aigov:OversightMode ;
+    skos:prefLabel  "Human-in-Command"@en ;
+    skos:definition '''A human sets the objectives, constraints, and boundaries within
+which the AI system operates autonomously. The human controls the
+overall system behavior but does not monitor individual decisions.'''@en ;
+    skos:example    "A portfolio manager sets risk parameters; the AI trading system operates within those bounds."@en ;
+.
+
+
+#################################################################
+# Assessment Statuses
+#################################################################
+
+:AssessmentPlanned
+    a               aigov:EngagementStatus ;
+    skos:prefLabel  "Planned"@en ;
+    skos:definition "Assessment has been scheduled but not yet started."@en ;
+.
+
+:AssessmentInProgress
+    a               aigov:EngagementStatus ;
+    skos:prefLabel  "In Progress"@en ;
+    skos:definition "Assessment is currently being conducted."@en ;
+.
+
+:AssessmentCompleted
+    a               aigov:EngagementStatus ;
+    skos:prefLabel  "Completed"@en ;
+    skos:definition "Assessment has been completed and results are available."@en ;
+.
+
+:AssessmentOverdue
+    a               aigov:EngagementStatus ;
+    skos:prefLabel  "Overdue"@en ;
+    skos:definition "Assessment is past its scheduled date and has not been completed."@en ;
+.

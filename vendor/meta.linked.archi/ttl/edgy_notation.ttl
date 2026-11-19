@@ -1,0 +1,539 @@
+@prefix edgynot: <https://meta.linked.archi/edgy/notation#> .
+@prefix edgy:    <https://meta.linked.archi/edgy/onto#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix arch-vis:<https://meta.linked.archi/core-vis#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+<https://meta.linked.archi/edgy/notation#>
+    a owl:Ontology ;
+    owl:imports <https://meta.linked.archi/core#> ,
+                <https://meta.linked.archi/core-vis#> ;
+    cc:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/edgy/notation#" ;
+    vann:preferredNamespacePrefix "edgynot" ;
+    dcterms:title "Linked.Archi EDGY 23 Visual Notation Set"@en ;
+    dcterms:description "Updated visual notation descriptors for EDGY 23 enterprise design elements, relationships, and labels. This set corrects the EDGY base shapes, facet/intersection colours, relationship line semantics, and icon/glyph references for Linked.Archi renderers."@en ;
+    dcterms:creator "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:created "2025-06-27"^^xsd:date ;
+    dcterms:modified "2026-10-10"^^xsd:date ;
+    dcterms:source <https://enterprise.design/wiki/Enterprise_Elements> ,
+                   <https://enterprise.design/wiki/Enterprise_Design_Facets> ,
+                   <https://www.hosiaisluoma.fi/EDGY-elements-and-relationships.pdf> ,
+                   <https://enterprise.design/wiki/Tools> ;
+    dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
+    dcterms:rights '''Pictures and glyphs by Intersection Group: 18 of the element pictures in
+https://meta.linked.archi/edgy/icons/ (activity, asset, brand, capability, channel, content, journey,
+metrics, object, organisation, outcome, people, process, product, purpose, story, tagging, task) and 19
+of the glyphs in https://meta.linked.archi/edgy/icons/glyphs/ (activity, asset, brand, capability,
+channel, content, facet-architecture, facet-experience, facet-identity, journey, object, organisation,
+outcome, people, process, product, purpose, story, task) are the EDGY 23 SVG shapes and icons of
+Enterprise Design with EDGY (https://enterprise.design/wiki/Tools), used unchanged under CC BY-SA 4.0.
+The other pictures and glyphs are drawn for Linked.Archi after the EDGY documentation, under the same
+licence.'''@en ;
+    owl:versionIRI <https://meta.linked.archi/edgy/notation/23#> ;
+    owl:versionInfo "23 updated draft"@en ;
+    skos:changeNote "2026-10-10: activities, stories, processes and journeys use edgynot:RightArrow and tags and metrics edgynot:Pill — both declared here with a core fallback and their geometry as path templates; the tag pill has its label inside (white on black), and the elements with white borders declare a black label (arch-vis:fontColor). edgynot:TagPill and edgynot:MetricPill are deprecated in favour of edgynot:Pill."@en .
+
+edgynot:EDGYStandardNotation
+    a arch-vis:NotationSet ;
+    skos:prefLabel "EDGY 23 Standard Notation"@en ;
+    skos:definition "The standard EDGY visual notation set: people as a glyph, outcomes as rounded rectangles, objects as sharp rectangles, activities as right-arrow shapes, facet colours for identity, architecture and experience, and distinct colours for organisation, brand and product intersections."@en ;
+    rdfs:seeAlso <https://enterprise.design/wiki/Enterprise_Elements> .
+
+edgynot:RightArrow
+    a                      arch-vis:ShapeType ;
+    skos:prefLabel         "Right Arrow"@en ;
+    skos:definition        "A rectangle whose right side comes to a point at mid-height, h x 0.3 deep (24 in EDGY's 123 x 80 shape), at most w / 2. EDGY's activity, story, process and journey."@en ;
+    arch-vis:fallbackShape arch-vis:Rectangle ;
+    arch-vis:shapeVariables "d = min(h * 0.3, w / 2)" ;
+    arch-vis:outlinePath   "M0,0 L{w - d},0 L{w},{h / 2} L{w - d},{h} L0,{h} Z" ;
+    arch-vis:contentBox    "0 0 {w - d} {h}" ;
+.
+
+edgynot:Pill
+    a                      arch-vis:ShapeType ;
+    skos:prefLabel         "Pill"@en ;
+    skos:definition        "A rectangle whose short ends are semicircles. EDGY's tags and metrics, with the label inside."@en ;
+    arch-vis:fallbackShape arch-vis:RoundedRectangle ;
+    arch-vis:shapeVariables "r = min(w, h) / 2" ;
+    arch-vis:outlinePath   "M{r},0 L{w-r},0 A{r},{r} 0 0 1 {w},{r} L{w},{h-r} A{r},{r} 0 0 1 {w-r},{h} L{r},{h} A{r},{r} 0 0 1 0,{h-r} L0,{r} A{r},{r} 0 0 1 {r},0 Z" ;
+    arch-vis:contentBox    "{r / 2} 0 {w - r} {h}" ;
+.
+
+edgynot:PeopleGlyph
+    a arch-vis:ShapeType ;
+    skos:prefLabel "People glyph"@en ;
+    skos:definition "EDGY people element rendered as a person glyph rather than a container shape."@en .
+
+edgynot:TagPill
+    a arch-vis:ShapeType ;
+    skos:prefLabel "Tag pill"@en ;
+    skos:definition "EDGY black rounded pill used for tag labels."@en ;
+    owl:deprecated true ;
+    dcterms:isReplacedBy edgynot:Pill .
+
+edgynot:MetricPill
+    a arch-vis:ShapeType ;
+    skos:prefLabel "Metric pill"@en ;
+    skos:definition "EDGY coloured rounded pill used for metric labels."@en ;
+    owl:deprecated true ;
+    dcterms:isReplacedBy edgynot:Pill .
+
+edgynot:IdentityColour
+    a skos:Concept ;
+    skos:prefLabel "Identity colour"@en ;
+    skos:notation "#75F0A5" .
+
+edgynot:ExperienceColour
+    a skos:Concept ;
+    skos:prefLabel "Experience colour"@en ;
+    skos:notation "#F985B4" .
+
+edgynot:ArchitectureColour
+    a skos:Concept ;
+    skos:prefLabel "Architecture colour"@en ;
+    skos:notation "#9DB9F6" .
+
+edgynot:OrganisationColour
+    a skos:Concept ;
+    skos:prefLabel "Organisation intersection colour"@en ;
+    skos:notation "#76D9EA" .
+
+edgynot:BrandColour
+    a skos:Concept ;
+    skos:prefLabel "Brand intersection colour"@en ;
+    skos:notation "#FFD47D" .
+
+edgynot:ProductColour
+    a skos:Concept ;
+    skos:prefLabel "Product intersection colour"@en ;
+    skos:notation "#DA7AF4" .
+
+edgynot:PeopleNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "People notation"@en ;
+    arch-vis:notationFor edgy:People ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/people.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/people.svg> ;
+    arch-vis:defaultStyle edgynot:PeopleStyle .
+
+edgynot:PeopleStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType edgynot:PeopleGlyph ;
+    arch-vis:renderingMode arch-vis:IconCentric ;
+    arch-vis:fillColor "#FFFFFF" ;
+    arch-vis:lineColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/people.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:Center ;
+    arch-vis:defaultWidth "80.0"^^xsd:double ;
+    arch-vis:defaultHeight "80.0"^^xsd:double .
+
+edgynot:OutcomeNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Outcome notation"@en ;
+    arch-vis:notationFor edgy:Outcome ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/outcome.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/outcome.svg> ;
+    arch-vis:defaultStyle edgynot:OutcomeStyle .
+
+edgynot:OutcomeStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType arch-vis:RoundedRectangle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#FFFFFF" ;
+    arch-vis:lineColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/outcome.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "120.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:ActivityNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Activity notation"@en ;
+    arch-vis:notationFor edgy:Activity ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/activity.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/activity.svg> ;
+    arch-vis:defaultStyle edgynot:ActivityStyle .
+
+edgynot:ActivityStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType edgynot:RightArrow ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#FFFFFF" ;
+    arch-vis:lineColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/activity.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "130.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:ObjectNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Object notation"@en ;
+    arch-vis:notationFor edgy:Object ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/object.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/object.svg> ;
+    arch-vis:defaultStyle edgynot:ObjectStyle .
+
+edgynot:ObjectStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType arch-vis:Rectangle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#FFFFFF" ;
+    arch-vis:lineColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/object.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "120.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:PurposeNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Purpose notation"@en ;
+    arch-vis:notationFor edgy:Purpose ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/purpose.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/purpose.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/facet-identity.svg> ;
+    arch-vis:defaultStyle edgynot:PurposeStyle .
+
+edgynot:PurposeStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType arch-vis:RoundedRectangle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#75F0A5" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/facet-identity.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "120.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:StoryNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Story notation"@en ;
+    arch-vis:notationFor edgy:Story ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/story.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/story.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/facet-identity.svg> ;
+    arch-vis:defaultStyle edgynot:StoryStyle .
+
+edgynot:StoryStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType edgynot:RightArrow ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#75F0A5" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/facet-identity.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "130.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:ContentNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Content notation"@en ;
+    arch-vis:notationFor edgy:Content ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/content.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/content.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/facet-identity.svg> ;
+    arch-vis:defaultStyle edgynot:ContentStyle .
+
+edgynot:ContentStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType arch-vis:Rectangle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#75F0A5" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/facet-identity.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "120.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:CapabilityNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Capability notation"@en ;
+    arch-vis:notationFor edgy:Capability ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/capability.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/capability.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/facet-architecture.svg> ;
+    arch-vis:defaultStyle edgynot:CapabilityStyle .
+
+edgynot:CapabilityStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType arch-vis:RoundedRectangle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#9DB9F6" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/facet-architecture.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "120.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:ProcessNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Process notation"@en ;
+    arch-vis:notationFor edgy:Process ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/process.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/process.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/facet-architecture.svg> ;
+    arch-vis:defaultStyle edgynot:ProcessStyle .
+
+edgynot:ProcessStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType edgynot:RightArrow ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#9DB9F6" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/facet-architecture.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "130.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:AssetNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Asset notation"@en ;
+    arch-vis:notationFor edgy:Asset ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/asset.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/asset.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/facet-architecture.svg> ;
+    arch-vis:defaultStyle edgynot:AssetStyle .
+
+edgynot:AssetStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType arch-vis:Rectangle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#9DB9F6" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/facet-architecture.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "120.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:TaskNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Task notation"@en ;
+    arch-vis:notationFor edgy:Task ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/task.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/task.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/facet-experience.svg> ;
+    arch-vis:defaultStyle edgynot:TaskStyle .
+
+edgynot:TaskStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType arch-vis:RoundedRectangle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#F985B4" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/facet-experience.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "120.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:JourneyNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Journey notation"@en ;
+    arch-vis:notationFor edgy:Journey ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/journey.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/journey.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/facet-experience.svg> ;
+    arch-vis:defaultStyle edgynot:JourneyStyle .
+
+edgynot:JourneyStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType edgynot:RightArrow ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#F985B4" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/facet-experience.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "130.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:ChannelNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Channel notation"@en ;
+    arch-vis:notationFor edgy:Channel ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/channel.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/channel.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/facet-experience.svg> ;
+    arch-vis:defaultStyle edgynot:ChannelStyle .
+
+edgynot:ChannelStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType arch-vis:Rectangle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#F985B4" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/facet-experience.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "120.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:OrganisationNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Organisation notation"@en ;
+    arch-vis:notationFor edgy:Organisation ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/organisation.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/organisation.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/intersection-organisation.svg> ;
+    arch-vis:defaultStyle edgynot:OrganisationStyle .
+
+edgynot:OrganisationStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType arch-vis:Rectangle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#76D9EA" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/intersection-organisation.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "120.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:BrandNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Brand notation"@en ;
+    arch-vis:notationFor edgy:Brand ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/brand.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/brand.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/intersection-brand.svg> ;
+    arch-vis:defaultStyle edgynot:BrandStyle .
+
+edgynot:BrandStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType arch-vis:Rectangle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#FFD47D" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/intersection-brand.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "120.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:ProductNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Product notation"@en ;
+    arch-vis:notationFor edgy:Product ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/product.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/product.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/intersection-product.svg> ;
+    arch-vis:defaultStyle edgynot:ProductStyle .
+
+edgynot:ProductStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType arch-vis:Rectangle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#DA7AF4" ;
+    arch-vis:lineColor "#FFFFFF" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/intersection-product.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:TopRight ;
+    arch-vis:defaultWidth "120.0"^^xsd:double ;
+    arch-vis:defaultHeight "60.0"^^xsd:double .
+
+edgynot:TaggingNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Tagging notation"@en ;
+    arch-vis:notationFor edgy:Tagging ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/tagging.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/tagging.svg> ;
+    arch-vis:defaultStyle edgynot:TaggingStyle .
+
+edgynot:TaggingStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType edgynot:Pill ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#000000" ;
+    arch-vis:lineColor "#000000" ;
+    arch-vis:fontColor "#FFFFFF" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/tagging.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:Center ;
+    arch-vis:defaultWidth "90.0"^^xsd:double ;
+    arch-vis:defaultHeight "22.0"^^xsd:double .
+
+edgynot:MetricsNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Metrics notation"@en ;
+    arch-vis:notationFor edgy:Metrics ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/metrics.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/metrics.svg> ;
+    arch-vis:defaultStyle edgynot:MetricsStyle .
+
+edgynot:MetricsStyle
+    a arch-vis:Style ;
+    arch-vis:shapeType edgynot:Pill ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor "#16D917" ;
+    arch-vis:lineColor "#16D917" ;
+    arch-vis:fontColor "#000000" ;
+    arch-vis:iconSymbol "https://meta.linked.archi/edgy/icons/glyphs/metrics.svg"^^xsd:anyURI ;
+    arch-vis:iconPlacement arch-vis:Center ;
+    arch-vis:defaultWidth "90.0"^^xsd:double ;
+    arch-vis:defaultHeight "22.0"^^xsd:double .
+
+edgynot:LinkNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Link notation"@en ;
+    arch-vis:notationFor edgy:Link ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/link.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/link.svg> ;
+    arch-vis:lineStyle arch-vis:SolidLine ;
+    arch-vis:sourceDecor arch-vis:NoDecoration ;
+    arch-vis:targetDecor arch-vis:NoDecoration .
+
+edgynot:FlowNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Flow notation"@en ;
+    arch-vis:notationFor edgy:Flow ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/flow.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/flow.svg> ;
+    arch-vis:lineStyle arch-vis:SolidLine ;
+    arch-vis:sourceDecor arch-vis:NoDecoration ;
+    arch-vis:targetDecor arch-vis:OpenArrowhead .
+
+edgynot:TreeNotation
+    a arch-vis:VisualNotation ;
+    skos:prefLabel "Tree notation"@en ;
+    arch-vis:notationFor edgy:Tree ;
+    arch-vis:inNotationSet edgynot:EDGYStandardNotation ;
+    arch:prefVisNotation <https://meta.linked.archi/edgy/icons/tree.svg> ;
+    arch:altVisNotation <https://meta.linked.archi/edgy/icons/glyphs/tree.svg> ;
+    arch-vis:lineStyle arch-vis:SolidLine ;
+    arch-vis:sourceDecor arch-vis:FilledDiamond ;
+    arch-vis:targetDecor arch-vis:NoDecoration .
+
+# Suggested manifest update, if the EDGY metamodel manifest does not already point here:
+# <https://meta.linked.archi/edgy/metamodel#EDGY23> arch:notationSet edgynot:EDGYStandardNotation .

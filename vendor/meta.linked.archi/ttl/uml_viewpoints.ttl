@@ -1,0 +1,277 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix uml:     <https://meta.linked.archi/uml/onto#> .
+@prefix :        <https://meta.linked.archi/uml/viewpoints#> .
+
+<https://meta.linked.archi/uml/viewpoints#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uml/viewpoints#" ;
+    vann:preferredNamespacePrefix "umlvp" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi UML 2.5.1 Viewpoints"@en ;
+    dcterms:description                '''UML 2.5.1 diagram types formalized as Linked.Archi viewpoints.
+Each of the 14 UML diagram types is represented as an arch:Viewpoint instance
+with its included concepts, purpose, and framed concerns.'''@en ;
+    dcterms:created               "2025-12-01"^^xsd:date ;
+    dcterms:modified              "2026-02-01"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/uml/viewpoints/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://www.omg.org/spec/UML/2.5.1/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UML/2.5.1/> ;
+.
+
+
+#################################################################
+# Viewpoint Catalog
+#################################################################
+
+:ViewpointCatalog
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "UML 2.5.1 Viewpoint Catalog"@en ;
+    dcterms:description  '''The 14 UML diagram types organized into structural and behavioral
+categories, as defined in UML 2.5.1 Annex A.'''@en ;
+    skos:hasTopConcept :StructuralViewpoints, :BehavioralViewpoints ;
+.
+
+:StructuralViewpoints
+    a skos:Concept ; skos:prefLabel "Structural Viewpoints"@en ;
+    skos:definition "UML diagram types that show static structure."@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+
+:BehavioralViewpoints
+    a skos:Concept ; skos:prefLabel "Behavioral Viewpoints"@en ;
+    skos:definition "UML diagram types that show dynamic behavior."@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+
+
+#################################################################
+# Structural Viewpoints (7)
+#################################################################
+
+:ClassDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Class Diagram"@en ;
+    skos:definition         '''Shows classes, interfaces, data types, enumerations, and their
+relationships (association, aggregation, composition, generalization, realization,
+dependency). The most commonly used UML diagram type.'''@en ;
+    arch:includesConcept    uml:Class, uml:Interface, uml:DataType, uml:Enumeration,
+                            uml:Property, uml:Operation ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :StructuralViewpoints ;
+.
+
+:ObjectDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Object Diagram"@en ;
+    skos:definition         '''Shows instances of classes and their relationships at a specific
+point in time. A snapshot of the system state.'''@en ;
+    arch:includesConcept    uml:Class ;
+    arch:viewpointHasPurpose archvp:Informing ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :StructuralViewpoints ;
+.
+
+:ComponentDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Component Diagram"@en ;
+    skos:definition         '''Shows components, their provided and required interfaces, ports,
+connectors, and dependencies. Used for modular system design.'''@en ;
+    arch:includesConcept    uml:Component, uml:Interface, uml:Port, uml:Connector ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:StructureConcern, archvp:DependencyConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :StructuralViewpoints ;
+.
+
+:DeploymentDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Deployment Diagram"@en ;
+    skos:definition         '''Shows the mapping of software artifacts to infrastructure nodes,
+devices, and execution environments.'''@en ;
+    arch:includesConcept    uml:Node, uml:Device, uml:ExecutionEnvironment,
+                            uml:Artifact, uml:DeploymentSpecification ;
+    arch:viewpointHasPurpose archvp:Designing, archvp:Informing ;
+    arch:viewpointFramesConcern archvp:DeploymentConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :StructuralViewpoints ;
+.
+
+:PackageDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Package Diagram"@en ;
+    skos:definition         '''Shows packages, their contents, and dependencies (import, merge).
+Used for organizing large models.'''@en ;
+    arch:includesConcept    uml:Package, uml:Model ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:StructureConcern, archvp:DependencyConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :StructuralViewpoints ;
+.
+
+:CompositeStructureDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Composite Structure Diagram"@en ;
+    skos:definition         '''Shows the internal structure of a classifier, including parts,
+ports, and connectors. Used for detailed component design.'''@en ;
+    arch:includesConcept    uml:Class, uml:Port, uml:Connector, uml:Collaboration ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :StructuralViewpoints ;
+.
+
+:ProfileDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Profile Diagram"@en ;
+    skos:definition         '''Shows stereotypes, profiles, and profile applications. Used for
+defining UML extensions for specific domains or platforms.'''@en ;
+    arch:includesConcept    uml:Profile, uml:Stereotype ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :StructuralViewpoints ;
+.
+
+
+#################################################################
+# Behavioral Viewpoints (7)
+#################################################################
+
+:UseCaseDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Use Case Diagram"@en ;
+    skos:definition         '''Shows actors, use cases, and their relationships (include, extend,
+generalization). Used for requirements capture and system scope definition.'''@en ;
+    arch:includesConcept    uml:Actor, uml:UseCase ;
+    arch:viewpointHasPurpose archvp:Informing ;
+    arch:viewpointFramesConcern archvp:StakeholderConcern, archvp:BehaviorConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :BehavioralViewpoints ;
+.
+
+:ActivityDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Activity Diagram"@en ;
+    skos:definition         '''Shows workflows with actions, control flows, object flows, decision
+nodes, fork/join nodes, and swim lanes. Used for business process and
+algorithm modeling.'''@en ;
+    arch:includesConcept    uml:Activity, uml:Action, uml:ControlNode, uml:ObjectNode,
+                            uml:ActivityPartition ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :BehavioralViewpoints ;
+.
+
+:StateMachineDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "State Machine Diagram"@en ;
+    skos:definition         '''Shows states, transitions, events, and guards for a single object
+lifecycle. Used for protocol and lifecycle modeling.'''@en ;
+    arch:includesConcept    uml:StateMachine, uml:State, uml:Pseudostate, uml:Region,
+                            uml:Transition ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :BehavioralViewpoints ;
+.
+
+:SequenceDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Sequence Diagram"@en ;
+    skos:definition         '''Shows time-ordered message exchanges between lifelines with
+activation bars, combined fragments (alt, loop, opt, par), and return
+messages. The richest UML behavioral diagram.'''@en ;
+    skos:scopeNote          '''Visual palette concepts (what appears as distinct diagram elements):
+Interaction, Lifeline, Message, CombinedFragment, ExecutionSpecification.
+Supporting semantic concepts (structural backbone for validation and ordering):
+MessageOccurrenceSpecification, OccurrenceSpecification, ExecutionOccurrenceSpecification,
+InteractionFragment, MessageEnd, InteractionOperand, InteractionUse, GeneralOrdering,
+Gate, InteractionConstraint, DestructionOccurrenceSpecification, StateInvariant,
+Continuation.'''@en ;
+    arch:includesConcept    uml:Interaction, uml:Lifeline, uml:Message,
+                            uml:CombinedFragment, uml:ExecutionSpecification,
+                            uml:MessageOccurrenceSpecification,
+                            uml:OccurrenceSpecification,
+                            uml:ExecutionOccurrenceSpecification,
+                            uml:InteractionFragment, uml:MessageEnd,
+                            uml:InteractionOperand, uml:InteractionUse,
+                            uml:GeneralOrdering, uml:Gate,
+                            uml:InteractionConstraint,
+                            uml:DestructionOccurrenceSpecification,
+                            uml:StateInvariant, uml:Continuation ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern, archvp:IntegrationConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :BehavioralViewpoints ;
+.
+
+:CommunicationDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Communication Diagram"@en ;
+    skos:definition         '''Shows message exchanges organized by object relationships rather
+than time ordering. Same information as Sequence Diagram, different layout.'''@en ;
+    arch:includesConcept    uml:Interaction, uml:Lifeline, uml:Message ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern, archvp:IntegrationConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :BehavioralViewpoints ;
+.
+
+:TimingDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Timing Diagram"@en ;
+    skos:definition         '''Shows state changes over time with precise timing constraints.
+Used for real-time and embedded systems.'''@en ;
+    arch:includesConcept    uml:Interaction, uml:Lifeline, uml:State ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :BehavioralViewpoints ;
+.
+
+:InteractionOverviewDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Interaction Overview Diagram"@en ;
+    skos:definition         '''Shows high-level flow of control between interaction fragments.
+A variant of the Activity Diagram where nodes are Interactions or
+InteractionUses.'''@en ;
+    arch:includesConcept    uml:Interaction, uml:InteractionUse ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :BehavioralViewpoints ;
+.

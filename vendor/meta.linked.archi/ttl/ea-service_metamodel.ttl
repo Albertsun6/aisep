@@ -1,0 +1,74 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix easvc:   <https://meta.linked.archi/ea-service/onto#> .
+@prefix easvctax: <https://meta.linked.archi/ea-service/tax#> .
+@prefix :        <https://meta.linked.archi/ea-service/metamodel#> .
+
+<https://meta.linked.archi/ea-service/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ea-service/metamodel#" ;
+    vann:preferredNamespacePrefix "easvcmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EA-as-a-Service Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for the EA-as-a-Service extension. Ties together
+the EA service ontology, SKOS taxonomy, SHACL shapes, and reference data
+into a single discoverable resource.
+
+Designed to compose with the Architecture Decisions extension (tracing
+engagements to decisions) and the Financial Architecture extension
+(cost-aware service delivery).'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ea-service/metamodel/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    rdfs:seeAlso                  <https://www.gartner.com/en/webinar/719451> ;
+.
+
+
+#################################################################
+# Metamodel Instance
+#################################################################
+
+:EAAsAService
+    a                             arch:Metamodel ;
+    skos:prefLabel                "EA-as-a-Service Metamodel"@en ;
+    dcterms:description               '''The EA-as-a-Service metamodel definition, aggregating the EA
+service ontology, SKOS taxonomy, SHACL shapes, and reference data.
+
+Formalizes the Internal Management Consultancy (IMC) model that Gartner
+predicts half of EA teams will adopt by 2028. Provides vocabulary for
+service catalogs, engagements, outcomes, satisfaction, capability
+portfolios, and maturity assessment.
+
+Designed to be lightweight and adaptable — organizations customize the
+service catalog and maturity model to their operating model.'''@en ;
+
+    ## Model concepts — EA service elements, properties, viewpoints
+    arch:modelConcepts            <https://meta.linked.archi/ea-service/onto#> ;
+
+    ## Concept classification — SKOS taxonomy
+    arch:conceptClassification    <https://meta.linked.archi/ea-service/tax#> ;
+
+    ## Formal rules — SHACL shapes for EA service governance
+    arch:formalRules              <https://meta.linked.archi/ea-service/shapes#> ;
+
+    ## Reference data — service types, engagement statuses, maturity levels
+    arch:referenceData            <https://meta.linked.archi/ea-service/reference-data#> ;
+
+    ## Concerns identified by this metamodel
+    arch:metamodelIdentifiesConsideration
+        easvc:EAValueDeliveryConcern, easvc:EACapacityManagementConcern,
+        easvc:EAMaturityConcern, easvc:StakeholderSatisfactionConcern ;
+.

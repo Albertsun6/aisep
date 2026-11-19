@@ -1,0 +1,188 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix mlsys:   <https://meta.linked.archi/ml-systems/onto#> .
+@prefix :        <https://meta.linked.archi/ml-systems/tax#> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/ml-systems/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "ML-Enabled Systems Concept Scheme"@en ;
+    dcterms:description  "Classification of ML-enabled system concepts by lifecycle phase and component role."@en ;
+    skos:hasTopConcept :ByLifecyclePhase, :ByComponentRole, :ByStakeholderDomain, :RelationshipKind ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ml-systems/tax#" ;
+    vann:preferredNamespacePrefix "mlsystax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ML-Enabled Systems Taxonomy"@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en .
+
+
+
+#################################################################
+# By Lifecycle Phase
+#################################################################
+
+:ByLifecyclePhase
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ml-systems/tax#> ;
+    skos:prefLabel       "By Lifecycle Phase"@en ;
+    skos:inScheme        <https://meta.linked.archi/ml-systems/tax#> ;
+.
+
+:DataPreparation
+    a                skos:Concept ;
+    skos:broader     :ByLifecyclePhase ;
+    skos:prefLabel   "Data Preparation"@en ;
+    skos:definition  "Phase covering data collection, cleaning, labeling, and feature engineering."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+    rdfs:seeAlso     mlsys:Dataset, mlsys:DataPipeline, mlsys:FeatureStore ;
+.
+
+:ModelDevelopment
+    a                skos:Concept ;
+    skos:broader     :ByLifecyclePhase ;
+    skos:prefLabel   "Model Development"@en ;
+    skos:definition  "Phase covering algorithm selection, training, evaluation, and experiment tracking."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+    rdfs:seeAlso     mlsys:MLModel, mlsys:TrainingPipeline, mlsys:ExperimentTracker ;
+.
+
+:ModelDeployment
+    a                skos:Concept ;
+    skos:broader     :ByLifecyclePhase ;
+    skos:prefLabel   "Model Deployment"@en ;
+    skos:definition  "Phase covering model packaging, serving infrastructure setup, and production release."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+    rdfs:seeAlso     mlsys:ServingInfrastructure, mlsys:ModelRegistry ;
+.
+
+:ModelMonitoring
+    a                skos:Concept ;
+    skos:broader     :ByLifecyclePhase ;
+    skos:prefLabel   "Model Monitoring"@en ;
+    skos:definition  "Phase covering production monitoring, drift detection, and retraining triggers."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+    rdfs:seeAlso     mlsys:MonitoringComponent ;
+.
+
+
+#################################################################
+# By Component Role
+#################################################################
+
+:ByComponentRole
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ml-systems/tax#> ;
+    skos:prefLabel       "By Component Role"@en ;
+    skos:inScheme        <https://meta.linked.archi/ml-systems/tax#> ;
+.
+
+:InferenceComponent
+    a                skos:Concept ;
+    skos:broader     :ByComponentRole ;
+    skos:prefLabel   "Inference Component"@en ;
+    skos:definition  "Components that perform prediction or inference — models and serving infrastructure."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+    rdfs:seeAlso     mlsys:MLModel, mlsys:ServingInfrastructure ;
+.
+
+:DataManagementComponent
+    a                skos:Concept ;
+    skos:broader     :ByComponentRole ;
+    skos:prefLabel   "Data Management Component"@en ;
+    skos:definition  "Components that manage data flow — pipelines, feature stores, datasets."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+    rdfs:seeAlso     mlsys:DataPipeline, mlsys:FeatureStore, mlsys:Dataset ;
+.
+
+:OrchestrationComponent
+    a                skos:Concept ;
+    skos:broader     :ByComponentRole ;
+    skos:prefLabel   "Orchestration Component"@en ;
+    skos:definition  "Components that orchestrate ML workflows — training pipelines, experiment trackers."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+    rdfs:seeAlso     mlsys:TrainingPipeline, mlsys:ExperimentTracker ;
+.
+
+:GovernanceComponent
+    a                skos:Concept ;
+    skos:broader     :ByComponentRole ;
+    skos:prefLabel   "Governance Component"@en ;
+    skos:definition  "Components that support ML governance — model registries, monitoring, audit trails."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+    rdfs:seeAlso     mlsys:ModelRegistry, mlsys:MonitoringComponent ;
+.
+
+
+#################################################################
+# By Stakeholder Domain
+#################################################################
+
+:ByStakeholderDomain
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ml-systems/tax#> ;
+    skos:prefLabel       "By Stakeholder Domain"@en ;
+    skos:inScheme        <https://meta.linked.archi/ml-systems/tax#> ;
+.
+
+:AnalyticsModeling
+    a                skos:Concept ;
+    skos:broader     :ByStakeholderDomain ;
+    skos:prefLabel   "Analytics Modeling (Data Science)"@en ;
+    skos:definition  "The domain of data scientists — algorithm selection, model training, evaluation."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+.
+
+:AnalyticsOperations
+    a                skos:Concept ;
+    skos:broader     :ByStakeholderDomain ;
+    skos:prefLabel   "Analytics Operations (Data Engineering)"@en ;
+    skos:definition  "The domain of data engineers — deployment, serving, monitoring, pipeline management."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+.
+
+:MLGovernance
+    a                skos:Concept ;
+    skos:broader     :ByStakeholderDomain ;
+    skos:prefLabel   "ML Governance"@en ;
+    skos:definition  "The domain of ethics officers and compliance — fairness, explainability, privacy, audit."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+.
+
+
+#################################################################
+# Relationship types
+#################################################################
+
+:RelationshipKind
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ml-systems/tax#> ;
+    skos:prefLabel       "Relationship Kind"@en ;
+    skos:definition      "The relationship types between the components of an ML-enabled system."@en ;
+    skos:inScheme        <https://meta.linked.archi/ml-systems/tax#> ;
+.
+
+:PipelineLinks
+    a skos:Concept ; skos:broader :RelationshipKind ;
+    skos:prefLabel   "Pipeline Links"@en ;
+    skos:definition  "How the components of an ML pipeline depend on each other: what a model is trained on, what a pipeline produces, what a component integrates with."@en ;
+    skos:inScheme    <https://meta.linked.archi/ml-systems/tax#> ;
+    rdfs:seeAlso     mlsys:TrainedOn, mlsys:ProducesModel, mlsys:IntegratesWith ;
+.
+

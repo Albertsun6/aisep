@@ -1,0 +1,223 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix archdt:  <https://meta.linked.archi/core-deliverable-templates#> .
+@prefix zachtax:    <https://meta.linked.archi/zachman/tax#> .
+@prefix zach:    <https://meta.linked.archi/zachman/onto#> .
+@prefix :        <https://meta.linked.archi/zachman/deliverable-templates#> .
+
+<https://meta.linked.archi/zachman/deliverable-templates#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/zachman/deliverable-templates#" ;
+    vann:preferredNamespacePrefix "zachdt" ;
+    dcterms:title                 "Zachman Framework Deliverable Templates"@en ;
+    dcterms:description           '''Deliverable templates for the Zachman Framework. Provides an
+EA Artifact Coverage Report that queries the knowledge graph for artifacts
+classified by Zachman perspective and interrogative (or directly by cell),
+identifies gaps, and generates a coverage matrix.'''@en ;
+    dcterms:created               "2026-02-17"^^xsd:date ;
+    dcterms:modified              "2026-02-17"^^xsd:date ;
+    dcterms:creator               "Kalin Maldzhanski" ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/zachman/deliverable-templates/0.3.0#> ;
+    owl:versionInfo               "0.3.0"@en ;
+.
+
+#################################################################
+# EA Artifact Coverage Report
+#################################################################
+
+:ArtifactCoverageReport
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "EA Artifact Coverage Report (Zachman)"@en ;
+    skos:definition         '''A coverage report that classifies all architecture artifacts in the
+knowledge graph by their Zachman perspective (row) and interrogative (column),
+identifies which cells are populated and which are gaps, and produces a 6x6
+coverage matrix. Supports both axis-level classification (perspective +
+interrogative) and direct cell-level classification. Useful for EA practice
+maturity assessment and artifact portfolio management.'''@en ;
+    arch:templateHasSection :ACR-S1, :ACR-S2, :ACR-S3, :ACR-S4, :ACR-S5 ;
+    arch:templateTargetsPurpose archvp:Governing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:HTMLFormat ;
+.
+
+#################################################################
+# Sections
+#################################################################
+
+:ACR-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Coverage Matrix"@en ;
+    skos:definition '''6x6 matrix showing artifact count per cell. Rows are perspectives
+(Executive through Enterprise), columns are interrogatives (What through Why).
+Cells with zero artifacts are highlighted as gaps. Includes both axis-level
+and cell-level classified artifacts.'''@en ;
+    arch:sectionQuery """
+PREFIX zach: <https://meta.linked.archi/zachman/onto#>
+PREFIX zachtax: <https://meta.linked.archi/zachman/tax#>
+PREFIX arch: <https://meta.linked.archi/core#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?perspective ?perspLabel ?interrogative ?intLabel
+       (COUNT(DISTINCT ?artifact) AS ?count)
+WHERE {
+    ?perspective skos:broader zachtax:Perspective ;
+                 skos:prefLabel ?perspLabel ;
+                 zachtax:rowOrder ?rowOrd .
+    ?interrogative skos:broader zachtax:Aspect ;
+                   skos:prefLabel ?intLabel ;
+                   zachtax:columnOrder ?colOrd .
+    OPTIONAL {
+        {
+            # Axis-level classification
+            ?artifact arch:viewpointCoversAspect ?interrogative ;
+                      arch:viewpointAddressesPerspective ?perspective .
+        } UNION {
+            # Cell-level classification
+            ?cell skos:broader zachtax:Cell ;
+                  zach:hasAspect ?interrogative ;
+                  zach:hasPerspective ?perspective .
+            ?artifact zach:classifiedByCell ?cell .
+        }
+    }
+}
+GROUP BY ?perspective ?perspLabel ?interrogative ?intLabel ?rowOrd ?colOrd
+ORDER BY ?rowOrd ?colOrd
+"""^^xsd:string .
+
+:ACR-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Gap Analysis"@en ;
+    skos:definition '''Lists all Zachman cells (perspective x interrogative) that have no
+artifacts classified against them. These represent potential coverage gaps
+in the EA practice.'''@en ;
+    arch:sectionQuery """
+PREFIX zach: <https://meta.linked.archi/zachman/onto#>
+PREFIX zachtax: <https://meta.linked.archi/zachman/tax#>
+PREFIX arch: <https://meta.linked.archi/core#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?perspective ?perspLabel ?interrogative ?intLabel ?cellLabel
+WHERE {
+    ?perspective skos:broader zachtax:Perspective ;
+                 skos:prefLabel ?perspLabel ;
+                 zachtax:rowOrder ?rowOrd .
+    ?interrogative skos:broader zachtax:Aspect ;
+                   skos:prefLabel ?intLabel ;
+                   zachtax:columnOrder ?colOrd .
+    ?cell skos:broader zachtax:Cell ;
+          zach:hasAspect ?interrogative ;
+          zach:hasPerspective ?perspective ;
+          skos:prefLabel ?cellLabel .
+    FILTER NOT EXISTS {
+        { ?artifact arch:viewpointCoversAspect ?interrogative ;
+                    arch:viewpointAddressesPerspective ?perspective . }
+        UNION
+        { ?artifact zach:classifiedByCell ?cell . }
+    }
+}
+ORDER BY ?rowOrd ?colOrd
+"""^^xsd:string .
+
+:ACR-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Artifacts by Perspective"@en ;
+    skos:definition '''For each perspective (row), lists all artifacts classified against it
+with their interrogative classification and labels.'''@en ;
+    arch:sectionQuery """
+PREFIX zach: <https://meta.linked.archi/zachman/onto#>
+PREFIX zachtax: <https://meta.linked.archi/zachman/tax#>
+PREFIX arch: <https://meta.linked.archi/core#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?perspective ?perspLabel ?artifact ?artifactLabel ?interrogative ?intLabel
+WHERE {
+    {
+        ?artifact arch:viewpointCoversAspect ?interrogative ;
+                  arch:viewpointAddressesPerspective ?perspective ;
+                  skos:prefLabel ?artifactLabel .
+    } UNION {
+        ?cell skos:broader zachtax:Cell ;
+              zach:hasAspect ?interrogative ;
+              zach:hasPerspective ?perspective .
+        ?artifact zach:classifiedByCell ?cell ;
+                  skos:prefLabel ?artifactLabel .
+    }
+    ?perspective skos:broader zachtax:Perspective ;
+                 skos:prefLabel ?perspLabel ;
+                 zachtax:rowOrder ?rowOrd .
+    ?interrogative skos:broader zachtax:Aspect ;
+                   skos:prefLabel ?intLabel ;
+                   zachtax:columnOrder ?colOrd .
+}
+ORDER BY ?rowOrd ?colOrd ?artifactLabel
+"""^^xsd:string .
+
+:ACR-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    skos:prefLabel "4. Summary Statistics"@en ;
+    skos:definition '''Total artifact count, coverage percentage (populated cells / 36),
+and distribution by perspective and interrogative.'''@en ;
+    arch:sectionQuery """
+PREFIX zach: <https://meta.linked.archi/zachman/onto#>
+PREFIX zachtax: <https://meta.linked.archi/zachman/tax#>
+PREFIX arch: <https://meta.linked.archi/core#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT
+    (COUNT(DISTINCT ?artifact) AS ?totalArtifacts)
+    (COUNT(DISTINCT ?cellKey) AS ?populatedCells)
+WHERE {
+    {
+        SELECT (CONCAT(STR(?p), \"-\", STR(?i)) AS ?cellKey) ?artifact
+        WHERE {
+            {
+                ?artifact arch:viewpointCoversAspect ?i ;
+                          arch:viewpointAddressesPerspective ?p .
+            } UNION {
+                ?cell skos:broader zachtax:Cell ;
+                      zach:hasAspect ?i ;
+                      zach:hasPerspective ?p .
+                ?artifact zach:classifiedByCell ?cell .
+            }
+            ?p skos:broader zachtax:Perspective .
+            ?i skos:broader zachtax:Aspect .
+        }
+    }
+}
+"""^^xsd:string .
+
+:ACR-S5 a arch:TemplateSection ; arch:sectionOrder 5 ;
+    skos:prefLabel "5. Reification Transformation Coverage"@en ;
+    skos:definition '''Shows artifact distribution by reification transformation level,
+revealing which levels of abstraction are well-covered and which are sparse.'''@en ;
+    arch:sectionQuery """
+PREFIX zach: <https://meta.linked.archi/zachman/onto#>
+PREFIX zachtax: <https://meta.linked.archi/zachman/tax#>
+PREFIX arch: <https://meta.linked.archi/core#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?transformation ?transLabel (COUNT(DISTINCT ?artifact) AS ?count)
+WHERE {
+    ?perspective skos:broader zachtax:Perspective ;
+                 zach:hasPerspective ?transformation .
+    ?transformation skos:prefLabel ?transLabel ;
+                    zachtax:rowOrder ?rowOrd .
+    OPTIONAL {
+        {
+            ?artifact arch:viewpointAddressesPerspective ?perspective .
+        } UNION {
+            ?cell skos:broader zachtax:Cell ;
+                  zach:hasPerspective ?perspective .
+            ?artifact zach:classifiedByCell ?cell .
+        }
+    }
+}
+GROUP BY ?transformation ?transLabel ?rowOrd
+ORDER BY ?rowOrd
+"""^^xsd:string .

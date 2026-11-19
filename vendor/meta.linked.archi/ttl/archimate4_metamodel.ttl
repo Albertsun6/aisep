@@ -1,0 +1,178 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix arch-vis: <https://meta.linked.archi/core-vis#> .
+@prefix am4tax:  <https://meta.linked.archi/archimate4/tax#> .
+@prefix am4vp:   <https://meta.linked.archi/archimate4/viewpoints#> .
+@prefix am4dt:   <https://meta.linked.archi/archimate4/deliverable-templates#> .
+@prefix am4rd:   <https://meta.linked.archi/archimate4/reference-data#> .
+@prefix am4rm:   <https://meta.linked.archi/archimate4/reference-models#> .
+@prefix am4pc:   <https://meta.linked.archi/archimate4/presentation-contexts#> .
+@prefix am4not:  <https://meta.linked.archi/archimate4/notation#> .
+@prefix amfw:    <https://meta.linked.archi/archimate/framework#> .
+@prefix :        <https://meta.linked.archi/archimate4/metamodel#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/archimate4/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate4/metamodel#" ;
+    vann:preferredNamespacePrefix "am4mm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ArchiMate 4.0 Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for ArchiMate 4.0. This file ties together all
+the ArchiMate 4.0 semantic resources — the element/relationship ontology, SKOS taxonomy,
+viewpoints, and future SHACL shapes — into a single arch:Metamodel instance.
+
+This is the entry point for tools that need to discover all resources that make up
+the ArchiMate 4.0 modeling language definition.'''@en ;
+    dcterms:created               "2026-04-19"^^xsd:date ;
+    dcterms:modified              "2026-04-29"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/archimate4/metamodel/4.0#> ;
+    owl:versionInfo               "4.0"@en ;
+    dcterms:source  <https://pubs.opengroup.org/architecture/archimate4-doc/> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/architecture/archimate4-doc/> ;
+.
+
+
+#################################################################
+# ArchiMate Framework Individual — DEPRECATED, moved
+#
+# The framework identity is now version-neutral and lives at
+# amfw:ArchiMateFramework, declared in
+# modelingLanguages/archimate/archimate-framework.ttl.
+#
+# It moved because this IRI and archimate3/metamodel#ArchiMateFramework
+# were two unrelated names for the same language, each carrying a version
+# in its skos:prefLabel. See the note in that file.
+#
+# The IRI is retained, owl:deprecated, with owl:sameAs to the new one, and
+# is deliberately no longer typed arch:Framework.
+#
+# What is genuinely 4.0-specific — the Hexagonion, domains replacing
+# layers, cross-domain behaviour elements — belongs on :ArchiMate4 below,
+# not on the framework, and is described there.
+#################################################################
+
+:ArchiMateFramework
+    owl:deprecated     true ;
+    owl:sameAs         amfw:ArchiMateFramework ;
+    rdfs:seeAlso       amfw:ArchiMateFramework ;
+    skos:editorialNote '''Deprecated. Use amfw:ArchiMateFramework
+(https://meta.linked.archi/archimate/framework#ArchiMateFramework), which identifies
+ArchiMate the language rather than the 4.0 release. Version detail belongs on
+:ArchiMate4, which carries owl:versionInfo "4.0".'''@en ;
+.
+
+
+#################################################################
+# ArchiMate 4.0 Metamodel Instance
+#################################################################
+
+:ArchiMate4
+    a                             arch:Metamodel ;
+    skos:prefLabel                "ArchiMate 4.0 Metamodel"@en ;
+    dcterms:description               '''The complete ArchiMate 4.0 metamodel definition, aggregating
+the element/relationship ontology, SKOS taxonomy, viewpoints, and future SHACL shapes
+into a single discoverable resource.'''@en ;
+
+    ## Foundation — the language, not this release
+    ## File: ../archimate-framework.ttl
+    ##
+    ## Points at the version-neutral framework IRI, the same one 3.2 points at, so that
+    ## arch:modelConformsToMetamodel/arch:basedOnFramework selects ArchiMate models of
+    ## either release in one hop. The release-level answer is this resource plus
+    ## owl:versionInfo below.
+    arch:basedOnFramework         amfw:ArchiMateFramework ;
+    owl:versionInfo               "4.0" ;
+
+    ## Model concepts — elements, relationships, abstract classes
+    ## File: archimate4-onto.ttl
+    arch:modelConcepts            <https://meta.linked.archi/archimate4/onto#> ;
+
+    ## Concept classification — SKOS taxonomy (by domain, by aspect)
+    ## File: archimate4-tax.ttl
+    arch:conceptClassification    <https://meta.linked.archi/archimate4/tax#> ;
+
+    ## Palette grouping — sections by domain, each in order of aspect
+    ## Diagram group order — the domains a diagram keeps in bands, motivation and strategy first
+    ## File: archimate4-tax.ttl
+    arch:paletteGrouping          am4tax:PaletteGrouping ;
+    arch:diagramGroupOrder        am4tax:DiagramGroupOrder ;
+
+    ## Relationship proposal order — the orders a modelling tool proposes relationships in, the general one
+    ## and those for the kinds of element they name
+    ## File: archimate4-tax.ttl
+    arch:relationshipProposalOrder am4tax:ProposalOrder, am4tax:BehaviorProposalOrder,
+                                   am4tax:BehaviorServiceProposalOrder, am4tax:StrategyBehaviorProposalOrder,
+                                   am4tax:CapabilityProposalOrder, am4tax:CollaborationProposalOrder,
+                                   am4tax:MotivationProposalOrder, am4tax:MeaningValueProposalOrder,
+                                   am4tax:CompositeProposalOrder ;
+
+    ## Viewpoints — viewpoint individuals and their properties
+    ## File: archimate4-viewpoints.ttl
+    arch:architectureViewpoints   <https://meta.linked.archi/archimate4/viewpoints#> ;
+
+    ## Viewpoint library — SKOS scheme grouping viewpoints
+    ## File: archimate4-viewpoints.ttl
+    arch:viewpointLibrary         am4vp:ViewpointCatalog ;
+
+    ## Formal rules — SHACL shapes for validation, and the relationship tables: the
+    ## relationship shapes' rules as lookups, which the derivation rules read as data
+    ## Files: archimate4-relationship-shapes.ttl, archimate4-relationship-tables.ttl,
+    ##        archimate4-element-shapes.ttl, archimate4-principle-shapes.ttl
+    arch:formalRules              <https://meta.linked.archi/archimate4/shapes#>,
+                                  <https://meta.linked.archi/archimate4/relationship-tables#>,
+                                  <https://meta.linked.archi/archimate4/element-shapes#>,
+                                  <https://meta.linked.archi/archimate4/principle-shapes#> ;
+
+    ## Viewpoint conformance rules
+    ## File: archimate4-viewpoint-shapes.ttl
+    arch:architectureViewpointsRestrictions
+                                  <https://meta.linked.archi/archimate4/viewpoint-shapes#> ;
+
+    ## Derivation rules
+    ## File: archimate4-derivation-rules.ttl
+    arch:derivationRules          <https://meta.linked.archi/archimate4/derivation#> ;
+
+    ## Deliverable templates
+    ## File: archimate4-deliverable-templates.ttl
+    arch:hasDeliverableTemplate   am4dt:ArchitectureDefinitionDocument,
+                                  am4dt:ArchitectureRequirementsSpec,
+                                  am4dt:ArchitecturePrinciplesDocument,
+                                  am4dt:ChangeImpactAssessment ;
+
+    ## Model questions: what ArchiMate 4.0 stakeholders ask of a model
+    ## File: archimate4-questions.ttl
+    arch:hasQuestionSet           <https://meta.linked.archi/archimate4/questions#> ;
+
+    ## Reference data
+    ## File: archimate4-reference-data.ttl
+    arch:referenceData            am4rd:ArchiMateReferenceData ;
+
+    ## Reference models
+    ## File: archimate4-reference-models.ttl
+    arch:referenceModels          am4rm:ArchiMateReferenceModels ;
+
+    ## Presentation contexts
+    ## File: archimate4-presentation-contexts.ttl
+    arch:presentationContextScheme am4pc:ArchiMatePresentationContexts ;
+
+    ## Visual notation set — default element/relationship appearance
+    ## File: archimate4-notation.ttl
+    arch:notationSet              am4not:ArchiMate40StandardNotation ;
+.

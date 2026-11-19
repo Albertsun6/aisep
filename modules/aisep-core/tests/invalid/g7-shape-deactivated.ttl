@@ -1,0 +1,22 @@
+# expect: undeclared predicate sh:deactivated in model file
+# G7 (n19): a model file switching off a module shape (aisep-core ApprovalRecordShape) via sh:deactivated.
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix ddd:  <https://aisep.example/ont/ddd#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix aisepsh: <https://aisep.example/ont/aisep-shapes#> .
+@prefix ex:   <https://example.com/> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+:ac a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "组件"@zh .
+aisepsh:ApprovalRecordShape sh:deactivated true .

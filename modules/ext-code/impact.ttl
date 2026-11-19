@@ -1,0 +1,4 @@
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# Spec §9: code depends on the design it implements (source depends on target).
+aisep:Implementation aisep:dependency aisep:Backward .

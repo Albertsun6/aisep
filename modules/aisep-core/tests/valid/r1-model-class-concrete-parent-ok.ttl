@@ -1,0 +1,21 @@
+# G6 valid: model classes specialising concrete module classes (am4:Device; aisep-core's arch:Association).
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:CloudServer rdfs:subClassOf am4:Device ; skos:prefLabel "云服务器"@zh .
+:Mentions rdfs:subClassOf arch:Association ; skos:prefLabel "提及"@zh .
+:d1 a :CloudServer ; arch:inModel :t ; skos:prefLabel "服务器一"@zh .
+:d2 a am4:Device ; arch:inModel :t ; skos:prefLabel "服务器二"@zh .
+:r1 a :Mentions ; arch:inModel :t ; arch:source :d1 ; arch:target :d2 .

@@ -1,0 +1,13 @@
+# expect: is not one of arch:Baseline
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix am4vp: <https://meta.linked.archi/archimate4/viewpoints#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:crm a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "客户关系系统"@zh ; arch:architectureState :Someday .

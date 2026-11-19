@@ -1,0 +1,35 @@
+# expect-no-warning: ambiguous approval
+# R3c valid: 10:00+08:00 (= 02:00Z) is EARLIER than 03:00Z, so the reject is the latest (no ambiguity); two records
+# at the same instant with the SAME decision are not ambiguous either.
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix ddd:  <https://aisep.example/ont/ddd#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:ac a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "组件"@zh .
+:ac2 a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "组件二"@zh .
+:boss a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "架构师"@zh .
+:zApprove a aisep:ApprovalRecord ; arch:inModel :t ; skos:prefLabel "记录zApprove"@zh ;
+    aisep:gate aisep:GateArchitecture ; aisep:decision aisep:DecisionApproved ; aisep:approvedBy :boss ; aisep:approves :ac ;
+    aisep:evidence "3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e" ; prov:generatedAtTime "2026-11-19T10:00:00+08:00"^^xsd:dateTime .
+:aReject a aisep:ApprovalRecord ; arch:inModel :t ; skos:prefLabel "记录aReject"@zh ;
+    aisep:gate aisep:GateArchitecture ; aisep:decision aisep:DecisionRejected ; aisep:approvedBy :boss ; aisep:approves :ac ;
+    aisep:evidence "3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e" ; prov:generatedAtTime "2026-11-19T03:00:00Z"^^xsd:dateTime .
+:approveA a aisep:ApprovalRecord ; arch:inModel :t ; skos:prefLabel "记录approveA"@zh ;
+    aisep:gate aisep:GateArchitecture ; aisep:decision aisep:DecisionApproved ; aisep:approvedBy :boss ; aisep:approves :ac2 ;
+    aisep:evidence "3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e" ; prov:generatedAtTime "2026-11-19T05:00:00Z"^^xsd:dateTime .
+:approveB a aisep:ApprovalRecord ; arch:inModel :t ; skos:prefLabel "记录approveB"@zh ;
+    aisep:gate aisep:GateArchitecture ; aisep:decision aisep:DecisionApproved ; aisep:approvedBy :boss ; aisep:approves :ac2 ;
+    aisep:evidence "3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e" ; prov:generatedAtTime "2026-11-19T13:00:00+08:00"^^xsd:dateTime .

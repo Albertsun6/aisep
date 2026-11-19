@@ -1,0 +1,117 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix bpmnvp:  <https://meta.linked.archi/bpmn/viewpoints#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix archdt:  <https://meta.linked.archi/core-deliverable-templates#> .
+@prefix bpmn:    <https://meta.linked.archi/bpmn/onto#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix :        <https://meta.linked.archi/bpmn/deliverable-templates#> .
+
+#################################################################
+# BPMN Deliverable Templates
+#################################################################
+
+:ProcessDocumentation
+    a                       arch:DeliverableTemplate ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/deliverable-templates#" ;
+    vann:preferredNamespacePrefix "bpmndt" ;
+    dcterms:title                 "Linked.Archi BPMN Deliverable Templates"@en ;
+    owl:versionInfo               "0.1.0"@en ;
+    skos:prefLabel          "Process Documentation"@en ;
+    dcterms:description          "Deliverable template definitions for generating process documentation from BPMN models."@en ;
+    dcterms:creator         "Kalin Maldzhanski"^^xsd:string ;
+    skos:definition         '''A BPMN-based process documentation covering process flows,
+participant collaborations, and conversation overviews. Suitable for process
+owners, business analysts, and compliance reviews.'''@en ;
+    arch:templateResource   "templates/process-documentation.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        bpmnvp:ProcessFlow, bpmnvp:CollaborationDiagram, bpmnvp:ConversationDiagram ;
+    arch:templateHasSection :PD-S1, :PD-S2, :PD-S3 ;
+    arch:templateTargetsPurpose archvp:Informing, archvp:Designing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:HTMLFormat ;
+.
+
+:PD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint bpmnvp:ProcessFlow ;
+    arch:sectionResultKey "processFlows" ;
+    skos:prefLabel "1. Process Flows"@en ;
+    skos:definition "Sequence of activities within each business process."@en ;
+    arch:sectionQuery """
+PREFIX bpmn: <https://meta.linked.archi/bpmn/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description ?process WHERE {
+    ?element a ?type ;
+             skos:prefLabel ?label .
+    VALUES ?type {
+        bpmn:Task bpmn:UserTask bpmn:ServiceTask bpmn:ScriptTask
+        bpmn:BusinessRuleTask bpmn:ManualTask bpmn:SendTask bpmn:ReceiveTask
+        bpmn:SubProcess bpmn:CallActivity
+        bpmn:ExclusiveGateway bpmn:ParallelGateway bpmn:InclusiveGateway
+        bpmn:EventBasedGateway bpmn:ComplexGateway
+        bpmn:StartEvent bpmn:EndEvent bpmn:IntermediateCatchEvent
+        bpmn:IntermediateThrowEvent bpmn:BoundaryEvent
+    }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?proc bpmn:hasFlowElement ?element .
+        ?proc a bpmn:Process .
+        ?proc skos:prefLabel ?process .
+        FILTER(lang(?process) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?process ?type ?label
+"""^^xsd:string .
+
+:PD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint bpmnvp:CollaborationDiagram ;
+    arch:sectionResultKey "collaborations" ;
+    skos:prefLabel "2. Participant Collaborations"@en ;
+    skos:definition "Interactions between participants via message flows."@en ;
+    arch:sectionQuery """
+PREFIX bpmn: <https://meta.linked.archi/bpmn/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?collaboration ?collabLabel ?participant ?participantLabel ?messageFlow ?messageFlowLabel WHERE {
+    ?collaboration a bpmn:Collaboration ;
+                   skos:prefLabel ?collabLabel .
+    OPTIONAL {
+        ?participant a bpmn:Participant ;
+                     bpmn:inCollaboration ?collaboration ;
+                     skos:prefLabel ?participantLabel .
+        FILTER(lang(?participantLabel) = "en")
+    }
+    OPTIONAL {
+        ?messageFlow a bpmn:MessageFlow ;
+                     skos:prefLabel ?messageFlowLabel .
+        FILTER(lang(?messageFlowLabel) = "en")
+    }
+    FILTER(lang(?collabLabel) = "en")
+} ORDER BY ?collabLabel ?participantLabel
+"""^^xsd:string .
+
+:PD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint bpmnvp:ConversationDiagram ;
+    arch:sectionResultKey "conversations" ;
+    skos:prefLabel "3. Conversation Overview"@en ;
+    skos:definition "High-level communication topics between participants."@en ;
+    arch:sectionQuery """
+PREFIX bpmn: <https://meta.linked.archi/bpmn/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?conversation ?conversationLabel ?participant ?participantLabel WHERE {
+    ?conversation a bpmn:Conversation ;
+                  skos:prefLabel ?conversationLabel .
+    OPTIONAL {
+        ?participant a bpmn:Participant ;
+                     skos:prefLabel ?participantLabel .
+        FILTER(lang(?participantLabel) = "en")
+    }
+    FILTER(lang(?conversationLabel) = "en")
+} ORDER BY ?conversationLabel ?participantLabel
+"""^^xsd:string .

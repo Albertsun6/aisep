@@ -1,0 +1,1009 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix :        <https://meta.linked.archi/edgy/onto#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/edgy/onto#>
+    a                             owl:Ontology ;
+    owl:versionIRI                <https://meta.linked.archi/edgy/onto/23#> ;
+    cc:license                    "http://creativecommons.org/licenses/by-sa/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/edgy/onto#" ;
+    vann:preferredNamespacePrefix "edgy" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EDGY 23 Ontology"@en ;
+    dcterms:description                '''OWL ontology for the EDGY 23 Enterprise Design language by Intersection Group.
+Defines the four base elements (People, Outcome, Activity, Object), twelve facet and
+intersection elements, three relationship types (Link, Flow, Tree), and two label types
+(Tagging, Metrics). EDGY content is available under CC BY-SA 4.0 license.'''@en ;
+    dcterms:created               "2025-06-27"^^xsd:date ;
+    dcterms:modified              "2026-04-17"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    dcterms:source  <https://enterprise.design/wiki/Enterprise_Elements> ;
+    prov:wasDerivedFrom <https://enterprise.design/wiki/Enterprise_Elements> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "23"@en ;
+    rdfs:seeAlso                  <https://enterprise.design>,
+                                  <https://enterprise.design/wiki/Enterprise_Elements>,
+                                  <https://enterprise.design/wiki/Enterprise_Design_Facets>,
+                                  <https://hosiaisluoma.fi/design/enterprise-design-with-edgy-cookbook/> ;
+.
+
+
+#################################################################
+# Abstract Superclasses
+#################################################################
+
+:EnterpriseElement
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    arch:isAbstractClass true ;
+    skos:prefLabel   "Enterprise Element"@en ;
+    skos:definition  "Abstract superclass for all EDGY enterprise elements — the building blocks used to describe what an enterprise consists of."@en ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Enterprise_Elements> ;
+.
+
+:BaseElement
+    a                owl:Class ;
+    rdfs:subClassOf  :EnterpriseElement ;
+    arch:isAbstractClass true ;
+    skos:prefLabel   "Base Element"@en ;
+    skos:definition  "Abstract superclass for the four generic base elements that describe what is happening in an enterprise and its ecosystem."@en ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Enterprise_Elements> ;
+.
+
+:FacetElement
+    a                owl:Class ;
+    rdfs:subClassOf  :EnterpriseElement ;
+    arch:isAbstractClass true ;
+    skos:prefLabel   "Facet Element"@en ;
+    skos:definition  "Abstract superclass for elements that describe an enterprise using a specific enterprise design facet (Identity, Architecture, or Experience)."@en ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Enterprise_Design_Facets> ;
+.
+
+:IntersectionElement
+    a                owl:Class ;
+    rdfs:subClassOf  :EnterpriseElement ;
+    arch:isAbstractClass true ;
+    skos:prefLabel   "Intersection Element"@en ;
+    skos:definition  "Abstract superclass for elements that sit at the intersection of two facets (Organisation, Product, Brand)."@en ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Enterprise_Design_Facets> ;
+.
+
+:IdentityElement
+    a                owl:Class ;
+    rdfs:subClassOf  :FacetElement ;
+    arch:isAbstractClass true ;
+    skos:prefLabel   "Identity Element"@en ;
+    skos:definition  "Abstract superclass for elements belonging to the Identity facet — answering why the enterprise exists, who it is, and what matters to it."@en ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Identity> ;
+.
+
+:ArchitectureElement
+    a                owl:Class ;
+    rdfs:subClassOf  :FacetElement ;
+    arch:isAbstractClass true ;
+    skos:prefLabel   "Architecture Element"@en ;
+    skos:definition  "Abstract superclass for elements belonging to the Architecture facet — answering how the enterprise runs, what it is capable of, and what makes everything work together."@en ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Architecture> ;
+.
+
+:ExperienceElement
+    a                owl:Class ;
+    rdfs:subClassOf  :FacetElement ;
+    arch:isAbstractClass true ;
+    skos:prefLabel   "Experience Element"@en ;
+    skos:definition  "Abstract superclass for elements belonging to the Experience facet — answering what role the enterprise plays in people's lives."@en ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Experience> ;
+.
+
+:EnterpriseRelationship
+    a                owl:Class ;
+    rdfs:subClassOf  arch:QualifiedRelationship ;
+    arch:isAbstractClass true ;
+    skos:prefLabel   "Enterprise Relationship"@en ;
+    skos:definition  "Abstract superclass for all EDGY relationship types that connect enterprise elements."@en ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Enterprise_Elements> ;
+.
+
+:EnterpriseLabel
+    a                owl:Class ;
+    rdfs:subClassOf  arch:ModelConcept ;
+    arch:isAbstractClass true ;
+    skos:prefLabel   "Enterprise Label"@en ;
+    skos:definition  "Abstract superclass for EDGY label types used to differentiate or quantify elements."@en ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Enterprise_Elements> ;
+.
+
+
+#################################################################
+# Base Elements
+#################################################################
+
+:People
+    a                owl:Class ;
+    rdfs:subClassOf  :BaseElement ;
+    skos:prefLabel   "People"@en ;
+    skos:definition  "The individuals co-creating the enterprise or using products."@en ;
+    skos:scopeNote   '''People are individuals with an identity, motivation and intent, skills and expertise,
+background, story and personality. They have the unique ability to have ambitions, find meaning and purpose
+in the world, and share those with other people. The roles people play in an enterprise relate to the
+activities they are expected to be involved in.'''@en ;
+    skos:example     "A manufacturing business makes goods for private household customers and relies on investors and suppliers."@en,
+                     "An open-source software company works remotely with thousands of independent developers."@en,
+                     "An NGO works with volunteers to run campaigns and make their case to parliamentarians."@en ;
+    dcterms:source  <https://enterprise.design/wiki/People> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/People> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/People> ;
+.
+
+:Outcome
+    a                owl:Class ;
+    rdfs:subClassOf  :BaseElement ;
+    skos:prefLabel   "Outcome"@en ;
+    skos:definition  "A result or change that occurs within our enterprise or its ecosystem."@en ;
+    skos:scopeNote   '''Outcomes are the results of activities. These can be intended results such as goals,
+objectives or more generally the purpose an enterprise strives to achieve. Outcomes can also be unintended.
+An outcome represents a state change we can observe in our own organisation, with our customers or
+co-creators, in our markets or ecosystem.'''@en ;
+    skos:example     "Double our market share in a country by the end of the following year."@en,
+                     "Explore the potential outcomes of a physical infrastructure upgrade."@en,
+                     "React to an important development in the labour market as an outcome of regulatory change."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Outcome> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Outcome> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Outcome> ;
+.
+
+:Activity
+    a                owl:Class ;
+    rdfs:subClassOf  :BaseElement ;
+    skos:prefLabel   "Activity"@en ;
+    skos:definition  "What is being done or going on in our enterprise or its ecosystem."@en ;
+    skos:scopeNote   '''An activity represents something happening that is relevant to our enterprise. It can be
+something done by people individually or collectively. An activity can also be used to refer to something
+that simply happens, without specifying who is doing what. Activities capture the behaviours and movements
+of our enterprise, enabling us to model the dynamic nature of our enterprise.'''@en ;
+    skos:example     "A car manufacturer describes the automated and manual activities needed to produce a car."@en,
+                     "An inbound call centre describes how agents can handle customer calls."@en,
+                     "Two partnering companies work together and decide each one's contribution as a set of activities."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Activity> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Activity> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Activity> ;
+.
+
+:Object
+    a                owl:Class ;
+    rdfs:subClassOf  :BaseElement ;
+    skos:prefLabel   "Object"@en ;
+    skos:definition  "A structure that is relevant to the enterprise."@en ;
+    skos:scopeNote   '''An object is a tangible or intangible multi-part structure such as a machine, building,
+application or data. Objects can have behaviour, such as performing automated activities, or support
+people that are doing activities. Objects consist of parts: objects that combine to form an object of
+a higher complexity and function.'''@en ;
+    skos:example     "A hospital manages beds, drugs and equipment, patient medical records, and teams of doctors and nurses."@en,
+                     "A broadcasting company provides a public website about food including recipes, food and famous chefs."@en,
+                     "An airport handles infrastructure such as taxiways and buildings, as well as planes, passengers and flights."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Object> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Object> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Object> ;
+.
+
+
+#################################################################
+# Identity Facet Elements
+#################################################################
+
+:Purpose
+    a                owl:Class ;
+    rdfs:subClassOf  :IdentityElement, :Outcome ;
+    skos:prefLabel   "Purpose"@en ;
+    skos:definition  "A reason why an enterprise exists and what people pursue and believe in."@en ;
+    skos:scopeNote   '''An enterprise's purpose expresses what its people believe in, consider valuable, and are
+striving for, usually expressed as outcomes/goals the enterprise aspires to achieve. The purpose acts
+as a shared 'north star' people can use to find inspiration and motivation in, and align their
+activities with.'''@en ;
+    skos:example     "An enterprise makes the best doohickies in the world - that's all they focus on."@en,
+                     "A public hospital seeks to provide everyone with the care they require."@en,
+                     "A technology company wants to make use of the latest innovations in engineering."@en ;
+    skos:editorialNote "Base element: purpose is an outcome."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Purpose> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Purpose> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Purpose> ;
+.
+
+:Story
+    a                owl:Class ;
+    rdfs:subClassOf  :IdentityElement, :Activity ;
+    skos:prefLabel   "Story"@en ;
+    skos:definition  "The way we make sense of our enterprise and communicate to people what it does."@en ;
+    skos:scopeNote   '''An enterprise story is a narrative with our co-creators as protagonists, the enterprise
+as the setting, the ecosystem as context, and the co-creators' activities as actions. Stories help
+us make sense of complex ideas, concepts and situations and share that sense with other people.
+Creating a story is a co-creative process, bringing together a group of stakeholders.'''@en ;
+    skos:example     "An enterprise has its roots in manual manufacturing before moving on to be a leader in automated production systems."@en,
+                     "An enterprise in the food industry is all about sustainable and eco-friendly production."@en ;
+    skos:editorialNote "Base element: story is an activity."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Story> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Story> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Story> ;
+.
+
+:Content
+    a                owl:Class ;
+    rdfs:subClassOf  :IdentityElement, :Object ;
+    skos:prefLabel   "Content"@en ;
+    skos:definition  "What is being communicated to people."@en ;
+    skos:scopeNote   '''Content refers to the information and data that is being communicated between and to people.
+Content always conveys messages and clues, both explicit and implicit, that people use to construct
+their perception of the enterprise's identity. It requires a medium to convey those underlying
+messages to its audiences. For an enterprise, content is a valuable asset, vital for its success.'''@en ;
+    skos:example     "A car manufacturer displays the latest models and their features on a website, including videos and animations."@en,
+                     "A consultant develops a mission statement and a process dashboard available to employees on the intranet."@en ;
+    skos:editorialNote "Base element: content is an object."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Content> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Content> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Content> ;
+.
+
+
+#################################################################
+# Architecture Facet Elements
+#################################################################
+
+:Capability
+    a                owl:Class ;
+    rdfs:subClassOf  :ArchitectureElement, :Outcome ;
+    skos:prefLabel   "Capability"@en ;
+    skos:definition  "What we are able to do by orchestrating people and assets."@en ;
+    skos:scopeNote   '''Enterprises strive to achieve their purpose by creating products. To do so, they must
+design and realise their capabilities by orchestrating meaningful combinations of people and assets.
+Each capability produces well-defined outputs for internal or external business use. Capabilities
+guide the modularisation of our enterprise by defining boundaries around what belongs together.'''@en ;
+    skos:example     "A national government develops the capability to warn citizens about potential environmental dangers."@en,
+                     "A technology company sets up a government relations capability to affect upcoming regulation."@en,
+                     "A design studio excels in its digital product design practice, building upon research and prototyping capabilities."@en ;
+    skos:editorialNote "Base element: capability is an outcome."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Capability> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Capability> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Capability>,
+                     <https://enterprise.design/wiki/Capability_Modelling_Guidelines> ;
+.
+
+:Process
+    a                owl:Class ;
+    rdfs:subClassOf  :ArchitectureElement, :Activity ;
+    skos:prefLabel   "Process"@en ;
+    skos:definition  "A set of related activities our enterprise carries out."@en ;
+    skos:scopeNote   '''Processes are the flows of activities needed for product creation. They transform a set
+of inputs into a set of products or intermediary outputs and consist of a set of activities performed
+in coordination. A process can be strictly structured or less structured. Well-designed processes
+lead to enterprises that operate efficiently and effectively.'''@en ;
+    skos:example     "A car company has largely automated their production process."@en,
+                     "An insurance provider treats incoming claims in a structured fashion."@en,
+                     "A software company uses agile methods to manage their development process."@en ;
+    skos:editorialNote "Base element: process is an activity."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Process> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Process> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Process> ;
+.
+
+:Asset
+    a                owl:Class ;
+    rdfs:subClassOf  :ArchitectureElement, :Object ;
+    skos:prefLabel   "Asset"@en ;
+    skos:definition  "An object we need and use to perform our capabilities."@en ;
+    skos:scopeNote   '''Enterprises need to develop, buy and manage a broad range of tangible or intangible assets
+(such as buildings, machines, raw materials, software applications, financial assets and know-how)
+to perform the capabilities needed to run their business. Buying assets from suppliers connects
+the enterprise to its supply chain.'''@en ;
+    skos:example     "A railroad maintenance company requires fuel and gravel, and operates power lines and tracks."@en,
+                     "A public healthcare provider operates with hospital buildings, medical records, and planning systems."@en,
+                     "An air traffic control organisation runs applications and databases to track flights."@en ;
+    skos:editorialNote "Base element: asset is an object."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Asset> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Asset> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Asset> ;
+.
+
+
+#################################################################
+# Experience Facet Elements
+#################################################################
+
+:Task
+    a                owl:Class ;
+    rdfs:subClassOf  :ExperienceElement, :Outcome ;
+    skos:prefLabel   "Task"@en ;
+    skos:definition  "What people want to achieve and get done."@en ;
+    skos:scopeNote   '''People have numerous tasks they want to accomplish every day. Those tasks are about the
+outcomes people want to achieve, not the means to get there. Tasks can be seen as a stable expression
+of people's needs, motivations and intent. Achieving clarity on people's tasks offers our enterprise
+a chance to focus on people's most important needs and motivations.'''@en ;
+    skos:example     "A private investor compares the financial performance of various stocks."@en,
+                     "A customer checks their insurance coverage before starting the procedure to file a claim."@en,
+                     "An airline official looks up current delays to inform passengers waiting at the airport."@en ;
+    skos:editorialNote "Base element: task is an outcome."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Task> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Task> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Task> ;
+.
+
+:Journey
+    a                owl:Class ;
+    rdfs:subClassOf  :ExperienceElement, :Activity ;
+    skos:prefLabel   "Journey"@en ;
+    skos:definition  "The events and activities people experience in their lives."@en ;
+    skos:scopeNote   '''A journey describes what a person does, feels, thinks, or otherwise experiences over time
+as they live a specific portion of their life, in particular when interacting with our enterprise.
+It is captured as a simplified sequential and chronological representation of activities and events
+people experience, and tasks they want to accomplish.'''@en ;
+    skos:example     "A traveller goes through a journey of making travel plans, booking tickets, and embarking on the actual trip."@en,
+                     "A new employee goes through a journey of signing the contract, onboarding activities, and meeting their team."@en ;
+    skos:editorialNote "Base element: journey is an activity."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Journey> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Journey> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Journey> ;
+.
+
+:Channel
+    a                owl:Class ;
+    rdfs:subClassOf  :ExperienceElement, :Object ;
+    skos:prefLabel   "Channel"@en ;
+    skos:definition  "The means people use to engage and interact with us."@en ;
+    skos:scopeNote   '''Channels are the means of communication between people and the enterprise. They are where
+moments of interaction between people and the enterprise take place. They include media, devices,
+communication systems, or physical environments used to facilitate interactions.'''@en ;
+    skos:example     "An airline uses an instant messenger app to communicate with their customers synchronously."@en,
+                     "An insurance company operates physical stores to sell printed tickets to use their services."@en,
+                     "A tech company builds a virtual Metaverse presence to interact with their job candidates."@en ;
+    skos:editorialNote "Base element: channel is an object."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Channel> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Channel> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Channel> ;
+.
+
+
+#################################################################
+# Intersection Elements
+#################################################################
+
+:Organisation
+    a                owl:Class ;
+    rdfs:subClassOf  :IntersectionElement, :Object ;
+    skos:prefLabel   "Organisation"@en ;
+    skos:definition  "A group of people working together."@en ;
+    skos:scopeNote   '''An organisation is a complex social structure. People form organisations to collaborate
+and co-create outcomes they cannot achieve alone without explicit agreements about membership,
+responsibilities and behavioural rules. Organisations are fractal: they are made up of nested
+structures that have similar attributes on each level. Organisations are complex adaptive systems
+displaying both designed and emergent attributes and behaviours.'''@en ;
+    skos:example     "A commercial company is structured into a hierarchy of roles and responsibilities."@en,
+                     "An NGO defines volunteer roles and processes needed to direct the organisation."@en ;
+    skos:editorialNote "Base element: organisation is an object. Intersection of Identity and Architecture facets."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Organisation> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Organisation> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Organisation> ;
+.
+
+:Product
+    a                owl:Class ;
+    rdfs:subClassOf  :IntersectionElement, :Object ;
+    skos:prefLabel   "Product"@en ;
+    skos:definition  "What we make, offer and deliver for people's benefit."@en ;
+    skos:scopeNote   '''Products are the result of our enterprise activity and encompass physical things manufactured
+and delivered, or services rendered to people. A product can be composed of any combination of physical
+goods and other tangible and intangible objects. A product helps people complete a task, and thereby
+adds value to their lives when used in the right context.'''@en ;
+    skos:example     "A car manufacturer makes cars and offers them for leasing or buying with custom loans."@en,
+                     "A railway company offers different trains, tickets and discount subscriptions."@en,
+                     "A law office offers advice, contract creation and legal representation as services."@en ;
+    skos:editorialNote "Base element: product is an object. Intersection of Architecture and Experience facets."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Product> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Product> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Product> ;
+.
+
+:Brand
+    a                owl:Class ;
+    rdfs:subClassOf  :IntersectionElement, :Object ;
+    skos:prefLabel   "Brand"@en ;
+    skos:definition  "Our name and what it stands for."@en ;
+    skos:scopeNote   '''A brand is a symbolic representation that stands for our enterprise and its products. It is
+designed to communicate our identity, especially how we are different from others. It invokes a set
+of expectations in people about our enterprise and our products. Positive expectations about a brand
+pull people towards the products an enterprise offers, negative expectations push them away.'''@en ;
+    skos:example     "The name a consumer goods company uses to represent itself, protected as a trademark."@en,
+                     "A product name used for sales on commercial markets and within franchising partnerships."@en,
+                     "A label used by different companies to communicate a sustainability certification."@en ;
+    skos:editorialNote "Base element: brand is an object. Intersection of Identity and Experience facets."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Brand> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Brand> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Brand> ;
+.
+
+
+#################################################################
+# Relationship Types — Three-Declaration Pattern
+#################################################################
+
+## Link ─────────────────────────────────────────────────────────
+
+:linksTo
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "links to"@en ;
+    skos:definition  "A meaningful structural association between two enterprise elements."@en ;
+    arch:domainIncludes :EnterpriseElement ;
+    arch:rangeIncludes  :EnterpriseElement ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Link> ;
+.
+
+:Link
+    a                owl:Class ;
+    rdfs:subClassOf  :EnterpriseRelationship ;
+    arch:unqualifiedForm :linksTo ;
+    skos:prefLabel   "Link"@en ;
+    skos:definition  "A meaningful structural association between two elements."@en ;
+    skos:scopeNote   '''A link expresses a structural relationship between two elements in terms that explain
+or illustrate the relevance of that relationship to the enterprise. EDGY provides twenty-four
+pre-defined types of links (core links) that enable co-designers from different disciplines
+to better communicate and connect their specialised designs. In addition, custom shortcut
+links can be defined to bypass the core model.'''@en ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Link> ;
+.
+
+:qualifiedLink
+    a                owl:ObjectProperty ;
+    rdfs:range       :Link ;
+    arch:unqualifiedForm :linksTo ;
+    arch:domainIncludes :EnterpriseElement ;
+    skos:prefLabel   "qualified Link"@en ;
+    skos:definition  "Navigates from a source element to a Link qualified relationship resource."@en ;
+.
+
+## Flow ─────────────────────────────────────────────────────────
+
+:flowsTo
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "flows to"@en ;
+    skos:definition  "An element influences another by passing objects."@en ;
+    arch:domainIncludes :EnterpriseElement ;
+    arch:rangeIncludes  :EnterpriseElement ;
+    dcterms:source  <https://enterprise.design/wiki/Flow> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Flow> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Flow> ;
+.
+
+:Flow
+    a                owl:Class ;
+    rdfs:subClassOf  :EnterpriseRelationship ;
+    arch:unqualifiedForm :flowsTo ;
+    skos:prefLabel   "Flow"@en ;
+    skos:definition  "An element influences another by passing objects."@en ;
+    skos:scopeNote   '''An enterprise functions through the way its parts influence each other to produce an
+aggregated result no single part can produce alone. Understanding and improving the effectiveness
+and ease with which things flow through the enterprise and its elements helps it function
+efficiently and effectively.'''@en ;
+    skos:example     "A business pays another by transferring money."@en,
+                     "A business process involves data passed from one information system to another."@en,
+                     "A supply chain involves transferring raw materials and physical goods between locations."@en ;
+    dcterms:source  <https://enterprise.design/wiki/Flow> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Flow> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Flow> ;
+.
+
+:qualifiedFlow
+    a                owl:ObjectProperty ;
+    rdfs:range       :Flow ;
+    arch:unqualifiedForm :flowsTo ;
+    arch:domainIncludes :EnterpriseElement ;
+    skos:prefLabel   "qualified Flow"@en ;
+    skos:definition  "Navigates from a source element to a Flow qualified relationship resource."@en ;
+.
+
+## Tree ─────────────────────────────────────────────────────────
+
+:partOf
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "part of"@en ;
+    skos:definition  "An element is part of another element of the same type."@en ;
+    skos:scopeNote   '''Expresses a hierarchical whole/part relationship. The subject (source) is the
+subordinate part and the object (target) is the superordinate whole. A tree is always
+between elements of the same type — e.g. a sub-capability is part of a capability,
+a team is part of a department. Direction: child → parent (the child "is part of" the parent).
+Use nesting in visual maps to show the same relationship spatially.'''@en ;
+    skos:example     "ex:IdentityVerification edgy:partOf ex:CustomerOnboarding . # sub-capability is part of parent capability"@en,
+                     "ex:NorthEuropeTeam edgy:partOf ex:SalesDepartment . # team is part of department"@en,
+                     "ex:MobileApp edgy:partOf ex:BankingSuite . # product is part of product portfolio"@en ;
+    arch:domainIncludes :EnterpriseElement ;
+    arch:rangeIncludes  :EnterpriseElement ;
+    dcterms:source  <https://enterprise.design/wiki/Tree> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Tree> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Tree> ;
+.
+
+:Tree
+    a                owl:Class ;
+    rdfs:subClassOf  :EnterpriseRelationship ;
+    arch:unqualifiedForm :partOf ;
+    skos:prefLabel   "Tree"@en ;
+    skos:definition  "An element is part of another element of the same type."@en ;
+    skos:scopeNote   '''A tree represents a hierarchical whole/part relationship between elements of the same type.
+Hierarchical relationships are based on degrees or levels of superordination and subordination,
+where the superordinate element represents a whole and subordinate elements represent its
+members or parts. In the qualified form, arch:source is the child (part) and arch:target is
+the parent (whole). The visual notation uses a filled diamond on the parent (target) end.'''@en ;
+    skos:example     "An organisation is structured as a tree of departments, teams and roles."@en,
+                     "A capability decomposition is structured as a tree of sub-capabilities."@en,
+                     "A product portfolio is structured as a tree of categories, products and components."@en,
+                     "A brand portfolio is structured as a tree of corporate, product and special edition brands."@en,
+                     "A purpose and goal portfolio is structured as a tree of strategic, tactical and operational outcomes."@en ;
+    skos:editorialNote '''Use: 1) Decompose an element into its smaller sub-elements.
+2) Express that a sub-element is a part of its superior element.
+The constraint is that both source and target must be of the same element type
+(e.g. both Capability, both Organisation, both Product).'''@en ;
+    dcterms:source  <https://enterprise.design/wiki/Tree> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Tree> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Tree> ;
+.
+
+:qualifiedTree
+    a                owl:ObjectProperty ;
+    rdfs:range       :Tree ;
+    arch:unqualifiedForm :partOf ;
+    arch:domainIncludes :EnterpriseElement ;
+    skos:prefLabel   "qualified Tree"@en ;
+    skos:definition  "Navigates from a source element to a Tree qualified relationship resource."@en ;
+.
+
+
+#################################################################
+# Label Types
+#################################################################
+
+:Tagging
+    a                owl:Class ;
+    rdfs:subClassOf  :EnterpriseLabel ;
+    skos:prefLabel   "Tagging"@en ;
+    skos:definition  "Used to differentiate elements based on a set of values."@en ;
+    skos:scopeNote   '''Tags capture characteristics that apply to multiple elements. They add information that
+helps to distinguish types of elements, to establish priorities or highlight elements that
+require a particular treatment. One element can have several tags applied to it.'''@en ;
+    dcterms:source  <https://enterprise.design/wiki/Tagging> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Tagging> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Tagging> ;
+.
+
+:Metrics
+    a                owl:Class ;
+    rdfs:subClassOf  :EnterpriseLabel ;
+    skos:prefLabel   "Metrics"@en ;
+    skos:definition  "Used to add a quantity or quality to an element that can be measured or otherwise determined."@en ;
+    skos:scopeNote   '''Metrics add a quantity or quality to an element that can be measured or otherwise determined.
+Typically this is used to express information about the performance, importance or status of the
+respective element. Combined with a colour coding scheme, metrics can be used to display a heat map.
+EDGY suggests: Priority, Investment, Cost, Risk, Performance, Quality/fitness.'''@en ;
+    dcterms:source  <https://enterprise.design/wiki/Metrics> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Metrics> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Metrics> ;
+.
+
+
+#################################################################
+# Object Properties — Label Attachment
+#################################################################
+
+:hasTag
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has tag"@en ;
+    skos:definition  "Attaches a Tagging label to an enterprise element to differentiate it by type, priority, or category."@en ;
+    arch:domainIncludes :EnterpriseElement ;
+    arch:rangeIncludes  :Tagging ;
+    dcterms:source  <https://enterprise.design/wiki/Tagging> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Tagging> ;
+.
+
+:hasMetric
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has metric"@en ;
+    skos:definition  "Attaches a Metrics label to an enterprise element to add a measurable quantity or quality."@en ;
+    arch:domainIncludes :EnterpriseElement ;
+    arch:rangeIncludes  :Metrics ;
+    dcterms:source  <https://enterprise.design/wiki/Metrics> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Metrics> ;
+.
+
+
+#################################################################
+# Object Properties — Core Links (Identity Facet)
+#################################################################
+
+:contextualisesPurpose
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "contextualises purpose"@en ;
+    skos:definition  "A story contextualises a purpose by providing narrative context for why the enterprise exists."@en ;
+    arch:domainIncludes :Story ;
+    arch:rangeIncludes  :Purpose ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Story>,
+                     <https://enterprise.design/wiki/Purpose> ;
+.
+
+:expressesPurpose
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "expresses purpose"@en ;
+    skos:definition  "Content expresses purpose by communicating the enterprise's reason for being."@en ;
+    arch:domainIncludes :Content ;
+    arch:rangeIncludes  :Purpose ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Content>,
+                     <https://enterprise.design/wiki/Purpose> ;
+.
+
+:conveysStory
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "conveys story"@en ;
+    skos:definition  "Content conveys a story by carrying the narrative through media and messages."@en ;
+    arch:domainIncludes :Content ;
+    arch:rangeIncludes  :Story ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Content>,
+                     <https://enterprise.design/wiki/Story> ;
+.
+
+
+#################################################################
+# Object Properties — Core Links (Experience Facet)
+#################################################################
+
+:isPartOfJourney
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "is part of journey"@en ;
+    skos:definition  "A task is part of a journey, representing what people want to accomplish within their experience."@en ;
+    arch:domainIncludes :Task ;
+    arch:rangeIncludes  :Journey ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Task>,
+                     <https://enterprise.design/wiki/Journey> ;
+.
+
+:usesChannel
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "uses channel"@en ;
+    skos:definition  "A task uses a channel as the means of interaction with the enterprise."@en ;
+    arch:domainIncludes :Task ;
+    arch:rangeIncludes  :Channel ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Task>,
+                     <https://enterprise.design/wiki/Channel> ;
+.
+
+:traversesChannel
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "traverses channel"@en ;
+    skos:definition  "A journey traverses a channel, moving across interaction points over time."@en ;
+    arch:domainIncludes :Journey ;
+    arch:rangeIncludes  :Channel ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Journey>,
+                     <https://enterprise.design/wiki/Channel> ;
+.
+
+
+#################################################################
+# Object Properties — Core Links (Architecture Facet)
+#################################################################
+
+:requiresAsset
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "requires asset"@en ;
+    skos:definition  "A capability requires an asset to be performed."@en ;
+    arch:domainIncludes :Capability ;
+    arch:rangeIncludes  :Asset ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Capability>,
+                     <https://enterprise.design/wiki/Asset> ;
+.
+
+:realisesCapability
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "realises capability"@en ;
+    skos:definition  "A process realises a capability by executing the activities needed to produce its outputs."@en ;
+    arch:domainIncludes :Process ;
+    arch:rangeIncludes  :Capability ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Process>,
+                     <https://enterprise.design/wiki/Capability> ;
+.
+
+:processRequiresAsset
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "requires asset (process)"@en ;
+    skos:definition  "A process requires an asset to operate."@en ;
+    arch:domainIncludes :Process ;
+    arch:rangeIncludes  :Asset ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Process>,
+                     <https://enterprise.design/wiki/Asset> ;
+.
+
+
+#################################################################
+# Object Properties — Intersection Core Links
+#################################################################
+
+## Organisation intersections
+:buildsBrand
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "builds brand"@en ;
+    skos:definition  "An organisation builds a brand as a symbolic representation of itself."@en ;
+    arch:domainIncludes :Organisation ;
+    arch:rangeIncludes  :Brand ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Organisation>,
+                     <https://enterprise.design/wiki/Brand> ;
+.
+
+:makesProduct
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "makes product"@en ;
+    skos:definition  "An organisation makes a product for people's benefit."@en ;
+    arch:domainIncludes :Organisation ;
+    arch:rangeIncludes  :Product ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Organisation>,
+                     <https://enterprise.design/wiki/Product> ;
+.
+
+:embodiesBrand
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "embodies brand"@en ;
+    skos:definition  "A product embodies a brand, carrying its identity and promise to people."@en ;
+    arch:domainIncludes :Product ;
+    arch:rangeIncludes  :Brand ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Product>,
+                     <https://enterprise.design/wiki/Brand> ;
+.
+
+## Product / Experience intersections
+:servesTask
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "serves task"@en ;
+    skos:definition  "A product serves a task by helping people accomplish what they want to get done."@en ;
+    arch:domainIncludes :Product ;
+    arch:rangeIncludes  :Task ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Product>,
+                     <https://enterprise.design/wiki/Task> ;
+.
+
+:featuresInJourney
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "features in journey"@en ;
+    skos:definition  "A product features in a journey, appearing in people's experiences over time."@en ;
+    arch:domainIncludes :Product ;
+    arch:rangeIncludes  :Journey ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Product>,
+                     <https://enterprise.design/wiki/Journey> ;
+.
+
+## Product / Architecture intersections
+:requiresCapability
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "requires capability"@en ;
+    skos:definition  "A product requires a capability to be created and delivered."@en ;
+    arch:domainIncludes :Product ;
+    arch:rangeIncludes  :Capability ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Product>,
+                     <https://enterprise.design/wiki/Capability> ;
+.
+
+:createsProduct
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "creates product"@en ;
+    skos:definition  "A process creates a product through its activities."@en ;
+    arch:domainIncludes :Process ;
+    arch:rangeIncludes  :Product ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Process>,
+                     <https://enterprise.design/wiki/Product> ;
+.
+
+## Organisation / Identity intersections
+:pursuesPurpose
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "pursues purpose"@en ;
+    skos:definition  "An organisation pursues a purpose as its reason for existing."@en ;
+    arch:domainIncludes :Organisation ;
+    arch:rangeIncludes  :Purpose ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Organisation>,
+                     <https://enterprise.design/wiki/Purpose> ;
+.
+
+:authorsStory
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "authors story"@en ;
+    skos:definition  "An organisation authors a story, creating the narrative about itself."@en ;
+    arch:domainIncludes :Organisation ;
+    arch:rangeIncludes  :Story ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Organisation>,
+                     <https://enterprise.design/wiki/Story> ;
+.
+
+## Organisation / Architecture intersections
+:hasCapability
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has capability"@en ;
+    skos:definition  "An organisation has a capability it can perform."@en ;
+    arch:domainIncludes :Organisation ;
+    arch:rangeIncludes  :Capability ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Organisation>,
+                     <https://enterprise.design/wiki/Capability> ;
+.
+
+:performsProcess
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "performs process"@en ;
+    skos:definition  "An organisation performs a process as part of its operations."@en ;
+    arch:domainIncludes :Organisation ;
+    arch:rangeIncludes  :Process ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Organisation>,
+                     <https://enterprise.design/wiki/Process> ;
+.
+
+## Brand / Identity intersections
+:evokesStory
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "evokes story"@en ;
+    skos:definition  "A brand evokes a story, triggering narratives in people's minds."@en ;
+    arch:domainIncludes :Brand ;
+    arch:rangeIncludes  :Story ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Brand>,
+                     <https://enterprise.design/wiki/Story> ;
+.
+
+:representsPurpose
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "represents purpose"@en ;
+    skos:definition  "A brand represents a purpose, standing for what the enterprise believes in."@en ;
+    arch:domainIncludes :Brand ;
+    arch:rangeIncludes  :Purpose ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Brand>,
+                     <https://enterprise.design/wiki/Purpose> ;
+.
+
+## Brand / Experience intersections
+:supportsTask
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "supports task"@en ;
+    skos:definition  "A brand supports a task by creating expectations that help people accomplish their goals."@en ;
+    arch:domainIncludes :Brand ;
+    arch:rangeIncludes  :Task ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Brand>,
+                     <https://enterprise.design/wiki/Task> ;
+.
+
+:appearsInJourney
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "appears in journey"@en ;
+    skos:definition  "A brand appears in a journey, manifesting in people's experiences over time."@en ;
+    arch:domainIncludes :Brand ;
+    arch:rangeIncludes  :Journey ;
+    dcterms:source  <https://enterprise.design/wiki/Link> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Link> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Brand>,
+                     <https://enterprise.design/wiki/Journey> ;
+.
+
+
+#################################################################
+# Object Properties — Base Element Relationships
+#################################################################
+
+:performsActivity
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "performs activity"@en ;
+    skos:definition  "People and objects perform activities."@en ;
+    arch:domainIncludes :People, :Object ;
+    arch:rangeIncludes  :Activity ;
+    dcterms:source  <https://enterprise.design/wiki/People> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/People> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/People>,
+                     <https://enterprise.design/wiki/Activity> ;
+.
+
+:usesObject
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "uses object"@en ;
+    skos:definition  "People use objects in their activities."@en ;
+    arch:domainIncludes :People ;
+    arch:rangeIncludes  :Object ;
+    dcterms:source  <https://enterprise.design/wiki/People> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/People> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/People>,
+                     <https://enterprise.design/wiki/Object> ;
+.
+
+:achievesOutcome
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "achieves outcome"@en ;
+    skos:definition  "People achieve outcomes through their activities."@en ;
+    arch:domainIncludes :People ;
+    arch:rangeIncludes  :Outcome ;
+    dcterms:source  <https://enterprise.design/wiki/People> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/People> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/People>,
+                     <https://enterprise.design/wiki/Outcome> ;
+.
+
+:leadsToOutcome
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "leads to outcome"@en ;
+    skos:definition  "Activities lead to outcomes as their results."@en ;
+    arch:domainIncludes :Activity ;
+    arch:rangeIncludes  :Outcome ;
+    dcterms:source  <https://enterprise.design/wiki/Activity> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Activity> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Activity>,
+                     <https://enterprise.design/wiki/Outcome> ;
+.
+
+:neededToAchieve
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "needed to achieve"@en ;
+    skos:definition  "Objects are needed to achieve outcomes."@en ;
+    arch:domainIncludes :Object ;
+    arch:rangeIncludes  :Outcome ;
+    dcterms:source  <https://enterprise.design/wiki/Object> ;
+    prov:wasQuotedFrom <https://enterprise.design/wiki/Object> ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Object>,
+                     <https://enterprise.design/wiki/Outcome> ;
+.

@@ -1,0 +1,123 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix :        <https://meta.linked.archi/4plus1#> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/4plus1#>
+    a                  skos:ConceptScheme ;
+    skos:prefLabel     "4+1 Architectural View Model"@en ;
+    dcterms:description    """Classification scheme based on Philippe Kruchten's 4+1 View Model
+(IEEE Software, 1995). Organizes architecture descriptions into four
+concurrent views (Logical, Process, Development, Physical) plus a
+unifying Scenarios view that validates and illustrates the others."""@en ;
+    skos:hasTopConcept :LogicalView, :ProcessView, :DevelopmentView,
+                       :PhysicalView, :ScenariosView ;
+    dcterms:source  <https://www.researchgate.net/publication/220018231_The_41_View_Model_of_Architecture> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/4plus1#" ;
+    vann:preferredNamespacePrefix "fourplus1" ;
+    dcterms:title                      "4+1 View Model Taxonomy"@en ;
+    dcterms:created               "2026-05-06"^^xsd:date ;
+    dcterms:modified              "2026-05-06"^^xsd:date ;
+    dcterms:creator                    "Kalin Maldzhanski" ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionInfo               "0.1.0"@en ;
+    prov:wasDerivedFrom <https://www.researchgate.net/publication/220018231_The_41_View_Model_of_Architecture> ;
+    rdfs:seeAlso                  <https://www.cs.ubc.ca/~gregor/teaching/papers/4+1view-architecture.pdf> .
+
+
+#################################################################
+# Views
+#################################################################
+
+:LogicalView
+    a                  skos:Concept, arch:Concern ;
+    skos:inScheme      <https://meta.linked.archi/4plus1#> ;
+    skos:topConceptOf  <https://meta.linked.archi/4plus1#> ;
+    skos:prefLabel     "Logical View"@en ;
+    skos:altLabel      "Design View"@en ;
+    skos:definition    """Addresses the functional requirements — what the system provides
+to end users. Describes the key abstractions (objects, classes, packages)
+and their relationships. Concerned with decomposition, encapsulation,
+and interface design."""@en ;
+    skos:scopeNote     """In UML: class diagrams, object diagrams, package diagrams.
+In ArchiMate: Application layer elements (ApplicationComponent, ApplicationService,
+ApplicationInterface, DataObject). In C4: Component diagrams."""@en ;
+    skos:example       "Domain model, service interfaces, module decomposition"@en ;
+.
+
+:ProcessView
+    a                  skos:Concept, arch:Concern ;
+    skos:inScheme      <https://meta.linked.archi/4plus1#> ;
+    skos:topConceptOf  <https://meta.linked.archi/4plus1#> ;
+    skos:prefLabel     "Process View"@en ;
+    skos:altLabel      "Concurrency View"@en ;
+    skos:definition    """Addresses non-functional requirements — concurrency, distribution,
+performance, scalability, fault tolerance. Describes the runtime behavior:
+processes, threads, synchronization, and communication mechanisms."""@en ;
+    skos:scopeNote     """In UML: activity diagrams, sequence diagrams, state machine diagrams.
+In ArchiMate: Triggering and Flow relationships, ApplicationProcess,
+ApplicationEvent. In BPMN: full process models with gateways and events."""@en ;
+    skos:example       "Message flows between services, event-driven choreography, thread pools"@en ;
+.
+
+:DevelopmentView
+    a                  skos:Concept, arch:Concern ;
+    skos:inScheme      <https://meta.linked.archi/4plus1#> ;
+    skos:topConceptOf  <https://meta.linked.archi/4plus1#> ;
+    skos:prefLabel     "Development View"@en ;
+    skos:altLabel      "Implementation View"@en ;
+    skos:definition    """Addresses the organization of the software in its development
+environment. Describes modules, packages, layers, subsystems, and their
+dependencies. Concerned with build structure, team allocation, and
+reuse."""@en ;
+    skos:scopeNote     """In UML: component diagrams, package diagrams. In C4: Container
+diagrams (deployable units and their technology choices). In Backstage:
+Component and System catalog entries with ownership."""@en ;
+    skos:example       "Microservice boundaries, shared libraries, monorepo structure"@en ;
+.
+
+:PhysicalView
+    a                  skos:Concept, arch:Concern ;
+    skos:inScheme      <https://meta.linked.archi/4plus1#> ;
+    skos:topConceptOf  <https://meta.linked.archi/4plus1#> ;
+    skos:prefLabel     "Physical View"@en ;
+    skos:altLabel      "Deployment View"@en ;
+    skos:definition    """Addresses the mapping of software to hardware — topology, deployment,
+communication, and infrastructure. Describes nodes, networks, and the
+allocation of processes and components to physical or virtual
+resources."""@en ;
+    skos:scopeNote     """In UML: deployment diagrams. In ArchiMate: Technology layer
+(Node, Device, SystemSoftware, CommunicationNetwork) with Assignment
+relationships. In C4: Deployment diagrams."""@en ;
+    skos:example       "Kubernetes cluster topology, cloud region layout, network zones"@en ;
+.
+
+:ScenariosView
+    a                  skos:Concept, arch:Concern ;
+    skos:inScheme      <https://meta.linked.archi/4plus1#> ;
+    skos:topConceptOf  <https://meta.linked.archi/4plus1#> ;
+    skos:prefLabel     "Scenarios View"@en ;
+    skos:altLabel      "+1 View"@en, "Use Case View"@en ;
+    skos:definition    """The unifying view — a set of key scenarios (use cases) that drive
+and validate the architecture. Each scenario traces through the other
+four views, showing how elements from the Logical, Process, Development,
+and Physical views collaborate to fulfill a user goal."""@en ;
+    skos:scopeNote     """In UML: use case diagrams, sequence diagrams showing end-to-end
+scenarios. In ArchiMate: motivation elements (Stakeholder, Goal,
+Requirement) linked to application and business elements. In C4:
+System Context diagrams showing user interactions."""@en ;
+    skos:example       "User places an order — traces from UI through services, queues, database, to deployment"@en ;
+.

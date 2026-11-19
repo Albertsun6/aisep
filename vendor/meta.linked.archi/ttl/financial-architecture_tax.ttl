@@ -1,0 +1,221 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix fina:    <https://meta.linked.archi/financial-architecture/onto#> .
+@prefix :        <https://meta.linked.archi/financial-architecture/tax#> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/financial-architecture/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "Financial Architecture Concept Scheme"@en ;
+    dcterms:description  "Classification of financial architecture concepts by cost type, investment type, and analysis type."@en ;
+    skos:hasTopConcept :ByCostType, :ByInvestmentType, :ByAnalysisType ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/financial-architecture/tax#" ;
+    vann:preferredNamespacePrefix "finatax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Financial Architecture Taxonomy"@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en .
+
+
+
+#################################################################
+# By Cost Type
+#################################################################
+
+:ByCostType
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/financial-architecture/tax#> ;
+    skos:prefLabel       "By Cost Type"@en ;
+    skos:inScheme        <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:DirectCosts
+    a                skos:Concept ;
+    skos:broader     :ByCostType ;
+    skos:prefLabel   "Direct Costs"@en ;
+    skos:definition  "Costs directly attributable to a specific architecture element."@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:LicenseCostConcept
+    a                skos:Concept ;
+    skos:broader     :DirectCosts ;
+    skos:prefLabel   "License Costs"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:InfrastructureCostConcept
+    a                skos:Concept ;
+    skos:broader     :DirectCosts ;
+    skos:prefLabel   "Infrastructure Costs"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:CloudCostConcept
+    a                skos:Concept ;
+    skos:broader     :InfrastructureCostConcept ;
+    skos:prefLabel   "Cloud Costs (FinOps)"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+    rdfs:seeAlso     fina:CloudCostAllocation ;
+.
+
+:LaborCostConcept
+    a                skos:Concept ;
+    skos:broader     :DirectCosts ;
+    skos:prefLabel   "Labor Costs"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:IndirectCosts
+    a                skos:Concept ;
+    skos:broader     :ByCostType ;
+    skos:prefLabel   "Indirect Costs"@en ;
+    skos:definition  "Costs not directly attributable to a single element — shared services, overhead."@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:SupportCostConcept
+    a                skos:Concept ;
+    skos:broader     :IndirectCosts ;
+    skos:prefLabel   "Support & Maintenance Costs"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:ComplianceCostConcept
+    a                skos:Concept ;
+    skos:broader     :IndirectCosts ;
+    skos:prefLabel   "Compliance Costs"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:HiddenCosts
+    a                skos:Concept ;
+    skos:broader     :ByCostType ;
+    skos:prefLabel   "Hidden Costs"@en ;
+    skos:definition  "Costs that are often invisible in traditional reporting."@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:TechnicalDebtCostConcept
+    a                skos:Concept ;
+    skos:broader     :HiddenCosts ;
+    skos:prefLabel   "Technical Debt Costs"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+    rdfs:seeAlso     fina:TechnicalDebtCost ;
+.
+
+:OpportunityCostConcept
+    a                skos:Concept ;
+    skos:broader     :HiddenCosts ;
+    skos:prefLabel   "Opportunity Costs"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:IntegrationCostConcept
+    a                skos:Concept ;
+    skos:broader     :HiddenCosts ;
+    skos:prefLabel   "Integration Costs"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+
+#################################################################
+# By Investment Type
+#################################################################
+
+:ByInvestmentType
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/financial-architecture/tax#> ;
+    skos:prefLabel       "By Investment Type"@en ;
+    skos:inScheme        <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:RunConcept
+    a                skos:Concept ;
+    skos:broader     :ByInvestmentType ;
+    skos:prefLabel   "Run (Keep the Lights On)"@en ;
+    skos:definition  "Investment to maintain current operations — no new capabilities."@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:GrowConcept
+    a                skos:Concept ;
+    skos:broader     :ByInvestmentType ;
+    skos:prefLabel   "Grow (Expand Capabilities)"@en ;
+    skos:definition  "Investment to expand capabilities or capacity on existing architecture."@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:TransformConcept
+    a                skos:Concept ;
+    skos:broader     :ByInvestmentType ;
+    skos:prefLabel   "Transform (Modernize)"@en ;
+    skos:definition  "Investment in fundamental modernization or replacement."@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+
+#################################################################
+# By Analysis Type
+#################################################################
+
+:ByAnalysisType
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/financial-architecture/tax#> ;
+    skos:prefLabel       "By Analysis Type"@en ;
+    skos:inScheme        <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:TCOAnalysisConcept
+    a                skos:Concept ;
+    skos:broader     :ByAnalysisType ;
+    skos:prefLabel   "Total Cost of Ownership (TCO)"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+    rdfs:seeAlso     fina:CostModel ;
+.
+
+:CBAAnalysisConcept
+    a                skos:Concept ;
+    skos:broader     :ByAnalysisType ;
+    skos:prefLabel   "Cost-Benefit Analysis (CBA)"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+    rdfs:seeAlso     fina:CostBenefitAnalysis ;
+.
+
+:ROIAnalysisConcept
+    a                skos:Concept ;
+    skos:broader     :ByAnalysisType ;
+    skos:prefLabel   "Return on Investment (ROI)"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:NPVAnalysisConcept
+    a                skos:Concept ;
+    skos:broader     :ByAnalysisType ;
+    skos:prefLabel   "Net Present Value (NPV)"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+.
+
+:FinOpsAnalysisConcept
+    a                skos:Concept ;
+    skos:broader     :ByAnalysisType ;
+    skos:prefLabel   "FinOps Cloud Cost Analysis"@en ;
+    skos:inScheme    <https://meta.linked.archi/financial-architecture/tax#> ;
+    rdfs:seeAlso     fina:CloudCostAllocation ;
+.

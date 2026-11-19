@@ -1,0 +1,15 @@
+# expect: EV9:
+# Invalid: priority given as a literal "Must" instead of the aisep:Must concept.
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/ext-verification-test/> .
+
+:model a arch:Model ;
+    skos:prefLabel "验证扩展测试模型"@zh .
+
+:reqQuote a am4:Requirement ;
+    arch:inModel :model ;
+    skos:prefLabel "报价需在 2 个工作日内审批"@zh ;
+    aisep:priority "Must" .

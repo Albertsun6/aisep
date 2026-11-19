@@ -1,0 +1,1565 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <http://schema.org/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ap:      <https://meta.linked.archi/arch-processes#> .
+@prefix :        <https://meta.linked.archi/leanix/onto#> .
+
+#################################################################
+# Ontology header – LeanIX Meta Model v4
+#################################################################
+
+<https://meta.linked.archi/leanix/onto#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/arch-processes#> ;
+    cc:license                    <http://creativecommons.org/licenses/by/4.0/> ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/leanix/onto#" ;
+    vann:preferredNamespacePrefix "lmm" ;
+    dcterms:title                      "Linked.Archi LeanIX Meta Model v4 Ontology"@en ;
+    dcterms:description                '''OWL ontology representing the SAP LeanIX Meta Model v4 — the fact sheet
+types and relationships used by SAP LeanIX for enterprise architecture management. Models
+12 default fact sheet types (Objective, Initiative, Business Capability, Organization,
+Business Context, Application, Interface, Data Object, IT Component, Tech Category,
+Platform, Provider) and the optional types System, Data Product, Contract and the Business
+Context subtype ESG Capability, organized across Strategy &
+Transformation, Business, Application & Data, and Technical architecture layers.
+Relationships follow the Linked.Archi qualified relationship pattern. This is not an
+official SAP document.'''@en ;
+    dcterms:created               "2025-01-01"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/leanix/onto/v4#> ;
+    owl:versionInfo               "4.2.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/leanix/v3/onto#> ;
+    skos:editorialNote
+            "Meta Model v4 revises the set of fact sheet types: introduces Objective, Initiative, Business Context and Platform; replaces v3 User Group, Project, Process and Tech Platform; and adds subtypes for Application and Organization."@en ,
+            '''The relationship types are the relations SAP's Meta Model v4 diagram draws, one per label
+— supports, uses, owns, affects, improves, provides, consumes, CRUD, transfers, offers, belongs to,
+implements, runs, runs on, is associated with, produces, realizes, derives from, is attached to, powers — each
+admitting the pairs of fact sheet types the diagram draws it between, pointing the way it draws it, and
+the parent-child hierarchy every fact sheet type carries. Which pairs each admits is a relationship
+shape in leanIX-shapes.ttl.'''@en ,
+            '''The fact sheet attributes every workspace has — status, completion, dated lifecycle phases,
+subscriptions and tags — have terms here, so a query over completion or lifecycle can span two
+organisations. Lifecycle stages are reused from the Architecture Processes extension rather than minted
+here; status and subscription type are named individuals rather than strings, per DD-23.
+Workspace-defined fields deliberately get no term.'''@en ,
+            '''Sources cite help.sap.com/docs/leanix/ea/… rather than docs-eam.leanix.net, which redirects
+there. The redirect target is not always the obvious rename — docs/factsheets resolves to fact-sheets,
+reference/manage-subscriptions-for-a-fact-sheet to managing-fact-sheet-subscriptions,
+docs/manage-subscription-roles to subscription-roles — so resolve the redirect rather than guessing:
+help.sap.com is a single-page application and answers 200 for paths that do not exist.'''@en ;
+    skos:scopeNote
+            '''This namespace (leanix/onto#) covers SAP LeanIX Meta Model v4 with 12 default
+fact sheet types and its optional ones. LeanIX Meta Model v3 used a different set of
+fact sheet types (User Group, Project, Tech Platform) and is represented separately at
+leanix/v3/onto#. A future Meta Model v5 may introduce a separate namespace if the
+fact sheet types change substantially.'''@en ;
+    rdfs:seeAlso                  <https://help.sap.com/docs/leanix/ea/meta-model>,
+                                  <https://help.sap.com/docs/leanix/ea/fact-sheets>,
+                                  <https://help.sap.com/docs/leanix/ea/general-modeling-guidelines>
+.
+
+#################################################################
+# Core abstract concept
+#################################################################
+
+:FactSheet
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Fact Sheet"@en ;
+    skos:definition "Abstract supertype for all LeanIX fact sheet instances in Meta Model v4."@en ;
+    skos:example    "Any Application, Business Capability or Platform fact sheet is also an instance of :FactSheet."@en ;
+    skos:scopeNote  "Abstract supertype for all LeanIX Meta Model v4 fact sheet instances."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/fact-sheets>,
+                    <https://help.sap.com/docs/leanix/ea/general-modeling-guidelines>
+.
+
+#################################################################
+# Strategy & Transformation layer – new in v4
+#################################################################
+
+:Objective
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/objective-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "Objective"@en ;
+    skos:definition "Objectives capture the goals that your organization aims to achieve. These drive initiatives to improve business capabilities and transform the IT landscape."@en ;
+    skos:example    "\"Reduce IT run cost by 20% by 2027\" modeled as an Objective."@en ;
+    skos:editorialNote
+            "Introduced in Meta Model v4 as a dedicated fact sheet type for strategic objectives, linked to Capabilities, Initiatives, Organizations and Platforms."@en ;
+    skos:scopeNote
+            "Use Objective to represent business or IT outcomes (OKRs, strategic goals) that guide Initiatives and constrain architecture decisions."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/objective-modeling-guidelines>
+.
+
+:Platform
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/platform-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "Platform"@en ;
+    skos:definition "Platforms are groupings of business capabilities, applications, and technologies that provide common functionalities."@en ;
+    skos:example    "Platforms like \"Customer Data Platform\" that group capabilities, applications and technologies providing common functionalities."@en ;
+    skos:editorialNote
+            "New fact sheet type in Meta Model v4 replacing the v3 Tech Platform fact sheet with a broader concept that groups Capabilities, Applications and IT Components."@en ;
+    skos:scopeNote
+            "Use Platform to model composable platforms that aggregate business capabilities, applications and technologies delivering shared functionality."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/platform-modeling-guidelines>
+.
+
+:Initiative
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/initiative-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "Initiative"@en ;
+    skos:definition "Initiatives capture the planned projects or programs within your organization that impact its enterprise architecture and are aimed at achieving specific goals or objectives."@en ;
+    skos:example    "\"ERP Consolidation Program 2026–2028\" that rationalizes the finance application landscape."@en ;
+    skos:editorialNote
+            "Replaces and generalizes the Project fact sheet type from Meta Model v3. Initiatives in v4 cover projects, programs, epics and other change efforts."@en ;
+    skos:scopeNote
+            "Use Initiative for work that realizes Objectives and drives changes in Capabilities, Applications, Platforms and IT Components."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/initiative-modeling-guidelines>
+.
+
+:Idea
+    a               owl:Class ;
+    rdfs:subClassOf :Initiative ;
+    skos:prefLabel  "Idea"@en ;
+    skos:definition "A proposed change being considered before commitment to implementation."@en ;
+    skos:scopeNote  "Default Initiative subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/initiative-modeling-guidelines> ;
+.
+
+:Program
+    a               owl:Class ;
+    rdfs:subClassOf :Initiative ;
+    skos:prefLabel  "Program"@en ;
+    skos:definition "A coordinated group of projects contributing to a shared transformation objective."@en ;
+    skos:scopeNote  "Default Initiative subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/initiative-modeling-guidelines> ;
+.
+
+:Project
+    a               owl:Class ;
+    rdfs:subClassOf :Initiative ;
+    skos:prefLabel  "Project"@en ;
+    skos:definition "A planned change effort with a defined objective and scope."@en ;
+    skos:scopeNote  "Default Initiative subtype. Unlike the v3 Project class, this is a subtype of Initiative."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/initiative-modeling-guidelines> ;
+.
+
+:Epic
+    a               owl:Class ;
+    rdfs:subClassOf :Initiative ;
+    skos:prefLabel  "Epic"@en ;
+    skos:definition "A substantial change effort expressed in agile planning terms."@en ;
+    skos:scopeNote  "Default Initiative subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/initiative-modeling-guidelines> ;
+.
+
+#################################################################
+# Business Architecture layer – reworked User Group / Process / Product
+#################################################################
+
+:BusinessCapability
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/business-capability-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "Business Capability"@en ;
+    skos:definition "Business capabilities (also called domains) model what your applications do to support your business goals."@en ;
+    skos:example    "Business capabilities like \"Customer Management\", \"Order Processing\" that model what applications do to support business goals."@en ;
+    skos:scopeNote
+            "Capabilities remain conceptually consistent with v3, but are more explicitly connected to Objectives, Initiatives, Platforms and Business Context elements."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/business-capability-modeling-guidelines>
+.
+
+:Organization
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/organization-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "Organization"@en ;
+    skos:definition "Organizations represent your organization's hierarchical business architecture, detailing departments and teams."@en ;
+    skos:example    "Departments like \"Finance\", \"Sales EMEA\" or teams like \"IT Operations\" that represent hierarchical business architecture."@en ;
+    skos:editorialNote
+            "Introduced in Meta Model v4 to replace the v3 User Group fact sheet type and provide clearer organizational modeling with subtypes (e.g. Business Unit, Customer, Region, Legal Entity, Team)."@en ;
+    skos:scopeNote
+            "Represents organizational structures that own, operate or consume Capabilities and Applications, such as business units, departments and locations."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/organization-modeling-guidelines>
+.
+
+:BusinessUnit
+    a               owl:Class ;
+    rdfs:subClassOf :Organization ;
+    skos:prefLabel  "Business Unit"@en ;
+    skos:definition "A distinct business division within an organization."@en ;
+    skos:scopeNote  "Default Organization subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/organization-modeling-guidelines> ;
+.
+
+:Region
+    a               owl:Class ;
+    rdfs:subClassOf :Organization ;
+    skos:prefLabel  "Region"@en ;
+    skos:definition "A geographic division of an organization or business unit."@en ;
+    skos:scopeNote  "Default Organization subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/organization-modeling-guidelines> ;
+.
+
+:LegalEntity
+    a               owl:Class ;
+    rdfs:subClassOf :Organization ;
+    skos:prefLabel  "Legal Entity"@en ;
+    skos:definition "An organization recognized in law as a distinct entity."@en ;
+    skos:scopeNote  "Default Organization subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/organization-modeling-guidelines> ;
+.
+
+:Team
+    a               owl:Class ;
+    rdfs:subClassOf :Organization ;
+    skos:prefLabel  "Team"@en ;
+    skos:definition "A group of users or owners associated with a business unit or region."@en ;
+    skos:scopeNote  "Default Organization subtype. Teams can own microservices."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/organization-modeling-guidelines> ;
+.
+
+:Customer
+    a               owl:Class ;
+    rdfs:subClassOf :Organization ;
+    skos:prefLabel  "Customer"@en ;
+    skos:definition "A customer group or segment with similar needs."@en ;
+    skos:scopeNote  "Default Organization subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/organization-modeling-guidelines> ;
+.
+
+
+:BusinessContext
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "Business Context"@en ;
+    skos:definition "Business contexts capture the specific activities your organization performs to achieve its business goals."@en ;
+    skos:example    "Activities like \"Customer Onboarding\", \"Order Fulfillment\" that your organization performs to achieve business goals."@en ;
+    skos:editorialNote
+            "New fact sheet type in Meta Model v4 that groups the v3 fact sheet types Product, Value Stream and Process."@en ;
+    skos:scopeNote
+            "Use Business Context to represent contextual business elements (Products, Value Streams, Processes, etc.) that link Capabilities, Applications, Data Objects and Organizations."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines>
+.
+
+:CustomerJourney
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessContext ;
+    skos:prefLabel  "Customer Journey"@en ;
+    skos:definition "The sequence of interactions and experiences a customer has with an organization, viewed from the customer perspective."@en ;
+    skos:scopeNote  "Default Business Context subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines> ;
+.
+
+:Product
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines> ;
+    rdfs:subClassOf :BusinessContext ;
+    skos:prefLabel  "Business Product"@en ;
+    skos:altLabel   "Product"@en ;
+    skos:editorialNote "The published Product IRI is retained for compatibility; its preferred label follows SAP terminology."@en ;
+    skos:definition "Market‑facing or internal product or service bundle that is offered to customers or users."@en ;
+    skos:example    "\"Gold Credit Card\", \"Premium Current Account\" or \"Field Service Mobile App\" modeled as Products."@en ;
+    skos:scopeNote
+            "Business Product modeled as a subtype of Business Context in v4 instead of a top-level fact sheet type in v3."@en ;
+    skos:editorialNote "Moved under Business Context in v4 to simplify the meta model and reuse common relations."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines> ;
+.
+
+
+:ValueStream
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines> ;
+    rdfs:subClassOf :BusinessContext ;
+    skos:prefLabel  "Value Stream"@en ;
+    skos:definition "End‑to‑end sequence of stages that collectively create value for an internal or external customer."@en ;
+    skos:example    "Value streams such as \"Lead to Cash\", \"Idea to Market\" or \"Acquire to Retire\"."@en ;
+    skos:scopeNote  "Represents value streams; introduced or consolidated as a Business Context subtype in v4."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines> ;
+.
+
+:Process
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines> ;
+    rdfs:subClassOf :BusinessContext ;
+    skos:prefLabel  "Process"@en ;
+    skos:definition "Repeatable sequence of activities or tasks that realizes one or more value stream stages and capabilities."@en ;
+    skos:example    "Processes such as \"Create Customer Invoice\", \"Approve Purchase Order\" or \"Handle Returns\"."@en ;
+    skos:editorialNote
+            "In v3, Process was a top-level fact sheet type. In Meta Model v4 it becomes a subtype of Business Context, aligning with a simplified meta model and Signavio integration."@en ;
+    skos:scopeNote
+            "Use this class for business processes; it inherits relations defined for Business Context (e.g. to Capabilities, Applications, Data Objects)."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines> ;
+.
+
+#################################################################
+# Application & Data Architecture layer – same concepts, more structure
+#################################################################
+
+:Application
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/application-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "Application"@en ;
+    skos:definition "Applications are the software systems or programs that process or analyze business data to support business tasks, processes, or aspects of your organization's business model. They are the central entities in SAP LeanIX because they link business and IT."@en ;
+    skos:example    "\"SAP S/4HANA Finance\" or \"Salesforce Sales Cloud\" represented as Application fact sheets."@en ;
+    skos:editorialNote
+            "The current Application subtypes are Business Application, AI Agent, Microservice and Extension."@en ;
+    skos:scopeNote
+            "Use Application as the logical representation of software supporting Capabilities and Business Context; specialize with subtypes where needed."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/application-modeling-guidelines>
+.
+
+:AIAgent
+    a               owl:Class ;
+    rdfs:subClassOf :Application ;
+    skos:prefLabel  "AI Agent"@en ;
+    skos:definition "An application that uses a large language model to reason through tasks and act towards user-defined goals."@en ;
+    skos:scopeNote  "Default in new workspaces created after May 11, 2026. Link to a business application for business context."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/ai-agent-modeling-guidelines> ;
+.
+
+:Extension
+    a               owl:Class ;
+    rdfs:subClassOf :Application ;
+    skos:prefLabel  "Extension"@en ;
+    skos:definition "A functional component that extends a host application and depends on that application to operate."@en ;
+    skos:scopeNote  "Optional application subtype enabled by SAP discovery integrations. Extensions are not independently deployable."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/extension-modeling-guidelines> ;
+.
+
+:BusinessApplication
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/application-modeling-guidelines> ;
+    rdfs:subClassOf :Application ;
+    skos:prefLabel  "Business Application"@en ;
+    skos:definition "Application subtype representing business‑facing applications used directly by end users in business processes."@en ;
+    skos:example    "A \"CRM Core\" system used by sales representatives to manage opportunities."@en ;
+    skos:scopeNote  "Default in new workspaces created after May 11, 2026. Business-facing applications provide business context for the other Application subtypes."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/application-modeling-guidelines>
+.
+
+
+:Microservice
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/microservice-modeling-guidelines> ;
+    rdfs:subClassOf :Application ;
+    skos:prefLabel  "Microservice"@en ;
+    skos:definition "Application subtype representing a fine‑grained, independently deployable service that contributes to a larger application or platform."@en ;
+    skos:example    "Microservices such as \"Pricing Service\", \"Customer Profile Service\" or \"Notification Service\" used by multiple channels."@en ;
+    skos:scopeNote  "Optional Application subtype. Use many-to-many supports relations to Business Applications rather than parent-child hierarchy for this connection."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/microservice-modeling-guidelines>
+.
+
+:Interface
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/interface-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "Interface"@en ;
+    skos:definition "Interfaces are the connections between applications that illustrate how data exchange occurs."@en ;
+    skos:example    "An \"Order export API\" interface between an e‑commerce front end and the ERP system."@en ;
+    skos:editorialNote
+            "Semantic role remains similar to v3: models integrations and APIs between applications, now more tightly integrated with Application and Business Context modeling guidelines."@en ;
+    skos:scopeNote
+            "Represents APIs, message channels or other technical interfaces; used to connect provider and consumer Applications and relate to Data Objects."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/interface-modeling-guidelines>
+.
+
+:LogicalInterface
+    a               owl:Class ;
+    rdfs:subClassOf :Interface ;
+    skos:prefLabel  "Logical Interface"@en ;
+    skos:definition "A conceptual connection describing business data flow between applications without specifying implementation endpoints."@en ;
+    skos:scopeNote  "Default Interface subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/interface-modeling-guidelines> ;
+.
+
+:API
+    a               owl:Class ;
+    rdfs:subClassOf :Interface ;
+    skos:prefLabel  "API"@en ;
+    skos:definition "An interface exposing functionality for integration between applications or microservices."@en ;
+    skos:scopeNote  "Default Interface subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/interface-modeling-guidelines> ;
+.
+
+:MCPServer
+    a               owl:Class ;
+    rdfs:subClassOf :Interface ;
+    skos:prefLabel  "MCP Server"@en ;
+    skos:definition "A managed protocol endpoint exposing tools or other capabilities to AI applications using the Model Context Protocol."@en ;
+    skos:scopeNote  "Default in new workspaces created after May 11, 2026."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/interface-modeling-guidelines> ;
+.
+
+:DataObject
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/data-object-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "Data Object"@en ;
+    skos:definition "Data objects provide an overview of general data processed and exchanged by specific applications."@en ;
+    skos:example    "General data like \"Customer Profile\", \"Invoice Data\" processed and exchanged by applications."@en ;
+    skos:editorialNote
+            "Continues the v3 concept of logical data entities, with richer relations to Applications, Processes and Business Context in v4."@en ;
+    skos:scopeNote
+            "Use Data Object for logical data entities exchanged via Interfaces or used by Applications and Processes."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/data-object-modeling-guidelines>
+.
+
+#################################################################
+# Technical Architecture layer
+#################################################################
+
+:ITComponent
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "IT Component"@en ;
+    skos:definition "IT components represent the technology or services that your applications depend on. They can provide information on both development and operations. They are used to model operating costs as well as technological risks."@en ;
+    skos:example    "\"PostgreSQL 15\", \"Kubernetes cluster\", \"Azure Functions\" or \"Red Hat Enterprise Linux\" modeled as IT Components."@en ;
+    skos:scopeNote
+            "Technologies (software, hardware, cloud services) that support Applications and Platforms; largely compatible with the v3 notion."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines>
+.
+
+:SaaS
+    a               owl:Class ;
+    rdfs:subClassOf :ITComponent ;
+    skos:prefLabel  "SaaS"@en ;
+    skos:definition "An IT component recording hosting, cost and implementation details of software delivered as a service."@en ;
+    skos:scopeNote  "Default IT Component subtype. Model the business-facing SaaS software separately as an Application."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines> ;
+.
+
+:PaaS
+    a               owl:Class ;
+    rdfs:subClassOf :ITComponent ;
+    skos:prefLabel  "PaaS"@en ;
+    skos:definition "A cloud platform providing facilities for developing and deploying applications."@en ;
+    skos:scopeNote  "Default IT Component subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines> ;
+.
+
+:IaaS
+    a               owl:Class ;
+    rdfs:subClassOf :ITComponent ;
+    skos:prefLabel  "IaaS"@en ;
+    skos:definition "Virtualized infrastructure resources provided as a cloud service."@en ;
+    skos:scopeNote  "Default IT Component subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines> ;
+.
+
+:Software
+    a               owl:Class ;
+    rdfs:subClassOf :ITComponent ;
+    skos:prefLabel  "Software"@en ;
+    skos:definition "A software technology or product on which an application depends."@en ;
+    skos:scopeNote  "Default IT Component subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines> ;
+.
+
+:Hardware
+    a               owl:Class ;
+    rdfs:subClassOf :ITComponent ;
+    skos:prefLabel  "Hardware"@en ;
+    skos:definition "Physical computing, storage or other IT equipment used by applications."@en ;
+    skos:scopeNote  "Default IT Component subtype."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines> ;
+.
+
+:Service
+    a               owl:Class ;
+    rdfs:subClassOf :ITComponent ;
+    skos:prefLabel  "Service"@en ;
+    skos:altLabel   "Services"@en ;
+    skos:definition "An IT management, maintenance, hosting or support service used to implement or operate applications."@en ;
+    skos:scopeNote  "Default IT Component subtype. The overview table also calls this subtype Services."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines> ;
+.
+
+:AIModel
+    a               owl:Class ;
+    rdfs:subClassOf :ITComponent ;
+    skos:prefLabel  "AI Model"@en ;
+    skos:definition "A software component implementing AI techniques for predictive, generative or other intelligent tasks."@en ;
+    skos:scopeNote  "Default in new workspaces created after October 29, 2025. Replaces the earlier LLM subtype in SAP guidance."@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines> ;
+.
+
+:TechCategory
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/tech-category-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "Tech Category"@en ;
+    skos:definition "Tech categories are used to group IT components into different categories of technology."@en ;
+    skos:example    "Technology categories like \"Database\", \"Middleware\", \"Cloud Platform\" used to group IT components."@en ;
+    skos:editorialNote "Continues the v3 Tech Category concept; still used as a grouping of IT Components."@en ;
+    skos:scopeNote  "Use Tech Category to classify IT Components (e.g. database, middleware, PaaS)."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/tech-category-modeling-guidelines>
+.
+
+
+:Provider
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/provider-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "Provider"@en ;
+    skos:definition "Providers are the companies or entities that supply IT solutions, services, or technologies to support your organization in achieving its objectives and operational efficiency."@en ;
+    skos:example    "External providers such as \"SAP\", \"Salesforce\", \"Microsoft Azure\", or an internal \"Shared Services IT\" provider."@en ;
+    skos:scopeNote
+            "Vendors or external providers of Applications, Platforms and IT Components; conceptually similar to v3 Provider."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/provider-modeling-guidelines>
+.
+
+#################################################################
+# Optional System fact sheet type (if enabled)
+#################################################################
+
+:System
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/system-modeling-guidelines> ;
+    rdfs:subClassOf :FactSheet ;
+    skos:prefLabel  "System"@en ;
+    skos:definition "Systems represent the technical environment underlying applications, such as a server or virtual machine with its operating system, database, runtime configurations, and more."@en ;
+    skos:example    "\"SAP ERP Central System (ECC PROD)\" modeled as a System composed of several applications and technologies."@en ;
+    skos:editorialNote
+            "Optional fact sheet type in Meta Model v4, used in some modeling guidelines to represent SAP or legacy systems; not part of the 12 default fact sheet types."@en ;
+    skos:scopeNote
+            "Enable and use System if you need an intermediate concept between Applications and technical infrastructure for specific ERP or legacy stacks."@en ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/system-modeling-guidelines>
+.
+
+#################################################################
+# Further optional fact sheet types (if enabled)
+#################################################################
+
+:DataProduct
+    a               owl:Class ;
+    rdfs:subClassOf :FactSheet ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/data-product-modeling-guidelines> ;
+    skos:prefLabel  "Data Product"@en ;
+    skos:definition "A data product: a curated set of data, produced and consumed by applications, that realizes data objects and may derive from other data products."@en ;
+    skos:scopeNote  "Optional fact sheet type in Meta Model v4, drawn with dashed lines in SAP's meta model diagram."@en ;
+.
+
+:Contract
+    a               owl:Class ;
+    rdfs:subClassOf :FactSheet ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/contract-extension-to-meta-model> ;
+    skos:prefLabel  "Contract"@en ;
+    skos:definition "A contract with a provider, attached to the applications it covers."@en ;
+    skos:scopeNote  "Optional fact sheet type in Meta Model v4, drawn with dashed lines in SAP's meta model diagram."@en ;
+.
+
+:ESGCapability
+    a               owl:Class ;
+    rdfs:subClassOf :BusinessContext ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel  "ESG Capability"@en ;
+    skos:definition "An environmental, social and governance capability: a business context that objectives and initiatives improve or affect, and business capabilities are associated with."@en ;
+    skos:scopeNote  "Optional subtype of Business Context in Meta Model v4, drawn with dashed lines in SAP's meta model diagram."@en ;
+.
+
+# Relationships follow below; fact sheet attributes are at the end of the file.
+# Workspace-defined fields are not declared here and should not be: they are
+# per-tenant by definition, so they belong in a namespace the operator owns.
+
+
+#################################################################
+# Relationship Types
+#
+# The relations of SAP LeanIX Meta Model v4, as its meta model diagram labels
+# them: one relationship type per label — supports, uses, owns, affects… —
+# admitting the pairs of fact sheet types the diagram draws it between. Which
+# pairs each admits is a relationship shape (leanIX-shapes.ttl), which a
+# modelling tool also reads to offer it; the arch:domainIncludes and
+# arch:rangeIncludes here list the types at each end. A relation the diagram
+# draws as optional — between optional fact sheet types, or optional itself —
+# is said so in its scope note.
+#
+# Each predicate is named after the label, and its qualified class after the
+# predicate (:supports, :Supports, :qualifiedSupports), as the core names its
+# own. A converter maps LeanIX's relation fields (relApplicationToITComponent…)
+# onto them; a field read from either end is one edge, pointing the way the
+# diagram draws it.
+#################################################################
+
+## supports — strategic, business, provider and microservice support pairs
+
+:supports
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Supports"@en ;
+    skos:definition      "A fact sheet supports another, including providers supporting initiatives and microservices supporting business applications or extensions."@en ;
+    arch:domainIncludes  :Application, :Platform, :Initiative, :BusinessCapability, :DataProduct, :Provider, :Microservice ;
+    arch:rangeIncludes   :BusinessCapability, :BusinessContext, :Objective, :Platform, :Initiative, :BusinessApplication, :Extension ;
+.
+
+:Supports
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :supports ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Supports"@en ;
+    skos:definition      "A fact sheet supports another, including providers supporting initiatives and microservices supporting business applications or extensions."@en ;
+    skos:scopeNote       "Application → Business Capability, Business Context; Platform → Objective; Initiative → Objective; Business Capability → Platform; Provider → Initiative. Optional: Data Product → Initiative, Business Capability; Microservice → Business Application, Extension."@en ;
+.
+
+:qualifiedSupports
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified supports"@en ;
+    skos:definition      "Links the source of a Supports relationship to its relationship resource."@en ;
+    rdfs:range           :Supports ;
+    arch:unqualifiedForm :supports ;
+.
+
+## uses — Application → IT Component, Organization → Application, Interface → IT Component, System → IT Component, Organization → Data Product
+
+:uses
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Uses"@en ;
+    skos:definition      "A fact sheet uses another: an application or an interface an IT component, an organization an application."@en ;
+    arch:domainIncludes  :Application, :Organization, :Interface, :System ;
+    arch:rangeIncludes   :ITComponent, :Application, :DataProduct ;
+.
+
+:Uses
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :uses ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Uses"@en ;
+    skos:definition      "A fact sheet uses another: an application or an interface an IT component, an organization an application."@en ;
+    skos:scopeNote       "Between Application → IT Component; Organization → Application; Interface → IT Component. Optional in Meta Model v4: System → IT Component; Organization → Data Product."@en ;
+.
+
+:qualifiedUses
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified uses"@en ;
+    skos:definition      "Links the source of a Uses relationship to its relationship resource."@en ;
+    rdfs:range           :Uses ;
+    arch:unqualifiedForm :uses ;
+.
+
+## owns — Organization → Objective, Initiative, Business Context, IT Component; Team → Microservice
+
+:owns
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Owns"@en ;
+    skos:definition      "An organization owns strategic, business or technical assets; a team can own a microservice."@en ;
+    arch:domainIncludes  :Organization, :Team ;
+    arch:rangeIncludes   :Objective, :Initiative, :BusinessContext, :ITComponent, :Microservice ;
+.
+
+:Owns
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :owns ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Owns"@en ;
+    skos:definition      "An organization owns strategic, business or technical assets; a team can own a microservice."@en ;
+    skos:scopeNote       "Organization → Objective, Initiative, Business Context, IT Component. Optional: Team → Microservice."@en ;
+.
+
+:qualifiedOwns
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified owns"@en ;
+    skos:definition      "Links the source of a Owns relationship to its relationship resource."@en ;
+    rdfs:range           :Owns ;
+    arch:unqualifiedForm :owns ;
+.
+
+## affects — Initiative → Platform, Initiative → Application, Initiative → Business Context, Initiative → Data Object, Initiative → Interface, Initiative → IT Component, Initiative → Tech Category, Initiative → System
+
+:affects
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Affects"@en ;
+    skos:definition      "An initiative affects a fact sheet it changes: a platform, an application, a business context, a data object, an interface, an IT component, a tech category."@en ;
+    arch:domainIncludes  :Initiative ;
+    arch:rangeIncludes   :Platform, :Application, :BusinessContext, :DataObject, :Interface, :ITComponent, :TechCategory, :System ;
+.
+
+:Affects
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :affects ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Affects"@en ;
+    skos:definition      "An initiative affects a fact sheet it changes: a platform, an application, a business context, a data object, an interface, an IT component, a tech category."@en ;
+    skos:scopeNote       "Between Initiative → Platform; Initiative → Application; Initiative → Business Context; Initiative → Data Object; Initiative → Interface; Initiative → IT Component; Initiative → Tech Category. Optional in Meta Model v4: Initiative → System, ESG Capability (through Business Context)."@en ;
+.
+
+:qualifiedAffects
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified affects"@en ;
+    skos:definition      "Links the source of a Affects relationship to its relationship resource."@en ;
+    rdfs:range           :Affects ;
+    arch:unqualifiedForm :affects ;
+.
+
+## improves — Objective → Business Capability, Initiative → Business Capability, Objective → ESG Capability
+
+:improves
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Improves"@en ;
+    skos:definition      "An objective or an initiative improves a business capability."@en ;
+    arch:domainIncludes  :Objective, :Initiative ;
+    arch:rangeIncludes   :BusinessCapability, :ESGCapability ;
+.
+
+:Improves
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :improves ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Improves"@en ;
+    skos:definition      "An objective or an initiative improves a business capability."@en ;
+    skos:scopeNote       "Between Objective → Business Capability; Initiative → Business Capability. Optional in Meta Model v4: Objective → ESG Capability."@en ;
+.
+
+:qualifiedImproves
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified improves"@en ;
+    skos:definition      "Links the source of a Improves relationship to its relationship resource."@en ;
+    rdfs:range           :Improves ;
+    arch:unqualifiedForm :improves ;
+.
+
+## provides — Application → Interface, Provider → Contract
+
+:provides
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Provides"@en ;
+    skos:definition      "An application provides an interface: it is the interface's provider."@en ;
+    arch:domainIncludes  :Application, :Provider ;
+    arch:rangeIncludes   :Interface, :Contract ;
+.
+
+:Provides
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :provides ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Provides"@en ;
+    skos:definition      "An application provides an interface: it is the interface's provider."@en ;
+    skos:scopeNote       "Between Application → Interface. Optional in Meta Model v4: Provider → Contract."@en ;
+.
+
+:qualifiedProvides
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified provides"@en ;
+    skos:definition      "Links the source of a Provides relationship to its relationship resource."@en ;
+    rdfs:range           :Provides ;
+    arch:unqualifiedForm :provides ;
+.
+
+## consumes — Application → Interface, Application → Data Product
+
+:consumes
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Consumes"@en ;
+    skos:definition      "An application consumes an interface another application provides."@en ;
+    arch:domainIncludes  :Application ;
+    arch:rangeIncludes   :Interface, :DataProduct ;
+.
+
+:Consumes
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :consumes ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Consumes"@en ;
+    skos:definition      "An application consumes an interface another application provides."@en ;
+    skos:scopeNote       "Between Application → Interface. Optional in Meta Model v4: Application → Data Product."@en ;
+.
+
+:qualifiedConsumes
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified consumes"@en ;
+    skos:definition      "Links the source of a Consumes relationship to its relationship resource."@en ;
+    rdfs:range           :Consumes ;
+    arch:unqualifiedForm :consumes ;
+.
+
+## crud — Application → Data Object
+
+:crud
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "CRUD"@en ;
+    skos:definition      "An application creates, reads, updates or deletes a data object."@en ;
+    arch:domainIncludes  :Application ;
+    arch:rangeIncludes   :DataObject ;
+.
+
+:Crud
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :crud ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "CRUD"@en ;
+    skos:definition      "An application creates, reads, updates or deletes a data object."@en ;
+    skos:scopeNote       "Between Application → Data Object."@en ;
+.
+
+:qualifiedCrud
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified CRUD"@en ;
+    skos:definition      "Links the source of a CRUD relationship to its relationship resource."@en ;
+    rdfs:range           :Crud ;
+    arch:unqualifiedForm :crud ;
+.
+
+## transfers — Interface → Data Object
+
+:transfers
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Transfers"@en ;
+    skos:definition      "An interface transfers a data object between the applications it connects."@en ;
+    arch:domainIncludes  :Interface ;
+    arch:rangeIncludes   :DataObject ;
+.
+
+:Transfers
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :transfers ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Transfers"@en ;
+    skos:definition      "An interface transfers a data object between the applications it connects."@en ;
+    skos:scopeNote       "Between Interface → Data Object."@en ;
+.
+
+:qualifiedTransfers
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified transfers"@en ;
+    skos:definition      "Links the source of a Transfers relationship to its relationship resource."@en ;
+    rdfs:range           :Transfers ;
+    arch:unqualifiedForm :transfers ;
+.
+
+## offers — Provider → IT Component
+
+:offers
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Offers"@en ;
+    skos:definition      "A provider offers an IT component."@en ;
+    arch:domainIncludes  :Provider ;
+    arch:rangeIncludes   :ITComponent ;
+.
+
+:Offers
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :offers ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Offers"@en ;
+    skos:definition      "A provider offers an IT component."@en ;
+    skos:scopeNote       "Between Provider → IT Component."@en ;
+.
+
+:qualifiedOffers
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified offers"@en ;
+    skos:definition      "Links the source of a Offers relationship to its relationship resource."@en ;
+    rdfs:range           :Offers ;
+    arch:unqualifiedForm :offers ;
+.
+
+## belongsTo — IT Component → Tech Category
+
+:belongsTo
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Belongs To"@en ;
+    skos:definition      "An IT component belongs to a tech category."@en ;
+    arch:domainIncludes  :ITComponent ;
+    arch:rangeIncludes   :TechCategory ;
+.
+
+:BelongsTo
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :belongsTo ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Belongs To"@en ;
+    skos:definition      "An IT component belongs to a tech category."@en ;
+    skos:scopeNote       "Between IT Component → Tech Category."@en ;
+.
+
+:qualifiedBelongsTo
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified belongs To"@en ;
+    skos:definition      "Links the source of a Belongs To relationship to its relationship resource."@en ;
+    rdfs:range           :BelongsTo ;
+    arch:unqualifiedForm :belongsTo ;
+.
+
+## implements — IT Component → Platform
+
+:implements
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Implements"@en ;
+    skos:definition      "An IT component implements a platform."@en ;
+    arch:domainIncludes  :ITComponent ;
+    arch:rangeIncludes   :Platform ;
+.
+
+:Implements
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :implements ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Implements"@en ;
+    skos:definition      "An IT component implements a platform."@en ;
+    skos:scopeNote       "Between IT Component → Platform."@en ;
+.
+
+:qualifiedImplements
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified implements"@en ;
+    skos:definition      "Links the source of a Implements relationship to its relationship resource."@en ;
+    rdfs:range           :Implements ;
+    arch:unqualifiedForm :implements ;
+.
+
+## runs — Platform → Application
+
+:runs
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Runs"@en ;
+    skos:definition      "A platform runs an application."@en ;
+    arch:domainIncludes  :Platform ;
+    arch:rangeIncludes   :Application ;
+.
+
+:Runs
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :runs ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Runs"@en ;
+    skos:definition      "A platform runs an application."@en ;
+    skos:scopeNote       "Between Platform → Application."@en ;
+.
+
+:qualifiedRuns
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified runs"@en ;
+    skos:definition      "Links the source of a Runs relationship to its relationship resource."@en ;
+    rdfs:range           :Runs ;
+    arch:unqualifiedForm :runs ;
+.
+
+## runsOn — Application → System; AI Agent → Business Application
+
+:runsOn
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Runs On"@en ;
+    skos:definition      "An application runs on a system, or an AI agent runs on a business application."@en ;
+    arch:domainIncludes  :Application, :AIAgent ;
+    arch:rangeIncludes   :System, :BusinessApplication ;
+.
+
+:RunsOn
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :runsOn ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Runs On"@en ;
+    skos:definition      "An application runs on a system, or an AI agent runs on a business application."@en ;
+    skos:scopeNote       "Optional relations: Application → System; AI Agent → Business Application. Availability of the AI Agent subtype is separate from optionality of this relation."@en ;
+.
+
+:qualifiedRunsOn
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified runs On"@en ;
+    skos:definition      "Links the source of a Runs On relationship to its relationship resource."@en ;
+    rdfs:range           :RunsOn ;
+    arch:unqualifiedForm :runsOn ;
+.
+
+## isAssociatedWith — Business Context → Business Capability, Business Capability → ESG Capability
+
+:isAssociatedWith
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Is Associated With"@en ;
+    skos:definition      "A business context is associated with a business capability."@en ;
+    arch:domainIncludes  :BusinessContext, :BusinessCapability ;
+    arch:rangeIncludes   :BusinessCapability, :ESGCapability ;
+.
+
+:IsAssociatedWith
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :isAssociatedWith ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Is Associated With"@en ;
+    skos:definition      "A business context is associated with a business capability."@en ;
+    skos:scopeNote       "Between Business Context → Business Capability. Optional in Meta Model v4: Business Capability → ESG Capability."@en ;
+.
+
+:qualifiedIsAssociatedWith
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified is Associated With"@en ;
+    skos:definition      "Links the source of a Is Associated With relationship to its relationship resource."@en ;
+    rdfs:range           :IsAssociatedWith ;
+    arch:unqualifiedForm :isAssociatedWith ;
+.
+
+## produces — Application → Data Product
+
+:produces
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Produces"@en ;
+    skos:definition      "An application produces a data product."@en ;
+    arch:domainIncludes  :Application ;
+    arch:rangeIncludes   :DataProduct ;
+.
+
+:Produces
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :produces ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Produces"@en ;
+    skos:definition      "An application produces a data product."@en ;
+    skos:scopeNote       "Optional in Meta Model v4: Application → Data Product."@en ;
+.
+
+:qualifiedProduces
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified produces"@en ;
+    skos:definition      "Links the source of a Produces relationship to its relationship resource."@en ;
+    rdfs:range           :Produces ;
+    arch:unqualifiedForm :produces ;
+.
+
+## realizes — Data Product → Data Object
+
+:realizes
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Realizes"@en ;
+    skos:definition      "A data product realizes a data object."@en ;
+    arch:domainIncludes  :DataProduct ;
+    arch:rangeIncludes   :DataObject ;
+.
+
+:Realizes
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :realizes ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Realizes"@en ;
+    skos:definition      "A data product realizes a data object."@en ;
+    skos:scopeNote       "Optional in Meta Model v4: Data Product → Data Object."@en ;
+.
+
+:qualifiedRealizes
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified realizes"@en ;
+    skos:definition      "Links the source of a Realizes relationship to its relationship resource."@en ;
+    rdfs:range           :Realizes ;
+    arch:unqualifiedForm :realizes ;
+.
+
+## derivesFrom — Data Product → Data Product
+
+:derivesFrom
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Derives From"@en ;
+    skos:definition      "A data product derives from another data product, which is its origin."@en ;
+    arch:domainIncludes  :DataProduct ;
+    arch:rangeIncludes   :DataProduct ;
+.
+
+:DerivesFrom
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :derivesFrom ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Derives From"@en ;
+    skos:definition      "A data product derives from another data product, which is its origin."@en ;
+    skos:scopeNote       "Optional in Meta Model v4: Data Product → Data Product."@en ;
+.
+
+:qualifiedDerivesFrom
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified derives From"@en ;
+    skos:definition      "Links the source of a Derives From relationship to its relationship resource."@en ;
+    rdfs:range           :DerivesFrom ;
+    arch:unqualifiedForm :derivesFrom ;
+.
+
+## isAttachedTo — Contract → Application
+
+:isAttachedTo
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Is Attached To"@en ;
+    skos:definition      "A contract is attached to an application."@en ;
+    arch:domainIncludes  :Contract ;
+    arch:rangeIncludes   :Application ;
+.
+
+:IsAttachedTo
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :isAttachedTo ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Is Attached To"@en ;
+    skos:definition      "A contract is attached to an application."@en ;
+    skos:scopeNote       "Optional in Meta Model v4: Contract → Application."@en ;
+.
+
+:qualifiedIsAttachedTo
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified is Attached To"@en ;
+    skos:definition      "Links the source of a Is Attached To relationship to its relationship resource."@en ;
+    rdfs:range           :IsAttachedTo ;
+    arch:unqualifiedForm :isAttachedTo ;
+.
+
+## powers — Extension → Business Application
+
+:powers
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Powers"@en ;
+    skos:definition      "An extension powers its host business application."@en ;
+    arch:domainIncludes  :Extension ;
+    arch:rangeIncludes   :BusinessApplication ;
+.
+
+:Powers
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :powers ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    skos:prefLabel       "Powers"@en ;
+    skos:definition      "An extension powers its host business application."@en ;
+    skos:scopeNote       "Optional in Meta Model v4: Extension → Business Application."@en ;
+.
+
+:qualifiedPowers
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified powers"@en ;
+    skos:definition      "Links the source of a Powers relationship to its relationship resource."@en ;
+    rdfs:range           :Powers ;
+    arch:unqualifiedForm :powers ;
+.
+
+## parentOf — FactSheet → FactSheet ─────────────────────────────
+##
+## Every LeanIX fact sheet type is hierarchical. relToParent and relToChild are
+## the two ends of one edge, and they are how a capability breakdown, an
+## organizational structure and an IT component tree are all expressed — so this
+## is the hierarchy relationship represented in this profile, and the one a
+## capability map is drawn from.
+##
+## Direction is parent → child, matching the relToChild reading. LeanIX exports
+## the edge twice, once from each end, so a converter canonicalizes both
+## exported forms onto this one direction.
+
+:parentOf
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/general-modeling-guidelines> ;
+    rdfs:seeAlso         <https://help.sap.com/docs/leanix/ea/fact-sheets> ;
+    skos:prefLabel       "Parent Of"@en ;
+    skos:definition      "Fact sheet is the hierarchical parent of another fact sheet of the same type."@en ;
+    skos:scopeNote       '''Parent and child are always of the same fact sheet type — LeanIX
+hierarchies do not cross types. That is a data rule rather than an OWL one, so it is not stated as
+an axiom here; a shape may check it where the exported scope makes it checkable.
+
+A LeanIX hierarchy is also a taxonomy, so emitting skos:broader from child to parent alongside this
+predicate is worthwhile and costs nothing: a consumer that understands SKOS then gets the tree
+without knowing anything about LeanIX. skos:broader is additive, not a substitute — it carries no
+relationship resource, so it cannot be typed, annotated or validated.'''@en ;
+    arch:domainIncludes  :FactSheet ;
+    arch:rangeIncludes   :FactSheet ;
+.
+
+:FactSheetHierarchy
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :parentOf ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/general-modeling-guidelines> ;
+    rdfs:seeAlso         <https://help.sap.com/docs/leanix/ea/fact-sheets> ;
+    skos:prefLabel       "Fact Sheet Hierarchy"@en ;
+    skos:definition      "A hierarchical relationship from a parent fact sheet to a child fact sheet of the same type."@en ;
+    skos:scopeNote       '''Named for what LeanIX calls it rather than "Composition", which in a
+merged multi-notation graph would invite reading it as ArchiMate's composition — a different
+relationship with whole-part semantics this one does not assert.'''@en ;
+.
+
+:qualifiedFactSheetHierarchy
+    a                    owl:ObjectProperty ;
+    rdfs:range           :FactSheetHierarchy ;
+    arch:unqualifiedForm :parentOf ;
+.
+
+
+#################################################################
+# Fact Sheet Attributes
+#
+# A LeanIX fact sheet is mostly attributes, and this ontology declared none, so
+# every value a GraphQL pull returns beyond a name and a description had nowhere
+# to go. Declared below is the set every workspace has.
+#
+# Attributes that already have a published home keep it, and no lmm: term is
+# minted to shadow them:
+#
+#   LeanIX field          term used instead
+#   ───────────────────── ──────────────────────────────────────────────
+#   id                    skos:notation
+#   displayName           skos:prefLabel, language-tagged (DD-24)
+#   name                  skos:altLabel
+#   description           skos:definition
+#   type                  dcterms:type, verbatim, as retained source data
+#   createdAt / updatedAt dcterms:created / dcterms:modified
+#   fact sheet URL        schema:url
+#   lifecycle.asString    ap:atLifecycleStage — see the lifecycle section
+#
+# On the type token specifically: rdf:type already carries the class, and the
+# matching taxonomy concept is reachable from it through rdfs:seeAlso in
+# leanIX-tax.ttl. What neither records is what a workspace calls a type it has
+# renamed or added, which is what the verbatim literal is for — so there is no
+# :factSheetType predicate here, deliberately.
+#
+# None of the object properties below take the qualified relationship treatment.
+# The three-declaration pattern (P-4) is for the relationship types in the
+# metamodel's palette — edges an architect draws between fact sheets. A
+# subscription or a dated phase is attribute structure hanging off one fact
+# sheet, so it is a plain owl:ObjectProperty, as bs:lifecycleState is in the
+# Backstage ontology.
+#################################################################
+
+## Completion ───────────────────────────────────────────────────
+
+:completion
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/fact-sheet-completeness> ;
+    rdfs:seeAlso        <https://help.sap.com/docs/leanix/ea/fact-sheets> ;
+    skos:prefLabel      "Completion"@en ;
+    skos:definition     "Completion ratio between 0 and 1, computed by LeanIX from the weights assigned to the fields, subsections and sections of the fact sheet type."@en ;
+    skos:scopeNote      '''A derived measure rather than something an author asserts: it moves when
+the workspace changes its field weights, without the fact sheet changing at all. Treat a value as a
+snapshot of the source system at export time, not as a property of the architecture.
+
+LeanIX renders the same number as a percentage in the fact sheet header. Store the ratio and format
+on display, so that two workspaces reporting 0.8 and 80 are not two different values.'''@en ;
+    arch:domainIncludes :FactSheet ;
+    rdfs:range          xsd:decimal ;
+.
+
+## Status — the record's state in the workspace ─────────────────
+##
+## Values are named individuals, not strings, per DD-23: an individual carries a
+## label, a definition and a notation, can be mapped to an external vocabulary,
+## and can be dereferenced — where a literal "ACTIVE" carries none of that and a
+## typo in it is indistinguishable from a new value. Membership of the set is a
+## SHACL matter (sh:maxCount 1 + sh:in in leanIX-shapes.ttl), not an owl:oneOf,
+## so a workspace that gains a state does not have to edit this ontology.
+
+:FactSheetStatus
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/fact-sheets> ;
+    skos:prefLabel  "Fact Sheet Status"@en ;
+    skos:definition "The state of a fact sheet as a record in the workspace — whether it is live, archived, or in an inconsistent state."@en ;
+    skos:scopeNote  '''Neither a lifecycle nor an approval state, and the three are independent:
+
+* :FactSheetStatus says whether the record is live in the workspace.
+* ap:LifecycleStage says where the thing the record describes sits in its own life.
+* arch:approvalState says whether the description carries governance authority.
+
+An archived fact sheet can describe an application that is still running, and an active fact sheet
+can describe one that was retired years ago.
+
+The field name has varied across LeanIX API versions; the value set has not.'''@en ;
+.
+
+:factSheetStatus
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/fact-sheets> ;
+    skos:prefLabel      "Fact Sheet Status"@en ;
+    skos:definition     "The state of the fact sheet as a record in the workspace."@en ;
+    skos:scopeNote      "At most one value — enforced in shapes, not with owl:FunctionalProperty (DD-23)."@en ;
+    arch:domainIncludes :FactSheet ;
+    arch:rangeIncludes  :FactSheetStatus ;
+.
+
+:StatusActive
+    a               owl:NamedIndividual, :FactSheetStatus ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/fact-sheets> ;
+    skos:prefLabel  "Active"@en ;
+    skos:notation   "ACTIVE" ;
+    skos:definition "The fact sheet is live in the workspace and can be read and edited."@en ;
+    skos:scopeNote  '''IRI carries the Status prefix to keep it distinct from ap:Active, the
+lifecycle stage. A fact sheet is :StatusActive because its record is live; the application it
+describes is ap:Active because it is in operational use. The two are unrelated.'''@en ;
+.
+
+:StatusArchived
+    a               owl:NamedIndividual, :FactSheetStatus ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/fact-sheets> ;
+    skos:prefLabel  "Archived"@en ;
+    skos:notation   "ARCHIVED" ;
+    skos:definition "The fact sheet has been archived. It remains readable and reportable, but LeanIX refuses updates to it."@en ;
+.
+
+:StatusBroken
+    a               owl:NamedIndividual, :FactSheetStatus ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/fact-sheets> ;
+    skos:prefLabel  "Broken"@en ;
+    skos:notation   "BROKEN" ;
+    skos:definition "The fact sheet is in an inconsistent state, typically after a failed import or an interrupted change."@en ;
+    skos:scopeNote  "Distinct from a broken quality seal, which is a data-governance signal on an otherwise healthy fact sheet."@en ;
+.
+
+## Lifecycle — a stage and the date it began ────────────────────
+##
+## The stages themselves are NOT declared here. ap:Plan, ap:PhaseIn, ap:Active,
+## ap:PhaseOut and ap:Retired in the Architecture Processes extension were
+## derived from SAP LeanIX's own lifecycle documentation, and each carries a
+## skos:closeMatch to the doc anchor it came from — so a converter resolves a
+## LeanIX phase token by kebab-casing it ("phaseIn" → #phase-in, "endOfLife" →
+## #end-of-life) and matching that anchor. Minting lmm: stages would copy the
+## vocabulary the original was lifted from and would cost the cross-notation
+## query the reuse buys: "every asset in phase-out" then spans LeanIX, ArchiMate
+## and Backstage data in one pattern instead of three.
+##
+## What LeanIX genuinely adds is the dated phase, which ap: has no construct
+## for. Hence one class here and nothing else.
+
+:LifecyclePhase
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/lifecycle> ;
+    skos:prefLabel  "Lifecycle Phase"@en ;
+    skos:definition "One dated phase of a fact sheet's lifecycle — a lifecycle stage together with the date the subject entered it."@en ;
+    skos:scopeNote  '''A node rather than a pair of properties on the fact sheet. Two phases
+flattened onto one fact sheet produce two dates with nothing saying which stage each belongs to,
+which is exactly the information a roadmap needs.
+
+The stage is carried by ap:atLifecycleStage, the same property that carries the current stage on the
+fact sheet itself, so "what stage is this?" reads the same whether asked of a fact sheet or of one of
+its phases. A phase has no end date: it ends when the next one starts.'''@en ;
+    skos:example    '''<…/element/app-1>
+    a                     lmm:Application ;
+    ap:atLifecycleStage   ap:Active ;                    # lifecycle.asString
+    lmm:hasLifecyclePhase <…/element/app-1/phase/plan>,
+                          <…/element/app-1/phase/active> .
+
+<…/element/app-1/phase/active>
+    a                   lmm:LifecyclePhase ;
+    ap:atLifecycleStage ap:Active ;
+    lmm:phaseStart      "2021-04-01"^^xsd:date .'''@en ;
+.
+
+:hasLifecyclePhase
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/lifecycle> ;
+    skos:prefLabel      "Has Lifecycle Phase"@en ;
+    skos:definition     "Relates a fact sheet to one dated phase of its lifecycle."@en ;
+    skos:scopeNote      '''Many-valued: a fact sheet carries every phase it has a date for, past and
+planned. The phase it is in now is on the fact sheet itself, as ap:atLifecycleStage.'''@en ;
+    arch:domainIncludes :FactSheet ;
+    arch:rangeIncludes  :LifecyclePhase ;
+.
+
+:phaseStart
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/lifecycle> ;
+    skos:prefLabel      "Phase Start"@en ;
+    skos:definition     "The date the subject entered this lifecycle phase."@en ;
+    arch:domainIncludes :LifecyclePhase ;
+    rdfs:range          xsd:date ;
+.
+
+## Subscriptions — who is responsible, in which role ────────────
+
+:Subscription
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/fact-sheet-subscription> ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/managing-fact-sheet-subscriptions> ;
+    skos:prefLabel  "Subscription"@en ;
+    skos:definition "A person's registered responsibility for a fact sheet, of a given subscription type and covering one or more roles."@en ;
+    skos:scopeNote  '''A node rather than properties on the fact sheet, for the same reason as
+:LifecyclePhase: two subscribers flattened onto a fact sheet produce two addresses and two types with
+nothing pairing them up.
+
+Subscriptions are how LeanIX records data governance — a responsible or accountable subscriber can
+edit a fact sheet without breaking its quality seal. Where a converter can identify the accountable
+subscriber as a stakeholder in the graph, emitting arch:conceptOwner as well makes that governance
+fact answerable without knowing anything about LeanIX.'''@en ;
+.
+
+:hasSubscription
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/fact-sheet-subscription> ;
+    skos:prefLabel      "Has Subscription"@en ;
+    skos:definition     "Relates a fact sheet to a subscription registered against it."@en ;
+    arch:domainIncludes :FactSheet ;
+    arch:rangeIncludes  :Subscription ;
+.
+
+:subscriber
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/fact-sheet-subscription> ;
+    skos:prefLabel      "Subscriber"@en ;
+    skos:definition     "The person the subscription belongs to."@en ;
+    skos:scopeNote      '''Range is arch:Stakeholder, so a subscriber is the same kind of thing here
+as a stakeholder identified by any other notation and can be reached by the same queries. Where a
+converter has no stable identity to mint a stakeholder from, :subscriberEmail alone is a legitimate
+fallback.'''@en ;
+    arch:domainIncludes :Subscription ;
+    arch:rangeIncludes  arch:Stakeholder ;
+.
+
+:subscriberEmail
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/managing-fact-sheet-subscriptions> ;
+    skos:prefLabel      "Subscriber Email"@en ;
+    skos:definition     "The email address LeanIX holds for the subscriber."@en ;
+    skos:scopeNote      '''Retained source data, kept because it is the identity a LeanIX workspace
+actually uses. It is not a substitute for :subscriber: an address is not a person, and the same
+person can appear under two addresses across systems.'''@en ;
+    arch:domainIncludes :Subscription ;
+    rdfs:range          xsd:string ;
+.
+
+:SubscriptionType
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/fact-sheet-subscription> ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/subscription-roles> ;
+    skos:prefLabel  "Subscription Type"@en ;
+    skos:definition "The level of responsibility a subscription carries: responsible, accountable, or observer."@en ;
+    skos:scopeNote  '''Three values, fixed by LeanIX. The *roles* within a type are configured per
+workspace and are not this vocabulary — see :subscriptionRole. Named individuals per DD-23, with
+membership constrained in shapes rather than closed with owl:oneOf.'''@en ;
+.
+
+:subscriptionType
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/fact-sheet-subscription> ;
+    skos:prefLabel      "Subscription Type"@en ;
+    skos:definition     "The level of responsibility this subscription carries."@en ;
+    skos:scopeNote      "At most one value — enforced in shapes, not with owl:FunctionalProperty (DD-23)."@en ;
+    arch:domainIncludes :Subscription ;
+    arch:rangeIncludes  :SubscriptionType ;
+.
+
+:Responsible
+    a               owl:NamedIndividual, :SubscriptionType ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/managing-fact-sheet-subscriptions> ;
+    skos:prefLabel  "Responsible"@en ;
+    skos:notation   "RESPONSIBLE" ;
+    skos:definition "The subscriber who keeps the fact sheet's data accurate and up to date — the subject-matter expert for it."@en ;
+.
+
+:Accountable
+    a               owl:NamedIndividual, :SubscriptionType ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/managing-fact-sheet-subscriptions> ;
+    skos:prefLabel  "Accountable"@en ;
+    skos:notation   "ACCOUNTABLE" ;
+    skos:definition "The subscriber who answers for the fact sheet and its data quality."@en ;
+    skos:scopeNote  "The natural source for arch:conceptOwner where the subscriber is modelled as a stakeholder."@en ;
+.
+
+:Observer
+    a               owl:NamedIndividual, :SubscriptionType ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/managing-fact-sheet-subscriptions> ;
+    skos:prefLabel  "Observer"@en ;
+    skos:notation   "OBSERVER" ;
+    skos:definition "A subscriber who follows the fact sheet without responsibility for its data."@en ;
+.
+
+:subscriptionRole
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/subscription-roles> ;
+    skos:prefLabel      "Subscription Role"@en ;
+    skos:definition     "The name of a role the subscription covers, such as Application Owner or Technical Lead."@en ;
+    skos:scopeNote      '''A string rather than a vocabulary, and deliberately so: subscription roles
+are defined per workspace, and a role can be scoped to one subscription type or to all of them. There
+is no set to enumerate. Many-valued — one subscription can cover several roles.'''@en ;
+    arch:domainIncludes :Subscription ;
+    rdfs:range          xsd:string ;
+.
+
+## Tags ─────────────────────────────────────────────────────────
+
+:Tag
+    a               owl:Class ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/tags> ;
+    skos:prefLabel  "Tag"@en ;
+    skos:definition "A LeanIX tag applied to a fact sheet, in the tag group that scopes it."@en ;
+    skos:scopeNote  '''A node because the group is what makes the name mean anything: "Cloud" in a
+Hosting group and "Cloud" in a Strategy group are different tags, and a bare name loses that.
+
+The tag's own identifier belongs on this node as skos:notation, the same term a fact sheet's id uses.
+A tag with no group is normal — LeanIX allows ungrouped tags — so :tagGroup is optional.'''@en ;
+.
+
+:hasTag
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/tags> ;
+    skos:prefLabel      "Has Tag"@en ;
+    skos:definition     "Relates a fact sheet to a tag applied to it."@en ;
+    arch:domainIncludes :FactSheet ;
+    arch:rangeIncludes  :Tag ;
+.
+
+:tagName
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/tags> ;
+    skos:prefLabel      "Tag Name"@en ;
+    skos:definition     "The tag's name, as the workspace writes it."@en ;
+    skos:scopeNote      '''Held here rather than on a general-purpose keyword property because this
+project publishes none. If a cross-notation keyword term is added to core, this becomes a
+sub-property of it and a converter's output does not have to change.'''@en ;
+    arch:domainIncludes :Tag ;
+    rdfs:range          xsd:string ;
+.
+
+:tagGroup
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/tags> ;
+    skos:prefLabel      "Tag Group"@en ;
+    skos:definition     "The name of the tag group that scopes the tag."@en ;
+    skos:scopeNote      "Optional: LeanIX permits tags outside any group."@en ;
+    arch:domainIncludes :Tag ;
+    rdfs:range          xsd:string ;
+.

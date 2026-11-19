@@ -1,0 +1,178 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix bstax:   <https://meta.linked.archi/backstage/tax#> .
+@prefix bsvp:    <https://meta.linked.archi/backstage/viewpoints#> .
+@prefix bsdt:    <https://meta.linked.archi/backstage/deliverable-templates#> .
+@prefix bsrd:    <https://meta.linked.archi/backstage/reference-data#> .
+@prefix bspc:    <https://meta.linked.archi/backstage/presentation-contexts#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix :        <https://meta.linked.archi/backstage/metamodel#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/backstage/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/backstage/metamodel#" ;
+    vann:preferredNamespacePrefix "bsmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Backstage Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for the Backstage Software Catalog. Ties together
+the Backstage element/relationship ontology, SHACL shapes, SKOS taxonomy,
+viewpoints, deliverable templates, reference data, and presentation contexts
+into a single discoverable resource.
+
+Note on reference data: since the value vocabularies moved into the ontology as named individuals,
+backstage-reference-data carries correspondences to other vocabularies rather than values of its
+own. It stays in the manifest under arch:referenceData because that is still what it is — reference
+data for the metamodel — but a consumer looking for the lifecycle or type value sets should follow
+arch:modelConcepts, not this property.'''@en ;
+    dcterms:created               "2026-04-16"^^xsd:date ;
+    dcterms:modified              "2026-08-24"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/backstage/metamodel/0.2.0#> ;
+    owl:versionInfo               "0.2.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/backstage/metamodel/0.1.0#> ;
+    skos:editorialNote            '''Kind coverage, stated here as well as in the ontology because this
+manifest is where a tool asks what the metamodel contains.
+
+The metamodel covers eight of the nine kinds the descriptor format defines: Component, System, API,
+Resource, Domain, Group, User and Template. The ninth, Location, is deliberately not modelled — it is
+catalog ingestion configuration rather than a node in an architecture, and what it carries is already
+retained on the entities it produced, as bs:managedByLocation and bs:managedByOriginLocation. A lift should
+drop Location entities and report the count rather than emit untyped nodes.
+
+The authoritative version of this decision, with the reasoning and with the other deliberate omissions
+(a Template's spec.parameters and spec.steps, a status item's serialised error, per-key label predicates),
+is the SCOPE STATEMENT on the ontology header. Read that; this is a pointer to it.'''@en ;
+    dcterms:source        <https://backstage.io/docs/features/software-catalog/> ,
+                          <https://backstage.io/docs/features/software-catalog/system-model> ,
+                          <https://backstage.io/docs/features/software-catalog/descriptor-format> ,
+                          <https://github.com/backstage/backstage/tree/master/packages/catalog-model/src/schema> ;
+    prov:wasDerivedFrom   <https://backstage.io/docs/features/software-catalog/> ;
+    prov:hadPrimarySource <https://backstage.io/docs/features/software-catalog/system-model> ;
+    rdfs:seeAlso          <https://backstage.io/> ,
+                          <https://backstage.io/docs/features/software-catalog/> ,
+                          <https://github.com/backstage/backstage> ,
+                          <https://github.com/backstage/backstage/tree/master/docs/features/software-catalog> ,
+                          <https://github.com/backstage/backstage/tree/master/packages/catalog-model> ,
+                          <https://www.cncf.io/projects/backstage/> ;
+.
+
+
+#################################################################
+# Backstage Framework Individual
+#################################################################
+
+:BackstageFramework
+    a               arch:Framework ;
+    skos:prefLabel  "Backstage Software Catalog"@en ;
+    skos:definition '''Backstage is an open framework for building developer portals. Its
+Software Catalog provides a centralized registry of the software components, APIs, resources,
+systems, domains, users and groups within an organization.'''@en ;
+    skos:scopeNote  '''Created and open-sourced by Spotify and donated to the Cloud Native Computing
+Foundation, where it is an incubating project; the documentation is published by the Backstage
+Project Authors. dcterms:creator records the origin, dcterms:publisher the body that maintains it
+now — the two were the same organisation when this file was written and are not any longer.'''@en ;
+    dcterms:creator      "Spotify" ;
+    dcterms:publisher    "Backstage Project Authors" ;
+    dcterms:license      <https://github.com/backstage/backstage/blob/master/LICENSE> ;
+    rdfs:seeAlso    <https://backstage.io/>,
+                    <https://backstage.io/docs/features/software-catalog/>,
+                    <https://backstage.io/docs/features/software-catalog/descriptor-format>,
+                    <https://backstage.io/docs/features/software-templates/>,
+                    <https://github.com/backstage/backstage>,
+                    <https://github.com/backstage/backstage/tree/master/packages/catalog-model>,
+                    <https://github.com/backstage/community>,
+                    <https://www.cncf.io/projects/backstage/> ;
+.
+
+
+#################################################################
+# Backstage Metamodel Instance
+#################################################################
+
+:BackstageCatalog
+    a                             arch:Metamodel ;
+    skos:prefLabel                "Backstage Catalog Metamodel"@en ;
+    dcterms:description               '''The complete Backstage Software Catalog metamodel definition,
+aggregating the element/relationship ontology, SHACL shapes, SKOS taxonomy,
+viewpoints, deliverable templates, reference data, and presentation contexts.'''@en ;
+
+    ## Foundation
+    arch:basedOnFramework         :BackstageFramework ;
+
+    ## Model concepts — elements, relationships
+    ## File: backstage-onto.ttl
+    arch:modelConcepts            <https://meta.linked.archi/backstage/onto#> ;
+
+    ## Cross-language mappings — Backstage ↔ ArchiMate 3.2, Backstage ↔ ArchiMate 4.0
+    ## File: backstage-crossmappings.ttl
+    arch:crossLanguageMappings    <https://meta.linked.archi/backstage/crossmappings#> ;
+
+    ## Viewpoints
+    ## File: backstage-viewpoints.ttl
+    arch:architectureViewpoints   <https://meta.linked.archi/backstage/viewpoints#> ;
+
+    ## Formal rules — SHACL shapes
+    ## File: backstage-shapes.ttl
+    arch:formalRules              <https://meta.linked.archi/backstage/shapes#> ;
+
+    ## Concept classification — SKOS taxonomy
+    ## File: backstage-tax.ttl
+    arch:conceptClassification    <https://meta.linked.archi/backstage/tax#> ;
+
+    ## Visual notation set — default element/relationship appearance
+    ## File: backstage-notation.ttl
+    arch:notationSet              <https://meta.linked.archi/backstage/notation#BackstageStandardNotation> ;
+
+    ## Viewpoint library
+    ## File: backstage-viewpoints.ttl
+    arch:viewpointLibrary         bsvp:ViewpointCatalog ;
+
+    ## Deliverable templates
+    ## File: backstage-deliverable-templates.ttl
+    arch:hasDeliverableTemplate   bsdt:ServiceCatalogDocument,
+                                  bsdt:SystemArchitectureDocument,
+                                  bsdt:OrganizationStructureDocument ;
+
+    ## Reference data
+    ## File: backstage-reference-data.ttl
+    arch:referenceData            bsrd:BackstageReferenceData ;
+
+    ## Presentation contexts
+    ## File: backstage-presentation-contexts.ttl
+    arch:presentationContextScheme bspc:BackstagePresentationContexts ;
+
+    ## Deliberately absent, so that their absence reads as a decision rather than an oversight:
+    ##   arch:derivationRules  — Backstage generates its relations in the catalog itself; there is
+    ##                           nothing for a derivation rule to infer that the source has not
+    ##                           already materialised.
+    ##   arch:referenceModels  — Backstage publishes no reference architectures or patterns.
+    ## Add either only if the corresponding file is created.
+
+    ## Stakeholders (referencing core viewpoint individuals)
+    arch:metamodelIdentifiesStakeholder
+        archvp:SoftwareDeveloper,
+        archvp:SolutionArchitect,
+        archvp:OperationsManager,
+        archvp:ProductManager ;
+
+    ## Concerns (referencing core viewpoint individuals)
+    arch:metamodelIdentifiesConsideration
+        archvp:StructureConcern,
+        archvp:DependencyConcern,
+        archvp:GovernanceConcern,
+        archvp:IntegrationConcern ;
+.

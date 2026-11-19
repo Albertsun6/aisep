@@ -1,0 +1,134 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix iso-thes: <http://purl.org/iso25964/skos-thes#> .
+
+@prefix atam:    <https://meta.linked.archi/atam/onto#> .
+@prefix :        <https://meta.linked.archi/atam/tax#> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/atam/tax#>
+    a                             skos:ConceptScheme ;
+    skos:prefLabel                "ATAM Concept Scheme"@en ;
+    dcterms:description           "Classification of the ATAM element types — the evaluation, the utility tree it builds and the findings it produces — and of the relationship types that draw its links."@en ;
+    skos:hasTopConcept            :ElementKind, :RelationshipKind ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/atam/tax#" ;
+    vann:preferredNamespacePrefix "atamtax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi ATAM Taxonomy"@en ;
+    dcterms:created               "2026-11-16"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source                <https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513908> ;
+    prov:wasDerivedFrom           <https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513908> ;
+.
+
+
+#################################################################
+# Element types
+#################################################################
+
+:ElementKind
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/atam/tax#> ;
+    skos:prefLabel    "Element Kind"@en ;
+    skos:definition   "The ATAM element types, by their part in an evaluation."@en ;
+    skos:inScheme     <https://meta.linked.archi/atam/tax#> ;
+.
+
+:Evaluation
+    a                 skos:Concept ;
+    skos:broader      :ElementKind ;
+    skos:prefLabel    "Evaluation"@en ;
+    skos:definition   "The evaluation itself: one application of the method to an architecture."@en ;
+    skos:inScheme     <https://meta.linked.archi/atam/tax#> ;
+    skos:narrower     atam:ATAMEvaluation ;
+.
+
+:UtilityTreeElements
+    a                 skos:Concept ;
+    skos:broader      :ElementKind ;
+    skos:prefLabel    "Utility Tree"@en ;
+    skos:definition   "The utility tree and its branches: the quality attributes an evaluation refines into scenarios."@en ;
+    skos:inScheme     <https://meta.linked.archi/atam/tax#> ;
+    skos:narrower     atam:UtilityTree, atam:QualityAttributeBranch ;
+.
+
+:Findings
+    a                 skos:Concept ;
+    skos:broader      :ElementKind ;
+    skos:prefLabel    "Findings"@en ;
+    skos:definition   "What an evaluation finds: sensitivity and tradeoff points, risks, non-risks and the themes the risks share."@en ;
+    skos:inScheme     <https://meta.linked.archi/atam/tax#> ;
+    skos:narrower     atam:SensitivityPoint, atam:TradeoffPoint, atam:ArchitecturalRisk,
+                      atam:NonRisk, atam:RiskTheme ;
+.
+
+:ElementKindOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    iso-thes:superOrdinate :ElementKind ;
+    skos:prefLabel         "Element Kind Order"@en ;
+    skos:memberList        ( :Evaluation :UtilityTreeElements :Findings ) ;
+.
+
+
+#################################################################
+# Relationship types
+#################################################################
+
+:RelationshipKind
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/atam/tax#> ;
+    skos:prefLabel    "Relationship Kind"@en ;
+    skos:definition   "The relationship types that draw the links of an evaluation, by what they connect."@en ;
+    skos:inScheme     <https://meta.linked.archi/atam/tax#> ;
+.
+
+:UtilityTreeLinks
+    a                 skos:Concept ;
+    skos:broader      :RelationshipKind ;
+    skos:prefLabel    "Utility Tree Links"@en ;
+    skos:definition   "How a utility tree is put together: from the evaluation to its tree, from the tree to its branches, from a branch to its scenarios."@en ;
+    skos:inScheme     <https://meta.linked.archi/atam/tax#> ;
+    skos:narrower     atam:HasUtilityTree, atam:HasQABranch, atam:HasScenario ;
+.
+
+:FindingLinks
+    a                 skos:Concept ;
+    skos:broader      :RelationshipKind ;
+    skos:prefLabel    "Finding Links"@en ;
+    skos:definition   "What an evaluation found, and where: from the evaluation to each finding, from a finding to the scenario that revealed it, from a risk theme to its risks."@en ;
+    skos:inScheme     <https://meta.linked.archi/atam/tax#> ;
+    skos:narrower     atam:IdentifiedRisk, atam:IdentifiedNonRisk, atam:IdentifiedSensitivityPoint,
+                      atam:IdentifiedTradeoffPoint, atam:IdentifiedRiskTheme, atam:IdentifiedInScenario,
+                      atam:ThemeIncludesRisk ;
+.
+
+:ArchitectureLinks
+    a                 skos:Concept ;
+    skos:broader      :RelationshipKind ;
+    skos:prefLabel    "Architecture Links"@en ;
+    skos:definition   "What a finding concerns in the architecture: the element a sensitivity point affects, the decision or the tactic that introduces a risk."@en ;
+    skos:inScheme     <https://meta.linked.archi/atam/tax#> ;
+    skos:narrower     atam:AffectsElement, atam:RiskInDecision, atam:RiskInApproach ;
+.
+
+:RelationshipKindOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    iso-thes:superOrdinate :RelationshipKind ;
+    skos:prefLabel         "Relationship Kind Order"@en ;
+    skos:memberList        ( :UtilityTreeLinks :FindingLinks :ArchitectureLinks ) ;
+.

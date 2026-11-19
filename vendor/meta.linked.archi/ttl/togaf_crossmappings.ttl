@@ -1,0 +1,188 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix togaf:   <https://meta.linked.archi/togaf/onto#> .
+@prefix uaf:     <https://meta.linked.archi/uaf/onto#> .
+@prefix am:      <https://meta.linked.archi/archimate3/onto#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+
+<https://meta.linked.archi/togaf/crossmappings#>
+    a                owl:Ontology ;
+    owl:imports      <https://meta.linked.archi/togaf/onto#> ;
+    cc:license       "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/togaf/crossmappings#" ;
+    vann:preferredNamespacePrefix "togafxm" ;
+    dcterms:creator  "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title    "Linked.Archi TOGAF Cross-Language Mappings"@en ;
+    dcterms:description '''Cross-language SKOS mappings between TOGAF Content Metamodel
+concepts and ArchiMate modeling language concepts.
+
+TOGAF ↔ ArchiMate mappings are derived from:
+  The Open Group, "Mapping of the TOGAF Content Metamodel to ArchiMate"
+  https://pubs.opengroup.org/architecture/archimate3-doc/ch-Mapping-TOGAF-Content-Metamodel.html
+
+This appendix in the ArchiMate 3.x specification provides an official mapping
+between TOGAF Content Metamodel entity types and ArchiMate elements. The
+ArchiMate 4.0 mappings extend this with the updated element names from the
+4.0 "Hexagonion" restructuring.'''@en ;
+    dcterms:issued   "2026-05-05"^^xsd:date ;
+    dcterms:modified "2026-05-05"^^xsd:date ;
+    owl:versionInfo  "0.1.0"@en ;
+    dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Mapping-TOGAF-Content-Metamodel.html>,
+                     <https://pubs.opengroup.org/architecture/archimate4-doc/>,
+                     <https://pubs.opengroup.org/togaf-standard/architecture-content/content-metamodel.html> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Mapping-TOGAF-Content-Metamodel.html>,
+                     <https://pubs.opengroup.org/architecture/archimate4-doc/>,
+                     <https://pubs.opengroup.org/togaf-standard/architecture-content/content-metamodel.html> ;
+.
+
+
+#################################################################
+# TOGAF ↔ ArchiMate 3.2
+#################################################################
+#
+# Derived from the official mapping in:
+#   ArchiMate 3.x Specification, Appendix C —
+#   "Mapping of the TOGAF Content Metamodel to ArchiMate"
+#   https://pubs.opengroup.org/architecture/archimate3-doc/ch-Mapping-TOGAF-Content-Metamodel.html
+
+## Motivation
+togaf:Principle              skos:closeMatch    am:Principle .
+togaf:Driver                 skos:closeMatch    am:Driver .
+togaf:Goal                   skos:closeMatch    am:Goal .
+togaf:Objective              skos:closeMatch    am:Outcome .
+togaf:Requirement            skos:closeMatch    am:Requirement .
+togaf:Constraint             skos:closeMatch    am:Constraint .
+
+## Business Architecture
+togaf:Organization           skos:closeMatch    am:BusinessActor .
+togaf:Actor                  skos:closeMatch    am:BusinessActor .
+togaf:Role                   skos:closeMatch    am:BusinessRole .
+togaf:BusinessService        skos:closeMatch    am:BusinessService .
+togaf:BusinessFunction       skos:closeMatch    am:BusinessFunction .
+togaf:BusinessProcess        skos:closeMatch    am:BusinessProcess .
+togaf:BusinessEvent          skos:closeMatch    am:BusinessEvent .
+togaf:Product                skos:closeMatch    am:Product .
+togaf:Contract               skos:closeMatch    am:Contract .
+togaf:Location               skos:closeMatch    am:Location .
+togaf:Capability             skos:closeMatch    am:Capability .
+
+## Data Architecture
+togaf:DataEntity             skos:closeMatch    am:BusinessObject .
+togaf:LogicalDataComponent   skos:closeMatch    am:DataObject .
+togaf:PhysicalDataComponent  skos:closeMatch    am:DataObject .
+
+## Application Architecture
+togaf:LogicalApplicationComponent   skos:closeMatch    am:ApplicationComponent .
+togaf:PhysicalApplicationComponent  skos:closeMatch    am:ApplicationComponent .
+togaf:InformationSystemService      skos:closeMatch    am:ApplicationService .
+togaf:ApplicationInterface          skos:closeMatch    am:ApplicationInterface .
+
+## Technology Architecture
+togaf:LogicalTechnologyComponent    skos:closeMatch    am:Node .
+togaf:PhysicalTechnologyComponent   skos:closeMatch    am:Node .
+togaf:TechnologyService             skos:closeMatch    am:TechnologyService .
+togaf:TechnologyInterface           skos:closeMatch    am:TechnologyInterface .
+togaf:Platform                      skos:relatedMatch  am:Node .
+
+## Implementation & Migration
+togaf:WorkPackage            skos:closeMatch    am:WorkPackage .
+togaf:Deliverable            skos:closeMatch    am:Deliverable .
+togaf:Plateau                skos:closeMatch    am:Plateau .
+togaf:Gap                    skos:closeMatch    am:Gap .
+
+
+#################################################################
+# TOGAF ↔ ArchiMate 4.0
+#################################################################
+#
+# Extended from the official 3.x mapping, updated for ArchiMate 4.0
+# domain-based restructuring. In 4.0, per-layer behavior elements
+# are merged into single cross-domain elements (Process, Function,
+# Event, Service) and Role/Collaboration become Common Domain.
+
+## Motivation
+togaf:Principle              skos:closeMatch    am4:Principle .
+togaf:Driver                 skos:closeMatch    am4:Driver .
+togaf:Goal                   skos:closeMatch    am4:Goal .
+togaf:Objective              skos:closeMatch    am4:Outcome .
+togaf:Requirement            skos:closeMatch    am4:Requirement .
+togaf:Constraint             skos:relatedMatch  am4:Requirement .
+
+## Business Architecture
+togaf:Organization           skos:closeMatch    am4:BusinessActor .
+togaf:Actor                  skos:closeMatch    am4:BusinessActor .
+togaf:Role                   skos:closeMatch    am4:Role .
+togaf:BusinessService        skos:closeMatch    am4:Service .
+togaf:BusinessFunction       skos:closeMatch    am4:Function .
+togaf:BusinessProcess        skos:closeMatch    am4:Process .
+togaf:BusinessEvent          skos:closeMatch    am4:Event .
+togaf:Product                skos:closeMatch    am4:Product .
+togaf:Location               skos:closeMatch    am4:Location .
+togaf:Capability             skos:closeMatch    am4:Capability .
+
+## Data Architecture
+togaf:DataEntity             skos:closeMatch    am4:BusinessObject .
+togaf:LogicalDataComponent   skos:closeMatch    am4:DataObject .
+togaf:PhysicalDataComponent  skos:closeMatch    am4:DataObject .
+
+## Application Architecture
+togaf:LogicalApplicationComponent   skos:closeMatch    am4:ApplicationComponent .
+togaf:PhysicalApplicationComponent  skos:closeMatch    am4:ApplicationComponent .
+togaf:InformationSystemService      skos:closeMatch    am4:Service .
+togaf:ApplicationInterface          skos:closeMatch    am4:ApplicationInterface .
+
+## Technology Architecture
+togaf:LogicalTechnologyComponent    skos:closeMatch    am4:Node .
+togaf:PhysicalTechnologyComponent   skos:closeMatch    am4:Node .
+togaf:TechnologyService             skos:closeMatch    am4:Service .
+togaf:TechnologyInterface           skos:closeMatch    am4:TechnologyInterface .
+togaf:Platform                      skos:relatedMatch  am4:Node .
+
+## Implementation & Migration
+togaf:WorkPackage            skos:closeMatch    am4:WorkPackage .
+togaf:Deliverable            skos:closeMatch    am4:Deliverable .
+togaf:Plateau                skos:closeMatch    am4:Plateau .
+
+
+#################################################################
+# TOGAF ↔ UAF 1.2
+#################################################################
+#
+# Editorial mappings — no official OMG or Open Group document
+# formally maps TOGAF to UAF. These express semantic proximity
+# based on concept definitions in both frameworks.
+
+## Motivation & Strategy
+togaf:Capability             skos:relatedMatch  uaf:Capability .
+togaf:Goal                   skos:relatedMatch  uaf:EnterpriseGoal .
+togaf:Objective              skos:relatedMatch  uaf:EnterpriseObjective .
+togaf:Vision                 skos:relatedMatch  uaf:EnterpriseVision .
+togaf:Driver                 skos:relatedMatch  uaf:Driver .
+togaf:Constraint             skos:relatedMatch  uaf:OperationalConstraint .
+togaf:Requirement            skos:relatedMatch  uaf:Standard .
+
+## Business Architecture → Operational
+togaf:BusinessProcess        skos:relatedMatch  uaf:OperationalActivity .
+togaf:BusinessService        skos:relatedMatch  uaf:Service .
+togaf:BusinessFunction       skos:relatedMatch  uaf:ServiceFunction .
+
+## Structure
+togaf:Organization           skos:relatedMatch  uaf:Organization .
+togaf:Actor                  skos:relatedMatch  uaf:Person .
+togaf:Role                   skos:relatedMatch  uaf:Post .
+
+## Application/Technology → Resources
+togaf:PhysicalApplicationComponent  skos:relatedMatch  uaf:ResourcePerformer .
+togaf:ApplicationInterface          skos:relatedMatch  uaf:ServiceInterface .
+
+## Implementation
+togaf:WorkPackage            skos:relatedMatch  uaf:Project .

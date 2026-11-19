@@ -1,0 +1,75 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix ap:      <https://meta.linked.archi/arch-processes#> .
+@prefix bs:      <https://meta.linked.archi/backstage/onto#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix :        <https://meta.linked.archi/backstage/reference-data#> .
+
+#################################################################
+# Backstage Reference Data (SKOS Concept Scheme)
+#################################################################
+
+:BackstageReferenceData
+    a                skos:ConceptScheme ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/backstage/reference-data#" ;
+    vann:preferredNamespacePrefix "bsrd" ;
+    dcterms:title                 "Linked.Archi Backstage Reference Data"@en ;
+    owl:versionInfo               "0.1.0"@en ;
+    skos:prefLabel   "Backstage Reference Data"@en ;
+    dcterms:description   "Controlled vocabularies and reference data for Backstage catalog models."@en ;
+    dcterms:creator  "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format> ;
+    rdfs:seeAlso    <https://backstage.io/docs/features/software-catalog/> ,
+                    <https://github.com/backstage/backstage> ,
+                    <https://github.com/backstage/backstage/tree/master/docs/features/software-catalog> ,
+                    <https://github.com/backstage/backstage/tree/master/packages/catalog-model> ;
+    skos:scopeNote   '''Scope boundary against the ontology, restated after the 0.3.0
+reconciliation. Every value vocabulary Backstage documents — lifecycle, API visibility, component
+type, API type — is now a class of named individuals in backstage-onto, following the same pattern
+as uml:MessageSort. Openness is expressed by the absence of owl:oneOf, not by keeping the values out
+of the metamodel: an adopter mints their own individual of the same class in their own namespace and
+it is an ordinary member.
+
+What belongs in this file is therefore not the values but everything around them: correspondences to
+other vocabularies (below), and any organisation-specific reference data an adopter adds. An earlier
+revision carried a second copy of the lifecycle values here as SKOS concepts; that copy is
+withdrawn, because two IRIs for one value is the failure mode this boundary exists to prevent.'''@en ;
+.
+
+
+## Cross-module lifecycle alignment ───────────────────────────
+##
+## The lifecycle values themselves are named individuals in the ontology
+## (bs:Experimental, bs:Production, bs:DeprecatedState) per DD-23. What belongs
+## here is their correspondence to the notation-agnostic stage set in the
+## Architecture Processes extension — a mapping, not a vocabulary, and one an
+## adopter may legitimately disagree with and replace.
+##
+## closeMatch rather than exactMatch throughout: the pairs are semantically
+## adjacent, not interchangeable. Backstage lifecycle describes how a catalogue
+## entry should be consumed; ap: stages describe where an asset sits in a managed
+## lifecycle. Backstage has no equivalent of ap:Plan or ap:Retired, and ap: has no
+## notion of "signals low reliability guarantees".
+
+bs:Experimental
+    skos:closeMatch ap:PhaseIn ;
+    rdfs:seeAlso    <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ,
+                    <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Component.v1alpha1.schema.json> ;
+.
+
+bs:Production
+    skos:closeMatch ap:Active ;
+    rdfs:seeAlso    <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ,
+                    <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Component.v1alpha1.schema.json> ;
+.
+
+bs:DeprecatedState
+    skos:closeMatch ap:PhaseOut ;
+    rdfs:seeAlso    <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ,
+                    <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Component.v1alpha1.schema.json> ;
+.

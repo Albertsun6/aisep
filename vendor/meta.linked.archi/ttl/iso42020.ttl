@@ -1,0 +1,170 @@
+@prefix owl:             <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:             <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:            <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:             <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix adms:            <http://www.w3.org/ns/adms#> .
+@prefix dcterms:         <http://purl.org/dc/terms/> .
+@prefix bibo:            <http://purl.org/ontology/bibo/> .
+@prefix vaem:            <http://www.linkedmodel.org/schema/vaem> .
+@prefix vann:            <http://purl.org/vocab/vann/> .
+@prefix pav:             <http://purl.org/pav/> .
+@prefix prov:            <http://www.w3.org/ns/prov#> .
+@prefix cc:              <http://creativecommons.org/ns#> .
+
+@prefix skos:            <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:          <http://schema.org/> .
+@prefix arch:            <https://meta.linked.archi/core#> .
+@prefix ap:              <https://meta.linked.archi/arch-processes#> .
+@prefix ad:              <https://meta.linked.archi/arch-decision#> .
+@prefix :                <https://meta.linked.archi/iso42020#> .
+
+<https://meta.linked.archi/iso42020#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   ap: ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/iso42020#" ;
+    vann:preferredNamespacePrefix "iso42020" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ISO/IEC/IEEE 42020 Architecture Governance Processes"@en ;
+    dcterms:description                '''
+SKOS taxonomy and OWL classes for architecture governance processes from ISO/IEC/IEEE 42020:2019.
+Covers the six architecture processes for governing and managing the architecture of systems and
+software: architecture governance, architecture management, architecture conceptualization,
+architecture evaluation, architecture elaboration, and architecture enablement.
+                                   '''@en ;
+    dcterms:abstract              '''
+Architecture governance process concepts from ISO/IEC/IEEE 42020, modelled as SKOS concepts and OWL classes
+for use in architecture descriptions and governance assessments.
+      '''@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-07-16"^^xsd:date ;
+    dcterms:publisher
+                                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    dcterms:source  <https://www.iso.org/standard/68982.html> ;
+    prov:wasDerivedFrom <https://www.iso.org/standard/68982.html> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/iso42020/0.2.0#> ;
+    owl:priorVersion              <https://meta.linked.archi/iso42020/0.1.0#> ;
+    owl:versionInfo               "0.2.0" ;
+    schema:citation               "ISO/IEC/IEEE 42020:2019 Software, systems and enterprise — Architecture processes" ;
+    prov:wasDerivedFrom           "ISO/IEC/IEEE 42020:2019" ;
+    rdfs:seeAlso                  <https://www.iso.org/standard/68982.html> ;
+.
+
+## ─── OWL Classes ──────────────────────────────────────────────────────────────
+
+:Process
+    a               owl:Class ;
+    rdfs:subClassOf ap:ArchitectureProcess ;
+    skos:prefLabel  "Process"@en ;
+    skos:definition "A set of interrelated or interacting activities that transforms inputs into outputs, as defined in ISO/IEC/IEEE 42020."@en ;
+.
+
+:Activity
+    a               owl:Class ;
+    rdfs:subClassOf ap:ProcessActivity ;
+    skos:prefLabel  "Activity"@en ;
+    skos:definition "A set of cohesive tasks within a process that contributes to the achievement of the process purpose."@en ;
+.
+
+:Task
+    a               owl:Class ;
+    rdfs:subClassOf ap:ProcessTask ;
+    skos:prefLabel  "Task"@en ;
+    skos:definition "A requirement, recommendation, or permissible action intended to contribute to the achievement of one or more outcomes of a process."@en ;
+.
+
+:InformationItem
+    a               owl:Class ;
+    rdfs:subClassOf ap:InformationItem ;
+    skos:prefLabel  "InformationItem"@en ;
+    skos:definition "A separately identifiable body of information that is produced, stored, and delivered for human use."@en ;
+.
+
+:Deliverable
+    a               owl:Class ;
+    rdfs:subClassOf ap:ProcessDeliverable ;
+    skos:prefLabel  "Deliverable"@en ;
+    skos:definition "A required output of a process that must be formally delivered to a stakeholder."@en ;
+.
+
+:ArchitectureRepository
+    a               owl:Class ;
+    skos:prefLabel  "Architecture Repository"@en ;
+    skos:definition "A managed store of architecture information items, models, methods, guidance, and reusable assets that supports the architecture practice. Established and maintained by the architecture enablement process."@en ;
+    skos:scopeNote  "The architecture repository is the primary enabling resource produced by the architecture enablement process. It holds the artefacts consumed and produced across the other architecture processes and provides the shared basis for reuse, traceability, and governance."@en ;
+    rdfs:seeAlso    <https://pubs.opengroup.org/togaf-standard/architecture-content/chap07.html> ;
+.
+
+## ─── Properties ───────────────────────────────────────────────────────────────
+
+:input
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "input"@en ;
+    skos:definition      "An information item, model, or artifact consumed by a process."@en ;
+    rdfs:domain          :Process ;
+    schema:rangeIncludes :InformationItem,
+                         arch:Metamodel,
+                         arch:Model,
+                         ad:Force ;
+.
+
+:output
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "output"@en ;
+    skos:definition      "An information item, model, or artifact produced by a process."@en ;
+    rdfs:domain          :Process ;
+    schema:rangeIncludes :InformationItem,
+                         arch:Metamodel,
+                         arch:Model,
+                         ad:Decision ;
+.
+
+:maintains
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "maintains"@en ;
+    skos:definition      "Links a process to an enabling resource, such as the architecture repository, that it establishes and keeps current."@en ;
+    rdfs:domain          :Process ;
+    schema:rangeIncludes :ArchitectureRepository ;
+.
+
+## ─── Architecture Process Areas (SKOS Concepts) ─────────────────────────────
+
+:ArchitectureGovernance
+    a               :Process ;
+    skos:prefLabel  "Architecture Governance"@en ;
+    skos:definition "The overarching process for establishing and maintaining the governance framework that directs and controls architecture activities across the organization, ensuring alignment with business goals and compliance with policies."@en ;
+.
+
+:ArchitectureManagement
+    a               :Process ;
+    skos:prefLabel  "Architecture Management"@en ;
+    skos:definition "The process for planning, organizing, directing, and controlling the architecture effort, including the coordination of architecture work, allocation of resources, and management of architecture information across the architecture endeavours."@en ;
+.
+
+:ArchitectureConceptualization
+    a               :Process ;
+    skos:prefLabel  "Architecture Conceptualization"@en ;
+    skos:definition "The process of developing an initial architecture concept that captures the essential ideas, stakeholder concerns, and high-level structure of the system to guide subsequent architecture elaboration."@en ;
+.
+
+:ArchitectureEvaluation
+    a               :Process ;
+    skos:prefLabel  "Architecture Evaluation"@en ;
+    skos:definition "The process of systematically assessing an architecture against its stated requirements, quality attributes, and stakeholder concerns to determine its fitness for purpose."@en ;
+.
+
+:ArchitectureElaboration
+    a               :Process ;
+    skos:prefLabel  "Architecture Elaboration"@en ;
+    skos:definition "The process of refining and detailing the architecture from its conceptual form into a sufficiently complete description to support implementation, integration, and verification activities."@en ;
+.
+
+:ArchitectureEnablement
+    a               :Process ;
+    skos:prefLabel  "Architecture Enablement"@en ;
+    skos:definition "The process of establishing and sustaining the resources, methods, tools, competencies, and infrastructure — including the architecture repository — that enable the architecture practice and support the other architecture processes."@en ;
+    :maintains      :ArchitectureRepository ;
+.

@@ -1,0 +1,14 @@
+# v0.4 review (spec §6.7) valid: timezone-less start (read as UTC) before a +08:00 end; neither L1 nor L3 EG24 reports it.
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+:ac a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "组件"@zh .
+:boss a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "架构师"@zh .
+:bot a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "编码代理"@zh .
+:act a aisep:AgentActivity ; arch:inModel :t ; skos:prefLabel "AI 活动"@zh ; prov:wasAssociatedWith :bot ; prov:startedAtTime "2026-11-19T18:30:00"^^xsd:dateTime ; prov:endedAtTime "2026-11-20T03:00:00+08:00"^^xsd:dateTime ; aisep:sessionRef "s" ; aisep:branch "b" ; aisep:baseCommit "0a1b2c3d4e5f60718293a4b5c6d7e8f901234567" ; aisep:headCommit "3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e" .

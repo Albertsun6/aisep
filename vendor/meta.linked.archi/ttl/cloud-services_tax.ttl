@@ -1,0 +1,301 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix :        <https://meta.linked.archi/cloud-services/tax#> .
+
+<https://meta.linked.archi/cloud-services/tax#>
+    a                             skos:ConceptScheme ;
+    skos:prefLabel                "Cloud Services Taxonomy"@en ;
+    dcterms:title                 "Linked.Archi Cloud Services Taxonomy"@en ;
+    dcterms:description           '''Classification of concrete cloud products and services, common to the cloud
+providers: the service categories — compute, storage, databases and so on — and the service
+models, infrastructure, platform and software as a service. Each category carries, as alternative labels, the
+names Microsoft Azure, Amazon Web Services and Google Cloud give it in their product catalogues, so that a
+product of any of them finds its category under the name it is known by. An element of a model takes them by
+the cloud services extension's properties, cs:serviceCategory and cs:serviceModel. Trademarked names referenced
+herein are property of their respective owners.'''@en ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/cloud-services/tax#" ;
+    vann:preferredNamespacePrefix "cstax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:created               "2026-11-14"^^xsd:date ;
+    dcterms:modified              "2026-11-14"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source                <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/>,
+                                  <https://cloud.google.com/products/>, <https://csrc.nist.gov/pubs/sp/800/145/final> ;
+    skos:hasTopConcept            :ServiceCategory, :ServiceModel ;
+.
+
+
+#################################################################
+# Service categories
+#################################################################
+
+:ServiceCategory
+    a                 skos:Concept ;
+    skos:prefLabel    "Service Category"@en ;
+    skos:definition   "What a cloud product or service is for — compute, storage, databases and so on — common to the cloud providers. Each narrower concept is a category."@en ;
+    skos:scopeNote    "The providers each sort their catalogue into categories of their own; these are the categories they share, each with the names the providers give it."@en ;
+    skos:topConceptOf <https://meta.linked.archi/cloud-services/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/cloud-services/tax#> ;
+.
+
+:Compute
+    a               skos:Concept ;
+    skos:prefLabel  "Compute"@en ;
+    skos:definition "Services that run workloads: virtual machines, serverless functions and batch processing."@en ;
+    skos:note       "Named in the product catalogues — Azure: Compute; AWS: Compute; Google Cloud: Compute."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/compute/>, <https://cloud.google.com/products/compute> ;
+.
+
+:AI_ML
+    a               skos:Concept ;
+    skos:prefLabel  "AI and Machine Learning"@en ;
+    skos:altLabel   "AI + machine learning"@en, "Artificial Intelligence"@en ;
+    skos:definition "Services to build, train, deploy and use machine-learning models, and AI capabilities such as language, vision and speech."@en ;
+    skos:note       "Named in the product catalogues — Azure: AI + machine learning; AWS: Artificial Intelligence; Google Cloud: AI and Machine Learning."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/>, <https://cloud.google.com/products/ai> ;
+.
+
+:Analytics
+    a               skos:Concept ;
+    skos:prefLabel  "Analytics"@en ;
+    skos:altLabel   "Data Analytics"@en ;
+    skos:definition "Services to process, analyse and visualise data at scale: data warehouses, stream and big-data processing, and business intelligence."@en ;
+    skos:note       "Named in the product catalogues — Azure: Analytics; AWS: Analytics; Google Cloud: Data Analytics."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/>, <https://cloud.google.com/solutions/data-analytics-and-ai> ;
+.
+
+:Blockchain
+    a               skos:Concept ;
+    skos:prefLabel  "Blockchain"@en ;
+    skos:altLabel   "Web3"@en ;
+    skos:definition "Services to run distributed ledgers and blockchain networks, and to build applications on them."@en ;
+    skos:note       "Named in the product catalogues — Google Cloud: Web3. Azure and AWS list no product category of their own for it."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://cloud.google.com/web3> ;
+.
+
+:Containers
+    a               skos:Concept ;
+    skos:prefLabel  "Containers"@en ;
+    skos:definition "Services to build, store, orchestrate and run containers: container registries, and managed Kubernetes and container platforms."@en ;
+    skos:note       "Named in the product catalogues — Azure: Containers; Google Cloud: Containers. AWS lists its container services under Compute."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://cloud.google.com/containers> ;
+.
+
+:Databases
+    a               skos:Concept ;
+    skos:prefLabel  "Databases"@en ;
+    skos:definition "Managed database services: relational, document, key-value, graph, time-series and in-memory databases."@en ;
+    skos:note       "Named in the product catalogues — Azure: Databases; AWS: Databases; Google Cloud: Databases."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/databases/>, <https://cloud.google.com/products/databases> ;
+.
+
+:DeveloperTools
+    a               skos:Concept ;
+    skos:prefLabel  "Developer Tools"@en ;
+    skos:definition "Services that support writing, building and testing software: development environments, SDKs, code repositories and test tooling."@en ;
+    skos:note       "Named in the product catalogues — Azure: Developer tools; AWS: Developer Tools; Google Cloud: Developer Tools."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/developer-tools/>, <https://cloud.google.com/products/tools> ;
+.
+
+:DevOps
+    a               skos:Concept ;
+    skos:prefLabel  "DevOps"@en ;
+    skos:definition "Services that automate building, testing, releasing and operating software: pipelines, artefact repositories and infrastructure as code."@en ;
+    skos:note       "Named in the product catalogues — Azure: DevOps. AWS and Google Cloud list these services under Developer Tools."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/> ;
+.
+
+:Identity
+    a               skos:Concept ;
+    skos:prefLabel  "Identity"@en ;
+    skos:definition "Services that manage identities and access: directories, authentication, single sign-on and authorisation."@en ;
+    skos:note       "Named in the product catalogues — Azure: Identity; AWS: Security & Identity; Google Cloud: Security and Identity. AWS and Google Cloud list identity and security as one category, Security & Identity and Security and Identity."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/security/>, <https://cloud.google.com/products/security-and-identity> ;
+.
+
+:Integration
+    a               skos:Concept ;
+    skos:prefLabel  "Integration"@en ;
+    skos:altLabel   "Application Integration"@en, "Integration Services"@en ;
+    skos:definition "Services that connect applications and data: messaging, event routing, API management and workflow orchestration."@en ;
+    skos:note       "Named in the product catalogues — Azure: Integration; AWS: Application Integration; Google Cloud: Integration Services."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/application-integration/>, <https://cloud.google.com/integration-services> ;
+.
+
+:IoT
+    a               skos:Concept ;
+    skos:prefLabel  "Internet of Things"@en ;
+    skos:definition "Services to connect and manage devices, and to process the data they send from the edge."@en ;
+    skos:note       "Named in the product catalogues — Azure: Internet of Things."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/> ;
+.
+
+:ManagementandGovernance
+    a               skos:Concept ;
+    skos:prefLabel  "Management and Governance"@en ;
+    skos:altLabel   "Management Tools"@en ;
+    skos:definition "Services to monitor, manage and govern the use of cloud resources: monitoring and logging, policy, cost management and automation."@en ;
+    skos:note       "Named in the product catalogues — Azure: Management and governance; AWS: Management Tools; Google Cloud: Management Tools. AWS and Google Cloud also list operations — monitoring and logging — as a category of its own, Operations."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/management-and-governance/>, <https://cloud.google.com/products/management> ;
+.
+
+:Media
+    a               skos:Concept ;
+    skos:prefLabel  "Media"@en ;
+    skos:altLabel   "Media Services"@en ;
+    skos:definition "Services to encode, store, stream and deliver audio and video."@en ;
+    skos:note       "Named in the product catalogues — Azure: Media; AWS: Media Services."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/> ;
+.
+
+:Migration
+    a               skos:Concept ;
+    skos:prefLabel  "Migration"@en ;
+    skos:altLabel   "Migration & Modernization"@en ;
+    skos:definition "Services to assess, move and modernise workloads, data and databases into the cloud."@en ;
+    skos:note       "Named in the product catalogues — Azure: Migration; AWS: Migration & Modernization; Google Cloud: Migration."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/migration-and-modernization/>, <https://cloud.google.com/products/cloud-migration> ;
+.
+
+:MixedReality
+    a               skos:Concept ;
+    skos:prefLabel  "Mixed Reality"@en ;
+    skos:definition "Services to build augmented, mixed and virtual reality experiences."@en ;
+    skos:note       "Named in the product catalogues — Azure: Mixed reality."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/> ;
+.
+
+:Mobile
+    a               skos:Concept ;
+    skos:prefLabel  "Mobile"@en ;
+    skos:definition "Services to build, run and engage with mobile applications: back ends, notifications and app distribution."@en ;
+    skos:note       "Named in the product catalogues — Azure: Mobile."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/> ;
+.
+
+:Networking
+    a               skos:Concept ;
+    skos:prefLabel  "Networking"@en ;
+    skos:altLabel   "Networking & Content Delivery"@en ;
+    skos:definition "Services that connect and deliver: virtual networks, load balancing, DNS, content delivery and private connectivity."@en ;
+    skos:note       "Named in the product catalogues — Azure: Networking; AWS: Networking & Content Delivery; Google Cloud: Networking."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/networking/>, <https://cloud.google.com/products/networking> ;
+.
+
+:Security
+    a               skos:Concept ;
+    skos:prefLabel  "Security"@en ;
+    skos:definition "Services that protect workloads and data: threat detection, key and secret management, firewalls and security posture management."@en ;
+    skos:note       "Named in the product catalogues — Azure: Security; AWS: Security & Identity; Google Cloud: Security and Identity. AWS and Google Cloud list security and identity as one category, Security & Identity and Security and Identity."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/security/>, <https://cloud.google.com/products/security-and-identity> ;
+.
+
+:Storage
+    a               skos:Concept ;
+    skos:prefLabel  "Storage"@en ;
+    skos:definition "Services that store data: object, block, file and archive storage, and data transfer."@en ;
+    skos:note       "Named in the product catalogues — Azure: Storage; AWS: Storage; Google Cloud: Storage."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://aws.amazon.com/products/storage/>, <https://cloud.google.com/products/storage> ;
+.
+
+:Web
+    a               skos:Concept ;
+    skos:prefLabel  "Web"@en ;
+    skos:altLabel   "Web and app hosting"@en ;
+    skos:definition "Services to host and run web applications and APIs."@en ;
+    skos:note       "Named in the product catalogues — Azure: Web; Google Cloud: Web and app hosting."@en ;
+    skos:broader    :ServiceCategory ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://azure.microsoft.com/en-us/products/>, <https://cloud.google.com/products/> ;
+.
+
+
+#################################################################
+# Service models (NIST SP 800-145)
+#################################################################
+
+:ServiceModel
+    a                 skos:Concept ;
+    skos:prefLabel    "Service Model"@en ;
+    skos:definition   "How much of a cloud service the provider manages and how much the consumer does: infrastructure, platform or software as a service. Each narrower concept is a service model."@en ;
+    skos:topConceptOf <https://meta.linked.archi/cloud-services/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source    <https://csrc.nist.gov/pubs/sp/800/145/final> ;
+.
+
+:IaaS
+    a               skos:Concept ;
+    skos:prefLabel  "Infrastructure as a Service"@en ;
+    skos:altLabel   "IaaS"@en ;
+    skos:definition "The consumer provisions processing, storage, networks and other basic computing resources and runs software of its own on them, operating systems included; the provider manages the infrastructure beneath."@en ;
+    skos:broader    :ServiceModel ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://csrc.nist.gov/pubs/sp/800/145/final> ;
+.
+
+:PaaS
+    a               skos:Concept ;
+    skos:prefLabel  "Platform as a Service"@en ;
+    skos:altLabel   "PaaS"@en ;
+    skos:definition "The consumer deploys applications of its own onto the provider's platform, with the languages, libraries, services and tools it supports; the provider manages the infrastructure, operating systems and runtime."@en ;
+    skos:broader    :ServiceModel ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://csrc.nist.gov/pubs/sp/800/145/final> ;
+.
+
+:SaaS
+    a               skos:Concept ;
+    skos:prefLabel  "Software as a Service"@en ;
+    skos:altLabel   "SaaS"@en ;
+    skos:definition "The consumer uses the provider's applications, running on cloud infrastructure; the provider manages everything beneath them and the applications themselves, but for settings particular to the consumer."@en ;
+    skos:broader    :ServiceModel ;
+    skos:inScheme   <https://meta.linked.archi/cloud-services/tax#> ;
+    dcterms:source  <https://csrc.nist.gov/pubs/sp/800/145/final> ;
+.

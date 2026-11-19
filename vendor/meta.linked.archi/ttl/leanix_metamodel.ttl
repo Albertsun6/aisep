@@ -1,0 +1,148 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix lmmvp:   <https://meta.linked.archi/leanix/viewpoints#> .
+@prefix lmmtax:  <https://meta.linked.archi/leanix/tax#> .
+@prefix lmm3mm:  <https://meta.linked.archi/leanix/v3/metamodel#> .
+@prefix :        <https://meta.linked.archi/leanix/metamodel#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/leanix/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/leanix/metamodel#" ;
+    vann:preferredNamespacePrefix "lmmmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi LeanIX Meta Model Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for the SAP LeanIX Meta Model v4. Ties together
+the LeanIX fact sheet ontology, shapes, viewpoints, taxonomy, notation set and
+deliverable templates into a single discoverable resource. Reference data and
+presentation contexts can be added later.
+
+Also the home of the version-free arch:Framework individual for SAP LeanIX,
+which the v3 manifest at leanix/v3/metamodel# points at as well.'''@en ;
+    dcterms:created               "2026-04-16"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/leanix/metamodel/0.2.0#> ;
+    owl:versionInfo               "0.2.0"@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    prov:wasDerivedFrom <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    rdfs:seeAlso                  <https://help.sap.com/docs/leanix/ea/meta-model> ;
+.
+
+
+#################################################################
+# LeanIX Framework Individual
+#
+# One arch:Framework per language family, in a namespace that carries no
+# version (DD-25). Both meta model versions point arch:basedOnFramework here,
+# so the language-level question is one hop and does not grow an enumeration
+# with each release.
+#################################################################
+
+:LeanIXFramework
+    a               arch:Framework ;
+    skos:prefLabel  "SAP LeanIX Enterprise Architecture"@en ;
+    skos:definition '''SAP LeanIX Enterprise Architecture Management — a SaaS platform for
+managing the application portfolio, technology landscape, and business
+capabilities of an organization.'''@en ;
+    skos:scopeNote  '''The framework is the product, not a release of its meta model. Meta Model v4
+(12 default fact sheet types plus three optional types across four architecture layers) and Meta Model
+v3 (13 types including User Group, Project and Tech Platform) are both versions of it, declared as
+:LeanIXv4 here and lmm3mm:LeanIXv3 in leanix/v3/metamodel#.'''@en ;
+    dcterms:publisher    "SAP" ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/meta-model>,
+                    <https://help.sap.com/docs/leanix/ea/fact-sheets> ;
+.
+
+## The v3 link is asserted here as well as in leanix/v3/metamodel#, so that a
+## consumer who dereferences the framework IRI alone still finds both versions
+## rather than only the one whose document they happened to load. RDF merge makes
+## the duplication harmless. Same arrangement as
+## modelingLanguages/archimate/archimate-framework.ttl. :LeanIXv4 needs no such
+## line — it declares arch:basedOnFramework below, in this same document.
+
+lmm3mm:LeanIXv3 arch:basedOnFramework :LeanIXFramework .
+
+
+#################################################################
+# LeanIX Metamodel Instance
+#################################################################
+
+:LeanIXv4
+    a                             arch:Metamodel ;
+    skos:prefLabel                "LeanIX Meta Model v4 Metamodel"@en ;
+    owl:versionInfo               "4"@en ;
+    dcterms:description               '''The complete LeanIX Meta Model v4 metamodel definition, aggregating
+the fact sheet ontology, shapes, viewpoints, taxonomy, notation set and deliverable
+templates. Reference data and presentation contexts can be added later.'''@en ;
+    skos:scopeNote                '''owl:versionInfo "4" is the meta model version — what a model
+conforms to. The 0.2.0 on the ontology header above is this document's own version. DD-25 puts the
+language version on the arch:Metamodel individual for exactly this reason.'''@en ;
+
+    ## Foundation
+    arch:basedOnFramework         :LeanIXFramework ;
+
+    ## Model concepts — fact sheet types and relationships
+    ## File: leanIX-v4-onto.ttl
+    arch:modelConcepts            <https://meta.linked.archi/leanix/onto#> ;
+
+    ## SHACL shapes — element naming (v4 and v3 namespaces)
+    ## File: leanIX-shapes.ttl
+    arch:formalRules              <https://meta.linked.archi/leanix/shapes#> ;
+
+    ## Cross-language mappings — LeanIX v4 ↔ ArchiMate 3.2, LeanIX v4 ↔ ArchiMate 4.0
+    ## File: leanIX-crossmappings.ttl
+    arch:crossLanguageMappings    <https://meta.linked.archi/leanix/crossmappings#> ;
+
+    ## Viewpoints
+    ## File: leanIX-viewpoints.ttl
+    arch:architectureViewpoints   <https://meta.linked.archi/leanix/viewpoints#> ;
+
+    ## Concept classification — SKOS taxonomy (by architecture layer)
+    ## File: leanIX-tax.ttl
+    arch:conceptClassification    <https://meta.linked.archi/leanix/tax#>,
+                                  <https://meta.linked.archi/arch-processes/tax#> ;
+    arch:paletteGrouping          <https://meta.linked.archi/leanix/tax#PaletteGrouping> ;
+
+    ## Visual notation set — default element/relationship appearance
+    ## File: leanIX-notation.ttl
+    arch:notationSet              <https://meta.linked.archi/leanix/notation#LeanIXStandardNotation> ;
+
+    ## Viewpoint library
+    ## File: leanIX-viewpoints.ttl
+    arch:viewpointLibrary         lmmvp:ViewpointCatalog ;
+
+    ## Deliverable templates
+    ## File: leanIX-deliverable-templates.ttl
+    arch:hasDeliverableTemplate
+        <https://meta.linked.archi/leanix/deliverable-templates#ApplicationPortfolioReport>,
+        <https://meta.linked.archi/leanix/deliverable-templates#TransformationPlanDocument> ;
+
+    ## Stakeholders (referencing core viewpoint individuals)
+    arch:metamodelIdentifiesStakeholder
+        archvp:EnterpriseArchitect,
+        archvp:ApplicationArchitect,
+        archvp:BusinessArchitect,
+        archvp:CIO ;
+
+    ## Concerns (referencing core viewpoint individuals)
+    arch:metamodelIdentifiesConsideration
+        archvp:StructureConcern,
+        archvp:DependencyConcern,
+        archvp:GovernanceConcern,
+        archvp:EvolutionConcern ;
+.

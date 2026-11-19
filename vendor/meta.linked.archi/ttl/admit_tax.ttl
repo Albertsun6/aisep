@@ -1,0 +1,187 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix schema:  <http://schema.org/> .
+@prefix refa:    <https://meta.linked.archi/ref-arch#> .
+@prefix admit:   <https://meta.linked.archi/admit/onto#> .
+@prefix :        <https://meta.linked.archi/admit/tax#> .
+
+
+<https://meta.linked.archi/admit/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "ADMIT Concept Scheme"@en ;
+    dcterms:description  "Classification of architecture concepts from the ADMIT framework."@en ;
+    skos:hasTopConcept :ArchitectureLevel, :ArchitectureDomain,
+                       :ArchitectureAndResourceDimension, :ArchitectureDesignForces,
+                       :ArchitectureDevelopmentLifecycle ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/admit/tax#" ;
+    vann:preferredNamespacePrefix "admittax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ADMIT Framework Taxonomy"@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-05-02"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en ;
+    prov:wasDerivedFrom           "ADMIT Framework (Prasad Rao, InfoQ 2014)" ;
+    rdfs:seeAlso                  <https://www.infoq.com/articles/admit-architecture-framework/> .
+
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Architecture Levels
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ArchitectureLevel
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/admit/tax#> ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "Architecture Level"@en ;
+    skos:definition "Architecture level represents the scope boundary and granularity of details the architectural activity should take, based on organization hierarchy and communication audience."@en .
+
+:EnterpriseArchitecture
+    a skos:Concept ; skos:broader :ArchitectureLevel ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "Enterprise Architecture"@en ; skos:altLabel "Company level"@en ;
+    skos:definition "Enterprise Architecture (Company level) aligns technological strategies and execution plans with business visions and objectives by providing architectural oversight and guidance. Enterprise architecture also drives consolidation, reuse, and economy of scale by addressing company-wide goals in a holistic way across all IT projects."@en .
+
+:SolutionArchitecture
+    a skos:Concept ; skos:broader :ArchitectureLevel ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "Solution Architecture"@en ; skos:altLabel "Department level"@en ;
+    skos:definition "Solution Architecture (Department level) models a solution vision that defines the IT systems, business processes and reusable services for a specific business unit, spanning across business and technology architectures."@en .
+
+:SystemArchitecture
+    a skos:Concept ; skos:broader :ArchitectureLevel ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "System Architecture"@en ; skos:altLabel "Team level"@en ;
+    skos:definition "System Architecture (Team level) defines the structure of an information system in terms of various subsystem components and their relationships with internal and external systems. System architecture focuses on application, data, and technology, and is called software architecture in some organizations."@en .
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Architecture Domains
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ArchitectureDomain
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/admit/tax#> ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "Architecture Domain"@en ;
+    skos:definition "IT architecture encompasses four domains from an information management perspective, based on the components of enterprise, solution, and system architectures."@en ;
+    schema:image <https://res.infoq.com/articles/admit-architecture-framework/en/resources/admit-figure1.jpg> .
+
+:BusinessArchitecture
+    a skos:Concept ; skos:broader :ArchitectureDomain ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "Business Architecture"@en ; skos:altLabel "Why domain"@en ;
+    skos:definition "Business Architecture (Why domain) represents the business-centric view of the enterprise from a functional perspective. Business processes, business services, and business rules are defined and designed along with the business operating model, business performance goals, and organizational structure."@en .
+
+:InformationDataArchitecture
+    a skos:Concept ; skos:broader :ArchitectureDomain ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "Information/Data Architecture"@en ; skos:altLabel "What domain"@en ;
+    skos:definition "Information/Data Architecture (What domain) describes the data assets and management resources, such as information catalogs, data models, data-flows, data quality, and data security, to support critical business functions and the governance models to share data across enterprise."@en .
+
+:ApplicationServiceArchitecture
+    a skos:Concept ; skos:broader :ArchitectureDomain ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "Application/Service Architecture"@en ; skos:altLabel "How domain"@en ;
+    skos:definition "Application/Service Architecture (How domain) provides the blueprint for applications and services and their alignment with other business processes and services."@en .
+
+:TechnologyTechnicalArchitecture
+    a skos:Concept ; skos:broader :ArchitectureDomain ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "Technology/Technical Architecture"@en ; skos:altLabel "Where domain"@en ;
+    skos:definition "Technology/Technical Architecture (Where domain) addresses the technology stack, data center, cloud delivery, network topology, and security architecture."@en .
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Architecture and Resource Dimensions
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ArchitectureAndResourceDimension
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/admit/tax#> ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "Architecture and Resource Dimension"@en ;
+    skos:definition "Technology architecture prepares the infrastructure environment by optimizing the use of system resources to meet key business demands. A balanced mix of workload, demand, throughput, and latency for a desired capacity and redundancy is required."@en .
+
+:Workload       a skos:Concept ; skos:broader :ArchitectureAndResourceDimension ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Workload"@en ; skos:definition "Computational tasks being performed within the system, consuming available processor capacity."@en .
+:Demand         a skos:Concept ; skos:broader :ArchitectureAndResourceDimension ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Demand"@en ; skos:definition "User load addressing average and peak capacities, mostly consuming memory for session, state and cache."@en .
+:Throughput     a skos:Concept ; skos:broader :ArchitectureAndResourceDimension ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Throughput"@en ; skos:definition "Volume of data transferred to and from storage, measured in I/O operations per second or megabytes per second."@en .
+:Latency        a skos:Concept ; skos:broader :ArchitectureAndResourceDimension ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Latency"@en ; skos:definition "Round-trip time and processing delay of network resources."@en .
+:Capacity       a skos:Concept ; skos:broader :ArchitectureAndResourceDimension ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Capacity"@en ; skos:definition "Raw resource power — CPU, memory, network, storage — contributing to vertical scaling."@en .
+:Redundancy     a skos:Concept ; skos:broader :ArchitectureAndResourceDimension ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Redundancy"@en ; skos:definition "Multiple machines sharing workloads or providing seamless failover, contributing to horizontal scaling."@en .
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Architecture Design Forces (classification — links to OWL classes in onto)
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ArchitectureDesignForces
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/admit/tax#> ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "Architecture Design Forces"@en ; skos:altLabel "ADF"@en ;
+    skos:definition "Design forces focus on the strategies and techniques of developing the architecture systematically. ADFs are used to drive the methodical development of any architecture."@en ;
+    schema:image <https://res.infoq.com/articles/admit-architecture-framework/en/resources/admit-figure2large.jpg> .
+
+:BusinessForceConcept           a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Business Force"@en ; rdfs:seeAlso admit:BusinessForce .
+:OperationForceConcept          a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Operation Force"@en ; rdfs:seeAlso admit:OperationForce .
+:AestheticismForceConcept       a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Aestheticism Force"@en ; rdfs:seeAlso admit:AestheticismForce .
+:FutureForceConcept             a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Future Force"@en ; rdfs:seeAlso admit:FutureForce .
+:SimplicityForceConcept         a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Simplicity Force"@en ; rdfs:seeAlso admit:SimplicityForce .
+:ChangeForceConcept             a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Change Force"@en ; rdfs:seeAlso admit:ChangeForce .
+:ProcessForceConcept            a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Process Force"@en ; rdfs:seeAlso admit:ProcessForce .
+:IntegrationForceConcept        a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Integration Force"@en ; rdfs:seeAlso admit:IntegrationForce .
+:ImplementationPatternForceConcept a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Implementation/Pattern Force"@en ; rdfs:seeAlso admit:ImplementationPatternForce .
+:EnterpriseForceConcept         a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Enterprise Force"@en ; rdfs:seeAlso admit:EnterpriseForce .
+:ConstraintEnvironmentForceConcept a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Constraint/Environment Force"@en ; rdfs:seeAlso admit:ConstraintEnvironmentForce .
+:FailureForceConcept            a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Failure Force"@en ; rdfs:seeAlso admit:FailureForce .
+:ChannelForceConcept            a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Channel Force"@en ; rdfs:seeAlso admit:ChannelForce .
+:ContentForceConcept            a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Content Force"@en ; rdfs:seeAlso admit:ContentForce .
+:PlatformForceConcept           a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Platform Force"@en ; rdfs:seeAlso admit:PlatformForce .
+:InfrastructureForceConcept     a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Infrastructure Force"@en ; rdfs:seeAlso admit:InfrastructureForce .
+:NetworkForceConcept            a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Network Force"@en ; rdfs:seeAlso admit:NetworkForce .
+:StorageForceConcept            a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Storage Force"@en ; rdfs:seeAlso admit:StorageForce .
+:SecurityForceConcept           a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Security Force"@en ; rdfs:seeAlso admit:SecurityForce .
+:CostForceConcept               a skos:Concept ; skos:broader :ArchitectureDesignForces ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Cost Force"@en ; rdfs:seeAlso admit:CostForce .
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Architecture Development Lifecycle (ADLC)
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ArchitectureDevelopmentLifecycle
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/admit/tax#> ; skos:inScheme <https://meta.linked.archi/admit/tax#> ;
+    skos:prefLabel "Architecture Development Lifecycle"@en ; skos:altLabel "ADLC"@en ;
+    skos:definition "Lifecycle defines the phases and processes of managing the architecture development. Fifteen processes are grouped into five phases across three areas: development, optimization, and automation."@en ;
+    schema:image <https://res.infoq.com/articles/admit-architecture-framework/en/resources/figure3resized.jpg> .
+
+:DevelopmentArea        a skos:Concept ; skos:broader :ArchitectureDevelopmentLifecycle ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Development Area"@en ; skos:definition "Encompasses the planning, design, and management phases of architecture development."@en .
+:OptimizationArea       a skos:Concept ; skos:broader :ArchitectureDevelopmentLifecycle ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Optimization Area"@en ; skos:definition "Focuses on continuous improvement of architecture and processes."@en .
+:AutomationArea         a skos:Concept ; skos:broader :ArchitectureDevelopmentLifecycle ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Automation Area"@en ; skos:definition "Focuses on using tools and technology to streamline architecture development."@en .
+
+:PlanningStrategyPhase          a skos:Concept ; skos:broader :DevelopmentArea ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Planning/Strategy Phase"@en ; skos:definition "Identifies business vision, stakeholder management, architecture strategy, and current state assessment."@en .
+:DesignExecutionPhase           a skos:Concept ; skos:broader :DevelopmentArea ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Design/Execution Phase"@en ; skos:definition "Develops target architecture, conducts gap analysis, builds roadmaps, and creates reference architectures."@en .
+:ManagementGovernancePhase      a skos:Concept ; skos:broader :DevelopmentArea ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Management/Governance Phase"@en ; skos:definition "Reviews architecture with stakeholders, initiates projects, performs governance, and manages lifecycle changes."@en .
+:OptimizationPhase              a skos:Concept ; skos:broader :OptimizationArea ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Optimization Phase"@en ; skos:definition "Focuses on continuous improvement of architecture products and development processes."@en .
+:AutomationPhase                a skos:Concept ; skos:broader :AutomationArea ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Automation Phase"@en ; skos:definition "Leverages tools and technologies to automate parts of the architecture development lifecycle."@en .
+
+## Planning/Strategy processes
+:IdentifyBusinessVisionAndStrategy      a skos:Concept ; skos:broader :PlanningStrategyPhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Identify business vision and strategy"@en ; skos:definition "Business vision and strategic plan are identified. Architecture is initiated by a business case and its objectives."@en .
+:PlanStakeholderManagement              a skos:Concept ; skos:broader :PlanningStrategyPhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Plan stakeholder management"@en ; skos:definition "Stakeholders are identified. Managing their expectations, requirements, and communication needs are keys to success."@en .
+:DefineArchitectureAndTechnologyStrategy a skos:Concept ; skos:broader :PlanningStrategyPhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Define architecture and technology strategy"@en ; skos:definition "Management and strategic direction are defined by technology standards, asset governance, and portfolio management."@en .
+:AssessCurrentArchitecture              a skos:Concept ; skos:broader :PlanningStrategyPhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Assess current architecture"@en ; skos:definition "Architecture assessment is performed by reviewing requirements and comparing them with the current architecture state."@en .
+
+## Design/Execution processes
+:DesignTargetArchitecture       a skos:Concept ; skos:broader :DesignExecutionPhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Design target architecture"@en ; skos:definition "The target architecture with future processes is developed using architecture design forces."@en .
+:ConductGapAnalysis             a skos:Concept ; skos:broader :DesignExecutionPhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Conduct gap analysis"@en ; skos:definition "Current and target architectures are compared and gaps between them are identified."@en .
+:DevelopExecutionRoadmap        a skos:Concept ; skos:broader :DesignExecutionPhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Develop execution roadmap"@en ; skos:definition "An execution roadmap with project initiatives and sequencing is developed based on business priorities."@en .
+:BuildReferenceArchitecture     a skos:Concept ; skos:broader :DesignExecutionPhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Build reference architecture"@en ; skos:definition "Reference architecture provides architectural foundation and guidance via solution blueprints and models."@en ; rdfs:seeAlso refa:ReferenceArchitecture, refa:Pattern .
+
+## Management/Governance processes
+:ReviewArchitectureWithStakeholders     a skos:Concept ; skos:broader :ManagementGovernancePhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Review architecture with stakeholders"@en ; skos:definition "Architecture views and roadmap are reviewed with stakeholders and validated for viability and feasibility."@en .
+:InitiateQuickWinProject                a skos:Concept ; skos:broader :ManagementGovernancePhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Initiate a quick-win project"@en ; skos:definition "Begin with a foundation project that emphasizes accelerating time-to-market to realize business value quickly."@en .
+:PerformImplementationGovernance        a skos:Concept ; skos:broader :ManagementGovernancePhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Perform implementation governance"@en ; skos:definition "Architecture team manages and monitors that standards and guidelines are followed by delivery teams."@en .
+:ManageLifecycleChanges                 a skos:Concept ; skos:broader :ManagementGovernancePhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Manage lifecycle changes"@en ; skos:definition "Architecture responds to changing business needs. Changes are evaluated for impact and managed proactively."@en .
+:ManageArchitectureAssets               a skos:Concept ; skos:broader :ManagementGovernancePhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Manage architecture assets"@en ; skos:definition "Deliverable artifacts such as views, models, catalogs are recorded and managed within a content repository."@en .
+
+## Optimization process
+:ImproveArchitectureAndProcessContinuously a skos:Concept ; skos:broader :OptimizationPhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Improve architecture and process continuously"@en ; skos:definition "Architectures are improved and optimized iteratively to maximize their value to the business."@en .
+
+## Automation process
+:AutomateLifecycleWithToolAndTechnology a skos:Concept ; skos:broader :AutomationPhase ; skos:inScheme <https://meta.linked.archi/admit/tax#> ; skos:prefLabel "Automate lifecycle with tool and technology"@en ; skos:definition "Appropriate tools and technologies should be used to automate parts of the development lifecycle."@en .
+

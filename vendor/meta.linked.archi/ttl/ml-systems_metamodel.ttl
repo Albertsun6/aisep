@@ -1,0 +1,74 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix mlsys:   <https://meta.linked.archi/ml-systems/onto#> .
+@prefix mlsystax: <https://meta.linked.archi/ml-systems/tax#> .
+@prefix :        <https://meta.linked.archi/ml-systems/metamodel#> .
+
+<https://meta.linked.archi/ml-systems/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ml-systems/metamodel#" ;
+    vann:preferredNamespacePrefix "mlsysmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ML-Enabled Systems Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for the ML-Enabled Systems extension. Ties together
+the ML element/relationship ontology, SKOS taxonomy, and SHACL shapes into a single
+discoverable resource.
+
+This is the entry point for tools that need to discover all resources that make up
+the ML-Enabled Systems modeling vocabulary.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ml-systems/metamodel/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://arxiv.org/abs/2308.05239> ;
+    prov:wasDerivedFrom <https://arxiv.org/abs/2308.05239> ;
+.
+
+
+#################################################################
+# Metamodel Instance
+#################################################################
+
+:MLEnabledSystems
+    a                             arch:Metamodel ;
+    skos:prefLabel                "ML-Enabled Systems Metamodel"@en ;
+    dcterms:description               '''The ML-Enabled Systems metamodel definition, aggregating the
+ML element/relationship ontology, SKOS taxonomy, and SHACL shapes. Designed to be
+composed with other metamodels (ArchiMate, C4, Backstage) via owl:imports to add
+ML-specific modeling capabilities to any architecture description.'''@en ;
+
+    ## Model concepts — ML elements, relationships, viewpoints
+    arch:modelConcepts            <https://meta.linked.archi/ml-systems/onto#> ;
+
+    ## Concept classification — SKOS taxonomy
+    arch:conceptClassification    <https://meta.linked.archi/ml-systems/tax#> ;
+
+    ## Formal rules — SHACL shapes for ML governance validation
+    arch:formalRules              <https://meta.linked.archi/ml-systems/shapes#> ;
+
+    ## Stakeholders identified by this metamodel
+    arch:metamodelIdentifiesStakeholder
+        mlsys:DataScientist, mlsys:DataEngineer,
+        mlsys:MLEngineer, mlsys:EthicsOfficer ;
+
+    ## Concerns identified by this metamodel
+    arch:metamodelIdentifiesConsideration
+        mlsys:ModelPerformanceConcern, mlsys:DataQualityConcern,
+        mlsys:ModelDriftConcern, mlsys:ExplainabilityConcern,
+        mlsys:FairnessConcern, mlsys:AdversarialRobustnessConcern,
+        mlsys:MLArtifactVersioningConcern, mlsys:MLMonitorabilityConcern,
+        mlsys:MLPrivacyConcern, mlsys:MLSECollaborationConcern ;
+.

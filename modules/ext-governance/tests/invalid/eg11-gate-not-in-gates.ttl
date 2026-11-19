@@ -1,0 +1,22 @@
+# expect: EG11:
+# Invalid: gate is not one of the five aisep:Gates (an approval-state value used as gate).
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/ext-governance-test/> .
+
+:model a arch:Model ; skos:prefLabel "治理扩展测试模型"@zh .
+:quoteSvc a am4:ApplicationComponent ; arch:inModel :model ; skos:prefLabel "报价服务"@zh .
+:chiefArchitect a arch:Stakeholder ; arch:inModel :model ; skos:prefLabel "首席架构师"@zh .
+
+:rec a aisep:ApprovalRecord ; aisep:evidence "3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e" ;
+    arch:inModel :model ;
+    skos:prefLabel "批准记录"@zh ;
+    aisep:gate aisep:DecisionApproved ;
+    aisep:decision aisep:DecisionApproved ;
+    aisep:approvedBy :chiefArchitect ;
+    aisep:approves :quoteSvc ;
+    prov:generatedAtTime "2026-11-19T11:00:00Z"^^xsd:dateTime .

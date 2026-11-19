@@ -1,0 +1,51 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix :        <https://meta.linked.archi/examples/cloudplatform/reference-data#> .
+
+<https://meta.linked.archi/examples/cloudplatform/reference-data#>
+    a owl:Ontology ;
+    cc:license "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri "https://meta.linked.archi/examples/cloudplatform/reference-data#" ;
+    vann:preferredNamespacePrefix "cpref" ;
+    dcterms:title "Cloud Platform Reference Data"@en ;
+    dcterms:created "2026-05-03"^^xsd:date ;
+    owl:versionInfo "0.1.0"@en ;
+    dcterms:description                "Controlled vocabularies and reference data for Custom Metamodel architecture models."@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+:CloudPlatformReferenceData
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "Cloud Platform Reference Data"@en ;
+    skos:hasTopConcept :ResilienceLevels, :DeploymentStrategies, :ServiceTiers, :DatabaseEngines .
+
+## Resilience Levels
+:ResilienceLevels a skos:Concept ; skos:topConceptOf :CloudPlatformReferenceData ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Resilience Levels"@en .
+:Critical a skos:Concept ; skos:broader :ResilienceLevels ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Critical"@en ; skos:definition "System failure causes immediate revenue loss, safety risk, or regulatory breach."@en .
+:High     a skos:Concept ; skos:broader :ResilienceLevels ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "High"@en ; skos:definition "System failure causes significant business disruption within hours requiring urgent response."@en .
+:Medium   a skos:Concept ; skos:broader :ResilienceLevels ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Medium"@en ; skos:definition "System failure causes moderate business impact with manual workarounds available."@en .
+:Low      a skos:Concept ; skos:broader :ResilienceLevels ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Low"@en ; skos:definition "System failure has minimal business impact and can be resolved during normal hours."@en .
+
+## Deployment Strategies
+:DeploymentStrategies a skos:Concept ; skos:topConceptOf :CloudPlatformReferenceData ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Deployment Strategies"@en .
+:BlueGreen a skos:Concept ; skos:broader :DeploymentStrategies ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Blue-Green"@en ; skos:definition "Two identical environments maintained in parallel; traffic switches instantly between them."@en .
+:Canary    a skos:Concept ; skos:broader :DeploymentStrategies ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Canary"@en ; skos:definition "Gradual rollout to a small subset of users before full production deployment."@en .
+:Rolling   a skos:Concept ; skos:broader :DeploymentStrategies ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Rolling"@en ; skos:definition "Instances updated one at a time with zero downtime and automatic rollback on failure."@en .
+:Recreate  a skos:Concept ; skos:broader :DeploymentStrategies ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Recreate"@en ; skos:definition "All existing instances terminated and recreated simultaneously with brief downtime."@en .
+
+## Service Tiers
+:ServiceTiers a skos:Concept ; skos:topConceptOf :CloudPlatformReferenceData ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Service Tiers"@en .
+:Tier1 a skos:Concept ; skos:broader :ServiceTiers ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Tier 1 (99.99%)"@en ; skos:definition "Mission-critical service requiring 99.99% uptime SLA with less than 5 minutes recovery time."@en .
+:Tier2 a skos:Concept ; skos:broader :ServiceTiers ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Tier 2 (99.9%)"@en ; skos:definition "Business-critical service requiring 99.9% uptime SLA with less than 1 hour recovery time."@en .
+:Tier3 a skos:Concept ; skos:broader :ServiceTiers ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Tier 3 (99%)"@en ; skos:definition "Operational service requiring 99% uptime SLA with less than 4 hours recovery time."@en .
+
+## Database Engines
+:DatabaseEngines a skos:Concept ; skos:topConceptOf :CloudPlatformReferenceData ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Database Engines"@en .
+:PostgreSQL a skos:Concept ; skos:broader :DatabaseEngines ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "PostgreSQL"@en .
+:MySQL      a skos:Concept ; skos:broader :DatabaseEngines ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "MySQL"@en .
+:MongoDB    a skos:Concept ; skos:broader :DatabaseEngines ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "MongoDB"@en .
+:Redis      a skos:Concept ; skos:broader :DatabaseEngines ; skos:inScheme :CloudPlatformReferenceData ; skos:prefLabel "Redis"@en .
+

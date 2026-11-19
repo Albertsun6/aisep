@@ -1,0 +1,243 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix uaf:     <https://meta.linked.archi/uaf/onto#> .
+@prefix :        <https://meta.linked.archi/uaf/shapes#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/uaf/shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/uaf/onto#>,
+                                  <https://meta.linked.archi/core-shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uaf/shapes#" ;
+    vann:preferredNamespacePrefix "uafsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi UAF SHACL Shapes"@en ;
+    dcterms:description                '''SHACL shapes for validating UAF 1.2 model data. Imports core-shapes
+for base QualifiedRelationship validation. Adds UAF-specific domain/range
+constraints per relationship type.
+
+This is not an official OMG document.'''@en ;
+    dcterms:created               "2025-12-01"^^xsd:date ;
+    dcterms:modified              "2026-08-04"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/uaf/shapes/1.2#> ;
+    owl:versionInfo               "1.2"@en ;
+    dcterms:source  <https://www.omg.org/spec/UAF/1.2/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UAF/1.2/> ;
+.
+
+#################################################################
+# Note: Base QualifiedRelationshipShape (source + target required)
+# is inherited from core-shapes via owl:imports.
+#
+# Label rules are NOT inherited. core-shapes carries no label shape, because
+# arch:Element means "a node in a model" and some notations have nodes that are
+# legitimately unnamed (BPMN gateways and events, ArchiMate junctions). Naming
+# policy is owned by each metamodel — see DD-24 in doc/guide/design-decisions.md.
+#################################################################
+
+
+#################################################################
+# Element instance requirements — the authoritative UAF naming rule
+#
+# uaf:UAFElement is the single abstract root of the UAF element hierarchy, so this
+# one target reaches all 60 element classes through rdfs:subClassOf reasoning.
+#
+# UAF has no unnamed-by-design constructs: every element is identified to the
+# reader by its name.
+#
+# Targets a UAF class, never arch:Element. In a merged multi-notation graph,
+# targeting arch:Element would impose UAF's naming policy on every other notation.
+#################################################################
+
+:UAFElementLabelShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''Requires a language-tagged skos:prefLabel on every UAF element. Reaches all
+60 element classes via the uaf:UAFElement root.'''@en ;
+    sh:targetClass uaf:UAFElement ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  '''Every UAF element must have at least one skos:prefLabel, and it must be
+language-tagged (rdf:langString), e.g. "Joint Command"@en.'''@en ;
+    ] ;
+.
+
+
+#################################################################
+# Exhibits — Performer exhibits Capability
+#################################################################
+
+:ExhibitsShape
+    a              sh:NodeShape ;
+    sh:targetClass uaf:Exhibits ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:or (
+            [ sh:class uaf:OperationalPerformer ]
+            [ sh:class uaf:ResourcePerformer ]
+        ) ;
+        sh:message  "Exhibits source must be an OperationalPerformer or ResourcePerformer."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uaf:Capability ;
+        sh:message  "Exhibits target must be a Capability."@en ;
+    ] ;
+.
+
+
+#################################################################
+# Performs — Performer performs Activity
+#################################################################
+
+:PerformsShape
+    a              sh:NodeShape ;
+    sh:targetClass uaf:Performs ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:or (
+            [ sh:class uaf:OperationalPerformer ]
+            [ sh:class uaf:ResourcePerformer ]
+        ) ;
+        sh:message  "Performs source must be an OperationalPerformer or ResourcePerformer."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:or (
+            [ sh:class uaf:OperationalActivity ]
+            [ sh:class uaf:Function ]
+        ) ;
+        sh:message  "Performs target must be an OperationalActivity or Function."@en ;
+    ] ;
+.
+
+
+#################################################################
+# Implements — Resource implements Service
+#################################################################
+
+:ImplementsShape
+    a              sh:NodeShape ;
+    sh:targetClass uaf:Implements ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uaf:ResourcePerformer ;
+        sh:message  "Implements source must be a ResourcePerformer."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uaf:Service ;
+        sh:message  "Implements target must be a Service."@en ;
+    ] ;
+.
+
+
+#################################################################
+# Realizes — Resource realizes Operational element
+#################################################################
+
+:RealizesShape
+    a              sh:NodeShape ;
+    sh:targetClass uaf:Realizes ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:or (
+            [ sh:class uaf:ResourcePerformer ]
+            [ sh:class uaf:Function ]
+        ) ;
+        sh:message  "Realizes source must be a ResourcePerformer or Function."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:or (
+            [ sh:class uaf:OperationalPerformer ]
+            [ sh:class uaf:OperationalActivity ]
+        ) ;
+        sh:message  "Realizes target must be an OperationalPerformer or OperationalActivity."@en ;
+    ] ;
+.
+
+
+#################################################################
+# CapabilityDependency — Capability depends on Capability
+#################################################################
+
+:CapabilityDependencyShape
+    a              sh:NodeShape ;
+    sh:targetClass uaf:CapabilityDependency ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uaf:Capability ;
+        sh:message  "CapabilityDependency source must be a Capability."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uaf:Capability ;
+        sh:message  "CapabilityDependency target must be a Capability."@en ;
+    ] ;
+.
+
+
+#################################################################
+# Provides — Performer provides Service
+#################################################################
+
+:ProvidesShape
+    a              sh:NodeShape ;
+    sh:targetClass uaf:Provides ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:or (
+            [ sh:class uaf:OperationalPerformer ]
+            [ sh:class uaf:ResourcePerformer ]
+        ) ;
+        sh:message  "Provides source must be an OperationalPerformer or ResourcePerformer."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uaf:Service ;
+        sh:message  "Provides target must be a Service."@en ;
+    ] ;
+.
+
+
+#################################################################
+# Consumes — Performer consumes Service
+#################################################################
+
+:ConsumesShape
+    a              sh:NodeShape ;
+    sh:targetClass uaf:Consumes ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:or (
+            [ sh:class uaf:OperationalPerformer ]
+            [ sh:class uaf:ResourcePerformer ]
+        ) ;
+        sh:message  "Consumes source must be an OperationalPerformer or ResourcePerformer."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uaf:Service ;
+        sh:message  "Consumes target must be a Service."@en ;
+    ] ;
+.

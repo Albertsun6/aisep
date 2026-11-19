@@ -1,0 +1,809 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix schema:  <http://schema.org/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix :        <https://meta.linked.archi/uaf/onto#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/uaf/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uaf/onto#" ;
+    vann:preferredNamespacePrefix "uaf" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi UAF Ontology"@en ;
+    dcterms:description                '''Linked.Archi ontology aligned to the Unified Architecture Framework
+(UAF) version 1.2, an OMG standard (formal/2025-10-01 through formal/2025-10-07).
+UAF provides a unified architecture framework superseding DoDAF, MODAF, and NAF.
+It organizes architectural data across 10 viewpoints and 11 aspects, defining
+approximately 288 metaclasses across multiple domains.
+
+This ontology models the core entity types used across UAF viewpoints as OWL
+classes extending arch:Element, and the key relationships using the three-declaration
+pattern (unqualified predicate, qualified class, qualified property).
+
+This is not an official OMG document.'''@en ;
+    dcterms:abstract              '''OWL representation of UAF 1.2 core metaclasses and relationships.
+All entity classes extend arch:Element from the Linked.Archi core ontology.'''@en ;
+    dcterms:created               "2025-12-01"^^xsd:date ;
+    dcterms:modified              "2026-02-01"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source  <https://www.omg.org/spec/UAF/1.2/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UAF/1.2/> ;
+    prov:wasDerivedFrom           "UAF 1.2 (Object Management Group, 2025)" ;
+    owl:versionIRI                <https://meta.linked.archi/uaf/onto/1.2#> ;
+    owl:versionInfo               "1.2"@en ;
+    schema:citation               "Linked.Archi UAF Ontology" ;
+    rdfs:seeAlso                  <https://www.omg.org/spec/UAF/1.2/>,
+                                  <https://www.omg.org/spec/UAF/> ;
+.
+
+
+#################################################################
+# Core / Abstract Classes
+#################################################################
+
+:UAFElement
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "UAF Element"@en ;
+    skos:definition '''The abstract base class for all UAF metaclasses. Every concept
+in the UAF metamodel is a specialization of UAFElement.'''@en ;
+.
+
+:MeasurableElement
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Measurable Element"@en ;
+    skos:definition '''An element that can have measures of effectiveness, performance,
+or suitability associated with it.'''@en ;
+.
+
+:PhaseableElement
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Phaseable Element"@en ;
+    skos:definition '''An element that can be associated with temporal phases, enabling
+roadmap and evolution planning across architecture increments.'''@en ;
+.
+
+
+#################################################################
+# Strategic Domain
+#################################################################
+
+:Capability
+    a               owl:Class ;
+    rdfs:subClassOf :MeasurableElement ;
+    skos:prefLabel  "Capability"@en ;
+    skos:definition '''The ability to achieve a desired effect under specified standards
+and conditions through a combination of ways and means to perform a set of
+activities.'''@en ;
+    skos:scopeNote  '''Capabilities are implementation-independent and describe what is
+needed, not how it is achieved. They form the basis for capability-based
+planning across the enterprise.'''@en ;
+.
+
+:CapabilityConfiguration
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Capability Configuration"@en ;
+    skos:definition '''A composite structure of resources, services, and personnel
+configured to deliver a specific capability.'''@en ;
+.
+
+:EnterpriseGoal
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Enterprise Goal"@en ;
+    skos:definition '''A high-level statement of intent or direction for the enterprise,
+providing context for decision-making and capability planning.'''@en ;
+.
+
+:EnterpriseObjective
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Enterprise Objective"@en ;
+    skos:definition '''A specific, measurable target that contributes to the achievement
+of an enterprise goal within a defined time frame.'''@en ;
+.
+
+:EnterpriseVision
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Enterprise Vision"@en ;
+    skos:definition '''A high-level aspirational description of what the enterprise seeks
+to achieve in the long term.'''@en ;
+.
+
+:Mission
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Mission"@en ;
+    skos:definition '''A clear statement of the task together with the purpose, that
+clearly indicates the action to be taken and the reason therefore.'''@en ;
+.
+
+:Opportunity
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Opportunity"@en ;
+    skos:definition '''A favorable circumstance or condition that can be exploited to
+achieve enterprise goals or deliver capabilities.'''@en ;
+.
+
+:Challenge
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Challenge"@en ;
+    skos:definition '''An unfavorable circumstance or condition that may impede the
+achievement of enterprise goals or delivery of capabilities.'''@en ;
+.
+
+:Driver
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Driver"@en ;
+    skos:definition '''An external or internal condition that motivates the enterprise
+to define its goals and implement changes.'''@en ;
+.
+
+
+#################################################################
+# Operational Domain
+#################################################################
+
+:OperationalActivity
+    a               owl:Class ;
+    rdfs:subClassOf :MeasurableElement ;
+    skos:prefLabel  "Operational Activity"@en ;
+    skos:definition '''An activity performed in the conduct of an operation or business
+process. Operational activities are implementation-independent and describe
+what needs to be done at the operational level.'''@en ;
+.
+
+:OperationalPerformer
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Operational Performer"@en ;
+    skos:definition '''A logical entity that performs operational activities. An operational
+performer may be realized by one or more resource performers.'''@en ;
+.
+
+:OperationalExchange
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Operational Exchange"@en ;
+    skos:definition '''A flow of information, energy, or materiel between operational
+performers or activities.'''@en ;
+.
+
+:OperationalAgent
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Operational Agent"@en ;
+    skos:definition '''An entity that acts on behalf of an operational performer,
+representing the binding between resource and operational domains.'''@en ;
+.
+
+:OperationalConnector
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Operational Connector"@en ;
+    skos:definition '''A communication or interaction path between operational performers
+through which operational exchanges flow.'''@en ;
+.
+
+:OperationalConstraint
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Operational Constraint"@en ;
+    skos:definition '''A rule or restriction that governs the execution of operational
+activities or the behavior of operational performers.'''@en ;
+.
+
+:HighLevelOperationalConcept
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "High-Level Operational Concept"@en ;
+    skos:definition '''A graphical and textual description of the operational concept
+showing the main operational performers and their interactions at a
+high level of abstraction.'''@en ;
+.
+
+:OperationalArchitecture
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Operational Architecture"@en ;
+    skos:definition '''A composite structure representing the complete operational
+architecture including performers, activities, exchanges, and constraints.'''@en ;
+.
+
+
+#################################################################
+# Services Domain
+#################################################################
+
+:Service
+    a               owl:Class ;
+    rdfs:subClassOf :MeasurableElement ;
+    skos:prefLabel  "Service"@en ;
+    skos:definition '''A mechanism to enable access to one or more capabilities, where
+the access is provided using a prescribed interface and is exercised
+consistent with constraints and policies as specified by the service
+description.'''@en ;
+.
+
+:ServiceFunction
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Service Function"@en ;
+    skos:definition '''A function performed by a service, representing a discrete unit
+of service behavior that contributes to the overall service capability.'''@en ;
+.
+
+:ServiceInterface
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Service Interface"@en ;
+    skos:definition '''A defined point of interaction through which a service is accessed,
+specifying the operations, protocols, and data formats available.'''@en ;
+.
+
+:ServiceContract
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Service Contract"@en ;
+    skos:definition '''An agreement between a service provider and consumer that specifies
+the terms, conditions, and quality of service parameters.'''@en ;
+.
+
+:ServiceExchange
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Service Exchange"@en ;
+    skos:definition '''A flow of information or resources between services or between
+a service and its consumers.'''@en ;
+.
+
+:ServiceArchitecture
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Service Architecture"@en ;
+    skos:definition '''A composite structure representing the complete service-oriented
+architecture including services, interfaces, contracts, and exchanges.'''@en ;
+.
+
+
+#################################################################
+# Personnel Domain
+#################################################################
+
+:Organization
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Organization"@en ;
+    skos:definition '''A specific real-world assemblage of people and other resources
+organized for an ongoing purpose. Organizations may be military units,
+government agencies, or commercial entities.'''@en ;
+.
+
+:Person
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Person"@en ;
+    skos:definition '''A type representing a human individual who may fill posts and
+perform roles within the enterprise.'''@en ;
+.
+
+:Post
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Post"@en ;
+    skos:definition '''A position within an organization that may be filled by a person
+and carries specific responsibilities and authorities.'''@en ;
+.
+
+:Responsibility
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Responsibility"@en ;
+    skos:definition '''A duty or obligation assigned to a post or person within the
+enterprise.'''@en ;
+.
+
+:OrganizationalResource
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Organizational Resource"@en ;
+    skos:definition '''A resource owned or managed by an organization, including
+personnel, equipment, and facilities.'''@en ;
+.
+
+
+#################################################################
+# Resources Domain
+#################################################################
+
+:ResourcePerformer
+    a               owl:Class ;
+    rdfs:subClassOf :MeasurableElement ;
+    skos:prefLabel  "Resource Performer"@en ;
+    skos:definition '''A physical or logical entity that performs functions in the resource
+domain. Resource performers realize operational performers and may be
+systems, platforms, or human resources.'''@en ;
+.
+
+:Function
+    a               owl:Class ;
+    rdfs:subClassOf :MeasurableElement ;
+    skos:prefLabel  "Function"@en ;
+    skos:definition '''A resource-level function performed by a resource performer.
+Functions trace to operational activities and represent the implementation
+of operational behavior.'''@en ;
+.
+
+:ResourceArchitecture
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Resource Architecture"@en ;
+    skos:definition '''A composite structure representing the complete resource architecture
+including resource performers, functions, connectors, and exchanges.'''@en ;
+.
+
+:NaturalResource
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Natural Resource"@en ;
+    skos:definition '''A resource that exists in nature and may be consumed or utilized
+by the enterprise, such as spectrum, water, or land.'''@en ;
+.
+
+:KnownResource
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Known Resource"@en ;
+    skos:definition '''A resource type that is known and cataloged within the enterprise,
+representing a class of resources that may be instantiated.'''@en ;
+.
+
+:ResourceConnector
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Resource Connector"@en ;
+    skos:definition '''A communication or interaction path between resource performers
+through which resource exchanges flow.'''@en ;
+.
+
+:ResourceExchange
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Resource Exchange"@en ;
+    skos:definition '''A flow of information, energy, or materiel between resource
+performers or functions.'''@en ;
+.
+
+
+#################################################################
+# Security Domain
+#################################################################
+
+:SecurityAsset
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Security Asset"@en ;
+    skos:definition '''An item of value to the enterprise that requires protection,
+including information, systems, personnel, and facilities.'''@en ;
+.
+
+:SecurityControl
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Security Control"@en ;
+    skos:definition '''A safeguard or countermeasure prescribed for an information system
+or organization to protect the confidentiality, integrity, and availability
+of security assets.'''@en ;
+.
+
+:SecurityControlFamily
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Security Control Family"@en ;
+    skos:definition '''A grouping of related security controls that address a common
+security concern or objective.'''@en ;
+.
+
+:SecurityEnclave
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Security Enclave"@en ;
+    skos:definition '''A bounded security domain within which a defined security policy
+is enforced and a consistent set of security controls is applied.'''@en ;
+.
+
+:SecurityConstraint
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Security Constraint"@en ;
+    skos:definition '''A restriction or requirement imposed to ensure the security of
+assets, systems, or information within the enterprise.'''@en ;
+.
+
+
+#################################################################
+# Projects Domain
+#################################################################
+
+:Project
+    a               owl:Class ;
+    rdfs:subClassOf :PhaseableElement ;
+    skos:prefLabel  "Project"@en ;
+    skos:definition '''A temporary endeavor undertaken to create a unique product, service,
+or result that delivers capability increments to the enterprise.'''@en ;
+.
+
+:ProjectMilestone
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Project Milestone"@en ;
+    skos:definition '''A significant point or event in a project timeline that marks
+the completion of a deliverable or phase.'''@en ;
+.
+
+:ProjectPhase
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Project Phase"@en ;
+    skos:definition '''A defined period within a project lifecycle during which specific
+work is performed and deliverables are produced.'''@en ;
+.
+
+
+#################################################################
+# Standards Domain
+#################################################################
+
+:Standard
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Standard"@en ;
+    skos:definition '''An operational, business, technical, or industry standard that
+applies to solution elements within the enterprise architecture.'''@en ;
+.
+
+:StandardProfile
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Standard Profile"@en ;
+    skos:definition '''A collection of standards that together define the technical
+environment for a set of solution elements.'''@en ;
+.
+
+:Protocol
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Protocol"@en ;
+    skos:definition '''A set of rules governing the format and transmission of data
+between systems or services.'''@en ;
+.
+
+
+#################################################################
+# Actual Resources Domain
+#################################################################
+
+:ActualOrganization
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Actual Organization"@en ;
+    skos:definition '''A specific, named instance of an organization that exists in the
+real world, as opposed to a type or template.'''@en ;
+.
+
+:ActualResource
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Actual Resource"@en ;
+    skos:definition '''A specific, named instance of a resource that exists in the real
+world, identified by serial number, name, or other unique identifier.'''@en ;
+.
+
+:ActualPerson
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Actual Person"@en ;
+    skos:definition '''A specific, named individual who fills a post or performs a role
+within the enterprise.'''@en ;
+.
+
+:ActualPost
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Actual Post"@en ;
+    skos:definition '''A specific, named instance of a post that exists within an actual
+organization.'''@en ;
+.
+
+:ActualService
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Actual Service"@en ;
+    skos:definition '''A specific, named instance of a service that is deployed and
+operational in the real world.'''@en ;
+.
+
+
+#################################################################
+# Architecture Management Domain
+#################################################################
+
+:Architecture
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Architecture"@en ;
+    skos:definition '''A fundamental organization of a system embodied in its components,
+their relationships to each other and to the environment, and the
+principles guiding its design and evolution.'''@en ;
+.
+
+:ArchitecturalDescription
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Architectural Description"@en ;
+    skos:definition '''A work product used to express an architecture, conforming to
+ISO/IEC/IEEE 42010:2011.'''@en ;
+.
+
+:Stakeholder
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Stakeholder"@en ;
+    skos:definition '''An individual, team, organization, or class thereof, having an
+interest in a system or its architecture.'''@en ;
+.
+
+:View
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "View"@en ;
+    skos:definition '''A representation of a whole system from the perspective of a
+related set of concerns, conforming to a viewpoint.'''@en ;
+.
+
+:Viewpoint
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Viewpoint"@en ;
+    skos:definition '''A specification of the conventions for constructing, interpreting,
+and using an architecture view to frame specific system concerns.'''@en ;
+.
+
+:WholeLifeEnterprise
+    a               owl:Class ;
+    rdfs:subClassOf :UAFElement ;
+    skos:prefLabel  "Whole Life Enterprise"@en ;
+    skos:definition '''The complete enterprise considered across its entire lifecycle,
+encompassing all phases from inception through disposal.'''@en ;
+.
+
+
+#################################################################
+# Relationships — Three-Declaration Pattern
+#################################################################
+
+# ─────────────────────────────────────────────────────────────
+# exhibits — Performer exhibits Capability
+# ─────────────────────────────────────────────────────────────
+
+:exhibits
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "exhibits"@en ;
+    skos:definition     '''Links a performer to the capability it exhibits or provides
+to the enterprise.'''@en ;
+    arch:domainIncludes :OperationalPerformer, :ResourcePerformer ;
+    arch:rangeIncludes  :Capability ;
+.
+
+:Exhibits
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :exhibits ;
+    skos:prefLabel       "Exhibits"@en ;
+    skos:definition      '''A qualified relationship indicating that a performer exhibits
+a capability.'''@en ;
+.
+
+:qualifiedExhibits
+    a                    owl:ObjectProperty ;
+    rdfs:domain          :UAFElement ;
+    rdfs:range           :Exhibits ;
+    arch:unqualifiedForm :exhibits ;
+.
+
+# ─────────────────────────────────────────────────────────────
+# performs — Performer performs Activity
+# ─────────────────────────────────────────────────────────────
+
+:performs
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "performs"@en ;
+    skos:definition     '''Links a performer to the activity it performs.'''@en ;
+    arch:domainIncludes :OperationalPerformer, :ResourcePerformer ;
+    arch:rangeIncludes  :OperationalActivity, :Function ;
+.
+
+:Performs
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :performs ;
+    skos:prefLabel       "Performs"@en ;
+    skos:definition      '''A qualified relationship indicating that a performer performs
+an activity or function.'''@en ;
+.
+
+:qualifiedPerforms
+    a                    owl:ObjectProperty ;
+    rdfs:domain          :UAFElement ;
+    rdfs:range           :Performs ;
+    arch:unqualifiedForm :performs ;
+.
+
+# ─────────────────────────────────────────────────────────────
+# implements — Resource implements Service
+# ─────────────────────────────────────────────────────────────
+
+:implements
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "implements"@en ;
+    skos:definition     '''Links a resource performer to the service it implements.'''@en ;
+    arch:domainIncludes :ResourcePerformer ;
+    arch:rangeIncludes  :Service ;
+.
+
+:Implements
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :implements ;
+    skos:prefLabel       "Implements"@en ;
+    skos:definition      '''A qualified relationship indicating that a resource performer
+implements a service.'''@en ;
+.
+
+:qualifiedImplements
+    a                    owl:ObjectProperty ;
+    rdfs:domain          :UAFElement ;
+    rdfs:range           :Implements ;
+    arch:unqualifiedForm :implements ;
+.
+
+# ─────────────────────────────────────────────────────────────
+# realizes — Resource realizes Operational element
+# ─────────────────────────────────────────────────────────────
+
+:realizes
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "realizes"@en ;
+    skos:definition     '''Links a resource-domain element to the operational-domain element
+it realizes or implements.'''@en ;
+    arch:domainIncludes :ResourcePerformer, :Function ;
+    arch:rangeIncludes  :OperationalPerformer, :OperationalActivity ;
+.
+
+:Realizes
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :realizes ;
+    skos:prefLabel       "Realizes"@en ;
+    skos:definition      '''A qualified relationship indicating that a resource-domain element
+realizes an operational-domain element.'''@en ;
+.
+
+:qualifiedRealizes
+    a                    owl:ObjectProperty ;
+    rdfs:domain          :UAFElement ;
+    rdfs:range           :Realizes ;
+    arch:unqualifiedForm :realizes ;
+.
+
+# ─────────────────────────────────────────────────────────────
+# dependsOn — Capability depends on Capability
+# ─────────────────────────────────────────────────────────────
+
+:dependsOn
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "depends on"@en ;
+    skos:definition     '''Links a capability to another capability on which it depends
+for its delivery or operation.'''@en ;
+    arch:domainIncludes :Capability ;
+    arch:rangeIncludes  :Capability ;
+.
+
+:CapabilityDependency
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :dependsOn ;
+    skos:prefLabel       "Capability Dependency"@en ;
+    skos:definition      '''A qualified relationship indicating that one capability depends
+on another capability.'''@en ;
+.
+
+:qualifiedCapabilityDependency
+    a                    owl:ObjectProperty ;
+    rdfs:domain          :UAFElement ;
+    rdfs:range           :CapabilityDependency ;
+    arch:unqualifiedForm :dependsOn ;
+.
+
+# ─────────────────────────────────────────────────────────────
+# provides — Performer provides Service
+# ─────────────────────────────────────────────────────────────
+
+:provides
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "provides"@en ;
+    skos:definition     '''Links a performer to the service it provides to consumers.'''@en ;
+    arch:domainIncludes :OperationalPerformer, :ResourcePerformer ;
+    arch:rangeIncludes  :Service ;
+.
+
+:Provides
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :provides ;
+    skos:prefLabel       "Provides"@en ;
+    skos:definition      '''A qualified relationship indicating that a performer provides
+a service.'''@en ;
+.
+
+:qualifiedProvides
+    a                    owl:ObjectProperty ;
+    rdfs:domain          :UAFElement ;
+    rdfs:range           :Provides ;
+    arch:unqualifiedForm :provides ;
+.
+
+# ─────────────────────────────────────────────────────────────
+# consumes — Performer consumes Service
+# ─────────────────────────────────────────────────────────────
+
+:consumes
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "consumes"@en ;
+    skos:definition     '''Links a performer to the service it consumes.'''@en ;
+    arch:domainIncludes :OperationalPerformer, :ResourcePerformer ;
+    arch:rangeIncludes  :Service ;
+.
+
+:Consumes
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :consumes ;
+    skos:prefLabel       "Consumes"@en ;
+    skos:definition      '''A qualified relationship indicating that a performer consumes
+a service.'''@en ;
+.
+
+:qualifiedConsumes
+    a                    owl:ObjectProperty ;
+    rdfs:domain          :UAFElement ;
+    rdfs:range           :Consumes ;
+    arch:unqualifiedForm :consumes ;
+.
+

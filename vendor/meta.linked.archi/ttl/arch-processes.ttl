@@ -1,0 +1,953 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <http://schema.org/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ad:      <https://meta.linked.archi/arch-decision#> .
+@prefix :        <https://meta.linked.archi/arch-processes#> .
+
+<https://meta.linked.archi/arch-processes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   arch: ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/arch-processes#" ;
+    vann:preferredNamespacePrefix "ap" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Architecture Processes Extension"@en ;
+    dcterms:description                '''Extension ontology describing architecture governance processes,
+activities, tasks, and their inputs and outputs.
+
+Architecture processes are not constituents of the system being architected —
+they are the governance and lifecycle infrastructure that acts upon it from the
+outside. An architecture review board process governs a system; it is not part
+of the system's architecture. They are elements of a model all the same — of a
+model of the architecture practice: a process, its activities, tasks,
+deliverables and milestones are element types (arch:Element), so that a
+modelling tool can place them in a view beside the architecture they govern.
+Process concepts relate to the elements of that architecture via linking
+properties (ap:governs, ap:input, ap:output, ap:consumedBy), never by being
+one of its components.
+
+Use this extension when you need to:
+* Describe architecture governance processes and their decomposition
+* Capture process inputs (forces, models, information items) and outputs
+  (decisions, deliverables, models)
+* Trace how architecture activities relate to decisions and deliverables
+* Link architecture elements to the processes that govern them
+
+The process concepts are aligned with ISO/IEC/IEEE 42020 (architecture governance),
+ISO/IEC/IEEE 12207 (software lifecycle), and ISO/IEC/IEEE 15288 (system lifecycle).
+For the normative standard definitions themselves, see the corresponding standard
+vocabularies under standards/.'''@en ;
+    dcterms:abstract              '''Ontology describing architecture governance processes, activities,
+tasks, and their inputs/outputs — governance infrastructure that acts upon
+architecture elements, not constituents of the architecture itself.'''@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-11-17"^^xsd:date ;
+    dcterms:publisher                  <https://linked.archi>,
+                                  "Linked.Archi"@en ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/arch-processes/0.4.0#> ;
+    owl:versionInfo               "0.4.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/arch-processes/0.3.0#> ;
+    schema:citation               "Linked.Archi Architecture Processes Extension" ;
+    prov:wasDerivedFrom           "ISO/IEC/IEEE 42020:2019",
+                                  "ISO/IEC/IEEE 12207:2017",
+                                  "ISO/IEC/IEEE 15288:2023" ;
+    rdfs:seeAlso                  <https://www.iso.org/standard/68982.html>,
+                                  <https://www.iso.org/standard/63712.html>,
+                                  <https://www.iso.org/standard/81702.html>,
+                                  <https://iasa-global.github.io/btabok/architecture_lifecycle.html>,
+                                  <http://dx.doi.org/10.1109/WICSA.2014.32>,
+                                  <http://dx.doi.org/10.1007/978-3-540-87879-7_14>,
+                                  <http://dx.doi.org/10.1016/j.jss.2015.08.054> ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Classes — Architecture Process Concepts
+##
+## These classes describe the governance and lifecycle infrastructure that
+## acts upon architecture elements. They are NOT subclasses of arch:Element
+## because they do not constitute the architecture — they govern it.
+##
+## Architecture elements relate to processes via linking properties:
+##   ap:governs        — process governs an element
+##   ap:input/output   — process consumes/produces elements
+##   ap:consumedBy     — element is consumed by a process
+##
+## For the normative ISO standard definitions, see:
+##   standards/iso42020/iso42020.ttl  — architecture governance processes
+##   standards/iso12207/iso12207.ttl  — software lifecycle processes
+##   standards/iso15288/iso15288.ttl  — system lifecycle processes
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ArchitectureProcess
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    skos:prefLabel   "Architecture Process"@en ;
+    skos:definition  '''A process within the architecture governance or lifecycle framework.
+An architecture process transforms inputs (information items, models, forces)
+into outputs (decisions, deliverables, models) through a structured set of
+activities and tasks.
+
+Processes can represent governance workflows (e.g., architecture review boards),
+lifecycle phases (e.g., architecture elaboration), or operational procedures
+(e.g., change impact assessment).
+
+Architecture processes are not part of the architecture being described — they
+are the governance infrastructure that acts upon it. An architecture review
+board governs systems; it is not itself a system component. In a model it is an
+element like any other: an element of a model of the practice, which a view may
+show beside what the process governs.'''@en ;
+    skos:scopeNote   '''Aligned with the process concept from ISO/IEC/IEEE 42020, 12207, and 15288.
+Use ap:governs to link a process to the architecture elements it governs.'''@en ;
+    skos:example     '''ex:ArchReviewProcess a ap:ArchitectureProcess ;
+    skos:prefLabel "Architecture Review Board Process"@en ;
+    ap:hasActivity ex:ReviewPreparation, ex:ReviewExecution, ex:ReviewFollowUp ;
+    rdfs:seeAlso <https://meta.linked.archi/iso42020#ArchitectureGovernance> .'''@en ;
+.
+
+:ProcessActivity
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    skos:prefLabel   "Process Activity"@en ;
+    skos:definition  '''A cohesive set of tasks within an architecture process that contributes
+to achieving the process purpose. Activities decompose a process into
+manageable units of work.
+
+An activity groups related tasks and may have its own inputs and outputs.
+Activities are ordered within a process and may have dependencies on
+other activities.'''@en ;
+    skos:scopeNote   '''Aligned with the activity concept from ISO/IEC/IEEE 42020, 12207, and 15288.
+Activities provide the intermediate decomposition level between processes and tasks.'''@en ;
+    skos:example     '''ex:StakeholderAnalysis a ap:ProcessActivity ;
+    skos:prefLabel "Stakeholder Analysis"@en ;
+    ap:activityOfProcess ex:ArchConceptualization ;
+    ap:hasTask ex:IdentifyStakeholders, ex:PrioritizeConcerns .'''@en ;
+    rdfs:seeAlso     <https://meta.linked.archi/iso42020#Activity>,
+                     <https://meta.linked.archi/iso12207#Activity>,
+                     <https://meta.linked.archi/iso15288#Activity> ;
+.
+
+:ProcessTask
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    skos:prefLabel   "Process Task"@en ;
+    skos:definition  '''A specific action or work item within a process activity. Tasks are
+the finest-grained units of work in the process decomposition.
+
+A task is a requirement, recommendation, or permissible action intended
+to contribute to the achievement of one or more outcomes of a process.'''@en ;
+    skos:scopeNote   '''Aligned with the task concept from ISO/IEC/IEEE 42020, 12207, and 15288.
+Tasks are the leaf-level work items that can be assigned, tracked, and verified.'''@en ;
+    skos:example     '''ex:IdentifyStakeholders a ap:ProcessTask ;
+    skos:prefLabel "Identify stakeholders and their concerns"@en ;
+    ap:taskOfActivity ex:StakeholderAnalysis ;
+    ap:performedBy ex:SolutionArchitect .'''@en ;
+    rdfs:seeAlso     <https://meta.linked.archi/iso42020#Task>,
+                     <https://meta.linked.archi/iso12207#Task>,
+                     <https://meta.linked.archi/iso15288#Task> ;
+.
+
+:ProcessDeliverable
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    skos:prefLabel   "Process Deliverable"@en ;
+    skos:definition  '''A required output of a process that must be formally delivered to a
+stakeholder. Deliverables are the tangible work products that result
+from process execution — documents, models, assessments, or other
+artifacts.'''@en ;
+    skos:scopeNote   '''Aligned with the deliverable concept from ISO/IEC/IEEE 42020, 12207, and 15288.
+Deliverables bridge the process world and the architecture description world —
+a deliverable may be an architecture model, a decision record, or a governance report.'''@en ;
+    skos:example     '''ex:ArchDefinitionDoc a ap:ProcessDeliverable ;
+    skos:prefLabel "Architecture Definition Document"@en ;
+    ap:producedBy ex:ArchElaborationProcess .'''@en ;
+    rdfs:seeAlso     <https://meta.linked.archi/iso42020#Deliverable>,
+                     <https://meta.linked.archi/iso12207#Deliverable>,
+                     <https://meta.linked.archi/iso15288#Deliverable> ;
+.
+
+:InformationItem
+    a                owl:Class ;
+    rdfs:subClassOf  :ProcessDeliverable ;
+    skos:prefLabel   "Information Item"@en ;
+    skos:definition  '''A separately identifiable body of information that is produced, stored,
+and delivered for human use. Information items are the currency of
+process communication — they flow between processes as inputs and outputs.'''@en ;
+    skos:scopeNote   '''Aligned with the information item concept from ISO/IEC/IEEE 42020, 12207, and 15288.
+An information item is a more general concept than a deliverable — not all information
+items are formal deliverables, but all deliverables contain information items.'''@en ;
+    skos:example     '''ex:ArchProposal a ap:InformationItem ;
+    skos:prefLabel "Architecture Proposal Document"@en ;
+    skos:definition "The solution architect proposal including context, options, and rationale."@en ;
+    ap:consumedBy ex:ArchReviewProcess .'''@en ;
+    rdfs:seeAlso     <https://meta.linked.archi/iso42020#InformationItem>,
+                     <https://meta.linked.archi/iso12207#InformationItem>,
+                     <https://meta.linked.archi/iso15288#InformationItem> ;
+.
+
+:ProcessMilestone
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    skos:prefLabel   "Process Milestone"@en ;
+    skos:definition  '''A significant point or event in a process that marks the completion
+of a set of activities or the achievement of a key objective.
+Milestones are used for governance checkpoints, phase gates,
+and progress tracking.'''@en ;
+    skos:example     '''ex:ArchReviewGate a ap:ProcessMilestone ;
+    skos:prefLabel "Architecture Review Gate"@en ;
+    ap:milestoneOfProcess ex:ArchGovernanceProcess .'''@en ;
+.
+
+:ProcessRole
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Stakeholder ;
+    skos:prefLabel   "Process Role"@en ;
+    skos:definition  '''A role that a stakeholder plays within an architecture process.
+Process roles define responsibilities and authorities for process
+execution — who performs, reviews, approves, or is informed about
+process activities.'''@en ;
+    skos:example     '''ex:ChiefArchitect a ap:ProcessRole ;
+    skos:prefLabel "Chief Architect"@en ;
+    ap:responsibleFor ex:ArchGovernanceProcess .'''@en ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Properties — Process Structure
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:hasActivity
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has activity"@en ;
+    skos:definition  '''Links an ArchitectureProcess to a ProcessActivity that is part of it.
+Activities decompose a process into manageable units of work.'''@en ;
+    rdfs:domain      :ArchitectureProcess ;
+    rdfs:range       :ProcessActivity ;
+.
+
+:activityOfProcess
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :hasActivity ;
+    skos:prefLabel   "activity of process"@en ;
+    skos:definition  "Links a ProcessActivity to the ArchitectureProcess it belongs to."@en ;
+    rdfs:domain      :ProcessActivity ;
+    rdfs:range       :ArchitectureProcess ;
+.
+
+:hasTask
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has task"@en ;
+    skos:definition  "Links a ProcessActivity to a ProcessTask that is part of it."@en ;
+    rdfs:domain      :ProcessActivity ;
+    rdfs:range       :ProcessTask ;
+.
+
+:taskOfActivity
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :hasTask ;
+    skos:prefLabel   "task of activity"@en ;
+    skos:definition  "Links a ProcessTask to the ProcessActivity it belongs to."@en ;
+    rdfs:domain      :ProcessTask ;
+    rdfs:range       :ProcessActivity ;
+.
+
+:hasSubProcess
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has sub-process"@en ;
+    skos:definition  '''Links an ArchitectureProcess to a child ArchitectureProcess,
+enabling hierarchical process decomposition.'''@en ;
+    rdfs:domain      :ArchitectureProcess ;
+    rdfs:range       :ArchitectureProcess ;
+.
+
+:milestoneOfProcess
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "milestone of process"@en ;
+    skos:definition  "Links a ProcessMilestone to the ArchitectureProcess it belongs to."@en ;
+    rdfs:domain      :ProcessMilestone ;
+    rdfs:range       :ArchitectureProcess ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Properties — Governance Links
+##
+## These properties bridge the process layer to the architecture layer.
+## Architecture elements are linked TO processes — processes are not
+## themselves architecture elements.
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:governs
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "governs"@en ;
+    skos:definition  '''Links an ArchitectureProcess to the architecture element(s) it
+governs. The governed elements are constituents of the architecture;
+the process is the governance infrastructure that acts upon them.'''@en ;
+    rdfs:domain      :ArchitectureProcess ;
+    rdfs:range       arch:Element ;
+.
+
+:governedBy
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :governs ;
+    skos:prefLabel   "governed by"@en ;
+    skos:definition  '''Links an architecture element to the ArchitectureProcess that
+governs it.'''@en ;
+    rdfs:domain      arch:Element ;
+    rdfs:range       :ArchitectureProcess ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Properties — Process Inputs and Outputs
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:input
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "input"@en ;
+    skos:definition      '''An information item, model, or artifact consumed by a process.
+Inputs can include architecture models, metamodels, forces (requirements,
+constraints), information items, or any other element that feeds into
+the process.'''@en ;
+    rdfs:domain          :ArchitectureProcess ;
+    schema:rangeIncludes :InformationItem,
+                         arch:Metamodel,
+                         arch:Model,
+                         ad:Force ;
+.
+
+:output
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "output"@en ;
+    skos:definition      '''An information item, model, or artifact produced by a process.
+Outputs can include architecture models, decisions, deliverables,
+information items, or any other element that results from process
+execution.'''@en ;
+    rdfs:domain          :ArchitectureProcess ;
+    schema:rangeIncludes :InformationItem,
+                         :ProcessDeliverable,
+                         arch:Metamodel,
+                         arch:Model,
+                         ad:Decision ;
+.
+
+:producedBy
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :output ;
+    skos:prefLabel   "produced by"@en ;
+    skos:definition  "Links a ProcessDeliverable to the ArchitectureProcess that produces it."@en ;
+    rdfs:domain      :ProcessDeliverable ;
+    rdfs:range       :ArchitectureProcess ;
+.
+
+:consumedBy
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :input ;
+    skos:prefLabel   "consumed by"@en ;
+    skos:definition  "Links an element to the ArchitectureProcess that consumes it as input."@en ;
+    rdfs:range       :ArchitectureProcess ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Properties — Process Roles and Responsibilities
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:responsibleFor
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "responsible for"@en ;
+    skos:definition  '''Links a ProcessRole (or Stakeholder) to the ArchitectureProcess
+they are responsible for executing or governing.'''@en ;
+    rdfs:domain      arch:Stakeholder ;
+    rdfs:range       :ArchitectureProcess ;
+.
+
+:performedBy
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "performed by"@en ;
+    skos:definition  "Links a ProcessActivity or ProcessTask to the role that performs it."@en ;
+    rdfs:range       :ProcessRole ;
+.
+
+:approvedBy
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "approved by"@en ;
+    skos:definition  "Links a ProcessDeliverable or ProcessMilestone to the role that approves it."@en ;
+    rdfs:range       :ProcessRole ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Properties — Process Dependencies and Sequencing
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:precedes
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "precedes"@en ;
+    skos:definition  '''Links a process element to another that must follow it.
+Used for sequencing activities, tasks, or milestones within a process.'''@en ;
+    owl:inverseOf    :follows ;
+.
+
+:follows
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "follows"@en ;
+    skos:definition  '''Links a process element to another that must precede it.
+Used for sequencing activities, tasks, or milestones within a process.'''@en ;
+    owl:inverseOf    :precedes ;
+.
+
+:triggeredBy
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "triggered by"@en ;
+    skos:definition  '''Links a process to the event or condition that triggers its execution.
+The trigger can be a milestone, a decision, an external event, or
+a change in the architecture.'''@en ;
+    rdfs:domain      :ArchitectureProcess ;
+.
+
+:relatedProcess
+    a                owl:ObjectProperty, owl:SymmetricProperty ;
+    skos:prefLabel   "related process"@en ;
+    skos:definition  "Links an ArchitectureProcess to another related process."@en ;
+    rdfs:domain      :ArchitectureProcess ;
+    rdfs:range       :ArchitectureProcess ;
+.
+
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Classes — Lifecycle Stage Concepts
+##
+## A lifecycle stage is a distinct phase in the lifecycle of a system,
+## software product, service, or portfolio item. Lifecycle stages are
+## complementary to processes — a process may be associated with one or
+## more lifecycle stages, but stages themselves represent states/phases,
+## not activities.
+##
+## Domain ontologies (TIME, Tech Radar, etc.) define their own lifecycle
+## enumerations as subclasses or instances of LifecycleStage.
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:LifecycleStage
+    a                owl:Class ;
+    rdfs:subClassOf  skos:Concept ;
+    skos:prefLabel   "Lifecycle Stage"@en ;
+    skos:definition  '''A distinct phase in the lifecycle of a system, software product,
+service, or portfolio item. Lifecycle stages represent states that an
+entity passes through over time — from initial conception through active
+use to eventual retirement.
+
+Lifecycle stages are not processes — they are the phases within which
+processes execute. A stage answers "where is it now?" while a process
+answers "what happens during that phase?"'''@en ;
+    skos:scopeNote   '''Aligned with lifecycle concepts from:
+* ISO/IEC/IEEE 12207:2017 (software lifecycle stages)
+* ISO/IEC/IEEE 15288:2023 (system lifecycle stages)
+* SAP LeanIX (application lifecycle: Plan, Phase In, Active, Phase Out, End of Life)
+
+This extension defines a canonical, notation-agnostic stage set as instances of
+this class: :Plan, :PhaseIn, :Active, :PhaseOut, :Retired, grouped by
+:ApplicationLifecycle. Use those unless a domain genuinely needs its own.
+
+Domain ontologies may define their own stage sets as subclasses or instances:
+* timefw:LifecycleState (Plan, Build, Run, Retire)
+* radar:Ring (Adopt, Trial, Assess, Hold) — analogous to technology lifecycle
+* iso12207 stage individuals (Concept, Development, Production, Utilization,
+  Support, Retirement)'''@en ;
+    skos:example     '''ex:ActiveStage a ap:LifecycleStage ;
+    skos:prefLabel "Active"@en ;
+    ap:partOfLifecycle ex:ApplicationLifecycle ;
+    ap:stageOrder 3 .'''@en ;
+    rdfs:seeAlso     <https://meta.linked.archi/iso12207#>,
+                     <https://meta.linked.archi/iso15288#> ;
+.
+
+:LifecycleModel
+    a                owl:Class ;
+    skos:prefLabel   "Lifecycle Model"@en ;
+    skos:definition  '''A named collection of lifecycle stages defining a complete lifecycle
+progression for a category of entities. Different domains use different
+lifecycle models — software products, enterprise applications, technology
+components, and services each have distinct stage sets.
+
+A lifecycle model defines the valid stages and their ordering. Individual
+entities are associated with a single stage at any point in time.'''@en ;
+    skos:example     '''ex:ApplicationLifecycle a ap:LifecycleModel ;
+    skos:prefLabel "Application Portfolio Lifecycle"@en ;
+    ap:hasStage ex:Plan, ex:Build, ex:Run, ex:Retire .'''@en ;
+    rdfs:seeAlso     <https://www.iso.org/standard/63712.html>,
+                     <https://www.iso.org/standard/81702.html> ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Properties — Lifecycle Structure
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:atLifecycleStage
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "at lifecycle stage"@en ;
+    skos:definition  '''Links a resource to the lifecycle stage it currently occupies.
+Applicable to architecture elements (applications, systems, services)
+and to architecture models (to indicate elaboration maturity).
+Domain ontologies may define more specific sub-properties
+(e.g., timefw:lifecycleState) for their own contexts.'''@en ;
+    skos:example     '''# Application lifecycle
+ex:PaymentPlatform a am:ApplicationComponent ;
+    ap:atLifecycleStage timefw:Run ;
+    ap:followsLifecycle ex:ApplicationLifecycle .
+
+# Architecture work maturity (ISO 42020 phases)
+ex:PaymentArchDescription a arch:Model ;
+    ap:atLifecycleStage ex:Elaboration .'''@en ;
+    rdfs:range       :LifecycleStage ;
+.
+
+:followsLifecycle
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "follows lifecycle"@en ;
+    skos:definition  '''Links a resource to the lifecycle model that governs its
+progression through stages. Applicable to architecture elements
+and to architecture models.'''@en ;
+    skos:example     '''ex:PaymentPlatform ap:followsLifecycle ex:ApplicationLifecycle .
+ex:ApplicationLifecycle a ap:LifecycleModel ;
+    skos:prefLabel "Application Portfolio Lifecycle"@en ;
+    ap:hasStage timefw:Plan, timefw:Build, timefw:Run, timefw:Retire .'''@en ;
+    rdfs:range       :LifecycleModel ;
+.
+
+:partOfLifecycle
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "part of lifecycle"@en ;
+    skos:definition  "Links a LifecycleStage to the LifecycleModel it belongs to."@en ;
+    rdfs:domain      :LifecycleStage ;
+    rdfs:range       :LifecycleModel ;
+.
+
+:hasStage
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :partOfLifecycle ;
+    skos:prefLabel   "has stage"@en ;
+    skos:definition  "Links a LifecycleModel to a LifecycleStage that is part of it."@en ;
+    rdfs:domain      :LifecycleModel ;
+    rdfs:range       :LifecycleStage ;
+.
+
+:stageOrder
+    a                owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel   "stage order"@en ;
+    skos:definition  "Numeric ordering of a lifecycle stage within its lifecycle model (1-based)."@en ;
+    rdfs:domain      :LifecycleStage ;
+    rdfs:range       xsd:integer ;
+.
+
+:nextStage
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "next stage"@en ;
+    skos:definition  "Links a LifecycleStage to the stage that typically follows it in the lifecycle progression."@en ;
+    rdfs:domain      :LifecycleStage ;
+    rdfs:range       :LifecycleStage ;
+.
+
+:previousStage
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :nextStage ;
+    skos:prefLabel   "previous stage"@en ;
+    skos:definition  "Links a LifecycleStage to the stage that typically precedes it in the lifecycle progression."@en ;
+    rdfs:domain      :LifecycleStage ;
+    rdfs:range       :LifecycleStage ;
+.
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Individuals — Portfolio Lifecycle Stages
+##
+## The canonical, notation-agnostic stage set. Nothing about "Active" or
+## "Phase Out" derives from ArchiMate, C4, or Backstage, so these stages live
+## here rather than in any modeling language's assets — versioning them per
+## notation release would attach a version axis with no source.
+##
+## Typed :LifecycleStage only. Because :LifecycleStage is rdfs:subClassOf
+## skos:Concept, these are SKOS concepts by entailment; explicit skos:Concept
+## typing would be redundant. They are deliberately not placed in a
+## skos:ConceptScheme — per DD-23, a second home invites a competing copy.
+##
+## The five-stage progression follows the SAP LeanIX application lifecycle
+## already cited in the scopeNote on :LifecycleStage. Mappings to ISO 12207 and
+## the TIME framework are asserted in those files, which already import this
+## one, so the dependency direction stays consistent.
+##
+## Note the distinction between :PhaseOut and :Retired, which ISO 12207 and the
+## TIME framework both collapse into a single stage.
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ApplicationLifecycle
+    a                  :LifecycleModel ;
+    skos:prefLabel     "Application Portfolio Lifecycle"@en ;
+    skos:definition    '''Five-stage lifecycle progression for portfolio assets — applications,
+technology components, and services alike.'''@en ;
+    :hasStage          :Plan, :PhaseIn, :Active, :PhaseOut, :Retired ;
+    dcterms:source     <https://docs-eam.leanix.net/docs/lifecycle> ;
+    rdfs:seeAlso       <https://docs-eam.leanix.net/docs/lifecycle> ;
+.
+
+:Plan
+    a                  :LifecycleStage ;
+    skos:prefLabel     "Plan"@en ;
+    skos:definition    "Asset is planned or proposed but not yet being built or acquired."@en ;
+    :partOfLifecycle   :ApplicationLifecycle ;
+    :stageOrder        1 ;
+    :nextStage         :PhaseIn ;
+    skos:closeMatch    <https://docs-eam.leanix.net/docs/lifecycle#plan> ;
+.
+
+:PhaseIn
+    a                  :LifecycleStage ;
+    skos:prefLabel     "Phase In"@en ;
+    skos:altLabel      "Build"@en ;
+    skos:definition    '''Asset is being developed, acquired, or rolled out, and is not yet in
+full operational use.'''@en ;
+    :partOfLifecycle   :ApplicationLifecycle ;
+    :stageOrder        2 ;
+    :nextStage         :Active ;
+    skos:closeMatch    <https://docs-eam.leanix.net/docs/lifecycle#phase-in> ;
+.
+
+:Active
+    a                  :LifecycleStage ;
+    skos:prefLabel     "Active"@en ;
+    skos:altLabel      "Run"@en ;
+    skos:definition    "Asset is in active operational use, providing its intended services."@en ;
+    :partOfLifecycle   :ApplicationLifecycle ;
+    :stageOrder        3 ;
+    :nextStage         :PhaseOut ;
+    skos:closeMatch    <https://docs-eam.leanix.net/docs/lifecycle#active> ;
+.
+
+:PhaseOut
+    a                  :LifecycleStage ;
+    skos:prefLabel     "Phase Out"@en ;
+    skos:definition    '''Asset is being decommissioned — still operational for some consumers,
+but closed to new use and scheduled for withdrawal.'''@en ;
+    :partOfLifecycle   :ApplicationLifecycle ;
+    :stageOrder        4 ;
+    :nextStage         :Retired ;
+    skos:closeMatch    <https://docs-eam.leanix.net/docs/lifecycle#phase-out> ;
+    skos:scopeNote     '''Distinct from :Retired. An asset in phase-out still runs; an asset that
+is retired does not.'''@en ;
+.
+
+:Retired
+    a                  :LifecycleStage ;
+    skos:prefLabel     "Retired"@en ;
+    skos:altLabel      "End of Life"@en ;
+    skos:definition    '''Asset has been withdrawn from service. Data is archived or migrated and
+resources are reclaimed.'''@en ;
+    :partOfLifecycle   :ApplicationLifecycle ;
+    :stageOrder        5 ;
+    skos:closeMatch    <https://docs-eam.leanix.net/docs/lifecycle#end-of-life> ;
+.
+
+#################################################################
+# Relationship types — the links that are drawn
+#
+# For each link whose two ends can be placed on a view, a qualified
+# relationship class whose unqualified form is the predicate above, with
+# its qualified property: a tool that draws one writes the same triple a
+# tool that sets the property writes, with a relationship resource beside
+# it. The class is named after its predicate.
+#################################################################
+
+:HasActivity
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasActivity ;
+    skos:prefLabel       "Has Activity"@en ;
+    skos:definition      "A drawn link from an Architecture Process to a Process Activity it is made of."@en ;
+.
+
+:qualifiedHasActivity
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified has Activity"@en ;
+    skos:definition      "Links the source of a drawn Has Activity link to its relationship resource."@en ;
+    rdfs:range           :HasActivity ;
+    arch:unqualifiedForm :hasActivity ;
+.
+
+:HasTask
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasTask ;
+    skos:prefLabel       "Has Task"@en ;
+    skos:definition      "A drawn link from a Process Activity to a Process Task it is made of."@en ;
+.
+
+:qualifiedHasTask
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified has Task"@en ;
+    skos:definition      "Links the source of a drawn Has Task link to its relationship resource."@en ;
+    rdfs:range           :HasTask ;
+    arch:unqualifiedForm :hasTask ;
+.
+
+:HasSubProcess
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasSubProcess ;
+    skos:prefLabel       "Has Sub-Process"@en ;
+    skos:definition      "A drawn link from an Architecture Process to a child Architecture Process."@en ;
+.
+
+:qualifiedHasSubProcess
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified has Sub-Process"@en ;
+    skos:definition      "Links the source of a drawn Has Sub-Process link to its relationship resource."@en ;
+    rdfs:range           :HasSubProcess ;
+    arch:unqualifiedForm :hasSubProcess ;
+.
+
+:MilestoneOfProcess
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :milestoneOfProcess ;
+    skos:prefLabel       "Milestone Of"@en ;
+    skos:definition      "A drawn link from a Process Milestone to the Architecture Process it belongs to."@en ;
+.
+
+:qualifiedMilestoneOfProcess
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified milestone Of"@en ;
+    skos:definition      "Links the source of a drawn Milestone Of link to its relationship resource."@en ;
+    rdfs:range           :MilestoneOfProcess ;
+    arch:unqualifiedForm :milestoneOfProcess ;
+.
+
+:Precedes
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :precedes ;
+    skos:prefLabel       "Precedes"@en ;
+    skos:definition      "A drawn link from a process, activity, task or milestone to the one that must follow it."@en ;
+.
+
+:qualifiedPrecedes
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified precedes"@en ;
+    skos:definition      "Links the source of a drawn Precedes link to its relationship resource."@en ;
+    rdfs:range           :Precedes ;
+    arch:unqualifiedForm :precedes ;
+.
+
+:Input
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :input ;
+    skos:prefLabel       "Input"@en ;
+    skos:definition      "A drawn link from an Architecture Process to an information item or a force it consumes."@en ;
+.
+
+:qualifiedInput
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified input"@en ;
+    skos:definition      "Links the source of a drawn Input link to its relationship resource."@en ;
+    rdfs:range           :Input ;
+    arch:unqualifiedForm :input ;
+.
+
+:Output
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :output ;
+    skos:prefLabel       "Output"@en ;
+    skos:definition      "A drawn link from an Architecture Process to a deliverable, an information item or a decision it produces."@en ;
+.
+
+:qualifiedOutput
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified output"@en ;
+    skos:definition      "Links the source of a drawn Output link to its relationship resource."@en ;
+    rdfs:range           :Output ;
+    arch:unqualifiedForm :output ;
+.
+
+:PerformedBy
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :performedBy ;
+    skos:prefLabel       "Performed By"@en ;
+    skos:definition      "A drawn link from a Process Activity or Process Task to the role that performs it."@en ;
+.
+
+:qualifiedPerformedBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified performed By"@en ;
+    skos:definition      "Links the source of a drawn Performed By link to its relationship resource."@en ;
+    rdfs:range           :PerformedBy ;
+    arch:unqualifiedForm :performedBy ;
+.
+
+:ApprovedBy
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :approvedBy ;
+    skos:prefLabel       "Approved By"@en ;
+    skos:definition      "A drawn link from a Process Deliverable or Process Milestone to the role that approves it."@en ;
+.
+
+:qualifiedApprovedBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified approved By"@en ;
+    skos:definition      "Links the source of a drawn Approved By link to its relationship resource."@en ;
+    rdfs:range           :ApprovedBy ;
+    arch:unqualifiedForm :approvedBy ;
+.
+
+:Governs
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :governs ;
+    skos:prefLabel       "Governs"@en ;
+    skos:definition      "A drawn link from an Architecture Process to an architecture element it governs."@en ;
+.
+
+:qualifiedGoverns
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified governs"@en ;
+    skos:definition      "Links the source of a drawn Governs link to its relationship resource."@en ;
+    rdfs:range           :Governs ;
+    arch:unqualifiedForm :governs ;
+.
+
+:ResponsibleFor
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :responsibleFor ;
+    skos:prefLabel       "Responsible For"@en ;
+    skos:definition      "A drawn link from a Process Role or Stakeholder to the Architecture Process they are responsible for executing or governing."@en ;
+.
+
+:qualifiedResponsibleFor
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified responsible For"@en ;
+    skos:definition      "Links the source of a drawn Responsible For link to its relationship resource."@en ;
+    rdfs:range           :ResponsibleFor ;
+    arch:unqualifiedForm :responsibleFor ;
+.
+
+:RelatedProcess
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :relatedProcess ;
+    skos:prefLabel       "Related Process"@en ;
+    skos:definition      "A drawn link between two Architecture Processes related to each other."@en ;
+.
+
+:qualifiedRelatedProcess
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified related Process"@en ;
+    skos:definition      "Links the source of a drawn Related Process link to its relationship resource."@en ;
+    rdfs:range           :RelatedProcess ;
+    arch:unqualifiedForm :relatedProcess ;
+.
+
+:TriggeredBy
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :triggeredBy ;
+    skos:prefLabel       "Triggered By"@en ;
+    skos:definition      "A drawn link from an Architecture Process to the event or condition that triggers it: a milestone, a decision, an event or a change in the architecture."@en ;
+.
+
+:qualifiedTriggeredBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified triggered By"@en ;
+    skos:definition      "Links the source of a drawn Triggered By link to its relationship resource."@en ;
+    rdfs:range           :TriggeredBy ;
+    arch:unqualifiedForm :triggeredBy ;
+.
+
+#################################################################
+# Typical ends of the predicates drawn
+#
+# Modelling-tool guidance (arch:domainIncludes, arch:rangeIncludes): where
+# a line of each kind usually starts and ends. An end that is no element —
+# a model, a metamodel, a quality attribute, a pattern — is not drawn, and
+# is not listed.
+#################################################################
+
+:hasActivity
+    arch:domainIncludes  :ArchitectureProcess ;
+    arch:rangeIncludes   :ProcessActivity ;
+.
+
+:hasTask
+    arch:domainIncludes  :ProcessActivity ;
+    arch:rangeIncludes   :ProcessTask ;
+.
+
+:hasSubProcess
+    arch:domainIncludes  :ArchitectureProcess ;
+    arch:rangeIncludes   :ArchitectureProcess ;
+.
+
+:milestoneOfProcess
+    arch:domainIncludes  :ProcessMilestone ;
+    arch:rangeIncludes   :ArchitectureProcess ;
+.
+
+:precedes
+    arch:domainIncludes  :ArchitectureProcess, :ProcessActivity, :ProcessTask, :ProcessMilestone ;
+    arch:rangeIncludes   :ArchitectureProcess, :ProcessActivity, :ProcessTask, :ProcessMilestone ;
+.
+
+:input
+    arch:domainIncludes  :ArchitectureProcess ;
+    arch:rangeIncludes   :InformationItem, ad:Force ;
+.
+
+:output
+    arch:domainIncludes  :ArchitectureProcess ;
+    arch:rangeIncludes   :ProcessDeliverable, ad:Decision ;
+.
+
+:performedBy
+    arch:domainIncludes  :ProcessActivity, :ProcessTask ;
+    arch:rangeIncludes   :ProcessRole ;
+.
+
+:approvedBy
+    arch:domainIncludes  :ProcessDeliverable, :ProcessMilestone ;
+    arch:rangeIncludes   :ProcessRole ;
+.
+
+:governs
+    arch:domainIncludes  :ArchitectureProcess ;
+    arch:rangeIncludes   arch:Element ;
+.
+
+:responsibleFor
+    arch:domainIncludes  :ProcessRole, arch:Stakeholder ;
+    arch:rangeIncludes   :ArchitectureProcess ;
+.
+
+:relatedProcess
+    arch:domainIncludes  :ArchitectureProcess ;
+    arch:rangeIncludes   :ArchitectureProcess ;
+.
+
+:triggeredBy
+    arch:domainIncludes  :ArchitectureProcess ;
+    arch:rangeIncludes   :ProcessMilestone, ad:Decision, arch:Element ;
+.

@@ -1,0 +1,115 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix zachtax:    <https://meta.linked.archi/zachman/tax#> .
+@prefix zach:    <https://meta.linked.archi/zachman/onto#> .
+@prefix :        <https://meta.linked.archi/zachman/shapes#> .
+
+<https://meta.linked.archi/zachman/shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/zachman/shapes#" ;
+    vann:preferredNamespacePrefix "zachsh" ;
+    dcterms:title                 "Zachman Framework SHACL Shapes"@en ;
+    dcterms:description           '''SHACL validation shapes for viewpoints classified using the Zachman
+Framework taxonomy. Validates that viewpoints using Zachman cell classification
+are consistent with their aspect and perspective declarations.'''@en ;
+    dcterms:created               "2026-02-17"^^xsd:date ;
+    dcterms:modified              "2026-02-17"^^xsd:date ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/zachman/shapes/0.3.0#> ;
+    owl:versionInfo               "0.3.0"@en ;
+.
+
+
+## =============================================================================
+## Shape: Viewpoint with classifiedByCell should have consistent aspect
+## =============================================================================
+
+:CellAspectConsistencyShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf zach:classifiedByCell ;
+    skos:prefLabel  "Zachman Cell-Aspect Consistency"@en ;
+    sh:description  '''When a viewpoint is classified by a Zachman cell, validates that any
+explicit aspect declaration is consistent with the cell's aspect.'''@en ;
+    sh:severity     sh:Warning ;
+    sh:sparql [
+        sh:message  "Viewpoint is classified by cell {?cell} but declares aspect {?aspect} which does not match the cell's aspect {?cellAspect}."@en ;
+        sh:select '''
+            PREFIX zach: <https://meta.linked.archi/zachman/onto#>
+            PREFIX zachtax: <https://meta.linked.archi/zachman/tax#>
+            PREFIX arch: <https://meta.linked.archi/core#>
+            SELECT $this ?cell ?aspect ?cellAspect
+            WHERE {
+                $this zach:classifiedByCell ?cell .
+                $this arch:viewpointCoversAspect ?aspect .
+                ?cell zach:hasAspect ?cellAspect .
+                FILTER (?aspect != ?cellAspect)
+            }
+        ''' ;
+    ] ;
+.
+
+
+## =============================================================================
+## Shape: Viewpoint with classifiedByCell should have consistent perspective
+## =============================================================================
+
+:CellPerspectiveConsistencyShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf zach:classifiedByCell ;
+    skos:prefLabel  "Zachman Cell-Perspective Consistency"@en ;
+    sh:description  '''When a viewpoint is classified by a Zachman cell, validates that any
+explicit perspective declaration is consistent with the cell's perspective.'''@en ;
+    sh:severity     sh:Warning ;
+    sh:sparql [
+        sh:message  "Viewpoint is classified by cell {?cell} but declares perspective {?perspective} which does not match the cell's perspective {?cellPerspective}."@en ;
+        sh:select '''
+            PREFIX zach: <https://meta.linked.archi/zachman/onto#>
+            PREFIX zachtax: <https://meta.linked.archi/zachman/tax#>
+            PREFIX arch: <https://meta.linked.archi/core#>
+            SELECT $this ?cell ?perspective ?cellPerspective
+            WHERE {
+                $this zach:classifiedByCell ?cell .
+                $this arch:viewpointAddressesPerspective ?perspective .
+                ?cell zach:hasPerspective ?cellPerspective .
+                FILTER (?perspective != ?cellPerspective)
+            }
+        ''' ;
+    ] ;
+.
+
+
+## =============================================================================
+## Shape: classifiedByCell value must be a valid Zachman Cell
+## =============================================================================
+
+:ValidCellShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf zach:classifiedByCell ;
+    skos:prefLabel  "Valid Zachman Cell Value"@en ;
+    sh:description  "Validates that the cell value is one of the 36 Zachman cells."@en ;
+    sh:severity     sh:Violation ;
+    sh:sparql [
+        sh:message  "zach:classifiedByCell value {?cell} is not a narrower concept of zachtax:Cell."@en ;
+        sh:select '''
+            PREFIX zach: <https://meta.linked.archi/zachman/onto#>
+            PREFIX zachtax: <https://meta.linked.archi/zachman/tax#>
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT $this ?cell
+            WHERE {
+                $this zach:classifiedByCell ?cell .
+                FILTER NOT EXISTS { ?cell skos:broader zachtax:Cell }
+            }
+        ''' ;
+    ] ;
+.

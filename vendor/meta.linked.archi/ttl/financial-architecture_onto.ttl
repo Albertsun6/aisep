@@ -1,0 +1,612 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <http://schema.org/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ad:      <https://meta.linked.archi/arch-decision#> .
+@prefix :        <https://meta.linked.archi/financial-architecture/onto#> .
+
+<https://meta.linked.archi/financial-architecture/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/financial-architecture/onto#" ;
+    vann:preferredNamespacePrefix "fina" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Financial Architecture Extension"@en ;
+    dcterms:description                '''Extension ontology for financial aspects of enterprise architecture.
+Provides vocabulary for Total Cost of Ownership (TCO) models, cost allocation to
+business capabilities and value streams, investment case tracking (Run/Grow/Transform),
+cost-benefit analysis for architecture decision options, and FinOps cloud cost management.
+
+Not intended to replace financial planning tools — the goal is to make cost a queryable
+dimension of the architecture knowledge graph, enabling questions like "What is the
+annual run cost of all applications supporting this capability?" or "Which decision
+option has the best NPV?"
+
+Motivated by Gartner 2025 Leadership Vision identifying lack of financial acumen as
+one of the five mistakes EA teams make.
+Trademarked names referenced herein are property of their respective owners.'''@en ;
+    dcterms:abstract              "Ontology for financial aspects of enterprise architecture within the Linked.Archi ecosystem."@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/financial-architecture/onto/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    rdfs:seeAlso                  <https://www.finops.org/framework/>,
+                                  <https://www.iso.org/standard/55088.html> ;
+    schema:citation               "Linked.Archi Financial Architecture Extension" ;
+.
+
+
+#################################################################
+# Supporting Classes
+#################################################################
+
+:CostCategory
+    a               owl:Class ;
+    skos:prefLabel  "Cost Category"@en ;
+    skos:definition '''Classification of cost items by type — license, infrastructure,
+labor, support, integration, compliance, opportunity cost, or technical
+debt interest.'''@en ;
+.
+
+:InvestmentType
+    a               owl:Class ;
+    skos:prefLabel  "Investment Type"@en ;
+    skos:definition '''Classification of architecture investments by strategic intent —
+Run (keep operational), Grow (expand capabilities), or Transform
+(fundamental modernization).'''@en ;
+.
+
+:CostPeriod
+    a               owl:Class ;
+    skos:prefLabel  "Cost Period"@en ;
+    skos:definition "The time period over which a cost applies — annual, monthly, quarterly, or one-time."@en ;
+.
+
+
+#################################################################
+# Core Classes
+#################################################################
+
+:CostModel
+    a               owl:Class ;
+    skos:prefLabel  "Cost Model"@en ;
+    skos:definition '''A Total Cost of Ownership (TCO) or cost model for an architecture
+element or group of elements. Aggregates cost items across categories
+(license, infrastructure, labor, support) over a defined time horizon.
+
+A CostModel can be linked to any arch:Element — an application, a
+capability, a platform, or a service. It can also be allocated to
+business capabilities and value streams for cost-per-capability analysis.
+
+The totalTCO property holds the calculated total; individual cost items
+provide the breakdown.'''@en ;
+.
+
+:CostItem
+    a               owl:Class ;
+    skos:prefLabel  "Cost Item"@en ;
+    skos:definition '''A single line item in a cost model — one specific cost with its
+category, amount, period, and optional notes. Cost items are the atomic
+units of financial tracking in the architecture knowledge graph.'''@en ;
+.
+
+:InvestmentCase
+    a               owl:Class ;
+    skos:prefLabel  "Investment Case"@en ;
+    skos:definition '''A business case for an architecture investment — modernization,
+new capability development, or decommissioning. Links the investment
+to the architecture elements it affects, the projected ROI, payback
+period, and the Run/Grow/Transform classification.
+
+Investment cases connect financial planning to architecture decisions:
+when an architect proposes a modernization, the investment case captures
+the financial justification.'''@en ;
+.
+
+:CostBenefitAnalysis
+    a               owl:Class ;
+    skos:prefLabel  "Cost-Benefit Analysis"@en ;
+    skos:definition '''A structured comparison of costs and benefits for an architecture
+decision option. Links to ad:Option from the architecture decisions
+extension, enabling cost-informed decision making.
+
+Captures estimated cost, estimated benefit, net present value (NPV),
+and supporting notes. Multiple options for the same decision can be
+compared by their CBA metrics.'''@en ;
+.
+
+:Budget
+    a               owl:Class ;
+    skos:prefLabel  "Budget"@en ;
+    skos:definition '''An allocated budget for an architecture initiative, portfolio
+segment, or organizational unit. Tracks the approved amount, the
+fiscal period, and the budget owner.'''@en ;
+.
+
+:Forecast
+    a               owl:Class ;
+    skos:prefLabel  "Forecast"@en ;
+    skos:definition '''A projected cost or benefit over a future time horizon. Used
+for financial planning and investment tracking. Links to the
+architecture elements or initiatives being forecasted.'''@en ;
+.
+
+
+#################################################################
+# Specialized Cost Item Subclasses
+#################################################################
+
+:CloudCostAllocation
+    a               owl:Class ;
+    rdfs:subClassOf :CostItem ;
+    skos:prefLabel  "Cloud Cost Allocation"@en ;
+    skos:definition '''A cloud-specific cost allocation aligned with FinOps practices.
+Captures cloud provider, service type (compute, storage, network,
+managed services), and usage-based vs reserved pricing.'''@en ;
+    rdfs:seeAlso    <https://www.finops.org/framework/> ;
+.
+
+:TechnicalDebtCost
+    a               owl:Class ;
+    rdfs:subClassOf :CostItem ;
+    skos:prefLabel  "Technical Debt Cost"@en ;
+    skos:definition '''The estimated cost of maintaining or remediating technical debt.
+Captures both the "interest" (ongoing cost of workarounds and
+maintenance overhead) and the "principal" (one-time cost to
+remediate the debt).'''@en ;
+    skos:scopeNote  '''Technical debt cost is often invisible in traditional financial
+reporting. Making it explicit in the architecture knowledge graph
+enables questions like "What is the total technical debt interest
+across our portfolio?" and "Which applications have the highest
+debt-to-value ratio?"'''@en ;
+.
+
+:MigrationCost
+    a               owl:Class ;
+    rdfs:subClassOf :CostItem ;
+    skos:prefLabel  "Migration Cost"@en ;
+    skos:definition '''The estimated cost of migrating an application or platform.
+Designed to compose with the TIME framework — applications classified
+as Migrate should have a MigrationCost item in their cost model.'''@en ;
+.
+
+
+#################################################################
+# Concerns
+#################################################################
+
+:TotalCostOfOwnershipConcern
+    a               arch:Concern ;
+    skos:prefLabel  "Total Cost of Ownership"@en ;
+    skos:definition '''The full lifecycle cost of an architecture element — acquisition,
+operation, maintenance, support, and eventual decommissioning.'''@en ;
+.
+
+:InvestmentPrioritizationConcern
+    a               arch:Concern ;
+    skos:prefLabel  "Investment Prioritization"@en ;
+    skos:definition '''Allocating limited investment budget across competing architecture
+initiatives based on projected ROI, strategic alignment, and risk.'''@en ;
+.
+
+:TechnicalDebtVisibilityConcern
+    a               arch:Concern ;
+    skos:prefLabel  "Technical Debt Visibility"@en ;
+    skos:definition '''Making the financial impact of technical debt visible to
+business stakeholders — the ongoing cost of workarounds and the
+investment required to remediate.'''@en ;
+.
+
+:CloudCostOptimizationConcern
+    a               arch:Concern ;
+    skos:prefLabel  "Cloud Cost Optimization"@en ;
+    skos:definition '''Optimizing cloud spending through right-sizing, reserved instances,
+spot usage, and architectural decisions that reduce cloud cost.'''@en ;
+.
+
+
+#################################################################
+# Viewpoints
+#################################################################
+
+:CostOverviewViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "Cost Overview"@en ;
+    skos:definition             '''High-level overview of architecture costs — total cost by
+capability, by application, by technology platform. The entry point for
+financial analysis of the architecture landscape.'''@en ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Informing>,
+                                <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:viewpointFramesConcern :TotalCostOfOwnershipConcern ;
+    arch:includesConcept        :CostModel, :CostItem ;
+    arch:viewType               arch:Matrix, arch:Catalog ;
+.
+
+:InvestmentPortfolioViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "Investment Portfolio"@en ;
+    skos:definition             '''View of architecture investments — Run/Grow/Transform
+classification, projected ROI, payback periods, and budget allocation.
+Used for investment prioritization and portfolio balancing.'''@en ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:viewpointFramesConcern :InvestmentPrioritizationConcern ;
+    arch:includesConcept        :InvestmentCase, :Budget, :Forecast ;
+    arch:viewType               arch:Matrix, arch:Diagram ;
+.
+
+:TechnicalDebtViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "Technical Debt Landscape"@en ;
+    skos:definition             '''View of technical debt across the portfolio — which applications
+carry the most debt, what is the annual interest cost, and what would
+remediation cost. Makes the invisible visible for business stakeholders.'''@en ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Informing>,
+                                <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:viewpointFramesConcern :TechnicalDebtVisibilityConcern ;
+    arch:includesConcept        :TechnicalDebtCost, :CostModel ;
+    arch:viewType               arch:Matrix, arch:Catalog ;
+.
+
+:CloudFinOpsViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "Cloud FinOps"@en ;
+    skos:definition             '''View of cloud cost allocation — spending by provider, service
+type, application, and team. Aligned with FinOps Foundation practices.'''@en ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:viewpointFramesConcern :CloudCostOptimizationConcern ;
+    arch:includesConcept        :CloudCostAllocation, :CostModel ;
+    arch:viewType               arch:Matrix, arch:Catalog ;
+    rdfs:seeAlso                <https://www.finops.org/framework/> ;
+.
+
+
+#################################################################
+# Properties — Cost Model
+#################################################################
+
+:hasCostModel
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has cost model"@en ;
+    skos:definition      "Links an architecture element to its cost model."@en ;
+    arch:domainIncludes  arch:Element ;
+    arch:rangeIncludes   :CostModel ;
+.
+
+:hasCostItem
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has cost item"@en ;
+    skos:definition      "Links a cost model to its line items."@en ;
+    arch:domainIncludes  :CostModel ;
+    arch:rangeIncludes   :CostItem ;
+.
+
+:costCategory
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "cost category"@en ;
+    skos:definition      "Categorizes a cost item (license, infrastructure, labor, etc.)."@en ;
+    arch:domainIncludes  :CostItem ;
+    arch:rangeIncludes   :CostCategory ;
+.
+
+:annualAmount
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "annual amount"@en ;
+    skos:definition  "The annual cost amount in the cost model's base currency."@en ;
+    rdfs:domain      :CostItem ;
+    rdfs:range       xsd:decimal ;
+.
+
+:oneTimeAmount
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "one-time amount"@en ;
+    skos:definition  "A one-time cost amount (e.g., migration cost, setup fee)."@en ;
+    rdfs:domain      :CostItem ;
+    rdfs:range       xsd:decimal ;
+.
+
+:currency
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "currency"@en ;
+    skos:definition  "ISO 4217 currency code for the cost model (e.g., EUR, USD, GBP)."@en ;
+    rdfs:domain      :CostModel ;
+    rdfs:range       xsd:string ;
+.
+
+:costPeriodType
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "cost period type"@en ;
+    skos:definition      "The time period over which a cost applies."@en ;
+    arch:domainIncludes  :CostItem ;
+    arch:rangeIncludes   :CostPeriod ;
+.
+
+:totalTCO
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "total TCO"@en ;
+    skos:definition  "The calculated total cost of ownership over the defined horizon."@en ;
+    rdfs:domain      :CostModel ;
+    rdfs:range       xsd:decimal ;
+.
+
+:tcoHorizonYears
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "TCO horizon (years)"@en ;
+    skos:definition  "The number of years over which TCO is calculated (typically 3 or 5)."@en ;
+    rdfs:domain      :CostModel ;
+    rdfs:range       xsd:integer ;
+.
+
+:costModelDate
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "cost model date"@en ;
+    skos:definition  "The date the cost model was created or last updated."@en ;
+    rdfs:domain      :CostModel ;
+    rdfs:range       xsd:date ;
+.
+
+:costModelOwner
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "cost model owner"@en ;
+    skos:definition      "The stakeholder responsible for maintaining the cost model."@en ;
+    arch:domainIncludes  :CostModel ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.
+
+
+#################################################################
+# Properties — Cost Allocation
+#################################################################
+
+:allocatedToCapability
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "allocated to capability"@en ;
+    skos:definition      "Allocates cost to a business capability for cost-per-capability analysis."@en ;
+    arch:domainIncludes  :CostModel ;
+.
+
+:allocatedToValueStream
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "allocated to value stream"@en ;
+    skos:definition      "Allocates cost to a value stream for value-stream cost analysis."@en ;
+    arch:domainIncludes  :CostModel ;
+.
+
+:allocationPercentage
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "allocation percentage"@en ;
+    skos:definition  "Percentage of cost allocated to a capability or value stream (0-100)."@en ;
+    rdfs:range       xsd:decimal ;
+.
+
+
+#################################################################
+# Properties — Investment Case
+#################################################################
+
+:hasInvestmentCase
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has investment case"@en ;
+    skos:definition      "Links an architecture element to its investment case."@en ;
+    arch:domainIncludes  arch:Element ;
+    arch:rangeIncludes   :InvestmentCase ;
+.
+
+:investmentType
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "investment type"@en ;
+    skos:definition      "Classifies the investment as Run, Grow, or Transform."@en ;
+    arch:domainIncludes  :InvestmentCase ;
+    arch:rangeIncludes   :InvestmentType ;
+.
+
+:projectedROI
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "projected ROI"@en ;
+    skos:definition  "Projected return on investment as a percentage."@en ;
+    rdfs:domain      :InvestmentCase ;
+    rdfs:range       xsd:decimal ;
+.
+
+:paybackPeriodMonths
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "payback period (months)"@en ;
+    skos:definition  "Expected number of months until the investment pays for itself."@en ;
+    rdfs:domain      :InvestmentCase ;
+    rdfs:range       xsd:integer ;
+.
+
+:investmentAmount
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "investment amount"@en ;
+    skos:definition  "Total investment amount requested."@en ;
+    rdfs:domain      :InvestmentCase ;
+    rdfs:range       xsd:decimal ;
+.
+
+:investmentCurrency
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "investment currency"@en ;
+    skos:definition  "ISO 4217 currency code for the investment case."@en ;
+    rdfs:domain      :InvestmentCase ;
+    rdfs:range       xsd:string ;
+.
+
+:investmentStatus
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "investment status"@en ;
+    skos:definition  "Status of the investment case (proposed, approved, in-progress, completed, cancelled)."@en ;
+    rdfs:domain      :InvestmentCase ;
+    rdfs:range       xsd:string ;
+.
+
+:investmentSponsor
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "investment sponsor"@en ;
+    skos:definition      "The stakeholder sponsoring the investment."@en ;
+    arch:domainIncludes  :InvestmentCase ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.
+
+
+#################################################################
+# Properties — Cost-Benefit Analysis
+#################################################################
+
+:hasCostBenefitAnalysis
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has cost-benefit analysis"@en ;
+    skos:definition      "Links a decision option to its cost-benefit analysis."@en ;
+.
+
+:estimatedCost
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "estimated cost"@en ;
+    skos:definition  "Total estimated cost of the option."@en ;
+    rdfs:domain      :CostBenefitAnalysis ;
+    rdfs:range       xsd:decimal ;
+.
+
+:estimatedBenefit
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "estimated benefit"@en ;
+    skos:definition  "Total estimated benefit of the option."@en ;
+    rdfs:domain      :CostBenefitAnalysis ;
+    rdfs:range       xsd:decimal ;
+.
+
+:netPresentValue
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "net present value"@en ;
+    skos:definition  "Net present value of the option over the analysis horizon."@en ;
+    rdfs:domain      :CostBenefitAnalysis ;
+    rdfs:range       xsd:decimal ;
+.
+
+:discountRate
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "discount rate"@en ;
+    skos:definition  "Discount rate used for NPV calculation (as a decimal, e.g., 0.08 for 8%)."@en ;
+    rdfs:domain      :CostBenefitAnalysis ;
+    rdfs:range       xsd:decimal ;
+.
+
+:analysisHorizonYears
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "analysis horizon (years)"@en ;
+    skos:definition  "Number of years over which the cost-benefit analysis is projected."@en ;
+    rdfs:domain      :CostBenefitAnalysis ;
+    rdfs:range       xsd:integer ;
+.
+
+:cbaCurrency
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "CBA currency"@en ;
+    skos:definition  "ISO 4217 currency code for the cost-benefit analysis."@en ;
+    rdfs:domain      :CostBenefitAnalysis ;
+    rdfs:range       xsd:string ;
+.
+
+
+#################################################################
+# Properties — Budget
+#################################################################
+
+:hasBudget
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has budget"@en ;
+    skos:definition      "Links an initiative or portfolio segment to its allocated budget."@en ;
+.
+
+:budgetAmount
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "budget amount"@en ;
+    skos:definition  "The approved budget amount."@en ;
+    rdfs:domain      :Budget ;
+    rdfs:range       xsd:decimal ;
+.
+
+:budgetCurrency
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "budget currency"@en ;
+    skos:definition  "ISO 4217 currency code for the budget."@en ;
+    rdfs:domain      :Budget ;
+    rdfs:range       xsd:string ;
+.
+
+:fiscalYear
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "fiscal year"@en ;
+    skos:definition  "The fiscal year the budget applies to."@en ;
+    rdfs:domain      :Budget ;
+    rdfs:range       xsd:gYear ;
+.
+
+:budgetOwner
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "budget owner"@en ;
+    skos:definition      "The stakeholder responsible for the budget."@en ;
+    arch:domainIncludes  :Budget ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.
+
+
+#################################################################
+# Properties — Cloud Cost (FinOps)
+#################################################################
+
+:cloudProvider
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "cloud provider"@en ;
+    skos:definition  "The cloud provider (AWS, Azure, GCP, etc.)."@en ;
+    rdfs:domain      :CloudCostAllocation ;
+    rdfs:range       xsd:string ;
+.
+
+:cloudServiceType
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "cloud service type"@en ;
+    skos:definition  "The type of cloud service (compute, storage, network, database, managed service)."@en ;
+    rdfs:domain      :CloudCostAllocation ;
+    rdfs:range       xsd:string ;
+.
+
+:pricingModel
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "pricing model"@en ;
+    skos:definition  "The pricing model (on-demand, reserved, spot, savings plan)."@en ;
+    rdfs:domain      :CloudCostAllocation ;
+    rdfs:range       xsd:string ;
+.
+
+
+#################################################################
+# Properties — Technical Debt
+#################################################################
+
+:debtType
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "debt type"@en ;
+    skos:definition  "The type of technical debt (interest = ongoing cost, principal = remediation cost)."@en ;
+    rdfs:domain      :TechnicalDebtCost ;
+    rdfs:range       xsd:string ;
+.
+
+:debtDescription
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "debt description"@en ;
+    skos:definition  "Description of the technical debt and its impact."@en ;
+    rdfs:domain      :TechnicalDebtCost ;
+    rdfs:range       xsd:string ;
+.

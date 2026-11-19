@@ -1,0 +1,195 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix mlsys:   <https://meta.linked.archi/ml-systems/onto#> .
+@prefix :        <https://meta.linked.archi/ml-systems/shapes#> .
+
+<https://meta.linked.archi/ml-systems/shapes#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ml-systems/shapes#" ;
+    vann:preferredNamespacePrefix "mlsyssh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ML-Enabled Systems SHACL Shapes"@en ;
+    dcterms:description                '''SHACL shapes for validating ML-enabled system architecture models.
+Enforces governance rules: every ML model must have versioning, monitoring,
+and dataset lineage; every serving infrastructure must have latency SLAs.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ml-systems/shapes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+#################################################################
+# ML Model Shape — Core Governance Rules
+#################################################################
+
+:MLModelShape
+    a               sh:NodeShape ;
+    sh:targetClass  mlsys:MLModel ;
+    skos:prefLabel  "ML Model Governance Shape"@en ;
+    skos:definition "Validates that every ML model has the minimum required governance metadata."@en ;
+
+    sh:property [
+        sh:path        skos:prefLabel ;
+        sh:minCount    1 ;
+        sh:datatype    rdf:langString ;
+        sh:message     "Every ML model must have a human-readable label (skos:prefLabel)." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        mlsys:hasModelVersion ;
+        sh:minCount    1 ;
+        sh:message     "Every ML model must have at least one version recorded." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        mlsys:trainedOn ;
+        sh:minCount    1 ;
+        sh:message     "Every ML model must declare the dataset it was trained on (data lineage)." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        mlsys:hasMonitoringPlan ;
+        sh:minCount    1 ;
+        sh:message     "Every ML model must have a monitoring plan for production observability." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path        mlsys:hasPerformanceMetric ;
+        sh:minCount    1 ;
+        sh:message     "Every ML model should have at least one performance metric recorded." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path        mlsys:registeredIn ;
+        sh:minCount    1 ;
+        sh:message     "Every ML model should be registered in a model registry." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Dataset Shape — Data Governance
+#################################################################
+
+:DatasetShape
+    a               sh:NodeShape ;
+    sh:targetClass  mlsys:Dataset ;
+    skos:prefLabel  "Dataset Governance Shape"@en ;
+    skos:definition "Validates that every dataset has provenance and quality metadata."@en ;
+
+    sh:property [
+        sh:path        skos:prefLabel ;
+        sh:minCount    1 ;
+        sh:message     "Every dataset must have a human-readable label." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        mlsys:hasDataLineage ;
+        sh:minCount    1 ;
+        sh:message     "Every dataset must declare its upstream data sources (data lineage)." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Serving Infrastructure Shape — Operational Governance
+#################################################################
+
+:ServingInfrastructureShape
+    a               sh:NodeShape ;
+    sh:targetClass  mlsys:ServingInfrastructure ;
+    skos:prefLabel  "Serving Infrastructure Shape"@en ;
+    skos:definition "Validates that serving infrastructure has operational metadata."@en ;
+
+    sh:property [
+        sh:path        mlsys:serves ;
+        sh:minCount    1 ;
+        sh:message     "Serving infrastructure must declare which model(s) it serves." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        mlsys:hasServingLatencySLA ;
+        sh:minCount    1 ;
+        sh:message     "Serving infrastructure should have a latency SLA defined." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Training Pipeline Shape
+#################################################################
+
+:TrainingPipelineShape
+    a               sh:NodeShape ;
+    sh:targetClass  mlsys:TrainingPipeline ;
+    skos:prefLabel  "Training Pipeline Shape"@en ;
+    skos:definition "Validates that training pipelines have required connections."@en ;
+
+    sh:property [
+        sh:path        mlsys:producesModel ;
+        sh:minCount    1 ;
+        sh:message     "A training pipeline must declare which model(s) it produces." ;
+        sh:severity    sh:Violation ;
+    ] ;
+.
+
+
+#################################################################
+# Integration Shape — ML/SE Boundary
+#################################################################
+
+:MLIntegrationShape
+    a               sh:NodeShape ;
+    sh:targetClass  mlsys:IntegratesWith ;
+    skos:prefLabel  "ML Integration Contract Shape"@en ;
+    skos:definition '''Validates that ML/SE integration points have sufficient documentation
+to prevent the ML Mismatch problem (Lewis et al. 2021).'''@en ;
+
+    sh:property [
+        sh:path        arch:source ;
+        sh:minCount    1 ;
+        sh:maxCount    1 ;
+        sh:message     "An integration relationship must have exactly one source." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        arch:target ;
+        sh:minCount    1 ;
+        sh:maxCount    1 ;
+        sh:message     "An integration relationship must have exactly one target." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        skos:definition ;
+        sh:minCount    1 ;
+        sh:message     "Integration contracts should document the interface agreement." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.

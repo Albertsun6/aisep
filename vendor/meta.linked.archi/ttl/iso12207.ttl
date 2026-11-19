@@ -1,0 +1,219 @@
+@prefix owl:             <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:             <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:            <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:             <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix adms:            <http://www.w3.org/ns/adms#> .
+@prefix dcterms:         <http://purl.org/dc/terms/> .
+@prefix bibo:            <http://purl.org/ontology/bibo/> .
+@prefix vaem:            <http://www.linkedmodel.org/schema/vaem> .
+@prefix vann:            <http://purl.org/vocab/vann/> .
+@prefix pav:             <http://purl.org/pav/> .
+@prefix prov:            <http://www.w3.org/ns/prov#> .
+@prefix cc:              <http://creativecommons.org/ns#> .
+
+@prefix skos:            <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:          <http://schema.org/> .
+@prefix arch:            <https://meta.linked.archi/core#> .
+@prefix ap:              <https://meta.linked.archi/arch-processes#> .
+@prefix ad:              <https://meta.linked.archi/arch-decision#> .
+@prefix :                <https://meta.linked.archi/iso12207#> .
+
+<https://meta.linked.archi/iso12207#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   ap: ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/iso12207#" ;
+    vann:preferredNamespacePrefix "iso12207" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ISO/IEC/IEEE 12207 Software Lifecycle Processes"@en ;
+    dcterms:description                '''
+SKOS taxonomy and OWL classes for software lifecycle processes from ISO/IEC/IEEE 12207:2017.
+Covers the framework of processes for the software life cycle, including agreement, organizational
+project-enabling, technical management, and technical processes applicable to software systems.
+                                   '''@en ;
+    dcterms:abstract              '''
+Software lifecycle process concepts from ISO/IEC/IEEE 12207, modelled as SKOS concepts and OWL classes
+for use in architecture descriptions and process assessments.
+      '''@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2020-07-27"^^xsd:date ;
+    dcterms:publisher
+                                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    dcterms:source  <https://www.iso.org/standard/63712.html> ;
+    prov:wasDerivedFrom <https://www.iso.org/standard/63712.html> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/iso12207/0.1.0#> ;
+    owl:versionInfo               "0.1.0" ;
+    schema:citation               "ISO/IEC/IEEE 12207:2017 Systems and software engineering — Software life cycle processes" ;
+    prov:wasDerivedFrom           "ISO/IEC/IEEE 12207:2017" ;
+    rdfs:seeAlso                  <https://www.iso.org/standard/63712.html> ;
+.
+
+## ─── OWL Classes ──────────────────────────────────────────────────────────────
+
+:Process
+    a               owl:Class ;
+    rdfs:subClassOf ap:ArchitectureProcess ;
+    skos:prefLabel  "Process"@en ;
+    skos:definition "A set of interrelated or interacting activities that transforms inputs into outputs, as defined in ISO/IEC/IEEE 12207."@en ;
+.
+
+:Activity
+    a               owl:Class ;
+    rdfs:subClassOf ap:ProcessActivity ;
+    skos:prefLabel  "Activity"@en ;
+    skos:definition "A set of cohesive tasks within a process that contributes to the achievement of the process purpose."@en ;
+.
+
+:Task
+    a               owl:Class ;
+    rdfs:subClassOf ap:ProcessTask ;
+    skos:prefLabel  "Task"@en ;
+    skos:definition "A requirement, recommendation, or permissible action intended to contribute to the achievement of one or more outcomes of a process."@en ;
+.
+
+:InformationItem
+    a               owl:Class ;
+    rdfs:subClassOf ap:InformationItem ;
+    skos:prefLabel  "InformationItem"@en ;
+    skos:definition "A separately identifiable body of information that is produced, stored, and delivered for human use."@en ;
+.
+
+:Deliverable
+    a               owl:Class ;
+    rdfs:subClassOf ap:ProcessDeliverable ;
+    skos:prefLabel  "Deliverable"@en ;
+    skos:definition "A required output of a process that must be formally delivered to a stakeholder."@en ;
+.
+
+## ─── Properties ───────────────────────────────────────────────────────────────
+
+:input
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "input"@en ;
+    skos:definition      "An information item, model, or artifact consumed by a process."@en ;
+    rdfs:domain          :Process ;
+    schema:rangeIncludes :InformationItem,
+                         arch:Metamodel,
+                         arch:Model,
+                         ad:Force ;
+.
+
+:output
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "output"@en ;
+    skos:definition      "An information item, model, or artifact produced by a process."@en ;
+    rdfs:domain          :Process ;
+    schema:rangeIncludes :InformationItem,
+                         arch:Metamodel,
+                         arch:Model,
+                         ad:Decision ;
+.
+
+## ─── Process Groups (SKOS Concepts) ──────────────────────────────────────────
+
+:AgreementProcesses
+    a               :Process ;
+    skos:prefLabel  "Agreement Processes"@en ;
+    skos:definition "Processes for establishing and managing agreements between the acquirer and the supplier, including acquisition and supply processes."@en ;
+.
+
+:OrganizationalProjectEnablingProcesses
+    a               :Process ;
+    skos:prefLabel  "Organizational Project-Enabling Processes"@en ;
+    skos:definition "Processes that manage the organization's capability to acquire and supply products or services through the initiation, support, and control of projects. Includes life cycle model management, infrastructure management, portfolio management, human resource management, quality management, and knowledge management."@en ;
+.
+
+:TechnicalManagementProcesses
+    a               :Process ;
+    skos:prefLabel  "Technical Management Processes"@en ;
+    skos:definition "Processes for managing the technical effort of a project, including project planning, project assessment and control, decision management, risk management, configuration management, information management, and measurement."@en ;
+.
+
+:TechnicalProcesses
+    a               :Process ;
+    skos:prefLabel  "Technical Processes"@en ;
+    skos:definition "Processes for defining the requirements, designing, implementing, integrating, verifying, validating, deploying, operating, maintaining, and disposing of software systems and software products."@en ;
+.
+
+
+## ─── Lifecycle Stages (ISO/IEC/IEEE 12207:2017, Clause 6.3.1) ────────────────
+##
+## ISO 12207 defines a generic lifecycle model for software systems.
+## These stages represent the phases a software product passes through.
+## Source: ISO/IEC/IEEE 12207:2017 §6.3.1 Life Cycle Model Management Process
+## ─────────────────────────────────────────────────────────────────────────────
+
+@prefix ap: <https://meta.linked.archi/arch-processes#> .
+
+:SoftwareLifecycleModel
+    a               ap:LifecycleModel ;
+    skos:prefLabel  "ISO 12207 Software Lifecycle Model"@en ;
+    skos:definition "Generic lifecycle model for software systems as defined in ISO/IEC/IEEE 12207:2017."@en ;
+    ap:hasStage     :ConceptStage, :DevelopmentStage, :ProductionStage,
+                    :UtilizationStage, :SupportStage, :RetirementStage ;
+    rdfs:seeAlso    <https://www.iso.org/standard/63712.html> ;
+.
+
+:ConceptStage
+    a               ap:LifecycleStage, skos:Concept ;
+    skos:prefLabel  "Concept"@en ;
+    skos:definition "Initial stage where the need for a software system is identified, feasibility is assessed, and the concept is defined."@en ;
+    ap:partOfLifecycle :SoftwareLifecycleModel ;
+    ap:stageOrder   1 ;
+    ap:nextStage    :DevelopmentStage ;
+    skos:closeMatch ap:Plan ;
+.
+
+:DevelopmentStage
+    a               ap:LifecycleStage, skos:Concept ;
+    skos:prefLabel  "Development"@en ;
+    skos:definition "Stage where the software system is designed, implemented, integrated, tested, and prepared for production."@en ;
+    ap:partOfLifecycle :SoftwareLifecycleModel ;
+    ap:stageOrder   2 ;
+    ap:nextStage    :ProductionStage ;
+    skos:broadMatch ap:PhaseIn ;
+.
+
+:ProductionStage
+    a               ap:LifecycleStage, skos:Concept ;
+    skos:prefLabel  "Production"@en ;
+    skos:definition "Stage where the software system is manufactured, packaged, and deployed to the operational environment."@en ;
+    ap:partOfLifecycle :SoftwareLifecycleModel ;
+    ap:stageOrder   3 ;
+    ap:nextStage    :UtilizationStage ;
+    skos:broadMatch ap:PhaseIn ;
+.
+
+:UtilizationStage
+    a               ap:LifecycleStage, skos:Concept ;
+    skos:prefLabel  "Utilization"@en ;
+    skos:definition "Stage where the software system is in active operational use, providing its intended services."@en ;
+    ap:partOfLifecycle :SoftwareLifecycleModel ;
+    ap:stageOrder   4 ;
+    ap:nextStage    :SupportStage ;
+    skos:closeMatch ap:Active ;
+.
+
+:SupportStage
+    a               ap:LifecycleStage, skos:Concept ;
+    skos:prefLabel  "Support"@en ;
+    skos:definition "Stage where the software system is maintained, patched, and supported in its operational environment."@en ;
+    ap:partOfLifecycle :SoftwareLifecycleModel ;
+    ap:stageOrder   5 ;
+    ap:nextStage    :RetirementStage ;
+    skos:relatedMatch ap:Active ;
+.
+
+:RetirementStage
+    a               ap:LifecycleStage, skos:Concept ;
+    skos:prefLabel  "Retirement"@en ;
+    skos:definition "Stage where the software system is withdrawn from active service, data is archived or migrated, and resources are reclaimed."@en ;
+    ap:partOfLifecycle :SoftwareLifecycleModel ;
+    ap:stageOrder   6 ;
+    skos:narrowMatch ap:PhaseOut, ap:Retired ;
+    skos:scopeNote  '''ISO 12207 treats withdrawal as a single stage. The Architecture Processes
+extension splits it into ap:PhaseOut and ap:Retired, both narrower than this one.'''@en ;
+.

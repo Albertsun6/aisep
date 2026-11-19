@@ -1,0 +1,23 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+
+
+<https://meta.linked.archi/bpmn/suite#>
+    a owl:Ontology ;
+    vann:preferredNamespaceUri "https://meta.linked.archi/bpmn/suite#" ;
+    vann:preferredNamespacePrefix "bpmnsuite" ;
+    cc:license "http://creativecommons.org/licenses/by/4.0/" ;
+    dcterms:title "Linked.Archi BPMN Suite Imports (draft)"@en ;
+    dcterms:description '''Import aggregator that pulls together all five BPMN ontology packages
+(Core, Infrastructure, BPMNDI, DI, DC) into a single importable unit.'''@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    owl:imports <https://meta.linked.archi/bpmn/onto#> ;
+    owl:imports <https://meta.linked.archi/bpmn/di#> ;
+    owl:imports <https://meta.linked.archi/bpmn/di-core#> ;
+    owl:imports <https://meta.linked.archi/bpmn/dc#> ;
+    owl:imports <https://meta.linked.archi/bpmn/infra#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .

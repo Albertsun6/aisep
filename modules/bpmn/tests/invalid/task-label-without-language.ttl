@@ -1,0 +1,10 @@
+# expect: must carry a language-tagged skos:prefLabel
+# Invalid per bpmn_onto-shapes :RequiredNameShape — a task's skos:prefLabel must be language-tagged
+# (bpmn:name alone, or an untagged literal, is not enough). Note: AISEP L1 (@zh label required) also rejects this.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix :     <https://aisep.example/model/bpmn-bad/> .
+
+:model a arch:Model ; skos:prefLabel "BPMN 负例"@zh .
+:t1 a bpmn:UserTask ; arch:inModel :model ; bpmn:name "审核报价" ; skos:prefLabel "审核报价" .

@@ -1,0 +1,52 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix :        <https://meta.linked.archi/ref-arch/metamodel#> .
+
+<https://meta.linked.archi/ref-arch/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ref-arch/metamodel#" ;
+    vann:preferredNamespacePrefix "refamm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Reference Architecture Metamodel Definition"@en ;
+    dcterms:description           '''Metamodel manifest for the Reference Architecture extension with the
+Tactics extension. Ties together the two ontologies and their SKOS taxonomies into a single
+discoverable resource. Designed to be added beside a modelling language: building blocks, standards
+and tactics are placed among the elements of the architecture they shape.'''@en ;
+    dcterms:created               "2026-11-16"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ref-arch/metamodel/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+:ReferenceArchitecture
+    a                             arch:Metamodel ;
+    skos:prefLabel                "Reference Architecture Metamodel"@en ;
+    dcterms:description           '''The Reference Architecture metamodel definition, aggregating the reference
+architecture ontology — building blocks, standards, tactics, patterns — the catalogue of tactics by
+quality attribute, and their SKOS taxonomies.'''@en ;
+    skos:scopeNote                '''The Tactics ontology imports the Architecture Decision ontology, whose
+element types therefore come with it; the manifest names that extension's taxonomy too, so that they keep
+their groups.'''@en ;
+
+    ## Model concepts — the reference architecture ontology and the tactics catalogue
+    arch:modelConcepts            <https://meta.linked.archi/ref-arch#>,
+                                  <https://meta.linked.archi/tactics#> ;
+
+    ## Concept classification — one SKOS taxonomy per ontology, and the decision extension's
+    arch:conceptClassification    <https://meta.linked.archi/ref-arch/tax#>,
+                                  <https://meta.linked.archi/tactics/tax#>,
+                                  <https://meta.linked.archi/arch-decision/tax#> ;
+
+    arch:paletteGrouping          <https://meta.linked.archi/ref-arch/tax#PaletteGrouping> ;
+.

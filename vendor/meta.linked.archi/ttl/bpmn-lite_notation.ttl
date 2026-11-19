@@ -1,0 +1,441 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix arch-vis: <https://meta.linked.archi/core-vis#> .
+@prefix bpmnl:    <https://meta.linked.archi/bpmn-lite/onto#> .
+@prefix :         <https://meta.linked.archi/bpmn-lite/notation#> .
+
+<https://meta.linked.archi/bpmn-lite/notation#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/core-vis#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn-lite/notation#" ;
+    vann:preferredNamespacePrefix "bpmnlnot" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi BPMN Lite Visual Notation Set"@en ;
+    dcterms:description           "Visual notation descriptors for BPMN Lite elements and relationships, following the BPMN 2.0.2 standard visual appearance."@en ;
+    dcterms:created               "2026-06-05"^^xsd:date ;
+    dcterms:modified              "2026-10-10"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    rdfs:seeAlso    <https://www.omg.org/spec/BPMN/2.0.2/>,
+                    <https://www.omg.org/spec/BPMN/2.0.2/PDF> ;
+    skos:editorialNote '''Visual shapes follow the BPMN 2.0.2 specification Chapter 7
+(BPMN Core Structure) and Chapter 12 (BPMN DI). Rounded rectangles for activities,
+circles for events (thin border = start, thick = end, double = intermediate),
+diamonds for gateways, rectangles for data artifacts and pools/lanes. Task type
+markers (user, service, send, receive, script, business rule, manual) placed
+top-left per §10.2.4.'''@en .
+
+
+#################################################################
+# Notation Set
+#################################################################
+
+:BPMNLiteStandardNotation
+    a               arch-vis:NotationSet ;
+    skos:prefLabel  "BPMN Lite Standard Notation"@en ;
+    skos:definition "Standard BPMN visual notation for the EA-relevant subset."@en .
+
+
+#################################################################
+# Activities
+#################################################################
+
+:ProcessNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:Process ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/process.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] .
+
+:SubProcessNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:SubProcess ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/subprocess.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "140.0"^^xsd:double ;
+        arch-vis:defaultHeight "100.0"^^xsd:double ;
+    ] .
+
+:TaskNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:Task ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "100.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+:UserTaskNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:UserTask ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/user-task.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "100.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+:ServiceTaskNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:ServiceTask ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/service-task.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "100.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+:SendTaskNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:SendTask ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/send-task.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "100.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+:ReceiveTaskNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:ReceiveTask ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/receive-task.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "100.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+:ScriptTaskNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:ScriptTask ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/script-task.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "100.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+:BusinessRuleTaskNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:BusinessRuleTask ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/business-rule-task.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "100.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+:ManualTaskNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:ManualTask ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/manual-task.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "100.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+:CallActivityNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:CallActivity ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "100.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+
+#################################################################
+# Events
+#################################################################
+
+:StartEventNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:StartEvent ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#4CAF50" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "36.0"^^xsd:double ;
+        arch-vis:defaultHeight "36.0"^^xsd:double ;
+    ] .
+
+:EndEventNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:EndEvent ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#F44336" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "36.0"^^xsd:double ;
+        arch-vis:defaultHeight "36.0"^^xsd:double ;
+    ] .
+
+:IntermediateEventNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:IntermediateEvent ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#FF9800" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "36.0"^^xsd:double ;
+        arch-vis:defaultHeight "36.0"^^xsd:double ;
+    ] .
+
+:BoundaryEventNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:BoundaryEvent ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#FF9800" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "30.0"^^xsd:double ;
+        arch-vis:defaultHeight "30.0"^^xsd:double ;
+    ] .
+
+
+#################################################################
+# Gateways
+#################################################################
+
+:ExclusiveGatewayNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:ExclusiveGateway ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Diamond ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/exclusive-gateway.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "42.0"^^xsd:double ;
+        arch-vis:defaultHeight "42.0"^^xsd:double ;
+    ] .
+
+:ParallelGatewayNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:ParallelGateway ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Diamond ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/parallel-gateway.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "42.0"^^xsd:double ;
+        arch-vis:defaultHeight "42.0"^^xsd:double ;
+    ] .
+
+:InclusiveGatewayNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:InclusiveGateway ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Diamond ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/inclusive-gateway.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "42.0"^^xsd:double ;
+        arch-vis:defaultHeight "42.0"^^xsd:double ;
+    ] .
+
+:EventBasedGatewayNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:EventBasedGateway ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Diamond ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/event-based-gateway.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "42.0"^^xsd:double ;
+        arch-vis:defaultHeight "42.0"^^xsd:double ;
+    ] .
+
+
+#################################################################
+# Swim Lanes
+#################################################################
+
+:ParticipantNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:Participant ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#F5F5F5" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "600.0"^^xsd:double ;
+        arch-vis:defaultHeight "200.0"^^xsd:double ;
+    ] .
+
+:LaneNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:Lane ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeOnly ;
+        arch-vis:defaultWidth  "560.0"^^xsd:double ;
+        arch-vis:defaultHeight "200.0"^^xsd:double ;
+    ] .
+
+
+#################################################################
+# Data
+#################################################################
+
+:DataObjectNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:DataObject ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/data-object.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "36.0"^^xsd:double ;
+        arch-vis:defaultHeight "50.0"^^xsd:double ;
+    ] .
+
+:DataStoreNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:DataStore ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/data-store.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "50.0"^^xsd:double ;
+        arch-vis:defaultHeight "50.0"^^xsd:double ;
+    ] .
+
+:MessageNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor bpmnl:Message ;
+    arch-vis:inNotationSet :BPMNLiteStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#FFFFFF" ;
+        arch-vis:lineColor     "#000000" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/bpmn-lite/icons/glyphs/message.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopLeft ;
+        arch-vis:defaultWidth  "36.0"^^xsd:double ;
+        arch-vis:defaultHeight "26.0"^^xsd:double ;
+    ] .

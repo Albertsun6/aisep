@@ -1,0 +1,25 @@
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix bpmn:  <https://meta.linked.archi/bpmn/onto#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+
+# AISEP alignment BPMN -> ArchiMate 4.0 hub (spec §6.2, first cut).
+# Only the items upstream bpmn_crossmappings.ttl marks skos:closeMatch are promoted.
+# relatedMatch items (Task family, Lane, Participant, gateways, lane membership) are NOT promoted
+# (decision D4, recommended "do not promote"; use arch:Refines instead).
+# These axioms live only in AISEP's graph, never in the vendored vocabulary file (spec §5).
+# Used by queries (§7.1); NOT placed in the data graph when am4 shapes run (§10.2, inheritsHubRules false).
+
+<https://aisep.example/module/bpmn/align>
+    a owl:Ontology ;
+    owl:versionInfo "0.1.0" .
+
+bpmn:Process        rdfs:subClassOf am4:Process .
+bpmn:SubProcess     rdfs:subClassOf am4:Process .
+# bpmn:StartEvent / bpmn:EndEvent are already rdfs:subClassOf+ bpmn:Event upstream, so one axiom covers them.
+bpmn:Event          rdfs:subClassOf am4:Event .
+bpmn:SequenceFlow   rdfs:subClassOf am4:Triggering .
+bpmn:sequenceFlow   rdfs:subPropertyOf am4:triggers .
+bpmn:MessageFlow    rdfs:subClassOf am4:Flow .
+bpmn:DataObject     rdfs:subClassOf am4:BusinessObject .
+bpmn:Collaboration  rdfs:subClassOf am4:Collaboration .

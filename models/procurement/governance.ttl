@@ -1,0 +1,23 @@
+# Procurement example — governance (spec v0.2 §6.6, ADR-009, D10): the architecture-gate approval of the am4
+# approval process. This record is the only authored approval fact; arch:approvalState is never written here
+# (`aisep build` derives it: latest record wins, no record = arch:Proposed). IRI pattern per spec §3.
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/procurement/> .
+
+:chiefArchitect a arch:Stakeholder ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "首席架构师"@zh ; skos:altLabel "Chief Architect"@en .
+
+:approval-20261119-arch-baseline a aisep:ApprovalRecord ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "报价审批流程架构基线批准"@zh ;
+    aisep:gate aisep:GateArchitecture ;
+    aisep:decision aisep:DecisionApproved ;
+    aisep:approvedBy :chiefArchitect ;
+    aisep:approves :quoteApproval ;
+    aisep:evidence "9c41e07b2d5a8f3e6b1c4d7a0e9f2b5c8d1a4e7f" ;   # placeholder commit id (required, R3b)
+    prov:generatedAtTime "2026-11-19T12:00:00Z"^^xsd:dateTime .

@@ -1,0 +1,11 @@
+# expect: ddd:payload must point to a data object
+# command payload pointing to a bounded context (spec v0.2 §6.4, D3: payload -> DataObject)
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix ddd:   <https://aisep.example/ont/ddd#> .
+@prefix :      <https://aisep.example/model/ddd-payload-bad/> .
+
+:model a arch:Model ; skos:prefLabel "命令载荷非法样例"@zh .
+:inventoryBC a ddd:BoundedContext ; arch:inModel :model ; skos:prefLabel "库存上下文"@zh .
+:reserveStock a ddd:Command ; arch:inModel :model ; skos:prefLabel "预留库存"@zh ;
+    ddd:payload :inventoryBC .

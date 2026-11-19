@@ -1,0 +1,238 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix arch-vis: <https://meta.linked.archi/core-vis#> .
+@prefix bs:       <https://meta.linked.archi/backstage/onto#> .
+@prefix :         <https://meta.linked.archi/backstage/notation#> .
+
+<https://meta.linked.archi/backstage/notation#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/core-vis#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/backstage/notation#" ;
+    vann:preferredNamespacePrefix "bsnot" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Backstage Visual Notation Set"@en ;
+    dcterms:description           "Visual notation descriptors for Backstage Software Catalog entity types."@en ;
+    dcterms:created               "2026-06-05"^^xsd:date ;
+    dcterms:modified              "2026-10-10"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/backstage/notation/0.2.0#> ;
+    owl:versionInfo               "0.2.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/backstage/notation/0.1.0#> ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format/> ;
+    prov:wasDerivedFrom <https://backstage.io/docs/features/software-catalog/> ;
+    rdfs:seeAlso    <https://backstage.io/docs/features/software-catalog/>,
+                    <https://backstage.io/docs/features/software-catalog/descriptor-format/>,
+                    <https://backstage.io/docs/features/software-catalog/system-model/>,
+                    <https://github.com/backstage/backstage>,
+                    <https://github.com/backstage/backstage/tree/master/docs/features/software-catalog> ;
+    skos:editorialNote '''Backstage has no formal visual notation specification. Shapes
+and colours in this notation set are derived from the Backstage UI conventions and
+the system model documentation. Entity types follow the catalog descriptor format
+(kind: Component, System, API, Resource, Domain, User, Group, Template).
+
+Element coverage is complete: the metamodel publishes eight of the descriptor format's nine kinds and
+each has a descriptor here, Template added in 0.2.0 alongside the ontology class. The Location kind is
+out of scope for the metamodel and therefore has no descriptor — see the scope statement on the
+ontology header, which says so and says what to do with a Location entity instead.
+
+bs:StatusItem likewise has no notation, and for a different reason: it is not an arch:Element. A status
+item is a diagnostic about a node rather than a node, so there is nothing to draw. The same holds for
+bs:Link.
+
+Two gaps are known and deliberate rather than overlooked:
+
+1. RELATIONSHIP NOTATION IS ABSENT. This set describes nodes only, while the ArchiMate, C4 and BPMN
+   sets describe elements and relationships alike. It mattered less when the metamodel had seven
+   relationship types that a renderer could reasonably draw identically; it matters now that there
+   are thirteen, that two of them are hierarchies whose direction the reader must be able to see
+   (bs:GroupParentage, bs:DomainHierarchy), and that the viewpoint catalogue includes two diagram
+   viewpoints — Organization Structure and System Dependency — whose whole content is edges. Until
+   descriptors exist, a renderer draws a containment, a dependency and an ownership edge as the same
+   line, which is a legend nobody can read.
+
+2. NO arch:prefVisNotation. Each VisualNotation here carries the construction recipe (defaultStyle)
+   but not the rendered composite image that documentation generators, static catalogues and LLM
+   context consume. Adding it requires the rendered SVG assets to exist first.
+
+Value vocabularies (bs:LifecycleState, bs:ApiVisibility and the spec.type sets) deliberately have no
+notation. They are attribute values, not nodes on a canvas. Styling by value — a deprecated component
+rendered differently from a production one — is a presentation-context concern and belongs in
+backstage-presentation-contexts.ttl, where it can vary by audience, not here, where it would fix one
+appearance for every reader.'''@en .
+
+
+#################################################################
+# Notation Set
+#################################################################
+
+:BackstageStandardNotation
+    a               arch-vis:NotationSet ;
+    skos:prefLabel  "Backstage Standard Notation"@en ;
+    skos:definition "Standard visual notation for Backstage Software Catalog entities."@en .
+
+
+#################################################################
+# Element Visual Notations
+#################################################################
+
+:ComponentNotation
+    a                    arch-vis:VisualNotation ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#component> ;
+    rdfs:seeAlso         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    arch-vis:notationFor bs:Component ;
+    arch-vis:inNotationSet :BackstageStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E3F2FD" ;
+        arch-vis:lineColor     "#1565C0" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/backstage/icons/glyphs/component.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:SystemNotation
+    a                    arch-vis:VisualNotation ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#system> ;
+    rdfs:seeAlso         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-system> ;
+    arch-vis:notationFor bs:System ;
+    arch-vis:inNotationSet :BackstageStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#2E7D32" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/backstage/icons/glyphs/system.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "140.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+:APINotation
+    a                    arch-vis:VisualNotation ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#api> ;
+    rdfs:seeAlso         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    arch-vis:notationFor bs:API ;
+    arch-vis:inNotationSet :BackstageStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF3E0" ;
+        arch-vis:lineColor     "#E65100" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/backstage/icons/glyphs/api.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:ResourceNotation
+    a                    arch-vis:VisualNotation ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#resource> ;
+    rdfs:seeAlso         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-resource> ;
+    arch-vis:notationFor bs:Resource ;
+    arch-vis:inNotationSet :BackstageStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#F3E5F5" ;
+        arch-vis:lineColor     "#6A1B9A" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/backstage/icons/glyphs/resource.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:DomainNotation
+    a                    arch-vis:VisualNotation ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#domain> ;
+    rdfs:seeAlso         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-domain> ;
+    arch-vis:notationFor bs:Domain ;
+    arch-vis:inNotationSet :BackstageStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#ECEFF1" ;
+        arch-vis:lineColor     "#37474F" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/backstage/icons/glyphs/domain.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "160.0"^^xsd:double ;
+        arch-vis:defaultHeight "70.0"^^xsd:double ;
+    ] .
+
+:UserNotation
+    a                    arch-vis:VisualNotation ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#user> ;
+    rdfs:seeAlso         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-user> ;
+    arch-vis:notationFor bs:User ;
+    arch-vis:inNotationSet :BackstageStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Ellipse ;
+        arch-vis:fillColor     "#FCE4EC" ;
+        arch-vis:lineColor     "#880E4F" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/backstage/icons/glyphs/user.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:GroupNotation
+    a                    arch-vis:VisualNotation ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#group> ;
+    rdfs:seeAlso         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group> ;
+    arch-vis:notationFor bs:Group ;
+    arch-vis:inNotationSet :BackstageStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E0F7FA" ;
+        arch-vis:lineColor     "#006064" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/backstage/icons/glyphs/group.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+:TemplateNotation
+    a                    arch-vis:VisualNotation ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-template> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-template> ;
+    skos:scopeNote       '''An amber palette, deliberately far from the Component blue it will most often be
+drawn beside: a template is a mould for a component, not another component in the estate, and a reader of a
+scaffolding view has to be able to tell the two apart at a glance.
+
+A dashed outline would say "definition rather than occurrence" more directly and is what this descriptor
+would carry if it could. arch-vis:Style has no border-style property — arch-vis:lineStyle exists but is
+declared rdfs:domain arch:QualifiedRelationship, for connectors, so putting it on a node Style would entail
+that the Style IS a relationship. Colour is doing the work a dash should do until core-vis grows the
+property.'''@en ;
+    arch-vis:notationFor bs:Template ;
+    arch-vis:inNotationSet :BackstageStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF8E1" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/backstage/icons/glyphs/template.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .

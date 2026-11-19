@@ -1,0 +1,150 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix schema:  <http://schema.org/> .
+@prefix c4tax:   <https://meta.linked.archi/c4/tax#> .
+@prefix c4vp:    <https://meta.linked.archi/c4/viewpoints#> .
+@prefix c4dt:    <https://meta.linked.archi/c4/deliverable-templates#> .
+@prefix c4rd:    <https://meta.linked.archi/c4/reference-data#> .
+@prefix c4pc:    <https://meta.linked.archi/c4/presentation-contexts#> .
+@prefix c4not:   <https://meta.linked.archi/c4/notation#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix :        <https://meta.linked.archi/c4/metamodel#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/c4/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/c4/metamodel#" ;
+    vann:preferredNamespacePrefix "c4mm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi C4 Model Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for the C4 model. Ties together the C4
+element/relationship ontology, SHACL shapes, SKOS taxonomy, viewpoints,
+deliverable templates, and reference data into a single discoverable resource.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-04-16"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/c4/metamodel/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://c4model.com/> ;
+    prov:wasDerivedFrom <https://c4model.com/> ;
+.
+
+
+#################################################################
+# C4 Framework Individual
+#################################################################
+
+:C4Framework
+    a               arch:Framework ;
+    skos:prefLabel  "C4 Model"@en ;
+    skos:definition '''The C4 model for visualising software architecture, created by
+Simon Brown. Defines four hierarchical abstraction levels (Context, Container,
+Component, Code) plus supplementary diagrams (Deployment, Dynamic, System Landscape).'''@en ;
+    dcterms:creator      "Simon Brown" ;
+    rdfs:seeAlso    <https://c4model.com/> ;
+.
+
+:StructurizrTool
+    a               schema:SoftwareApplication ;
+    skos:prefLabel  "Structurizr"@en ;
+    skos:definition '''The reference tooling for the C4 model, created by Simon Brown.
+Provides a text-based DSL for defining C4 models as code, a rendering engine,
+workspace management, and deployment diagram support. Structurizr formalizes
+the C4 deployment concepts (DeploymentNode, ContainerInstance, InfrastructureNode)
+and adds environment tagging.'''@en ;
+    dcterms:source  <https://structurizr.com/> ;
+    dcterms:creator      "Simon Brown" ;
+    rdfs:seeAlso    <https://structurizr.com/>,
+                    <https://docs.structurizr.com/dsl/language> ;
+.
+
+
+#################################################################
+# C4 Metamodel Instance
+#################################################################
+
+:C4Model
+    a                             arch:Metamodel ;
+    skos:prefLabel                "C4 Model Metamodel"@en ;
+    dcterms:description               '''The complete C4 model metamodel definition, aggregating the
+element/relationship ontology, deployment extensions (formalized by Structurizr),
+SHACL shapes, SKOS taxonomy, viewpoints, deliverable templates, reference data,
+and presentation contexts.'''@en ;
+
+    ## Foundation
+    arch:basedOnFramework         :C4Framework ;
+
+    ## Model concepts — abstract C4 elements and relationships
+    ## File: c4-onto.ttl
+    arch:modelConcepts            <https://meta.linked.archi/c4/onto#> ;
+
+    ## Model concepts — Structurizr deployment extensions
+    ## File: structurizr-onto.ttl
+    arch:modelConcepts            <https://meta.linked.archi/c4/structurizr#> ;
+
+    ## Viewpoints
+    ## File: c4-viewpoints.ttl
+    arch:architectureViewpoints   <https://meta.linked.archi/c4/viewpoints#> ;
+
+    ## Formal rules — C4 SHACL shapes
+    ## File: c4-shapes.ttl
+    arch:formalRules              <https://meta.linked.archi/c4/shapes#> ;
+
+    ## Formal rules — Structurizr SHACL shapes
+    ## File: structurizr-shapes.ttl
+    arch:formalRules              <https://meta.linked.archi/c4/structurizr-shapes#> ;
+
+    ## Concept classification — SKOS taxonomy (by abstraction level)
+    ## File: c4-tax.ttl
+    arch:conceptClassification    <https://meta.linked.archi/c4/tax#> ;
+
+    ## Viewpoint library
+    ## File: c4-viewpoints.ttl
+    arch:viewpointLibrary         c4vp:ViewpointCatalog ;
+
+    ## Deliverable templates
+    ## File: c4-deliverable-templates.ttl
+    arch:hasDeliverableTemplate   c4dt:SystemOverviewDocument,
+                                  c4dt:ComponentDesignDocument ;
+
+    ## Reference data
+    ## File: c4-reference-data.ttl
+    arch:referenceData            c4rd:C4ReferenceData ;
+
+    ## Presentation contexts
+    ## File: c4-presentation-contexts.ttl
+    arch:presentationContextScheme c4pc:C4PresentationContexts ;
+
+    ## Visual notation set — default element/relationship appearance
+    ## File: c4-notation.ttl
+    arch:notationSet              c4not:C4StandardNotation ;
+
+    ## Stakeholders (from C4 viewpoints, referencing core viewpoint individuals)
+    arch:metamodelIdentifiesStakeholder
+        archvp:SolutionArchitect,
+        archvp:SoftwareDeveloper,
+        archvp:OperationsManager,
+        archvp:ProductManager ;
+
+    ## Concerns (from C4 viewpoints, referencing core viewpoint individuals)
+    arch:metamodelIdentifiesConsideration
+        archvp:StructureConcern,
+        archvp:BehaviorConcern,
+        archvp:DeploymentConcern,
+        archvp:DependencyConcern,
+        archvp:IntegrationConcern,
+        archvp:StakeholderConcern ;
+.

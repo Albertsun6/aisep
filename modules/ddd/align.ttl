@@ -1,0 +1,45 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix ddd:  <https://aisep.example/ont/ddd#> .
+
+# DDD ⊑ ArchiMate 4.0 alignment (spec §6.4). Kept out of onto.ttl so validation scope can
+# decide whether to load it (spec §10.2). [D1] BC ⊑ ApplicationComponent, [D2] Subdomain ⊑ Capability,
+# [D3] Command ⊑ Event were approved in spec v0.2 §14 (ADR-011).
+
+<https://aisep.example/ont/ddd/align#> a owl:Ontology ;
+    owl:versionInfo "0.1.0" .
+
+# Elements
+ddd:Domain             rdfs:subClassOf am4:Grouping .
+ddd:Subdomain          rdfs:subClassOf am4:Capability .
+ddd:BoundedContext     rdfs:subClassOf am4:ApplicationComponent .
+ddd:ContextMap         rdfs:subClassOf am4:Grouping .
+ddd:Team               rdfs:subClassOf am4:BusinessActor .
+ddd:Aggregate          rdfs:subClassOf am4:DataObject .
+ddd:Entity             rdfs:subClassOf am4:DataObject .
+ddd:ValueObject        rdfs:subClassOf am4:DataObject .
+ddd:ReadModel          rdfs:subClassOf am4:DataObject .
+ddd:DomainEvent        rdfs:subClassOf am4:Event .
+ddd:Command            rdfs:subClassOf am4:Event .
+ddd:DomainService      rdfs:subClassOf am4:Function .
+ddd:ApplicationService rdfs:subClassOf am4:Service .
+ddd:Policy             rdfs:subClassOf am4:Process .
+
+# Qualified relationship classes
+ddd:UpstreamDownstream      rdfs:subClassOf am4:Serving .        # CustomerSupplier inherits via ddd:UpstreamDownstream
+ddd:Partnership             rdfs:subClassOf am4:Association .
+ddd:SharedKernel            rdfs:subClassOf am4:Association .
+ddd:Ownership               rdfs:subClassOf am4:Assignment .
+ddd:Containment             rdfs:subClassOf am4:Composition .    # RootContainment inherits via ddd:Containment
+ddd:SubdomainImplementation rdfs:subClassOf am4:Realization .
+ddd:EventTriggering         rdfs:subClassOf am4:Triggering .
+
+# Direct properties
+ddd:upstreamOf       rdfs:subPropertyOf am4:serves .
+ddd:partnerOf        rdfs:subPropertyOf am4:associatedWith .
+ddd:sharesKernelWith rdfs:subPropertyOf am4:associatedWith .
+ddd:owns             rdfs:subPropertyOf am4:assignedTo .
+ddd:contains         rdfs:subPropertyOf am4:composedOf .
+ddd:implements       rdfs:subPropertyOf am4:realizes .
+ddd:triggers         rdfs:subPropertyOf am4:triggers .

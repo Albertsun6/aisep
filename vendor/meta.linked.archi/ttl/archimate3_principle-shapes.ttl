@@ -1,0 +1,853 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix am:      <https://meta.linked.archi/archimate3/onto#> .
+@prefix :        <https://meta.linked.archi/archimate3/principle-shapes#> .
+
+<https://meta.linked.archi/archimate3/principle-shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/core-shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate3/principle-shapes#" ;
+    vann:preferredNamespacePrefix "ampsh" ;
+    dcterms:title                      "Linked.Archi Architecture Principle Shapes"@en ;
+    dcterms:description                '''SHACL shapes encoding common enterprise architecture principles
+and best practices as executable constraints. These shapes validate architecture models
+against governance patterns such as redundancy avoidance, single authoritative source,
+separation of concerns, stewardship, and technology standardization.
+
+Inspired by the ontology-based EA principle validation approach described in:
+Montecchiari, D.; Hinkelmann, K. (2026) "Ontology-Based Validation of Enterprise
+Architecture Principles", Applied Sciences, 16(7):3352.
+
+These shapes are designed to be loaded alongside the standard ArchiMate element and
+relationship shapes. They operate on instance data (architecture models) and detect
+violations of common governance principles. All shapes use sh:severity sh:Warning
+by default — organizations should promote specific shapes to sh:Violation based on
+their governance policies.
+
+Usage:
+  ./validate.sh --shacl archimate-principles
+
+Or load manually alongside other shapes:
+  core-shapes.ttl + archimate3.2-principle-shapes.ttl + your-model-data.ttl
+'''@en ;
+    dcterms:created               "2022-11-14"^^xsd:date ;
+    skos:historyNote              '''2026-11-06: OrphanedElementShape written with MINUS rather than
+FILTER NOT EXISTS — the same results, without testing every element against every other one; and
+targeted at ArchiMate 3.2's elements and junctions rather than arch:Element, so that it judges no other
+notation's elements and, with ArchiMate 4.0 loaded too, does not report an element twice.'''@en ;
+    dcterms:modified              "2026-11-06"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/archimate3/principle-shapes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    rdfs:seeAlso                  <https://www.mdpi.com/2076-3417/16/7/3352> ;
+    sh:declare [
+        sh:prefix "am" ;
+        sh:namespace "https://meta.linked.archi/archimate3/onto#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "arch" ;
+        sh:namespace "https://meta.linked.archi/core#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdf" ;
+        sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdfs" ;
+        sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "skos" ;
+        sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ;
+    ] ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+
+#################################################################
+#
+#  CATEGORY 1: REDUNDANCY AVOIDANCE
+#
+#  Principle: Avoid redundant application support for the same
+#  business capability or process. Multiple applications serving
+#  the same process for the same purpose indicate duplication
+#  that increases cost and complexity.
+#
+#  Reference: Montecchiari & Hinkelmann (2026), Section 5.6,
+#  Listing 3 — "RedundancyAvoidanceShape"
+#
+#################################################################
+
+:RedundantApplicationServingShape
+    a              sh:NodeShape ;
+    sh:targetClass am:BusinessProcess ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Redundant Application Serving"@en ;
+    skos:definition
+        '''Detects business processes served by more than one application
+        component. Multiple applications serving the same process may
+        indicate redundancy that should be consolidated or justified.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Business process {$this} is served by multiple application components ({?app1} and {?app2}), indicating potential redundancy."@en ;
+        sh:select """
+            SELECT $this ?app1 ?app2
+            WHERE {
+                $this a am:BusinessProcess .
+                ?app1 a am:ApplicationComponent ;
+                      am:serves $this .
+                ?app2 a am:ApplicationComponent ;
+                      am:serves $this .
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+:RedundantApplicationRealizingServiceShape
+    a              sh:NodeShape ;
+    sh:targetClass am:ApplicationService ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Redundant Application Realizing Service"@en ;
+    skos:definition
+        '''Detects application services realized by more than one
+        application component. Multiple components realizing the same
+        service may indicate duplication in the application landscape.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Application service {$this} is realized by multiple application components ({?app1} and {?app2})."@en ;
+        sh:select """
+            SELECT $this ?app1 ?app2
+            WHERE {
+                $this a am:ApplicationService .
+                ?app1 a am:ApplicationComponent ;
+                      am:realizes $this .
+                ?app2 a am:ApplicationComponent ;
+                      am:realizes $this .
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+:RedundantFunctionRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass am:BusinessFunction ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Redundant Function Support"@en ;
+    skos:definition
+        '''Detects business functions served by more than one application
+        component. Consolidation candidates for application rationalization.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Business function {$this} is served by multiple application components ({?app1} and {?app2})."@en ;
+        sh:select """
+            SELECT $this ?app1 ?app2
+            WHERE {
+                $this a am:BusinessFunction .
+                ?app1 a am:ApplicationComponent ;
+                      am:serves $this .
+                ?app2 a am:ApplicationComponent ;
+                      am:serves $this .
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 2: SINGLE AUTHORITATIVE SOURCE
+#
+#  Principle: Each data object should be owned/updated by exactly
+#  one application component. Multiple writers to the same data
+#  create consistency risks and governance gaps.
+#
+#  Reference: Montecchiari & Hinkelmann (2026), Section 6.3–6.4,
+#  Table 1 — "Single authoritative update source for data objects"
+#
+#################################################################
+
+:SingleDataWriterShape
+    a              sh:NodeShape ;
+    sh:targetClass am:DataObject ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Single Authoritative Data Writer"@en ;
+    skos:definition
+        '''Detects data objects accessed with write by more than one
+        application component. Each data object should have a single
+        authoritative source of updates to ensure consistency.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Data object {$this} is written by multiple application components ({?app1} and {?app2}). Designate a single authoritative source."@en ;
+        sh:select """
+            SELECT DISTINCT $this ?app1 ?app2
+            WHERE {
+                $this a am:DataObject .
+                # A writer: write or read/write access, or an access not stated to be a read.
+                ?app1 a am:ApplicationComponent .
+                {
+                    ?app1 am:accesses $this .
+                    FILTER NOT EXISTS { ?read1 a am:ReadAccess ; arch:source ?app1 ; arch:target $this . }
+                } UNION {
+                    ?write1 a ?kind1 ; arch:source ?app1 ; arch:target $this .
+                    FILTER(?kind1 IN (am:WriteAccess, am:ReadWriteAccess))
+                }
+                ?app2 a am:ApplicationComponent .
+                {
+                    ?app2 am:accesses $this .
+                    FILTER NOT EXISTS { ?read2 a am:ReadAccess ; arch:source ?app2 ; arch:target $this . }
+                } UNION {
+                    ?write2 a ?kind2 ; arch:source ?app2 ; arch:target $this .
+                    FILTER(?kind2 IN (am:WriteAccess, am:ReadWriteAccess))
+                }
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+:SingleBusinessObjectOwnerShape
+    a              sh:NodeShape ;
+    sh:targetClass am:BusinessObject ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Single Business Object Owner"@en ;
+    skos:definition
+        '''Detects business objects accessed by more than one application
+        component. Shared access without clear ownership creates
+        governance ambiguity.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Business object {$this} is accessed by multiple application components ({?app1} and {?app2}). Clarify ownership."@en ;
+        sh:select """
+            SELECT $this ?app1 ?app2
+            WHERE {
+                $this a am:BusinessObject .
+                ?app1 a am:ApplicationComponent ;
+                      am:accesses $this .
+                ?app2 a am:ApplicationComponent ;
+                      am:accesses $this .
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 3: STEWARDSHIP AND GOVERNANCE
+#
+#  Principle: Critical architecture elements must have assigned
+#  ownership and governance. Unowned elements create accountability
+#  gaps.
+#
+#  Reference: Montecchiari & Hinkelmann (2026), Section 6.2 —
+#  "MDM governance for critical business objects"
+#
+#################################################################
+
+:ApplicationComponentOwnershipShape
+    a              sh:NodeShape ;
+    sh:targetClass am:ApplicationComponent ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Application Component Ownership"@en ;
+    skos:definition
+        '''Every application component should have a business actor or
+        role that owns it, associated with the component.'''@en ;
+    skos:scopeNote
+        '''ArchiMate has no ownership relationship, and its relationship
+        tables do not let a business actor or role be assigned to an
+        application component; an association between the two, in
+        either direction, is read as ownership.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Application component {$this} has no business actor or role associated with it as its owner."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am:ApplicationComponent .
+                FILTER NOT EXISTS {
+                    { ?owner am:associatedWith $this . } UNION { $this am:associatedWith ?owner . }
+                    { ?owner a am:BusinessActor . } UNION { ?owner a am:BusinessRole . }
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:BusinessProcessOwnershipShape
+    a              sh:NodeShape ;
+    sh:targetClass am:BusinessProcess ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Business Process Ownership"@en ;
+    skos:definition
+        '''Every business process should be assigned to at least one
+        business role or actor that is responsible for it.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Business process {$this} has no assigned business role or actor."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am:BusinessProcess .
+                FILTER NOT EXISTS {
+                    ?role rdf:type/rdfs:subClassOf* am:ActiveStructureElement .
+                    ?role rdf:type/rdfs:subClassOf* am:BusinessLayerElement .
+                    ?role am:assignedTo $this .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:DataObjectStewardshipShape
+    a              sh:NodeShape ;
+    sh:targetClass am:DataObject ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Data Object Stewardship"@en ;
+    skos:definition
+        '''Critical data objects should have at least one application
+        component that realizes or accesses them, establishing a
+        clear system of record.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Data object {$this} has no application component accessing or realizing it. Assign a system of record."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am:DataObject .
+                FILTER NOT EXISTS {
+                    ?app a am:ApplicationComponent .
+                    {
+                        ?app am:accesses $this .
+                    } UNION {
+                        ?app am:realizes $this .
+                    }
+                }
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 4: SEPARATION OF CONCERNS
+#
+#  Principle: Architecture layers should maintain clear boundaries.
+#  Business logic should not leak into technology, and technology
+#  concerns should not pollute business processes.
+#
+#################################################################
+
+:BusinessProcessDirectTechnologyDependencyShape
+    a              sh:NodeShape ;
+    sh:targetClass am:BusinessProcess ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Business Process Direct Technology Dependency"@en ;
+    skos:definition
+        '''Business processes should not directly depend on technology
+        layer elements. An application layer should mediate between
+        business and technology. The physical elements, part of the
+        Technology Layer, are left out: equipment may serve a process
+        directly.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Business process {$this} has a direct serving/realization dependency on technology element {?tech}. Introduce an application layer mediator."@en ;
+        sh:select """
+            SELECT $this ?tech
+            WHERE {
+                $this a am:BusinessProcess .
+                {
+                    ?tech am:serves $this .
+                } UNION {
+                    ?tech am:realizes $this .
+                }
+                ?tech rdf:type/rdfs:subClassOf* am:TechnologyLayerElement .
+                FILTER NOT EXISTS { ?tech rdf:type/rdfs:subClassOf* am:PhysicalLayerElement }
+            }
+        """ ;
+    ] ;
+.
+
+:TechnologyServingBusinessDirectlyShape
+    a              sh:NodeShape ;
+    sh:targetClass am:Node ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Technology Serving Business Directly"@en ;
+    skos:definition
+        '''Technology nodes should not directly serve business layer
+        elements. Services should be exposed through the application
+        layer.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Technology node {$this} directly serves business element {?biz}. Route through the application layer."@en ;
+        sh:select """
+            SELECT $this ?biz
+            WHERE {
+                $this a am:Node .
+                $this am:serves ?biz .
+                ?biz rdf:type/rdfs:subClassOf* am:BusinessLayerElement .
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 5: SERVICE ORIENTATION
+#
+#  Principle: Application components should expose their
+#  functionality through services. Direct component-to-component
+#  dependencies create tight coupling.
+#
+#################################################################
+
+:ApplicationComponentWithoutServiceShape
+    a              sh:NodeShape ;
+    sh:targetClass am:ApplicationComponent ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Application Component Without Service"@en ;
+    skos:definition
+        '''Application components should expose at least one application
+        service. Components without services may indicate missing
+        service definitions or tightly coupled integrations.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Application component {$this} does not expose any application service."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am:ApplicationComponent .
+                FILTER NOT EXISTS {
+                    $this am:realizes ?svc .
+                    ?svc a am:ApplicationService .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:DirectComponentToComponentServingShape
+    a              sh:NodeShape ;
+    sh:targetClass am:ApplicationComponent ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Direct Component-to-Component Serving"@en ;
+    skos:definition
+        '''Application components should serve other components through
+        services, not directly. Direct serving creates tight coupling
+        that hinders independent evolution.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Application component {$this} directly serves another application component {?target} without an intermediary service."@en ;
+        sh:select """
+            SELECT $this ?target
+            WHERE {
+                $this a am:ApplicationComponent .
+                $this am:serves ?target .
+                ?target a am:ApplicationComponent .
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 6: TECHNOLOGY STANDARDIZATION
+#
+#  Principle: Technology choices should be standardized. Excessive
+#  technology diversity increases operational cost and risk.
+#
+#################################################################
+
+:ExcessiveTechnologyDiversityPerServiceShape
+    a              sh:NodeShape ;
+    sh:targetClass am:ApplicationService ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Excessive Technology Diversity Per Service"@en ;
+    skos:definition
+        '''Application services realized by components deployed on
+        many different technology nodes may indicate excessive
+        technology diversity. The physical elements, part of the
+        Technology Layer, are not counted.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Application service {$this} depends on {?nodeCount} distinct technology nodes. Consider standardizing."@en ;
+        sh:select """
+            SELECT $this (COUNT(DISTINCT ?node) AS ?nodeCount)
+            WHERE {
+                $this a am:ApplicationService .
+                ?app am:realizes $this .
+                ?app a am:ApplicationComponent .
+                # Technology it depends on: serving or realizing the component, or hosting
+                # what realizes it (a node assigned to an artifact or system software).
+                ?node (am:serves|am:realizes|am:assignedTo/am:realizes) ?app .
+                ?node rdf:type/rdfs:subClassOf* am:TechnologyLayerElement ,
+                                                am:ActiveStructureElement .
+                FILTER NOT EXISTS { ?node rdf:type/rdfs:subClassOf* am:PhysicalLayerElement }
+            }
+            GROUP BY $this
+            HAVING (COUNT(DISTINCT ?node) > 3)
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 7: SINGLE POINT OF FAILURE
+#
+#  Principle: Critical business processes should not depend on a
+#  single application component without redundancy. Single points
+#  of failure threaten business continuity.
+#
+#################################################################
+
+:SinglePointOfFailureShape
+    a              sh:NodeShape ;
+    sh:targetClass am:BusinessService ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Single Point of Failure"@en ;
+    skos:definition
+        '''Business services realized by exactly one application
+        component with no redundancy may represent a single point
+        of failure.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Business service {$this} is realized by only one application component ({?app}). Consider redundancy for critical services."@en ;
+        sh:select """
+            SELECT $this ?app
+            WHERE {
+                $this a am:BusinessService .
+                ?app am:realizes $this .
+                ?app a am:ApplicationComponent .
+                FILTER NOT EXISTS {
+                    ?app2 am:realizes $this .
+                    ?app2 a am:ApplicationComponent .
+                    FILTER(?app2 != ?app)
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:CriticalNodeSingleDeploymentShape
+    a              sh:NodeShape ;
+    sh:targetClass am:ApplicationComponent ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Single Deployment Node"@en ;
+    skos:definition
+        '''Application components deployed on only one technology node
+        may lack resilience. Critical components should be deployed
+        across multiple nodes.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Application component {$this} is deployed on only one node ({?node}). Consider multi-node deployment for resilience."@en ;
+        sh:select """
+            SELECT $this ?node
+            WHERE {
+                $this a am:ApplicationComponent .
+                # Deployed on a node: the node realizes the component, or is assigned to an
+                # artifact or system software that does.
+                ?node (am:realizes|am:assignedTo/am:realizes) $this .
+                ?node a am:Node .
+                FILTER NOT EXISTS {
+                    ?node2 (am:realizes|am:assignedTo/am:realizes) $this .
+                    ?node2 a am:Node .
+                    FILTER(?node2 != ?node)
+                }
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 8: COMPLETENESS AND TRACEABILITY
+#
+#  Principle: Architecture models should be complete enough to
+#  support governance. Key elements should have required
+#  relationships and documentation.
+#
+#################################################################
+
+:BusinessServiceWithoutRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass am:BusinessService ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Business Service Without Realization"@en ;
+    skos:definition
+        '''Every business service should be realized by at least one
+        business process or function. Unrealized services indicate
+        incomplete modeling.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Business service {$this} is not realized by any business process or function."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am:BusinessService .
+                FILTER NOT EXISTS {
+                    ?behavior am:realizes $this .
+                    ?behavior rdf:type/rdfs:subClassOf* am:BehaviorElement .
+                    ?behavior rdf:type/rdfs:subClassOf* am:BusinessLayerElement .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:ApplicationServiceWithoutRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass am:ApplicationService ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Application Service Without Realization"@en ;
+    skos:definition
+        '''Every application service should be realized by at least one
+        application component. Unrealized services indicate incomplete
+        modeling or orphaned service definitions.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Application service {$this} is not realized by any application component."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am:ApplicationService .
+                FILTER NOT EXISTS {
+                    ?app am:realizes $this .
+                    ?app a am:ApplicationComponent .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:CapabilityWithoutBehaviorRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass am:Capability ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Capability Without Business Behavior Realization"@en ;
+    skos:definition
+        '''Capabilities should be realized by at least one business
+        behavior element (process, function, or interaction). A
+        capability without realization is aspirational only and
+        cannot be assessed for operational readiness.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Capability {$this} is not realized by any business process, function, or interaction."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am:Capability .
+                FILTER NOT EXISTS {
+                    ?behavior am:realizes $this .
+                    ?behavior rdf:type/rdfs:subClassOf* am:BehaviorElement .
+                    ?behavior rdf:type/rdfs:subClassOf* am:BusinessLayerElement .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:BusinessBehaviorRedundantApplicationRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass am:BusinessProcess ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Business Behavior Realized by Multiple Application Components"@en ;
+    skos:definition
+        '''Detects business processes (or functions) realized by more
+        than one application component. Multiple components realizing
+        the same business behavior may indicate redundant automation
+        or unclear application ownership of the process.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Business process {$this} is realized by multiple application components ({?app1} and {?app2}). Clarify which component is authoritative."@en ;
+        sh:select """
+            SELECT $this ?app1 ?app2
+            WHERE {
+                $this rdf:type/rdfs:subClassOf* am:BehaviorElement .
+                $this rdf:type/rdfs:subClassOf* am:BusinessLayerElement .
+                ?app1 a am:ApplicationComponent ;
+                      am:realizes $this .
+                ?app2 a am:ApplicationComponent ;
+                      am:realizes $this .
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+:BusinessFunctionRedundantApplicationRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass am:BusinessFunction ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Business Function Realized by Multiple Application Components"@en ;
+    skos:definition
+        '''Detects business functions realized by more than one
+        application component. Same concern as for processes —
+        multiple realizers indicate potential duplication or
+        unclear automation boundaries.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Business function {$this} is realized by multiple application components ({?app1} and {?app2})."@en ;
+        sh:select """
+            SELECT $this ?app1 ?app2
+            WHERE {
+                $this a am:BusinessFunction .
+                ?app1 a am:ApplicationComponent ;
+                      am:realizes $this .
+                ?app2 a am:ApplicationComponent ;
+                      am:realizes $this .
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+:OrphanedElementShape
+    a              sh:NodeShape ;
+    # ArchiMate 3.2's elements only — the roots amelsh:ArchiMateElementShape targets, and
+    # the junctions — not arch:Element: in a graph holding other notations' models, or
+    # ArchiMate 4.0's beside 3.2's, this rule would judge their elements too, and an
+    # element would be reported once for each ArchiMate version loaded.
+    sh:targetClass am:CoreLayerElement ,
+                   am:StrategyLayerElement ,
+                   am:ImplementationAndMigrationLayerElement ,
+                   am:MotivationElement ,
+                   am:BehaviorElement ,
+                   am:StructureElement ,
+                   am:CompositeElement ,
+                   am:Junction_And ,
+                   am:Junction_Or ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Orphaned Element"@en ;
+    skos:definition
+        '''Elements with no relationships to other elements may be
+        orphaned or incompletely modeled. Every element should
+        participate in at least one relationship.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Element {$this} has no relationships to any other element."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a/rdfs:subClassOf* arch:Element .
+                # MINUS, not FILTER NOT EXISTS: the same results, without testing every
+                # element against every other one — which grows with the square of the model.
+                MINUS { $this ?p ?other . ?other a ?otherType . ?otherType rdfs:subClassOf* arch:Element . }
+                MINUS { ?other ?p $this . ?other a ?otherType . ?otherType rdfs:subClassOf* arch:Element . }
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 9: MOTIVATION ALIGNMENT
+#
+#  Principle: Architecture elements should be traceable to business
+#  goals and requirements. Untraceable elements may lack business
+#  justification.
+#
+#################################################################
+
+:CapabilityWithoutGoalShape
+    a              sh:NodeShape ;
+    sh:targetClass am:Capability ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Capability Without Goal"@en ;
+    skos:definition
+        '''Capabilities should be linked to at least one goal or
+        outcome to establish business justification.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Capability {$this} is not linked to any goal or outcome."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am:Capability .
+                FILTER NOT EXISTS {
+                    {
+                        $this am:realizes ?goal .
+                        { ?goal a am:Goal . } UNION { ?goal a am:Outcome . }
+                    } UNION {
+                        ?goal am:serves $this .
+                        { ?goal a am:Goal . } UNION { ?goal a am:Outcome . }
+                    } UNION {
+                        $this am:associatedWith ?goal .
+                        { ?goal a am:Goal . } UNION { ?goal a am:Outcome . }
+                    }
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:RequirementWithoutRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass am:Requirement ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Requirement Without Realization"@en ;
+    skos:definition
+        '''Requirements should be realized by at least one core element.
+        Unrealized requirements indicate gaps in the architecture.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/principle-shapes#> ;
+        sh:message  "Requirement {$this} is not realized by any architecture element."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am:Requirement .
+                FILTER NOT EXISTS {
+                    ?element am:realizes $this .
+                    FILTER NOT EXISTS {
+                        ?element rdf:type/rdfs:subClassOf* am:MotivationElement .
+                    }
+                }
+            }
+        """ ;
+    ] ;
+.
+
+
+## ─── Composition: multiple-parent warning ────────────────────────────────
+## ArchiMate 3.2 §5.1.2 defines composition as expressing an existence
+## dependency ("if a composite is deleted, its parts are deleted as well").
+## This logically implies a part should belong to at most one composite —
+## otherwise deleting one composite would destroy parts still needed by
+## another. The spec does not explicitly enforce exclusivity, but the
+## existence dependency semantics make multiple-parent composition
+## logically inconsistent. This shape emits a warning when an element
+## is the target of composition from multiple sources.
+
+:CompositionMultipleParentWarning
+ a sh:NodeShape ;
+ sh:targetObjectsOf am:composedOf ;
+ sh:severity sh:Warning ;
+ sh:sparql [
+  sh:message "Element {$this} is composed into multiple parents via am:composedOf. Composition implies existence dependency — a part with multiple composites may indicate a modelling issue (ArchiMate 3.2 §5.1.2)."@en ;
+  sh:select """
+   PREFIX am: <https://meta.linked.archi/archimate3/onto#>
+   SELECT $this (COUNT(?parent) AS ?parentCount)
+   WHERE {
+    ?parent am:composedOf $this .
+   }
+   GROUP BY $this
+   HAVING (COUNT(?parent) > 1)
+  """ ;
+ ] ;
+.

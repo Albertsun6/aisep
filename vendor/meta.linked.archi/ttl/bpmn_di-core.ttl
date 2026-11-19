@@ -1,0 +1,236 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix dc: <https://meta.linked.archi/bpmn/dc#> .
+@prefix archvis: <https://meta.linked.archi/core-vis#> .
+@prefix di: <https://meta.linked.archi/bpmn/di-core#> .
+@prefix :   <https://meta.linked.archi/bpmn/di-core#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+
+
+<https://meta.linked.archi/bpmn/di-core#>
+    a owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/di-core#" ;
+    vann:preferredNamespacePrefix "di" ;
+    dcterms:title "Linked.Archi DI Ontology (OMG DD/DI)"@en ;
+    dcterms:description               '''OWL mapping of the OMG DD Diagram Interchange (DI) abstract classes.'''@en ;
+    rdfs:comment """Maps the OMG DD Diagram Interchange (DI) package.
+Source: DI.cmof — defines the abstract diagram element hierarchy:
+
+  Diagram (abstract) → arch:Diagram → arch:View → arch:ModelConcept
+  DiagramElement (abstract) → archvis:DiagElement
+    ├── Node (abstract) → archvis:Node
+    │   ├── Shape (abstract) → archvis:ArchNode — has bounds : dc:Bounds
+    │   │   └── LabeledShape (abstract) — has ownedLabel : Label
+    │   ├── Plane (abstract) — has planeElement : DiagramElement [0..*]
+    │   └── Label (abstract) → archvis:LabelNode — has bounds : dc:Bounds [0..1]
+    └── Edge (abstract) → archvis:Link — has waypoint : dc:Point [2..*], source/target
+        └── LabeledEdge (abstract) — has ownedLabel : Label
+  Style (abstract) → archvis:Style
+
+Property alignments to core-vis:
+  di:source / di:target → rdfs:subPropertyOf archvis:source / archvis:target
+  di:modelElement aligns with archvis:archElement (shapes) / archvis:archRelationship (edges)
+
+Cross-package references:
+  - Shape.bounds, Label.bounds → dc:Bounds (cmof:DataType from DC.cmof)
+  - Edge.waypoint → dc:Point (cmof:DataType from DC.cmof)
+  - Diagram.name, Diagram.documentation → dcterms:String (cmof:PrimitiveType)
+  - Diagram.resolution → dcterms:Real (cmof:PrimitiveType)
+  - DiagramElement.modelElement → cmof:Element (external, resolved per-package)
+
+All classes in this package are abstract; concrete subclasses are in BPMNDI."""@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    dcterms:modified              "2026-05-06"^^xsd:date ;
+    dcterms:publisher                 "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source  <https://www.omg.org/spec/DD/20100524/DI> ;
+    rdfs:seeAlso <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    dcterms:references <https://www.omg.org/spec/BPMN/2.0.2/PDF> ;
+    rdfs:comment """Validated against:
+  • DI.xsd — abstract DiagramElement, Node, Edge, Shape, LabeledShape, Plane, Label, LabeledEdge, Diagram, Style
+  • DI.cmof — class hierarchy and property definitions
+Source: BPMN 2.0.2 (OMG formal/13-12-09), https://www.omg.org/spec/BPMN/20100501/DI.xsd"""@en ;
+    owl:imports <https://meta.linked.archi/core-vis#> ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    owl:imports <https://meta.linked.archi/bpmn/dc#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+# ── Abstract classes ──
+# Hierarchy: DiagramElement → Node → Shape → LabeledShape
+#             DiagramElement → Node → Plane
+#             DiagramElement → Node → Label
+#             DiagramElement → Edge → LabeledEdge
+#             Diagram (no superclass)
+#             Style (no superclass)
+
+di:DiagramElement a owl:Class ;
+    skos:prefLabel "DiagramElement"@en ;
+    skos:definition "Abstract root of all diagram elements. CMOF: isAbstract=true."@en ;
+    rdfs:subClassOf archvis:DiagElement ;
+.
+
+di:Node a owl:Class ;
+    skos:prefLabel "Node"@en ;
+    skos:definition "Abstract. CMOF: Node → DiagramElement. Aligned with archvis:Node."@en ;
+    rdfs:subClassOf di:DiagramElement, archvis:Node ;
+.
+
+di:Edge a owl:Class ;
+    skos:prefLabel "Edge"@en ;
+    skos:definition "Abstract. CMOF: Edge → DiagramElement. Has waypoint [2..*] : dc:Point, source/target : DiagramElement. Aligned with archvis:Link."@en ;
+    rdfs:subClassOf di:DiagramElement, archvis:Link ;
+.
+
+di:Shape a owl:Class ;
+    skos:prefLabel "Shape"@en ;
+    skos:definition "Abstract. CMOF: Shape → Node. Has bounds : dc:Bounds. Aligned with archvis:ArchNode (shapes depict model elements)."@en ;
+    rdfs:subClassOf di:Node, archvis:ArchNode ;
+.
+
+di:LabeledShape a owl:Class ;
+    skos:prefLabel "LabeledShape"@en ;
+    skos:definition "Abstract. CMOF: LabeledShape → Shape. Has ownedLabel : Label [0..*]."@en ;
+    rdfs:subClassOf di:Shape ;
+.
+
+di:Plane a owl:Class ;
+    skos:prefLabel "Plane"@en ;
+    skos:definition "Abstract. CMOF: Plane → Node. Has planeElement : DiagramElement [0..*] (composite)."@en ;
+    rdfs:subClassOf di:Node ;
+.
+
+di:Label a owl:Class ;
+    skos:prefLabel "Label"@en ;
+    skos:definition "Abstract. CMOF: Label → Node. Has bounds : dc:Bounds [0..1]. Aligned with archvis:LabelNode."@en ;
+    rdfs:subClassOf di:Node, archvis:LabelNode ;
+.
+
+di:LabeledEdge a owl:Class ;
+    skos:prefLabel "LabeledEdge"@en ;
+    skos:definition "Abstract. CMOF: LabeledEdge → Edge. Has ownedLabel : Label [0..*]."@en ;
+    rdfs:subClassOf di:Edge ;
+.
+
+di:Diagram a owl:Class ;
+    arch:isAbstractClass true ;
+    skos:prefLabel "Diagram"@en ;
+    skos:definition "Abstract. CMOF: standalone (no superclass). Has rootElement : DiagramElement (composite), name, documentation, resolution, ownedStyle. Aligned with arch:Diagram."@en ;
+    rdfs:subClassOf arch:Diagram ;
+.
+
+di:Style a owl:Class ;
+    skos:prefLabel "Style"@en ;
+    skos:definition "Abstract. CMOF: standalone (no superclass). Aligned with archvis:Style."@en ;
+    rdfs:subClassOf archvis:Style ;
+.
+
+# ── Object properties ──
+
+di:bounds a owl:ObjectProperty ;
+    skos:prefLabel "bounds"@en ;
+    skos:definition "Shape.bounds [1..1] and Label.bounds [0..1] — value is dc:Bounds."@en ;
+    rdfs:range dc:Bounds ;
+.
+
+di:waypoint a owl:ObjectProperty ;
+    skos:prefLabel "waypoint"@en ;
+    skos:definition "Edge.waypoint [2..*] ordered, non-unique — value is dc:Point."@en ;
+    rdfs:range dc:Point ;
+.
+
+di:source a owl:ObjectProperty ;
+    skos:prefLabel "source"@en ;
+    skos:definition "Edge.source [0..1] — the source DiagramElement."@en ;
+    rdfs:subPropertyOf archvis:source ;
+    rdfs:range di:DiagramElement ;
+.
+
+di:target a owl:ObjectProperty ;
+    skos:prefLabel "target"@en ;
+    skos:definition "Edge.target [0..1] — the target DiagramElement."@en ;
+    rdfs:subPropertyOf archvis:target ;
+    rdfs:range di:DiagramElement ;
+.
+
+di:modelElement a owl:ObjectProperty ;
+    skos:prefLabel "modelElement"@en ;
+    skos:definition "DiagramElement.modelElement [0..1] — the semantic element depicted. Aligned with archvis:archElement (for shapes) and archvis:archRelationship (for edges)."@en ;
+.
+
+di:ownedElement a owl:ObjectProperty ;
+    skos:prefLabel "ownedElement"@en ;
+    skos:definition "DiagramElement.ownedElement [0..*] composite."@en ;
+    rdfs:range di:DiagramElement ;
+.
+
+di:owningElement a owl:ObjectProperty ;
+    skos:prefLabel "owningElement"@en ;
+    rdfs:range di:DiagramElement ;
+.
+
+di:owningDiagram a owl:ObjectProperty ;
+    skos:prefLabel "owningDiagram"@en ;
+    rdfs:range di:Diagram ;
+.
+
+di:rootElement a owl:ObjectProperty ;
+    skos:prefLabel "rootElement"@en ;
+    skos:definition "Diagram.rootElement [1..1] composite — the top-level DiagramElement."@en ;
+    rdfs:range di:DiagramElement ;
+.
+
+di:planeElement a owl:ObjectProperty ;
+    skos:prefLabel "planeElement"@en ;
+    skos:definition "Plane.planeElement [0..*] ordered, composite — shapes and edges on the plane."@en ;
+    rdfs:domain di:Plane ;
+    rdfs:range di:DiagramElement ;
+.
+
+di:ownedLabel a owl:ObjectProperty ;
+    skos:prefLabel "ownedLabel"@en ;
+    skos:definition "LabeledShape.ownedLabel / LabeledEdge.ownedLabel [0..*] composite."@en ;
+    rdfs:range di:Label ;
+.
+
+di:ownedStyle a owl:ObjectProperty ;
+    skos:prefLabel "ownedStyle"@en ;
+    rdfs:range di:Style ;
+.
+
+di:style a owl:ObjectProperty ;
+    skos:prefLabel "style"@en ;
+    rdfs:range di:Style ;
+.
+
+# ── Datatype properties ──
+
+di:id a owl:DatatypeProperty ;
+    skos:prefLabel "id"@en ;
+    skos:definition "DiagramElement.id, Diagram.id, Style.id [0..1] — type xsd:ID. Declared by DI.xsd only: DI.cmof leaves identity to XMI. The DI counterpart of bpmn:id, which BaseElement carries in the semantic model."@en ;
+.
+
+di:name a owl:DatatypeProperty ;
+    skos:prefLabel "name"@en ;
+    skos:definition "Diagram.name [0..1] — type String."@en ;
+.
+
+di:documentation a owl:DatatypeProperty ;
+    skos:prefLabel "documentation"@en ;
+    skos:definition "Diagram.documentation [0..1] — type String."@en ;
+.
+
+di:resolution a owl:DatatypeProperty ;
+    skos:prefLabel "resolution"@en ;
+    skos:definition "Diagram.resolution [0..1] — type Real (xsd:double)."@en ;
+    rdfs:range xsd:double ;
+.

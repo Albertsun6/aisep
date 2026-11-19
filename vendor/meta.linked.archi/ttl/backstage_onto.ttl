@@ -1,0 +1,2316 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix :        <https://meta.linked.archi/backstage/onto#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/backstage/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/backstage/onto#" ;
+    vann:preferredNamespacePrefix "bs" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Backstage Metamodel Ontology"@en ;
+    dcterms:description                '''An RDF/OWL ontology for Backstage catalog entities and their
+relationships, extending the Linked.Archi core ontology.
+This is not an official Spotify document.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-08-24"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source                <https://backstage.io/docs/features/software-catalog/system-model> ,
+                                  <https://backstage.io/docs/features/software-catalog/descriptor-format> ,
+                                  <https://backstage.io/docs/features/software-catalog/well-known-relations> ,
+                                  <https://backstage.io/docs/features/software-catalog/well-known-annotations> ,
+                                  <https://backstage.io/docs/features/software-catalog/well-known-statuses> ,
+                                  <https://github.com/backstage/backstage/tree/master/packages/catalog-model/src/schema> ,
+                                  <https://github.com/backstage/backstage/blob/master/plugins/scaffolder-common/src/Template.v1beta3.schema.json> ;
+    prov:wasDerivedFrom           <https://backstage.io/docs/features/software-catalog/system-model> ,
+                                  <https://backstage.io/docs/features/software-catalog/descriptor-format> ,
+                                  <https://backstage.io/docs/features/software-catalog/well-known-relations> ,
+                                  <https://backstage.io/docs/features/software-catalog/well-known-annotations> ,
+                                  <https://backstage.io/docs/features/software-catalog/well-known-statuses> ,
+                                  <https://github.com/backstage/backstage/tree/master/packages/catalog-model/src/schema> ,
+                                  <https://github.com/backstage/backstage/blob/master/plugins/scaffolder-common/src/Template.v1beta3.schema.json> ;
+    prov:hadPrimarySource         <https://backstage.io/docs/features/software-catalog/system-model> ;
+    dcterms:rightsHolder          "Backstage Project Authors"@en ;
+    dcterms:rights                '''Terms and definitions quoted from the Backstage documentation remain the
+copyright of the Backstage Project Authors and are published by them under Apache-2.0. They are quoted here
+for identification and alignment. The cc:license above covers the modelling work — the IRIs, the class and
+property structure, the scope statement and the editorial notes — not the quoted definition text.'''@en ;
+    skos:editorialNote            '''Attribution convention (DD-16). Every class, property and individual carries
+dcterms:source pointing at the specific documentation section it derives from, and rdfs:seeAlso
+pointing at the /docs/next/ variant of that section plus any second section that also bears on the
+term — the Backstage analogue of a singlepage alternative, since the docs are versioned by channel
+rather than published as one document.
+
+prov:wasQuotedFrom is asserted ONLY where skos:definition reproduces the documentation wording
+verbatim, which here is :Resource and :User. Everywhere else the definition is a Linked.Archi
+rendering — condensed, or generalised across the several sections that define one term — and
+asserting wasQuotedFrom on it would be a false provenance claim. The explanatory prose from the
+source section is carried in skos:scopeNote instead, paraphrased.
+
+Backstage documentation is published by the Backstage Project Authors under Apache-2.0.
+
+TWO SOURCES PER TERM, AND WHICH ONE WINS (added 0.5.0). Terms here cite the rendered documentation at
+backstage.io AND, where a machine-readable artifact exists, the file in
+github.com/backstage/backstage that defines it — the JSON Schemas under
+packages/catalog-model/src/schema for the eight catalog kinds and the envelope, and
+plugins/scaffolder-common/src for Template.
+
+The two are not redundant. The rendered page is the human account and carries the section anchors this
+file's dcterms:source values point at; the repository file is what the catalogue actually enforces. Where
+they disagree, THE SCHEMA IS AUTHORITATIVE AND THE DIVERGENCE IS RECORDED ON THE TERM, because a
+consumer needs to know which of the two their data will be judged against.
+
+There is one such divergence today, and it is why this convention was adopted rather than assumed. The
+descriptor format page still documents Template as apiVersion backstage.io/v1beta2; the schema's
+apiVersion enum admits only scaffolder.backstage.io/v1beta3, and Template has no schema under
+catalog-model at all because the kind belongs to the scaffolder plugin rather than to the catalog model.
+:Template and :apiVersion record the schema value and cite both sources. Modelling from the rendered page
+alone would have published a version string the catalogue rejects.
+
+One class of term deliberately carries no dcterms:source: the twelve qualified* navigation
+properties. They exist because of the three-declaration pattern (DD-10 / P-4), not because Backstage
+documents anything corresponding to them, so pointing them at a specification section would
+misattribute a Linked.Archi construct to the source. Their provenance is arch:unqualifiedForm, which
+already names the spec-derived predicate they belong to.'''@en ;
+    owl:versionIRI                <https://meta.linked.archi/backstage/onto/0.5.0#> ;
+    owl:versionInfo               "0.5.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/backstage/onto/0.4.0#> ;
+    rdfs:seeAlso                  <https://backstage.io/> ,
+                                  <https://backstage.io/docs/features/software-catalog/> ,
+                                  <https://backstage.io/docs/features/software-catalog/well-known-relations> ,
+                                  <https://backstage.io/docs/features/software-catalog/well-known-annotations> ,
+                                  <https://backstage.io/docs/features/software-catalog/well-known-statuses> ,
+                                  <https://github.com/backstage/backstage> ,
+                                  <https://github.com/backstage/backstage/tree/master/docs/features/software-catalog> ,
+                                  <https://github.com/backstage/backstage/tree/master/packages/catalog-model> ,
+                                  <https://github.com/backstage/backstage/blob/master/LICENSE> ;
+    skos:editorialNote            '''Backstage materializes every relation in both directions (ownedBy/ownerOf,
+partOf/hasPart, dependsOn/dependencyOf, ...). This ontology declares ONE canonical direction per
+pair — the direction generated from the declaring entity's spec field (child->parent, part->whole,
+dependent->dependency, owned->owner). Lifters MUST normalize inverse-direction edges from the
+catalog API's relations array onto the canonical property rather than minting inverse properties.'''@en ;
+    skos:editorialNote            '''SCOPE STATEMENT — what this document covers, and what it deliberately
+does not.
+
+Read this rather than the history notes below to learn the current scope. The history notes accumulate and
+each records the state at one release, so a reader cannot tell from them which line is still true; this note
+is maintained as the single current answer, and is the note to change when scope changes.
+
+Why the statement exists at all. Converters read this document and are expected NOT to mint terms in the
+bs: namespace, because a term invented here would look to a downstream consumer like part of the Backstage
+vocabulary while nothing defines it, and two organisations inventing the same local name for different
+things is worse than either having none. That rule only works if a converter author can tell a deliberate
+omission from an oversight. Absent this note they cannot, and silence reads as a gap to be filled.
+
+IN SCOPE — the descriptor format's eight architecture-bearing kinds, each with a class here and a
+skos:notation carrying its kind token: Component, System, API, Resource, Domain, Group, User, Template.
+The envelope (:apiVersion, :kind), the reserved metadata fields, the well-known relations, the well-known
+annotations, the spec.type and state vocabularies, and status.items.
+
+OUT OF SCOPE, by decision, with what to do instead:
+
+1. The Location kind — descriptor-format#kind-location, and
+   packages/catalog-model/src/schema/kinds/Location.v1alpha1.schema.json. A location is, in the
+   specification's own words, a marker that references other
+   places to look for catalog data — it is ingestion configuration, not a node in an architecture, and
+   nothing else in this ontology depends on it. Its content is already published from the other direction
+   and in the form the specification defines: :managedByLocation and :managedByOriginLocation retain the
+   <type>:<target> reference on every entity a location produced, which answers "where did this record come
+   from" without a Location entity in the graph. A lift SHOULD therefore drop Location entities and report
+   the count, rather than emit an untyped node. An adopter who genuinely wants them as nodes declares a
+   class in their own namespace; that is a local modelling choice, not a gap here.
+
+2. A Template's execution detail — spec.parameters, spec.steps, spec.secrets, spec.output,
+   spec.presentation and the form decorators, per Template.v1beta3.schema.json. The wizard form schema and
+   the executable action pipeline. All are unbounded JSON whose shape is set by the scaffolder plugin
+   rather than by the catalog model, and none is an architectural fact about the template — they are its
+   implementation. Same treatment as an API's spec.definition, except that a definition at least has a
+   declared format, so it is carried as a literal and these are not carried at all. A reader who needs
+   them declares a predicate they own. Note that the schema, unlike the rendered page, requires only
+   spec.type and spec.steps.
+
+3. status.items[].error. The serialised error object. Its shape is not fixed upstream, and a stack trace is
+   a debugging artifact rather than an architectural fact. The item's type, level and message ARE published
+   (see the Entity Status section) because they are what says whether the record beside them was ingested
+   cleanly; the error body adds detail no architecture query asks for.
+
+4. Per-key label and annotation predicates. metadata.labels and metadata.annotations are open key spaces
+   that organisations define, so this document publishes the family super-properties :label and
+   :externalIdentifier and no members beyond the vendor annotations the specification itself documents. The
+   intended pattern is a per-key subproperty in the READER's namespace — see the scope note on :label,
+   which states it as intent rather than leaving it to be inferred.
+
+5. The relations root field as data. Already modelled, as the twelve relationship types; a lift normalises
+   the array onto them rather than retaining it. This is the one omission that is genuinely covered
+   elsewhere rather than declined.
+
+Anything else a catalog API dump carries and this list does not name is an oversight worth reporting
+upstream, not a decision.'''@en ;
+    skos:historyNote              '''0.5.0: Template, scaffolding, and entity status.
+
+Answers three gaps found by asking what a catalog API dump loses on conversion.
+
+:Template is now an element class, reversing the 0.3.0 decision that put it outside scope alongside
+Location. The two are not alike and should not have been decided together. A scaffolder template is the
+closest thing the catalog has to a prescribed, reusable way of creating software — a standard, not merely a
+wizard — and this ontology already carried the evidence: :sourceTemplate exists precisely so that adherence
+to it can be tracked, and its own scope note anticipated promoting the literal to a relation. That
+promotion is :scaffoldedFrom, in full three-declaration form, with the annotation literal retained
+alongside the resolved edge on the :kind / rdf:type pattern rather than deprecated. Template also takes
+spec.owner through the existing :ownedBy, spec.type through :componentType — whose domain widens, since the
+descriptor format says a template's type should match the component type it creates — and
+backstage.io/time-saved through the new :timeSaved.
+
+Location stays out, and now says so. See the scope statement above.
+
+Entity status is published: :StatusItem with :statusType, :statusLevel and :statusMessage, reached by
+:hasStatusItem, and a :StatusLevel vocabulary of info / warning / error. This too reverses a 0.3.0
+decision, whose stated reason — that the catalog derives status rather than an author writing it — is not a
+test this ontology applies anywhere else. :uid, :etag, :orphan, :managedByLocation and the whole catalog
+provenance family are equally catalog-derived and all published. Status is where the catalogue reports
+whether the entity beside it was ingested cleanly, so a graph lifted from a dump could not previously say,
+and a query over the estate could not tell a clean record from a stale one.
+
+A node per item, not fields flattened onto the entity: two items flattened produce two levels and two
+messages with nothing pairing them, the same argument that makes :Link a node and spec.profile not.
+
+:apiVersion completes the envelope beside :kind. Motivated by Template, the one kind the catalog model does
+not own: the scaffolder plugin versions it separately, on scaffolder.backstage.io/v1beta3 against
+backstage.io/v1alpha1 for the rest, so a graph that records the kind and not the apiVersion loses the fact
+that this kind's descriptor is less settled than its neighbours.
+
+Every term now cites the repository artifact that defines it as well as the rendered documentation page —
+the JSON Schemas under packages/catalog-model/src/schema, and plugins/scaffolder-common for Template. That
+convention is stated on the header, and it earned its keep immediately: the rendered descriptor format page
+still documents Template as backstage.io/v1beta2 and omits its spec.lifecycle, both of which the schema
+contradicts. Terms record what the schema enforces and cite both sources.
+
+:label's scope note now states that per-key subproperties in the adopter's namespace ARE the intended
+pattern, and why no shape enforces it.'''@en ;
+    skos:historyNote              '''0.4.0: Entity identity completed.
+
+The two remaining reserved root fields are now retained source data (DD-24) rather than left implicit:
+:kind, the descriptor's kind token, and :entityRef, the compact kind:namespace/name reference the
+catalogue circulates in its relations array, in spec.owner / spec.system / spec.dependsOn, and in the
+techdocs-entity annotation. Both are read from the source. Neither is derived.
+
+:kind is not a duplicate of rdf:type. rdf:type records how this graph classifies the entity, which is a
+modelling decision open to later revision; :kind records what the catalogue said. A lift maps one to the
+other through the skos:notation now carried by each element class, but an adopter may retype an entity
+under a convention adopted afterwards, or add types from another notation in a merged graph, and neither
+makes the retained kind wrong. Keeping only rdf:type would lose the descriptor's statement; keeping only
+:kind would leave the entity invisible to every sh:targetClass and subClassOf query here. Divergence is
+reported at sh:Info as a reconciliation aid, not as a conformance failure.
+
+skos:notation on the seven element classes also closes the one place 0.3.0 applied the notation
+convention inconsistently: every value individual carried its YAML token, and the classes identifying
+the entity carried none, so a lift had to hardcode the token->class map. These tokens are title-case,
+unlike every other notation in this file.
+
+:entityRef is validated against :kind, :namespace and :name — the three other retained fields from the
+same descriptor — and deliberately not against rdf:type, since checking it against a type the modeller
+is free to change would report intentional retyping as breakage.
+
+0.3.0: Well-known relations and annotations coverage.
+
+Relations — added dependsOn (with usesResource re-based as its resource-facing subproperty), childOf
+(Group hierarchy), subcomponentOf (spec.subcomponentOf), subdomainOf (spec.subdomainOf) and
+techdocsDelegatedTo (backstage.io/techdocs-entity, the one annotation whose value is an entity ref),
+each in full three-declaration form. Widened ownedBy range to include User; widened
+providesAPI/consumesAPI domains to include System; narrowed belongsToDomain domain to System per the
+descriptor format. Declared the canonical-direction policy for inverse relation pairs.
+
+Attributes — catalog provenance properties from the backstage.io/* annotations, techdocsEntityPath on
+the TechDocsDelegation qualified relationship, and a named datatype property per documented vendor
+annotation, all under the externalIdentifier super-property.
+
+Value vocabularies (DD-23) — LifecycleState (Experimental/Production/Deprecated) with the
+lifecycleState property, and ApiVisibility (Public/Restricted/Private) with the apiVisibility
+property, as named individuals in this file; value-set membership is enforced in shapes. The 0.2.0
+lifecycle string property is deprecated in favour of lifecycleState, and the duplicate lifecycle
+concepts previously held in backstage-reference-data are withdrawn in favour of these individuals.
+
+Classification vocabularies — ComponentType (service/website/library) and APIType
+(openapi/asyncapi/graphql/grpc) as classes of named individuals with the componentType and apiType
+properties, following the uml:MessageSort pattern but without owl:oneOf, since spec.type is
+explicitly user-defined. Their earlier home in backstage-reference-data is withdrawn. All value
+individuals now carry skos:notation with the exact YAML token, which is the key a lift matches
+on.
+
+Descriptor-format completion — the reserved metadata fields (name, namespace, uid, etag, title,
+description, tags, and the label super-property), the Link structure, the User/Group profile fields
+flattened onto the entity, the API definition, and the remaining four spec.type vocabularies
+(ResourceType, GroupType, SystemType, DomainType) as classes of named individuals.
+
+Out of scope by decision — the Location and Template kinds (catalog plumbing and scaffolder
+respectively, neither an architecture construct); the read-only relations and status root fields,
+which the catalog derives rather than an author writing, and whose content is either already modeled
+as relationships or is ingestion diagnostics; backstage.io/code-coverage (plugin configuration); and
+the deprecated annotations.'''@en ;
+    skos:historyNote              '''0.2.0: Modernized to Linked.Archi conventions. Replaced
+rdfs:domain/rdfs:range with arch:domainIncludes/arch:rangeIncludes. Added three-declaration
+qualified relationship pattern. Added @en language tags. Added full ontology header.'''@en ;
+.
+
+#################################################################
+# Element Classes
+#
+# One class per architecture-bearing catalog kind, and
+# skos:notation on each carrying the exact kind token. That
+# publishes the token->class map a lift needs — "Component" ->
+# :Component — in the metamodel instead of hardcoded in every lift,
+# the same role notation plays for the value vocabularies below.
+#
+# Eight of the descriptor format's nine kinds are here. Location is
+# the one that is not, deliberately; the scope statement on the
+# ontology header says so and says what to do with a Location
+# entity instead, so that its absence reads as a decision rather
+# than as an omission a lift should quietly patch.
+#
+# The map is a DEFAULT, not an identity. rdf:type is a modelling
+# decision and :kind is what the descriptor said, and the two are
+# allowed to diverge: an adopter may retype a lifted entity to suit
+# a convention adopted later, or carry additional types in a merged
+# graph, without that making the retained kind wrong. Both are
+# recorded, neither is derived from the other, and the divergence
+# is reported at sh:Info rather than as an error.
+#
+# Note the case: kind tokens are title-case in the descriptor
+# format ("Component", "API"), unlike every other skos:notation in
+# this file, which carries a lowercase spec.type or state token.
+# Entity references are compared case-insensitively, so a
+# lowercased kind still resolves — but it is not what the
+# descriptor said, and this is retained source data. Do not
+# "normalize" these to lowercase.
+#################################################################
+
+:Component
+    a               owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#component> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#component> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ,
+                         <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Component.v1alpha1.schema.json> ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Component"@en ;
+    skos:notation   "Component" ;
+    skos:definition "A deployable unit, service, library, or application."@en ;
+    skos:scopeNote  "A piece of software — mobile feature, web site, backend service, data pipeline — either tracked in source control or adopted from open source or commercial suppliers. A component may implement APIs for others to consume, consume APIs implemented elsewhere, or depend directly on components and resources attached at runtime."@en ;
+.
+
+:System
+    a               owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#system> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#system> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-system> ,
+                         <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/System.v1alpha1.schema.json> ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "System"@en ;
+    skos:notation   "System" ;
+    skos:definition "A set of components and resources that provide business or technical value."@en ;
+    skos:scopeNote  "The encapsulation boundary: a system exposes one or more public APIs while hiding its resources and the private APIs between its components, so the owner can change the implementation without consumers noticing. Typically a handful of components at most; use Domain to group systems."@en ;
+.
+
+:API
+    a               owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#api> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#api> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ,
+                         <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/API.v1alpha1.schema.json> ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "API"@en ;
+    skos:notation   "API" ;
+    skos:definition "An API that is owned and maintained in the ecosystem."@en ;
+    skos:scopeNote  "APIs are implemented by components and form the boundaries between them. They may be expressed through an RPC IDL, a data schema, or code interfaces, but must be in a machine-readable format so tooling and analysis can be built on top."@en ;
+.
+
+:Resource
+    a               owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#resource> ;
+    prov:wasQuotedFrom   <https://backstage.io/docs/features/software-catalog/system-model#resource> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#resource> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-resource> ,
+                         <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Resource.v1alpha1.schema.json> ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Resource"@en ;
+    skos:notation   "Resource" ;
+    skos:definition "Resources are the infrastructure a component needs to operate at runtime."@en ;
+    skos:scopeNote  "Databases, topics, buckets, CDNs and the like. Modelling them alongside components and systems is what makes resource footprint visible."@en ;
+.
+
+:Domain
+    a               owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#domain> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#domain> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-domain> ,
+                         <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Domain.v1alpha1.schema.json> ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Domain"@en ;
+    skos:notation   "Domain" ;
+    skos:definition "A high-level grouping (often aligned to business domains)."@en ;
+    skos:scopeNote  "Groups systems that share terminology, domain models, metrics, business purpose or documentation — that is, systems forming a bounded context. Large organizations may nest domains; see :subdomainOf."@en ;
+.
+
+:User
+    a               owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#user> ;
+    prov:wasQuotedFrom   <https://backstage.io/docs/features/software-catalog/system-model#user> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#user> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-user> ,
+                         <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/User.v1alpha1.schema.json> ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "User"@en ;
+    skos:notation   "User" ;
+    skos:definition "A user describes a person, such as an employee, a contractor, or similar."@en ;
+.
+
+:Group
+    a               owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#group> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#group> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group> ,
+                         <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Group.v1alpha1.schema.json> ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Group"@en ;
+    skos:notation   "Group" ;
+    skos:definition "A group of users (e.g., team, department, tribe)."@en ;
+    skos:scopeNote  "An organizational entity — a team, a business unit, or a looser collection of people such as an interest group. Group hierarchies are expressed with :childOf."@en ;
+.
+
+:Template
+    a               owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-template> ,
+                         <https://github.com/backstage/backstage/blob/master/plugins/scaffolder-common/src/Template.v1beta3.schema.json> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-template> ,
+                         <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiosource-template> ,
+                         <https://backstage.io/docs/features/software-templates/> ,
+                         <https://github.com/backstage/backstage/blob/master/plugins/scaffolder-common/src/TemplateEntityV1beta3.ts> ,
+                         <https://github.com/backstage/backstage/tree/master/plugins/scaffolder-common> ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Template"@en ;
+    skos:notation   "Template" ;
+    skos:definition "A scaffolder template describing the parameters rendered in the scaffolding wizard and the steps executed when scaffolding a component."@en ;
+    skos:scopeNote  '''In scope as of 0.5.0, reversing the 0.3.0 decision that grouped it with Location.
+A template is the closest construct the catalog has to a prescribed, reusable way of creating software: the
+documented purpose of the backstage.io/source-template annotation is tracking adherence to software
+standards, and "which components were scaffolded from an approved template, and which were not" is an
+architecture governance question that needs the template as a node to answer without string joins.
+
+What a Template carries here is almost entirely existing vocabulary. spec.owner is :ownedBy, so a template
+appears in the ownership matrix like any other entity. spec.type is :componentType rather than a vocabulary
+of its own, because the descriptor format defines it as the type of component the template creates and says
+it should ideally match that component's own spec.type — one vocabulary, used from both ends, so a query for
+"templates that produce services" and one for "services" agree. metadata.tags, metadata.title, description,
+links and annotations are the common metadata. The edge to what a template produced is :scaffoldedFrom.
+
+spec.parameters and spec.steps are NOT carried, nor are spec.secrets, spec.output, spec.presentation or
+the form decorators; see the scope statement on the ontology header. Note that the schema requires
+spec.type and spec.steps, and that spec.parameters is optional in the schema even though the rendered
+documentation marks it required.
+
+APIVERSION — READ THIS BEFORE LIFTING TEMPLATES. Template is the one kind that does not belong to the
+catalog model. It has no schema under packages/catalog-model; the scaffolder plugin owns it, in
+plugins/scaffolder-common, and versions it on its own track. The two published sources disagree about
+which track:
+
+  rendered descriptor format page  ->  backstage.io/v1beta2
+  Template.v1beta3.schema.json    ->  scaffolder.backstage.io/v1beta3   (apiVersion enum, sole value)
+
+The schema is what the catalogue enforces, so THE CORRECT VALUE IS scaffolder.backstage.io/v1beta3 and
+the documentation page is stale. Both are cited above so a reader can check rather than take this on
+trust. A lift emitting the documented v1beta2 string produces a descriptor the scaffolder rejects.
+
+That divergence is itself the reason to keep :apiVersion per entity rather than assume it constant, and
+the reason to treat this kind as less settled than its neighbours.'''@en ;
+.
+
+
+#################################################################
+# Relationship Types
+#################################################################
+
+## Ownership ───────────────────────────────────────────────────
+
+:ownedBy
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#ownedby-and-ownerof> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#ownedby-and-ownerof> ;
+    skos:prefLabel       "Owned By"@en ;
+    skos:definition      "Element is owned by a group or user."@en ;
+    skos:scopeNote       '''The well-known-relations spec says the owner is "usually an
+organizational entity (User or Group)". Group owners dominate in practice, but User owners are
+ordinary Backstage — common in small organisations — so the range lists both. The spec frames
+ownership as singular ultimate responsibility for display purposes, not as an authorization source.'''@en ;
+    arch:domainIncludes  arch:Element ;
+    arch:rangeIncludes   :Group, :User ;
+.
+
+:Ownership
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#ownedby-and-ownerof> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#ownedby-and-ownerof> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :ownedBy ;
+    skos:prefLabel       "Ownership"@en ;
+    skos:definition      "An ownership relationship from an element to a group or user."@en ;
+.
+
+:qualifiedOwnership
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Ownership ;
+    arch:unqualifiedForm :ownedBy ;
+.
+
+## Part of System ──────────────────────────────────────────────
+
+:partOfSystem
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    skos:prefLabel       "Part of System"@en ;
+    skos:definition      "Component, API, or resource is part of a system."@en ;
+    skos:scopeNote       '''Backstage declares spec.system on three kinds — Component, API and
+Resource — and each one generates the same partOf / hasPart relation towards the System it names. The
+domain lists all three so that the ontology is as wide as the descriptor format; a catalogue that
+places an API or a Resource in a system is ordinary Backstage, not an edge case.'''@en ;
+    arch:domainIncludes  :Component, :API, :Resource ;
+    arch:rangeIncludes   :System ;
+.
+
+:SystemMembership
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :partOfSystem ;
+    skos:prefLabel       "System Membership"@en ;
+    skos:definition      "A membership relationship from a component, API, or resource to a system."@en ;
+.
+
+:qualifiedSystemMembership
+    a                    owl:ObjectProperty ;
+    rdfs:range           :SystemMembership ;
+    arch:unqualifiedForm :partOfSystem ;
+.
+
+## Provides API ────────────────────────────────────────────────
+
+:providesAPI
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#providesapi-and-apiprovidedby> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#providesapi-and-apiprovidedby> ;
+    skos:prefLabel       "Provides API"@en ;
+    skos:definition      "Component or system provides an API."@en ;
+    skos:scopeNote       '''The providesApi relation is generated from spec.providesApis "of the
+component or system in question" (well-known relations). The system reading matches the system
+model itself: a System is defined as exposing one or several public APIs.'''@en ;
+    arch:domainIncludes  :Component, :System ;
+    arch:rangeIncludes   :API ;
+.
+
+:APIProvision
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#providesapi-and-apiprovidedby> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#providesapi-and-apiprovidedby> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :providesAPI ;
+    skos:prefLabel       "API Provision"@en ;
+    skos:definition      "A provision relationship from a component or system to an API."@en ;
+.
+
+:qualifiedAPIProvision
+    a                    owl:ObjectProperty ;
+    rdfs:range           :APIProvision ;
+    arch:unqualifiedForm :providesAPI ;
+.
+
+## Consumes API ────────────────────────────────────────────────
+
+:consumesAPI
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#consumesapi-and-apiconsumedby> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#consumesapi-and-apiconsumedby> ;
+    skos:prefLabel       "Consumes API"@en ;
+    skos:definition      "Component or system consumes an API."@en ;
+    skos:scopeNote       '''Generated from spec.consumesApis of the component or system in
+question, mirroring providesAPI.'''@en ;
+    arch:domainIncludes  :Component, :System ;
+    arch:rangeIncludes   :API ;
+.
+
+:APIConsumption
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#consumesapi-and-apiconsumedby> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#consumesapi-and-apiconsumedby> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :consumesAPI ;
+    skos:prefLabel       "API Consumption"@en ;
+    skos:definition      "A consumption relationship from a component or system to an API."@en ;
+.
+
+:qualifiedAPIConsumption
+    a                    owl:ObjectProperty ;
+    rdfs:range           :APIConsumption ;
+    arch:unqualifiedForm :consumesAPI ;
+.
+
+## Depends On ──────────────────────────────────────────────────
+
+:dependsOn
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
+    skos:prefLabel       "Depends On"@en ;
+    skos:definition      "Entity depends on another entity to function."@en ;
+    skos:scopeNote       '''Backstage's general dependency relation, generated from spec.dependsOn,
+which the descriptor format declares on Component and Resource. The well-known-relations spec calls
+it "a general expression of being in need of that other entity" and gives both readings as examples:
+a website component needing a library component, and a service component using a persistent storage
+resource. Targets are commonly Components and Resources; the relation itself is deliberately broad.
+
+This is the property a faithful lift of the catalog API's relations array emits. The resource-facing
+slice has a dedicated subproperty, :usesResource, retained for continuity — data asserted with either
+term participates in dependsOn queries via subproperty entailment.'''@en ;
+    arch:domainIncludes  :Component, :Resource ;
+    arch:rangeIncludes   :Component, :Resource ;
+.
+
+:Dependency
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :dependsOn ;
+    skos:prefLabel       "Dependency"@en ;
+    skos:definition      "A dependency relationship from an entity to another entity it needs in order to function."@en ;
+.
+
+:qualifiedDependency
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Dependency ;
+    arch:unqualifiedForm :dependsOn ;
+.
+
+## Uses Resource ───────────────────────────────────────────────
+
+:usesResource
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
+    rdfs:subPropertyOf   :dependsOn ;
+    skos:prefLabel       "Uses Resource"@en ;
+    skos:definition      "Component or resource uses a resource."@en ;
+    skos:scopeNote       '''The resource-facing subproperty of :dependsOn — a database that depends
+on a cluster is a Resource source. Backstage itself has no relation named usesResource; in the
+catalog this edge IS a dependsOn edge whose target happens to be a Resource. The term is retained
+for continuity with 0.2.0 data and for queries that want only resource dependencies. New lifts
+SHOULD emit :dependsOn and MAY additionally type resource-targeted edges with this property;
+component-targeted dependencies belong on :dependsOn directly.'''@en ;
+    arch:domainIncludes  :Component, :Resource ;
+    arch:rangeIncludes   :Resource ;
+.
+
+:ResourceUsage
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
+    rdfs:subClassOf      :Dependency ;
+    arch:unqualifiedForm :usesResource ;
+    skos:prefLabel       "Resource Usage"@en ;
+    skos:definition      "A usage relationship from a component or resource to a resource."@en ;
+.
+
+:qualifiedResourceUsage
+    a                    owl:ObjectProperty ;
+    rdfs:range           :ResourceUsage ;
+    arch:unqualifiedForm :usesResource ;
+.
+
+## Belongs to Domain ───────────────────────────────────────────
+
+:belongsToDomain
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    skos:prefLabel       "Belongs to Domain"@en ;
+    skos:definition      "System belongs to a domain."@en ;
+    skos:scopeNote       '''Narrowed from arch:Element in 0.3.0. The descriptor format declares
+spec.domain on System only — components, APIs and resources reach a domain transitively through
+their system. Domain-to-domain nesting is a distinct relation with its own spec field
+(spec.subdomainOf) and its own term here, :subdomainOf; do not use this property for it.
+arch:domainIncludes is guidance rather than an OWL constraint, so 0.2.0 data with wider sources
+does not become inconsistent — it becomes flaggable by the shapes.'''@en ;
+    arch:domainIncludes  :System ;
+    arch:rangeIncludes   :Domain ;
+.
+
+:DomainMembership
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :belongsToDomain ;
+    skos:prefLabel       "Domain Membership"@en ;
+    skos:definition      "A membership relationship from a system to a domain."@en ;
+.
+
+:qualifiedDomainMembership
+    a                    owl:ObjectProperty ;
+    rdfs:range           :DomainMembership ;
+    arch:unqualifiedForm :belongsToDomain ;
+.
+
+## Member of Group ─────────────────────────────────────────────
+
+:memberOf
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#memberof-and-hasmember> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#memberof-and-hasmember> ;
+    skos:prefLabel       "Member Of"@en ;
+    skos:definition      "User is a member of a group."@en ;
+    arch:domainIncludes  :User ;
+    arch:rangeIncludes   :Group ;
+.
+
+:GroupMembership
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#memberof-and-hasmember> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#memberof-and-hasmember> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :memberOf ;
+    skos:prefLabel       "Group Membership"@en ;
+    skos:definition      "A membership relationship from a user to a group."@en ;
+.
+
+:qualifiedGroupMembership
+    a                    owl:ObjectProperty ;
+    rdfs:range           :GroupMembership ;
+    arch:unqualifiedForm :memberOf ;
+.
+
+## Child of Group ──────────────────────────────────────────────
+
+:childOf
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#parentof-and-childof> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#parentof-and-childof> ;
+    skos:prefLabel       "Child Of"@en ;
+    skos:definition      "Group is a child of a parent group."@en ;
+    skos:scopeNote       '''The tree-building relation from the well-known-relations spec, generated
+from spec.parent and/or spec.children — "used for example to describe the organizational structure
+between Groups". The canonical stored direction here is child->parent, matching spec.parent on the
+declaring group; parentOf edges from the catalog API normalize onto this property with source and
+target swapped. The spec's "for example" leaves the pair open to other kinds, but Group hierarchy is
+its only defined use; widen deliberately if a plugin population requires it.'''@en ;
+    arch:domainIncludes  :Group ;
+    arch:rangeIncludes   :Group ;
+.
+
+:GroupParentage
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#parentof-and-childof> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#parentof-and-childof> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :childOf ;
+    skos:prefLabel       "Group Parentage"@en ;
+    skos:definition      "A child-to-parent relationship between groups in an organizational hierarchy."@en ;
+.
+
+:qualifiedGroupParentage
+    a                    owl:ObjectProperty ;
+    rdfs:range           :GroupParentage ;
+    arch:unqualifiedForm :childOf ;
+.
+
+## Subcomponent of Component ───────────────────────────────────
+
+:subcomponentOf
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    skos:prefLabel       "Subcomponent Of"@en ;
+    skos:definition      "Component is part of a larger component."@en ;
+    skos:scopeNote       '''The component-to-component reading of Backstage's partOf, generated
+from spec.subcomponentOf on the child component. Together with :partOfSystem, :belongsToDomain and
+:subdomainOf, this completes the four kind-pair readings that Backstage's single partOf/hasPart
+relation collapses into; the lift dispatches on source and target kind to pick the term.'''@en ;
+    arch:domainIncludes  :Component ;
+    arch:rangeIncludes   :Component ;
+.
+
+:ComponentComposition
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :subcomponentOf ;
+    skos:prefLabel       "Component Composition"@en ;
+    skos:definition      "A part-whole relationship from a subcomponent to its containing component."@en ;
+.
+
+:qualifiedComponentComposition
+    a                    owl:ObjectProperty ;
+    rdfs:range           :ComponentComposition ;
+    arch:unqualifiedForm :subcomponentOf ;
+.
+
+## Subdomain of Domain ─────────────────────────────────────────
+
+:subdomainOf
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#partof-and-haspart> ,
+                         <https://backstage.io/docs/features/software-catalog/system-model#domain> ;
+    skos:prefLabel       "Subdomain Of"@en ;
+    skos:definition      "Domain is a subdomain of a larger domain."@en ;
+    skos:scopeNote       '''The domain-to-domain reading of Backstage's partOf, generated from
+spec.subdomainOf on the child domain. The system model motivates it directly: "in case of a large
+organization, it might make sense to further group domains in a hierarchy, where a domain can be a
+subdomain of another domain."'''@en ;
+    arch:domainIncludes  :Domain ;
+    arch:rangeIncludes   :Domain ;
+.
+
+:DomainHierarchy
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#partof-and-haspart> ,
+                         <https://backstage.io/docs/features/software-catalog/system-model#domain> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :subdomainOf ;
+    skos:prefLabel       "Domain Hierarchy"@en ;
+    skos:definition      "A part-whole relationship from a subdomain to its containing domain."@en ;
+.
+
+:qualifiedDomainHierarchy
+    a                    owl:ObjectProperty ;
+    rdfs:range           :DomainHierarchy ;
+    arch:unqualifiedForm :subdomainOf ;
+.
+
+## TechDocs Delegation ─────────────────────────────────────────
+
+:techdocsDelegatedTo
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiotechdocs-entity> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageiotechdocs-entity> ;
+    skos:prefLabel       "TechDocs Delegated To"@en ;
+    skos:definition      "Entity's technical documentation is owned and built by another entity."@en ;
+    skos:scopeNote       '''Lifted from the backstage.io/techdocs-entity annotation, whose value is
+an entity ref naming "an external entity that owns the TechDocs" — the pattern for complex systems
+sharing a single repo and a single docs build. This is the only well-known annotation whose value
+is an intra-catalog entity reference, which is why it is modeled as a relation while the rest of
+the annotation vocabulary lifts to literals. The companion backstage.io/techdocs-entity-path
+annotation deep-links into the target's docs; it is an attribute of the delegation edge, not of
+either entity, so it lives on the qualified relationship — see :techdocsEntityPath.'''@en ;
+    arch:domainIncludes  arch:Element ;
+    arch:rangeIncludes   arch:Element ;
+.
+
+:TechDocsDelegation
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiotechdocs-entity> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageiotechdocs-entity> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :techdocsDelegatedTo ;
+    skos:prefLabel       "TechDocs Delegation"@en ;
+    skos:definition      "A documentation-ownership delegation from an entity to the entity that owns and builds its TechDocs."@en ;
+.
+
+:qualifiedTechDocsDelegation
+    a                    owl:ObjectProperty ;
+    rdfs:range           :TechDocsDelegation ;
+    arch:unqualifiedForm :techdocsDelegatedTo ;
+.
+
+:techdocsEntityPath
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiotechdocs-entity-path> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageiotechdocs-entity-path> ;
+    skos:prefLabel      "TechDocs Entity Path"@en ;
+    skos:definition     "Path to the source entity's docs within the delegate's TechDocs site (backstage.io/techdocs-entity-path)."@en ;
+    skos:scopeNote      '''Declared on the qualified relationship, not on the element: the path only
+means anything relative to a specific delegation edge. Use the qualified form of
+:techdocsDelegatedTo whenever this annotation is present.'''@en ;
+    arch:domainIncludes :TechDocsDelegation ;
+    rdfs:range          xsd:string ;
+.
+
+## Scaffolded From ─────────────────────────────────────────────
+
+:scaffoldedFrom
+    a                    owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiosource-template> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageiosource-template> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-template> ;
+    skos:prefLabel       "Scaffolded From"@en ;
+    skos:definition      "Entity was created from a scaffolder template."@en ;
+    skos:scopeNote       '''Lifted from the backstage.io/source-template annotation, whose value is the
+entity reference of the Template the entity was created from. The second annotation whose value is an
+intra-catalog reference rather than a literal, after backstage.io/techdocs-entity, and modeled as a relation
+for the same reason.
+
+The annotation literal is retained on :sourceTemplate alongside this edge rather than replaced by it, on the
+:kind / rdf:type and :entityRef / relations pattern used throughout this file: the literal is what the
+catalogue said, the edge is the resolved reference, and a lift that cannot resolve the target — a template
+outside the pulled scope, or one since deleted — still has somewhere to put the annotation. Neither is
+derived from the other; emit both where the target resolves.
+
+Direction is created entity -> template, matching the annotation's own direction and the canonical-direction
+policy on the ontology header. The domain is arch:Element rather than :Component because the Scaffolder is
+not restricted to producing components, even though a component is the ordinary case.
+
+This is the edge the documented use of the annotation needs. Tracking adherence to software standards means
+asking which entities came from an approved template and which came from none, and the second half of that
+question — entities with no :scaffoldedFrom at all — is only askable once the first half is a relation.'''@en ;
+    arch:domainIncludes  arch:Element ;
+    arch:rangeIncludes   :Template ;
+.
+
+:Scaffolding
+    a                    owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiosource-template> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageiosource-template> ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :scaffoldedFrom ;
+    skos:prefLabel       "Scaffolding"@en ;
+    skos:definition      "A provenance relationship from an entity to the scaffolder template it was created from."@en ;
+.
+
+:qualifiedScaffolding
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Scaffolding ;
+    arch:unqualifiedForm :scaffoldedFrom ;
+.
+
+#################################################################
+# Attribute Properties
+#################################################################
+
+:lifecycle
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-component> ;
+    owl:deprecated      true ;
+    skos:prefLabel      "Lifecycle (deprecated)"@en ;
+    skos:definition     "Component lifecycle as a plain string. Deprecated in 0.4.0."@en ;
+    skos:scopeNote      '''Superseded by :lifecycleState, which points at LifecycleState named
+individuals per DD-23 — string literals carry no labels, definitions, or external mappings, and a
+typo is indistinguishable from a new value. Retained for 0.2.0 data; new lifts must emit
+:lifecycleState.'''@en ;
+    arch:domainIncludes :Component ;
+    rdfs:range          xsd:string ;
+.
+
+#################################################################
+# Value Vocabularies (DD-23)
+#
+# Both vocabularies follow DD-23: values are named individuals of
+# a state class in THIS file, attached with a plain
+# owl:ObjectProperty. No owl:FunctionalProperty (it entails
+# owl:sameAs between distinct values on a multi-valued data error,
+# merging states instead of flagging them) and no owl:oneOf on the
+# class. Labels and definitions ride as SKOS annotation properties
+# on the individuals, which per DD-6 does not make them
+# skos:Concepts — the vocabulary has exactly one home, here.
+#
+# Value-set membership is therefore a SHACL matter, not an OWL
+# one: shapes carry sh:maxCount 1 plus sh:in. The two sets differ
+# only in the severity that is appropriate there — the API
+# visibility set is fixed by the system model, the lifecycle set
+# is a convention organizations extend.
+#################################################################
+
+:LifecycleState
+    a               owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-component> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    skos:prefLabel  "Lifecycle State"@en ;
+    skos:definition "The lifecycle stage of a catalog entity (spec.lifecycle)."@en ;
+    skos:scopeNote  '''Open vocabulary: the three well-known values are a Backstage convention,
+not a spec-closed set, and organizations extend them. Organization-specific states should be minted
+in the organization's own namespace and typed :LifecycleState. Alignment to the notation-agnostic
+stages in the Architecture Processes extension (ap:LifecycleStage) is asserted as skos:closeMatch in
+backstage-reference-data, kept out of this file because a correspondence between two vocabularies is
+mapping data an adopter may replace, not a fact about either vocabulary.'''@en ;
+.
+
+:lifecycleState
+    a                   owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-component> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ,
+                         <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Component.v1alpha1.schema.json> ,
+                         <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/API.v1alpha1.schema.json> ,
+                         <https://github.com/backstage/backstage/blob/master/plugins/scaffolder-common/src/Template.v1beta3.schema.json> ;
+    skos:prefLabel      "Lifecycle State"@en ;
+    skos:definition     "The lifecycle state of a component, API, or template."@en ;
+    skos:scopeNote      '''At most one value, drawn from the LifecycleState vocabulary — enforced in shapes
+(sh:maxCount 1 + sh:in), never in OWL, per DD-23.
+
+:Template joined the domain in 0.5.0 on the strength of the schema rather than the prose.
+Template.v1beta3.schema.json declares spec.lifecycle with the description "The lifecycle state of the
+template", and the rendered descriptor format page does not mention the field at all — a case where the
+machine-readable artifact is ahead of the documentation, and one a lift would otherwise have had to drop
+a real value for. It is required on a Component and optional on a Template.'''@en ;
+    arch:domainIncludes :Component, :API, :Template ;
+    arch:rangeIncludes  :LifecycleState ;
+.
+
+:Experimental
+    a               owl:NamedIndividual, :LifecycleState ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-component> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    skos:prefLabel  "Experimental"@en ;
+    skos:notation   "experimental" ;
+    skos:definition "An experiment or early, non-production entity, signaling that users may not prefer to consume it over other more established entities, or that there are low or no reliability guarantees."@en ;
+.
+
+:Production
+    a               owl:NamedIndividual, :LifecycleState ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-component> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    skos:prefLabel  "Production"@en ;
+    skos:notation   "production" ;
+    skos:definition "An established, owned, maintained entity."@en ;
+.
+
+:DeprecatedState
+    a               owl:NamedIndividual, :LifecycleState ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-component> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    skos:prefLabel  "Deprecated"@en ;
+    skos:notation   "deprecated" ;
+    skos:definition "An entity that is at the end of its lifecycle and may disappear at a later point in time."@en ;
+    skos:scopeNote  "IRI carries the State suffix to avoid colliding with the general notion of deprecation on ontology terms (owl:deprecated)."@en ;
+.
+
+#################################################################
+# Classification Vocabularies (spec.type)
+#
+# Same shape as the state vocabularies above and as
+# uml:MessageSort / uml:VisibilityKind: a class in this file whose
+# members are named individuals, named as the range of a plain
+# owl:ObjectProperty.
+#
+# What is NOT copied from the UML enumerations is owl:oneOf. UML's
+# MessageSort is a normative OMG Enumeration, so closing it states
+# a fact. Backstage's spec.type is the opposite case — the system
+# model says the type field has no set meaning and that users
+# assign their own — so an owl:oneOf here would assert something
+# the specification denies. The class stays open; an adopter types
+# their own value :ComponentType in their own namespace and it is
+# an ordinary member, discoverable by "?t a bs:ComponentType" and
+# accepted by sh:class, rather than an exception the range has to
+# tolerate.
+#
+# skos:notation carries the exact YAML token, which is what a lift
+# matches on: "service" -> :ServiceType.
+#################################################################
+
+:ComponentType
+    a               owl:Class ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    rdfs:seeAlso    <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-component> ,
+                    <https://backstage.io/docs/features/software-catalog/system-model#type> ;
+    skos:prefLabel  "Component Type"@en ;
+    skos:definition "The kind of component, e.g. service, website, or library."@en ;
+    skos:scopeNote  "Open class — see the section note. The members below are the values the documentation calls out as common, not an exhaustive set."@en ;
+.
+
+:componentType
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-component> ,
+                        <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-template> ;
+    skos:prefLabel      "Component Type"@en ;
+    skos:definition     "The kind of component this is, or — on a Template — the kind of component the template creates."@en ;
+    skos:scopeNote      '''At most one value — spec.type is single-valued — enforced in shapes, not with
+owl:FunctionalProperty (DD-23).
+
+Domain widened to :Template in 0.5.0 rather than minting a TemplateType vocabulary beside ComponentType.
+The descriptor format defines a template's spec.type as the type of component created by the template and
+says it should ideally match the spec.type of that component, so the two fields range over one value set by
+the specification's own account. Two vocabularies would give "templates that produce services" and
+"services" different IRIs for the same token, which is the failure this repository's reference-data boundary
+exists to prevent. The consequence to be aware of is that a template's type describes its OUTPUT while a
+component's describes ITSELF, so a query joining the two must say which end it means.'''@en ;
+    arch:domainIncludes :Component, :Template ;
+    arch:rangeIncludes  :ComponentType ;
+.
+
+:ServiceType
+    a               owl:NamedIndividual, :ComponentType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    skos:prefLabel  "service"@en ;
+    skos:notation   "service" ;
+    skos:definition "A backend service, typically exposing an API."@en ;
+.
+
+:WebsiteType
+    a               owl:NamedIndividual, :ComponentType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    skos:prefLabel  "website"@en ;
+    skos:notation   "website" ;
+    skos:definition "A website or web application."@en ;
+.
+
+:LibraryType
+    a               owl:NamedIndividual, :ComponentType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    skos:prefLabel  "library"@en ;
+    skos:notation   "library" ;
+    skos:definition "A software library consumed as a dependency."@en ;
+.
+
+:APIType
+    a               owl:Class ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    rdfs:seeAlso    <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-api> ,
+                    <https://backstage.io/docs/features/software-catalog/system-model#api> ;
+    skos:prefLabel  "API Type"@en ;
+    skos:definition "The specification format of an API, e.g. openapi, asyncapi, graphql, or grpc."@en ;
+    skos:scopeNote  '''Open class, and the property that makes the system model's machine-readability
+requirement actionable: the type tells tooling how to parse spec.definition, so an API with a
+definition but no type is only nominally readable.'''@en ;
+.
+
+:apiType
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-api> ;
+    skos:prefLabel      "API Type"@en ;
+    skos:definition     "The specification format of the API."@en ;
+    arch:domainIncludes :API ;
+    arch:rangeIncludes  :APIType ;
+.
+
+:OpenAPI
+    a               owl:NamedIndividual, :APIType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    skos:prefLabel  "openapi"@en ;
+    skos:notation   "openapi" ;
+    skos:definition "An API definition based on the OpenAPI version 2 or version 3 specification."@en ;
+.
+
+:AsyncAPI
+    a               owl:NamedIndividual, :APIType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    skos:prefLabel  "asyncapi"@en ;
+    skos:notation   "asyncapi" ;
+    skos:definition "An API definition based on the AsyncAPI version 2 or version 3 specification, for event-driven interfaces."@en ;
+.
+
+:GraphQL
+    a               owl:NamedIndividual, :APIType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    skos:prefLabel  "graphql"@en ;
+    skos:notation   "graphql" ;
+    skos:definition "An API definition based on GraphQL schemas."@en ;
+.
+
+:GRPC
+    a               owl:NamedIndividual, :APIType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    skos:prefLabel  "grpc"@en ;
+    skos:notation   "grpc" ;
+    skos:definition "An API definition based on Protocol Buffers, for use with gRPC."@en ;
+.
+
+:ApiVisibility
+    a               owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#api> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#api> ;
+    skos:prefLabel  "API Visibility"@en ;
+    skos:definition "The consumption scope of an API: public, restricted, or private."@en ;
+    skos:scopeNote  '''The system model fixes exactly these three values, so unlike the lifecycle
+set this one is genuinely closed. The closure is stated in SHACL (sh:in at Violation severity) rather
+than with owl:oneOf, per DD-23 — an OWL enumeration would also close the class against a downstream
+adopter who needs a fourth value, and an adopter can replace a shape but not a published axiom.'''@en ;
+.
+
+:apiVisibility
+    a                   owl:ObjectProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#api> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#api> ;
+    skos:prefLabel      "API Visibility"@en ;
+    skos:definition     "Whether the API is public, restricted to an allowed set of consumers, or private within its system."@en ;
+    arch:domainIncludes :API ;
+    arch:rangeIncludes  :ApiVisibility ;
+.
+
+:Public
+    a               owl:NamedIndividual, :ApiVisibility ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#api> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#api> ;
+    skos:prefLabel  "Public"@en ;
+    skos:notation   "public" ;
+    skos:definition "Available for any other component to consume."@en ;
+.
+
+:Restricted
+    a               owl:NamedIndividual, :ApiVisibility ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#api> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#api> ;
+    skos:prefLabel  "Restricted"@en ;
+    skos:notation   "restricted" ;
+    skos:definition "Only available to an allowed set of consumers."@en ;
+.
+
+:Private
+    a               owl:NamedIndividual, :ApiVisibility ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/system-model#api> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/system-model#api> ;
+    skos:prefLabel  "Private"@en ;
+    skos:notation   "private" ;
+    skos:definition "Only available within its system."@en ;
+.
+
+#################################################################
+# Catalog Provenance Properties
+#
+# Lifted from the catalog-managed backstage.io/* annotations.
+# These describe how the catalog record came to be, not the
+# architecture of the described system. Location reference
+# strings keep the spec's <type>:<target> format verbatim —
+# the type prefix is load-bearing (url:, file:, bootstrap:)
+# and the spec warns the value cannot be assumed to be a URL,
+# so xsd:string, not xsd:anyURI. At the dataset level these
+# complement, not replace, PROV-O statements about the lift.
+#################################################################
+
+:managedByLocation
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiomanaged-by-location> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageiomanaged-by-location> ;
+    skos:prefLabel      "Managed By Location"@en ;
+    skos:definition     "Location reference string for the source the entity was fetched from (backstage.io/managed-by-location)."@en ;
+    skos:scopeNote      '''Catalog-injected, many entities to one location. Do not split naively on
+":" — the target part may itself contain colons.'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:managedByOriginLocation
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiomanaged-by-origin-location> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageiomanaged-by-origin-location> ;
+    skos:prefLabel      "Managed By Origin Location"@en ;
+    skos:definition     "Location reference string for the registration that led to the entity's creation (backstage.io/managed-by-origin-location)."@en ;
+    skos:scopeNote      "Differs from managedByLocation only when the origin location delegates to another location, e.g. bootstrap:bootstrap from app-config."@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:orphan
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageioorphan> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageioorphan> ;
+    skos:prefLabel      "Orphan"@en ;
+    skos:definition     "Catalog-injected marker on entities no longer kept alive by any registered location (backstage.io/orphan)."@en ;
+    skos:scopeNote      '''In Backstage the annotation is either absent or the exact string "true";
+the lift maps that to a boolean, and absence lifts to no triple, never to false. An orphaned entity
+is stale-but-retained evidence — exactly the kind of record a governance query wants to find.'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:boolean ;
+.
+
+:viewUrl
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageioview-url-backstageioedit-url> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageioview-url-backstageioedit-url> ;
+    skos:prefLabel      "View URL"@en ;
+    skos:definition     "Link to the canonical metadata that governs this entity (backstage.io/view-url)."@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:anyURI ;
+.
+
+:editUrl
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageioview-url-backstageioedit-url> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageioview-url-backstageioedit-url> ;
+    skos:prefLabel      "Edit URL"@en ;
+    skos:definition     "Link to the editable source file for the entity's metadata (backstage.io/edit-url)."@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:anyURI ;
+.
+
+:sourceLocation
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiosource-location> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageiosource-location> ;
+    skos:prefLabel      "Source Location"@en ;
+    skos:definition     "Location reference string pointing to the entity's source code (backstage.io/source-location)."@en ;
+    arch:domainIncludes :Component ;
+    rdfs:range          xsd:string ;
+.
+
+:techdocsRef
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiotechdocs-ref> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageiotechdocs-ref> ;
+    skos:prefLabel      "TechDocs Ref"@en ;
+    skos:definition     "Where TechDocs source content is stored, as dir:-relative path or url: location reference (backstage.io/techdocs-ref)."@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:sourceTemplate
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiosource-template> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageiosource-template> ;
+    skos:prefLabel      "Source Template"@en ;
+    skos:definition     "Entity ref of the Scaffolder template the entity was created from (backstage.io/source-template)."@en ;
+    skos:scopeNote      '''Retained source data (DD-24), not a stand-in for a relation any more. The
+promotion this note asked for in 0.3.0 happened in 0.5.0 and is :scaffoldedFrom, now that :Template is an
+element class.
+
+The literal is NOT deprecated by it. Same division as :kind against rdf:type and :entityRef against the
+relations it encodes: this is the annotation value as the catalogue wrote it, :scaffoldedFrom is the resolved
+reference, and a lift whose pull did not include the template — out of scope, or since deleted — can still
+record the annotation. Emit both wherever the target resolves; emit this alone where it does not, and the
+absent edge then tells a consumer the reference is unresolved rather than absent.'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:timeSaved
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#metadataannotationsbackstageiotime-saved-optional> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#metadataannotationsbackstageiotime-saved-optional> ,
+                        <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiosource-template> ;
+    skos:prefLabel      "Time Saved"@en ;
+    skos:definition     "Approximate time saved each time this template is used, as an ISO 8601 duration (backstage.io/time-saved)."@en ;
+    skos:scopeNote      '''Declared on the Template, which is where the annotation sits — the estimate belongs
+to the template, not to the entities it produced. xsd:duration rather than a string because the
+specification fixes the format as ISO 8601, so the value is comparable and summable as it stands; a lift that
+passes "PT4H" through as a string makes every aggregate a parse away.
+
+The documented use is to combine it with :scaffoldedFrom, which is what makes the pair worth publishing
+together: total time saved is the count of entities scaffolded from a template multiplied by its estimate,
+and neither factor was available before 0.5.0.
+
+An estimate an author typed, not a measurement. Do not read it as evidence of anything but intent.'''@en ;
+    arch:domainIncludes :Template ;
+    rdfs:range          xsd:duration ;
+.
+
+#################################################################
+# External Identity Bridges
+#
+# The vendor annotations carry identifiers assigned by OTHER
+# systems. They are linkage EVIDENCE, not identity: the lift must
+# not mint owl:sameAs to external IRIs from them directly — they
+# feed a linkage proposal queue instead. Each documented key gets
+# a named datatype property under :externalIdentifier so the
+# whole family is queryable uniformly. The spec marks the key set
+# as non-exhaustive: undocumented keys lift as organization-local
+# subproperties of :externalIdentifier in the organization's own
+# namespace, not as new terms here.
+#################################################################
+
+:externalIdentifier
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#annotations> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#annotations> ,
+                         <https://backstage.io/docs/features/software-catalog/descriptor-format#annotations-optional> ;
+    rdfs:subPropertyOf  dcterms:identifier ;
+    skos:prefLabel      "External Identifier"@en ;
+    skos:definition     "Abstract super-property for identifier literals assigned to this entity by external systems, lifted from vendor annotations."@en ;
+    skos:scopeNote      "Query this property to sweep all external identities regardless of vendor; query a named subproperty for one system."@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+## Source control & directory identity ─────────────────────────
+
+:githubProjectSlug
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#githubcomproject-slug> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#githubcomproject-slug> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "GitHub Project Slug"@en ;
+    skos:definition     "GitHub repository slug in <owner>/<repository> format (github.com/project-slug)."@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:githubTeamSlug
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#githubcomteam-slug> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#githubcomteam-slug> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "GitHub Team Slug"@en ;
+    skos:definition     "GitHub team slug in <organization>/<team> format (github.com/team-slug), noting a Group originated from that team."@en ;
+    arch:domainIncludes :Group ;
+    rdfs:range          xsd:string ;
+.
+
+:githubUserLogin
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#githubcomuser-login> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#githubcomuser-login> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "GitHub User Login"@en ;
+    skos:definition     "GitHub username (github.com/user-login)."@en ;
+    skos:scopeNote      "Mutable — users can rename. Prefer :githubUserId as durable linkage evidence when both are present."@en ;
+    arch:domainIncludes :User ;
+    rdfs:range          xsd:string ;
+.
+
+:githubUserId
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#githubcomuser-id> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#githubcomuser-id> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "GitHub User ID"@en ;
+    skos:definition     "Immutable numeric GitHub user ID (github.com/user-id)."@en ;
+    arch:domainIncludes :User ;
+    rdfs:range          xsd:string ;
+.
+
+:gitlabUserId
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#gitlabcomuser-id> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#gitlabcomuser-id> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "GitLab User ID"@en ;
+    skos:definition     "Immutable numeric GitLab user ID (gitlab.com/user-id)."@en ;
+    skos:scopeNote      "Self-hosted GitLab uses {integration-host}/user-id as the key; all such variants lift to this one property, with the host preserved by the lift in provenance if needed."@en ;
+    arch:domainIncludes :User ;
+    rdfs:range          xsd:string ;
+.
+
+:ldapRdn
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageioldap-rdn-backstageioldap-uuid-backstageioldap-dn> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageioldap-rdn-backstageioldap-uuid-backstageioldap-dn> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "LDAP RDN"@en ;
+    skos:definition     "Relative distinguished name found when ingesting the entity from LDAP (backstage.io/ldap-rdn)."@en ;
+    arch:domainIncludes :User, :Group ;
+    rdfs:range          xsd:string ;
+.
+
+:ldapUuid
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageioldap-rdn-backstageioldap-uuid-backstageioldap-dn> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageioldap-rdn-backstageioldap-uuid-backstageioldap-dn> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "LDAP UUID"@en ;
+    skos:definition     "UUID found when ingesting the entity from LDAP (backstage.io/ldap-uuid)."@en ;
+    arch:domainIncludes :User, :Group ;
+    rdfs:range          xsd:string ;
+.
+
+:ldapDn
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageioldap-rdn-backstageioldap-uuid-backstageioldap-dn> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#backstageioldap-rdn-backstageioldap-uuid-backstageioldap-dn> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "LDAP DN"@en ;
+    skos:definition     "Distinguished name found when ingesting the entity from LDAP (backstage.io/ldap-dn)."@en ;
+    arch:domainIncludes :User, :Group ;
+    rdfs:range          xsd:string ;
+.
+
+:msGraphTenantId
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#graphmicrosoftcomtenant-id-graphmicrosoftcomgroup-id-graphmicrosoftcomuser-id> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#graphmicrosoftcomtenant-id-graphmicrosoftcomgroup-id-graphmicrosoftcomuser-id> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "Microsoft Graph Tenant ID"@en ;
+    skos:definition     "Tenant ID found when ingesting the entity from the Microsoft Graph API (graph.microsoft.com/tenant-id)."@en ;
+    arch:domainIncludes :User, :Group ;
+    rdfs:range          xsd:string ;
+.
+
+:msGraphGroupId
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#graphmicrosoftcomtenant-id-graphmicrosoftcomgroup-id-graphmicrosoftcomuser-id> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#graphmicrosoftcomtenant-id-graphmicrosoftcomgroup-id-graphmicrosoftcomuser-id> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "Microsoft Graph Group ID"@en ;
+    skos:definition     "Group ID found when ingesting the entity from the Microsoft Graph API (graph.microsoft.com/group-id)."@en ;
+    arch:domainIncludes :Group ;
+    rdfs:range          xsd:string ;
+.
+
+:msGraphUserId
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#graphmicrosoftcomtenant-id-graphmicrosoftcomgroup-id-graphmicrosoftcomuser-id> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#graphmicrosoftcomtenant-id-graphmicrosoftcomgroup-id-graphmicrosoftcomuser-id> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "Microsoft Graph User ID"@en ;
+    skos:definition     "User ID found when ingesting the entity from the Microsoft Graph API (graph.microsoft.com/user-id)."@en ;
+    arch:domainIncludes :User ;
+    rdfs:range          xsd:string ;
+.
+
+## CI/CD & observability identity ──────────────────────────────
+
+:jenkinsJobFullName
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#jenkinsiojob-full-name> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#jenkinsiojob-full-name> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "Jenkins Job Full Name"@en ;
+    skos:definition     "Path to the Jenkins job that builds this entity, as [folder-path] or [instanceName]:[folder-path] (jenkins.io/job-full-name)."@en ;
+    arch:domainIncludes :Component ;
+    rdfs:range          xsd:string ;
+.
+
+:gocdPipeline
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#gocdorgpipelines> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#gocdorgpipelines> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "GoCD Pipeline"@en ;
+    skos:definition     "Name of a GoCD pipeline for this entity (gocd.org/pipelines)."@en ;
+    skos:scopeNote      "The annotation value is comma-separated; the lift splits it into one triple per pipeline, so this property is multi-valued by design — hence the singular name."@en ;
+    arch:domainIncludes :Component ;
+    rdfs:range          xsd:string ;
+.
+
+:circleciProjectSlug
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#circlecicomproject-slug> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#circlecicomproject-slug> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "CircleCI Project Slug"@en ;
+    skos:definition     "CircleCI project slug, as [scm]/[organization]/[project] or [organization]/[project] (circleci.com/project-slug)."@en ;
+    arch:domainIncludes :Component ;
+    rdfs:range          xsd:string ;
+.
+
+:sentryProjectSlug
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#sentryioproject-slug> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#sentryioproject-slug> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "Sentry Project Slug"@en ;
+    skos:definition     "Sentry project slug or ID, as [organization]/[project-slug] or [project-slug] (sentry.io/project-slug)."@en ;
+    arch:domainIncludes :Component ;
+    rdfs:range          xsd:string ;
+.
+
+:rollbarProjectSlug
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#rollbarcomproject-slug> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#rollbarcomproject-slug> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "Rollbar Project Slug"@en ;
+    skos:definition     "Rollbar project slug or ID, as [organization]/[project-slug] or [project-slug] (rollbar.com/project-slug)."@en ;
+    arch:domainIncludes :Component ;
+    rdfs:range          xsd:string ;
+.
+
+:sonarqubeProjectKey
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#sonarqubeorgproject-key> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#sonarqubeorgproject-key> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "SonarQube Project Key"@en ;
+    skos:definition     "Project key of a SonarQube or SonarCloud project (sonarqube.org/project-key)."@en ;
+    arch:domainIncludes :Component ;
+    rdfs:range          xsd:string ;
+.
+
+:periskopServiceName
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#periskopioservice-name> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#periskopioservice-name> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "Periskop Service Name"@en ;
+    skos:definition     "Periskop project name for the entity (periskop.io/service-name)."@en ;
+    arch:domainIncludes :Component ;
+    rdfs:range          xsd:string ;
+.
+
+:vaultSecretsPath
+    a                   owl:DatatypeProperty ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-annotations#vaultiosecrets-path> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-annotations#vaultiosecrets-path> ;
+    rdfs:subPropertyOf  :externalIdentifier ;
+    skos:prefLabel      "Vault Secrets Path"@en ;
+    skos:definition     "Path to the entity's secrets in Vault (vault.io/secrets-path)."@en ;
+    arch:domainIncludes :Component ;
+    rdfs:range          xsd:string ;
+.
+
+#################################################################
+# Entity Metadata (descriptor format, common to all kinds)
+#
+# The reserved metadata fields. Retained as their own properties
+# per DD-24: skos:prefLabel is the canonical label, and the
+# notation's own name attribute is kept verbatim alongside it
+# rather than folded into it. Here that matters more than usual,
+# because metadata.name is not decoration — it is part of the
+# entity reference that identifies the entity across the
+# catalogue, so losing it loses the join key.
+#################################################################
+
+:name
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#name-required> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#name-required> ,
+                        <https://backstage.io/docs/features/software-catalog/references> ;
+    skos:prefLabel      "Name"@en ;
+    skos:definition     "The name of the entity, unique per kind within its namespace."@en ;
+    skos:scopeNote      '''Retained source data (DD-24), not a substitute for skos:prefLabel — emit both.
+Together with kind and namespace this forms the entity reference, so it is the field a federation lift joins
+on. Backstage constrains it to 1-63 characters of [a-z0-9A-Z] separated by [-_.], which is why an entity
+reference needs no percent-encoding to sit in an IRI path.'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:namespace
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#namespace-optional> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#namespace-optional> ,
+                        <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/EntityMeta.schema.json> ;
+    skos:prefLabel      "Namespace"@en ;
+    skos:definition     "The namespace the entity belongs to; bounds the uniqueness constraint on the name."@en ;
+    skos:scopeNote      '''Absent means "default". A lift should materialise the default rather than leave it
+implicit, so an entity reference reconstructs without the consumer having to know the rule.'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:apiVersion
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#apiversion-and-kind-required> ,
+                        <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/EntityEnvelope.schema.json> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#apiversion-and-kind-required> ,
+                        <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-template> ,
+                        <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/Entity.schema.json> ,
+                        <https://github.com/backstage/backstage/blob/master/plugins/scaffolder-common/src/Template.v1beta3.schema.json> ;
+    skos:prefLabel      "API Version"@en ;
+    skos:definition     "The descriptor schema version the entity declares, e.g. backstage.io/v1alpha1."@en ;
+    skos:scopeNote      '''Retained source data (DD-24). The other half of the descriptor's envelope, beside
+:kind, and published in 0.5.0 for a concrete reason rather than for completeness: the eight catalog kinds
+are on backstage.io/v1alpha1, and Template is on scaffolder.backstage.io/v1beta3 because the scaffolder
+plugin owns that kind and versions it separately. A graph that records the kind and not the apiVersion
+loses the fact that one of its kinds is on a different and less settled schema track.
+
+The value above is the schema's, not the rendered documentation's — the descriptor format page still says
+Template is backstage.io/v1beta2, and it is stale. See the scope note on :Template, and the two-sources
+editorial note on the ontology header.
+
+Not a version of this ontology and not a version of the entity. It names the schema the descriptor was
+written against, which is why it is worth keeping per entity in a merged graph assembled from catalogues
+upgraded at different times.
+
+No shape requires it, for the same reason none requires :kind — a natively authored Linked.Archi model has no
+descriptor to retain.'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:kind
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#apiversion-and-kind-required> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#apiversion-and-kind-required> ,
+                        <https://backstage.io/docs/features/software-catalog/references> ;
+    skos:prefLabel      "Kind"@en ;
+    skos:definition     "The kind token as written in the entity descriptor, e.g. Component, API, Group."@en ;
+    skos:scopeNote      '''Retained source data (DD-24), read from the descriptor's kind root field. It is
+NOT a duplicate of rdf:type and is not derived from it.
+
+The two answer different questions. :kind is what the catalogue said; rdf:type is how this graph
+classifies the entity, which is a modelling decision that may be revised later — a lift maps kind to the
+class whose skos:notation matches, but an adopter may retype the entity under a convention adopted
+afterwards, or add types from another notation in a merged graph. Recording only rdf:type would lose the
+descriptor's own statement the moment either happened, and recording only :kind would leave the entity
+unclassified for every shape and subClassOf query in the repository. Both are kept.
+
+Divergence between the two is therefore legitimate and is reported at sh:Info by
+bssh:KindTypeAlignmentShape, as an audit aid for reconciling a lift — not as a conformance failure.
+Switch that shape off where retyping is deliberate policy.
+
+Title-case, matching the descriptor and the skos:notation on the element classes. Not required by the
+shapes even though the descriptor format requires the field, because a natively authored Linked.Archi
+model has no descriptor to retain and states its kind by rdf:type; contrast :name, which IS required,
+because a minted IRI cannot yield the name back whereas the class can yield a kind token.'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:entityRef
+    a                   owl:DatatypeProperty ;
+    rdfs:subPropertyOf  dcterms:identifier ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/references> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/references> ,
+                        <https://backstage.io/docs/features/software-catalog/descriptor-format#name-required> ;
+    skos:prefLabel      "Entity Reference"@en ;
+    skos:definition     "The compact entity reference, kind:namespace/name, that identifies this entity across the catalogue."@en ;
+    skos:scopeNote      '''Retained source data (DD-24), not a computed convenience. This is the form the
+catalogue itself circulates: the entity reference is what the relations array, spec.owner, spec.system,
+spec.dependsOn and the techdocs-entity annotation all contain, so it is read from the source alongside
+kind, namespace and name rather than assembled from them.
+
+Keeping it verbatim is what makes reference resolution honest. The specification defines the
+default-namespace rule and case-insensitive comparison; a consumer that rebuilds the reference
+reimplements those rules and may diverge from the catalogue, and a reference the catalogue actually
+emitted is evidence where a reconstruction is only an assumption. It also makes resolving an incoming
+reference one triple pattern instead of a three-way join with string concatenation.
+
+bssh:EntityRefConsistencyShape checks it against :kind, :namespace and :name — the other three retained
+fields from the same descriptor, so a mismatch means the lift mangled one of them. It is deliberately
+NOT checked against rdf:type: the graph type may legitimately differ from the catalogue kind, and
+validating the reference against it would report every intentionally retyped entity as broken.
+
+Not an :externalIdentifier. That super-property is scoped to identifiers assigned by OTHER systems, held
+as linkage evidence; this is Backstage's own identity for the entity, so it sits under
+dcterms:identifier alongside :uid. Unlike :uid it is stable, and unlike :uid it is the correct
+cross-source join key.'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:uid
+    a                   owl:DatatypeProperty ;
+    rdfs:subPropertyOf  dcterms:identifier ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#uid-output> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#uid-output> ;
+    skos:prefLabel      "UID"@en ;
+    skos:definition     "The globally unique ID the catalog database assigns an entity on first ingestion."@en ;
+    skos:scopeNote      '''Output-only, and explicitly NOT stable: the documentation warns it changes when the
+identical file is unregistered and re-registered, so it identifies a registration rather than the thing.
+Record it for provenance; never derive an IRI from it and never use it as a cross-source join key — the entity
+reference (kind + namespace + name) is what serves that purpose.'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:etag
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#overall-shape-of-an-entity> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#overall-shape-of-an-entity> ;
+    skos:prefLabel      "ETag"@en ;
+    skos:definition     "Opaque change marker for the entity as held by the catalog."@en ;
+    skos:scopeNote      "Output-only. Useful to a lift for change detection between runs; carries no architectural meaning."@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:title
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#title-optional> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#title-optional> ,
+                        <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/EntityMeta.schema.json> ;
+    skos:prefLabel      "Title"@en ;
+    skos:definition     "A display name shown in user interfaces in place of the name."@en ;
+    skos:scopeNote      '''Presentation only — entity references always use the name, never the title. A lift
+must not put the title in skos:prefLabel in place of the name, or two entities sharing a title become
+indistinguishable in every label-driven view.'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:description
+    a                   owl:DatatypeProperty ;
+    rdfs:subPropertyOf  dcterms:description ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#description-optional> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#description-optional> ,
+                        <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/EntityMeta.schema.json> ;
+    skos:prefLabel      "Description"@en ;
+    skos:definition     "A short human-readable description of the entity."@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:tag
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#tags-optional> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#tags-optional> ,
+                        <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/EntityMeta.schema.json> ;
+    skos:prefLabel      "Tag"@en ;
+    skos:definition     "A single-valued free-text classifier on the entity."@en ;
+    skos:scopeNote      '''Multi-valued by design: one triple per tag. Deliberately a literal rather than a
+concept — the documentation says tags are user-defined and currently carry no special semantics, so promoting
+them to IRIs would assert a shared vocabulary that does not exist. An organisation that governs its tag list
+maps the literals to concepts in its own reference data instead.'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+:label
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#labels-optional> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#labels-optional> ,
+                        <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/EntityMeta.schema.json> ;
+    skos:prefLabel      "Label"@en ;
+    skos:definition     "Abstract super-property for the entity's key/value labels."@en ;
+    skos:scopeNote      '''Same mechanism as :externalIdentifier, and — stated as intent rather than left to
+be inferred, which 0.4.0 and earlier did — ONE PREDICATE PER LABEL KEY, minted in the namespace of whoever
+reads the catalogue, with this property as the parent. Label keys are organisation-defined and open-ended, so
+no members are published here beyond this root. Backstage reserves the backstage.io/ key prefix for its own
+components; a prefixed key maps to whatever namespace the reader has bound that prefix to, a bare key to the
+reader's own vocabulary namespace.
+
+A reified Label node with labelKey / labelValue was considered and is NOT the pattern. Reification earns its
+extra hop where fields are positional and would otherwise be orphaned from each other — that is why :Link is
+a node and why :StatusItem is one. A label is a single scalar value under a single key, so the key IS the
+predicate, and a Label node would add a hop that carries nothing while making "every entity whose tier is
+gold" a two-triple join instead of one. The same reasoning keeps spec.profile flat.
+
+Why no shape enforces it. The check one would want — was the abstract parent asserted directly, losing the
+key? — is not expressible in SHACL over a graph that may have been entailed, because
+"acme:tier rdfs:subPropertyOf bs:label" makes every correct per-key assertion entail a :label triple too. A
+shape reporting subjects of :label would pass on the malformed graph a validator ran without inference and
+fail on the well-formed one it ran with. So the guidance lives here, in the document a converter author
+reads, which is where it can be acted on.'''@en ;
+    skos:example        '''## An adopter's own namespace, not bs:. One predicate per key, parented on bs:label.
+acme:tier    a owl:DatatypeProperty ; rdfs:subPropertyOf bs:label .
+acme:podName a owl:DatatypeProperty ; rdfs:subPropertyOf bs:label .
+
+ex:payment-processor
+    acme:tier    "gold" ;
+    acme:podName "payments" ;
+.
+
+## Sweep every label regardless of key:   ?e bs:label ?v
+## Query one key:                         ?e acme:tier ?v'''@en ;
+    arch:domainIncludes arch:Element ;
+    rdfs:range          xsd:string ;
+.
+
+#################################################################
+# Entity Links
+#
+# The one metadata field with genuine internal structure — four
+# fields whose meaning is positional, so unlike labels it cannot
+# be flattened into a family of datatype properties without
+# losing which title belongs to which url.
+#################################################################
+
+:Link
+    a               owl:Class ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#links-optional> ;
+    rdfs:seeAlso    <https://backstage.io/docs/next/features/software-catalog/descriptor-format#links-optional> ,
+                    <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/EntityMeta.schema.json> ;
+    skos:prefLabel  "Link"@en ;
+    skos:definition "An external hyperlink related to an entity."@en ;
+    skos:scopeNote  '''Not an arch:Element — a link is contextual metadata on a node, not a node in the
+architecture. The documentation is explicit that links are not meant to drive functionality and should be used
+only where no well-known annotation covers the case, so nothing should be inferred from one.'''@en ;
+.
+
+:hasLink
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#links-optional> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#links-optional> ,
+                        <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/EntityMeta.schema.json> ;
+    skos:prefLabel      "Has Link"@en ;
+    skos:definition     "Relates an entity to an external hyperlink."@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  :Link ;
+.
+
+:linkUrl
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#links-optional> ;
+    skos:prefLabel      "Link URL"@en ;
+    skos:definition     "The target of the link, in standard URI format. Required on a link."@en ;
+    arch:domainIncludes :Link ;
+    rdfs:range          xsd:anyURI ;
+.
+
+:linkTitle
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#links-optional> ;
+    skos:prefLabel      "Link Title"@en ;
+    skos:definition     "A user-friendly display name for the link."@en ;
+    arch:domainIncludes :Link ;
+    rdfs:range          xsd:string ;
+.
+
+:linkIcon
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#links-optional> ;
+    skos:prefLabel      "Link Icon"@en ;
+    skos:definition     "A semantic key naming the icon a UI should render for the link."@en ;
+    skos:scopeNote      "A key resolved against an icon library by the Backstage integrator, not an image reference."@en ;
+    arch:domainIncludes :Link ;
+    rdfs:range          xsd:string ;
+.
+
+:linkType
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#links-optional> ;
+    skos:prefLabel      "Link Type"@en ;
+    skos:definition     "An optional category for the link."@en ;
+    skos:scopeNote      "The documentation leaves the semantics of this field undefined and the value set to the adopter, so it stays a literal."@en ;
+    arch:domainIncludes :Link ;
+    rdfs:range          xsd:string ;
+.
+
+#################################################################
+# Entity Status
+#
+# The status root field: a read-only set of statuses reporting the
+# current state or health of the entity, and in practice how the
+# catalogue's own ingestion of it went.
+#
+# Published in 0.5.0, reversing the 0.3.0 decision to leave it out.
+# That decision's reason was that the catalogue derives status
+# rather than an author writing it — but that is not a test applied
+# anywhere else in this file. :uid, :etag, :orphan, :managedByLocation
+# and the whole catalog provenance family are equally derived and
+# equally published. The distinction that matters is whether a lift
+# has the data and whether an architecture question needs it, and
+# for a lift of the catalog API rather than of authored files the
+# answer is yes twice: this is the only place the graph can say
+# whether the record beside it was ingested cleanly, so without it
+# a stale entity and a current one look identical.
+#
+# A NODE PER ITEM, on the :Link pattern and for the same reason: a
+# level and a message flattened onto the entity lose which belongs
+# to which, and the specification is explicit that several systems
+# contribute items under their own type keys, so more than one item
+# is the ordinary case rather than the edge case.
+#
+# Scoped to status.items[] and its type, level and message. The rest
+# of the status object is, in the specification's words, left
+# unrestricted, and the serialised error is out of scope — see the
+# scope statement on the ontology header.
+#################################################################
+
+:StatusItem
+    a               owl:Class ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#common-to-all-kinds-status> ;
+    rdfs:seeAlso    <https://backstage.io/docs/next/features/software-catalog/descriptor-format#common-to-all-kinds-status> ,
+                    <https://backstage.io/docs/features/software-catalog/well-known-statuses#common-fields> ,
+                    <https://github.com/backstage/backstage/blob/master/docs/features/software-catalog/well-known-statuses.md> ,
+                    <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/Entity.schema.json> ;
+    skos:prefLabel  "Status Item"@en ;
+    skos:definition "One entry in an entity's status, describing some aspect of its state as seen by one specific system."@en ;
+    skos:scopeNote  '''Not an arch:Element, on the same grounds as :Link — a status item is a diagnostic
+about a node, not a node in the architecture. It therefore carries no naming or identity obligation and does
+not appear in any viewpoint.
+
+Read-only in Backstage: descriptor files are not supposed to contain a status key, so an item in the graph
+came from the catalog API, and a natively authored Linked.Archi model will have none.
+
+Upstream warns that the status model is in active development and its format may change. That warning is the
+reason the terms here stop at the three documented item fields, and the reason to expect this section to move
+before the rest of the file does.'''@en ;
+.
+
+:hasStatusItem
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#common-to-all-kinds-status> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#common-to-all-kinds-status> ,
+                        <https://github.com/backstage/backstage/blob/master/docs/features/software-catalog/well-known-statuses.md> ;
+    skos:prefLabel      "Has Status Item"@en ;
+    skos:definition     "Relates an entity to one entry in its status."@en ;
+    skos:scopeNote      "Multi-valued by design: status.items is an array and several systems contribute to it independently."@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  :StatusItem ;
+.
+
+:statusType
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#common-to-all-kinds-status> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#common-to-all-kinds-status> ,
+                        <https://backstage.io/docs/features/software-catalog/well-known-statuses#status-item-types> ;
+    skos:prefLabel      "Status Type"@en ;
+    skos:definition     "The type of status, as a key unique per contributing source, e.g. backstage.io/catalog-processing."@en ;
+    skos:scopeNote      '''A literal rather than a vocabulary of named individuals, unlike :statusLevel beside
+it and unlike the spec.type sets. The value identifies the SYSTEM that contributed the item, not a
+classification of the item: the specification calls it an arbitrary string, recommends namespacing it to avoid
+collisions, and documents exactly one well-known value against an open set that every plugin extends. Minting
+individuals for a set that is almost entirely plugin- and organisation-private would publish one member and
+imply a vocabulary that does not exist — the reasoning that keeps :tag and :linkType literals too.
+
+The same type may appear on more than one item of one entity, which the specification states explicitly. It is
+single-valued per item; it is not a key for the item.'''@en ;
+    arch:domainIncludes :StatusItem ;
+    rdfs:range          xsd:string ;
+.
+
+:StatusLevel
+    a               owl:Class ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#common-to-all-kinds-status> ;
+    rdfs:seeAlso    <https://backstage.io/docs/next/features/software-catalog/descriptor-format#common-to-all-kinds-status> ;
+    skos:prefLabel  "Status Level"@en ;
+    skos:definition "The level or severity of a status item: info, warning, or error."@en ;
+    skos:scopeNote  '''A DD-23 vocabulary of named individuals, and a closed one: the descriptor format fixes
+these three values, so closure is a fact about the language rather than a convention, and it is stated in
+SHACL at Violation as :ApiVisibility is rather than with owl:oneOf. An adopter who needs a fourth value
+replaces a shape instead of forking a published axiom.
+
+Member IRIs carry the Level suffix because the bare tokens are among the most collision-prone names in any
+vocabulary — "Info", "Warning" and "Error" also name SHACL severities, which appear in every shapes file that
+validates this data. The bare token is on skos:notation, which is what a lift matches.
+
+Upstream reserves the right to extend the status model. If the level set grows, this closure is the shape to
+revisit; the correct response then is to widen the set, not to conclude the closure was wrong to state.'''@en ;
+.
+
+:statusLevel
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#common-to-all-kinds-status> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#common-to-all-kinds-status> ,
+                        <https://github.com/backstage/backstage/blob/master/docs/features/software-catalog/well-known-statuses.md> ;
+    skos:prefLabel      "Status Level"@en ;
+    skos:definition     "The level or severity of the status item."@en ;
+    skos:scopeNote      "At most one value, drawn from the StatusLevel vocabulary — enforced in shapes (sh:maxCount 1 + sh:in), never in OWL, per DD-23."@en ;
+    arch:domainIncludes :StatusItem ;
+    arch:rangeIncludes  :StatusLevel ;
+.
+
+:InfoLevel
+    a               owl:NamedIndividual, :StatusLevel ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#common-to-all-kinds-status> ;
+    skos:prefLabel  "info"@en ;
+    skos:notation   "info" ;
+    skos:definition "An informational status item, reporting state without asserting a problem."@en ;
+.
+
+:WarningLevel
+    a               owl:NamedIndividual, :StatusLevel ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#common-to-all-kinds-status> ;
+    skos:prefLabel  "warning"@en ;
+    skos:notation   "warning" ;
+    skos:definition "A status item reporting a condition that did not prevent the entity being processed."@en ;
+.
+
+:ErrorLevel
+    a               owl:NamedIndividual, :StatusLevel ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#common-to-all-kinds-status> ;
+    rdfs:seeAlso    <https://backstage.io/docs/features/software-catalog/well-known-statuses#backstageiocatalog-processing> ;
+    skos:prefLabel  "error"@en ;
+    skos:notation   "error" ;
+    skos:definition "A status item reporting a failure."@en ;
+    skos:scopeNote  '''Where the type is backstage.io/catalog-processing, an error means the catalogue could
+not ingest the entity's source — and the documentation warns that the entity data alongside it is then the
+last version that DID ingest, deliberately left untouched. So an error item does not describe the record it
+sits on; it says that record is stale. Any freshness or governance query over lifted catalogue data has to
+read it that way round.'''@en ;
+.
+
+:statusMessage
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#common-to-all-kinds-status> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#common-to-all-kinds-status> ,
+                        <https://github.com/backstage/backstage/blob/master/docs/features/software-catalog/well-known-statuses.md> ;
+    skos:prefLabel      "Status Message"@en ;
+    skos:definition     "A brief description of the status, intended for human consumption."@en ;
+    skos:scopeNote      '''Written for a person, so do not parse it — the serialised error object beside it is
+where a machine-readable cause would live, and that is deliberately not lifted. Not language-tagged: the
+catalogue emits one string with no locale, and tagging it @en would assert something the source does not
+say.'''@en ;
+    arch:domainIncludes :StatusItem ;
+    rdfs:range          xsd:string ;
+.
+
+#################################################################
+# Profile (User and Group)
+#
+# spec.profile is a three-field display structure. Flattened onto
+# the entity rather than reified: every field is optional and
+# scalar and none is positional, so a Profile node would add a hop
+# without carrying anything the three properties do not.
+#################################################################
+
+:displayName
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-user> ;
+    rdfs:seeAlso        <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group> ;
+    skos:prefLabel      "Display Name"@en ;
+    skos:definition     "A human-readable name for the user or group (spec.profile.displayName)."@en ;
+    arch:domainIncludes :User, :Group ;
+    rdfs:range          xsd:string ;
+.
+
+:email
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-user> ;
+    rdfs:seeAlso        <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group> ;
+    skos:prefLabel      "Email"@en ;
+    skos:definition     "A contact email address for the user or group (spec.profile.email)."@en ;
+    skos:scopeNote      "On a Group this is a group address rather than a person's, so it is not a route to an individual."@en ;
+    arch:domainIncludes :User, :Group ;
+    rdfs:range          xsd:string ;
+.
+
+:picture
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-user> ;
+    rdfs:seeAlso        <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group> ;
+    skos:prefLabel      "Picture"@en ;
+    skos:definition     "A URL to an image representing the user or group (spec.profile.picture)."@en ;
+    arch:domainIncludes :User, :Group ;
+    rdfs:range          xsd:anyURI ;
+.
+
+#################################################################
+# API Definition
+#################################################################
+
+:definition
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-api> ;
+    skos:prefLabel      "Definition"@en ;
+    skos:definition     "The API definition itself, in the format declared by the API type. Required on an API."@en ;
+    skos:scopeNote      '''Carried verbatim as a literal — an OpenAPI or AsyncAPI document is a payload the
+graph refers to, not a structure to lift. An EA-level lift may legitimately keep only the type and a source
+location and omit the body, which is why the shapes report an absent definition as a warning rather than a
+violation even though the descriptor format marks the field required.'''@en ;
+    arch:domainIncludes :API ;
+    rdfs:range          xsd:string ;
+.
+
+#################################################################
+# Remaining spec.type Vocabularies
+#
+# Same class-plus-named-individuals shape as ComponentType and
+# APIType, and likewise no owl:oneOf. Resource and Group type are
+# REQUIRED by the descriptor format; System and Domain type are
+# optional. All four are weaker than component and API type in
+# how the documentation states them — see the scope notes.
+#################################################################
+
+:ResourceType
+    a               owl:Class ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-resource> ;
+    rdfs:seeAlso    <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-resource> ;
+    skos:prefLabel  "Resource Type"@en ;
+    skos:definition "The kind of infrastructure resource, e.g. database."@en ;
+    skos:scopeNote  '''Illustrative, not normative. Unlike component and API type, where the documentation
+gives a "current set of well-known and common values", this field is described as having no enforced
+set and a nomenclature left to the adopting organization — the members below are the examples the
+documentation offers. They are minted anyway so that two catalogues lifting the same common value land
+on the same IRI instead of inventing one each, which is the interoperability the graph exists for.
+Adopters add their own individuals of this class in their own namespace.
+
+Member IRIs carry the vocabulary name as a suffix because the tokens collide across vocabularies:
+"service" is both a component type and a system type, "product-area" both a group type and a domain
+type. The bare token is on skos:notation, which is what a lift matches.'''@en ;
+.
+
+:resourceType
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-resource> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-resource> ;
+    skos:prefLabel      "Resource Type"@en ;
+    skos:definition     "The type of this resource (spec.type, required)."@en ;
+    skos:scopeNote      "At most one value, enforced in shapes rather than with owl:FunctionalProperty (DD-23)."@en ;
+    arch:domainIncludes :Resource ;
+    arch:rangeIncludes  :ResourceType ;
+.
+
+:DatabaseResourceType
+    a               owl:NamedIndividual, :ResourceType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-resource> ;
+    skos:prefLabel  "database"@en ;
+    skos:notation   "database" ;
+    skos:definition "A database resource."@en ;
+.
+
+:S3BucketResourceType
+    a               owl:NamedIndividual, :ResourceType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-resource> ;
+    skos:prefLabel  "s3-bucket"@en ;
+    skos:notation   "s3-bucket" ;
+    skos:definition "An object-storage bucket resource."@en ;
+.
+
+:KubernetesClusterResourceType
+    a               owl:NamedIndividual, :ResourceType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-resource> ;
+    skos:prefLabel  "kubernetes-cluster"@en ;
+    skos:notation   "kubernetes-cluster" ;
+    skos:definition "A Kubernetes cluster resource."@en ;
+.
+
+:GroupType
+    a               owl:Class ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group> ;
+    rdfs:seeAlso    <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-group> ;
+    skos:prefLabel  "Group Type"@en ;
+    skos:definition "The kind of organizational group, e.g. team."@en ;
+    skos:scopeNote  '''Illustrative, not normative. Unlike component and API type, where the documentation
+gives a "current set of well-known and common values", this field is described as having no enforced
+set and a nomenclature left to the adopting organization — the members below are the examples the
+documentation offers. They are minted anyway so that two catalogues lifting the same common value land
+on the same IRI instead of inventing one each, which is the interoperability the graph exists for.
+Adopters add their own individuals of this class in their own namespace.
+
+Member IRIs carry the vocabulary name as a suffix because the tokens collide across vocabularies:
+"service" is both a component type and a system type, "product-area" both a group type and a domain
+type. The bare token is on skos:notation, which is what a lift matches.'''@en ;
+.
+
+:groupType
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-group> ;
+    skos:prefLabel      "Group Type"@en ;
+    skos:definition     "The type of this group (spec.type, required)."@en ;
+    skos:scopeNote      "At most one value, enforced in shapes rather than with owl:FunctionalProperty (DD-23)."@en ;
+    arch:domainIncludes :Group ;
+    arch:rangeIncludes  :GroupType ;
+.
+
+:TeamGroupType
+    a               owl:NamedIndividual, :GroupType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group> ;
+    skos:prefLabel  "team"@en ;
+    skos:notation   "team" ;
+    skos:definition "A team."@en ;
+.
+
+:BusinessUnitGroupType
+    a               owl:NamedIndividual, :GroupType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group> ;
+    skos:prefLabel  "business-unit"@en ;
+    skos:notation   "business-unit" ;
+    skos:definition "A business unit."@en ;
+.
+
+:ProductAreaGroupType
+    a               owl:NamedIndividual, :GroupType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group> ;
+    skos:prefLabel  "product-area"@en ;
+    skos:notation   "product-area" ;
+    skos:definition "A product area."@en ;
+.
+
+:RootGroupType
+    a               owl:NamedIndividual, :GroupType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group> ;
+    skos:prefLabel  "root"@en ;
+    skos:notation   "root" ;
+    skos:definition "A virtual root of the group hierarchy, for organizations that want one. The catalog supports multi-root hierarchies, so a single root is a convention rather than a requirement."@en ;
+.
+
+:SystemType
+    a               owl:Class ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-system> ;
+    rdfs:seeAlso    <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-system> ;
+    skos:prefLabel  "System Type"@en ;
+    skos:definition "The kind of system, e.g. product."@en ;
+    skos:scopeNote  '''Illustrative, not normative. Unlike component and API type, where the documentation
+gives a "current set of well-known and common values", this field is described as having no enforced
+set and a nomenclature left to the adopting organization — the members below are the examples the
+documentation offers. They are minted anyway so that two catalogues lifting the same common value land
+on the same IRI instead of inventing one each, which is the interoperability the graph exists for.
+Adopters add their own individuals of this class in their own namespace.
+
+Member IRIs carry the vocabulary name as a suffix because the tokens collide across vocabularies:
+"service" is both a component type and a system type, "product-area" both a group type and a domain
+type. The bare token is on skos:notation, which is what a lift matches.'''@en ;
+.
+
+:systemType
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-system> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-system> ;
+    skos:prefLabel      "System Type"@en ;
+    skos:definition     "The type of this system (spec.type, optional)."@en ;
+    skos:scopeNote      "At most one value, enforced in shapes rather than with owl:FunctionalProperty (DD-23)."@en ;
+    arch:domainIncludes :System ;
+    arch:rangeIncludes  :SystemType ;
+.
+
+:ProductSystemType
+    a               owl:NamedIndividual, :SystemType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-system> ;
+    skos:prefLabel  "product"@en ;
+    skos:notation   "product" ;
+    skos:definition "A product."@en ;
+.
+
+:ServiceSystemType
+    a               owl:NamedIndividual, :SystemType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-system> ;
+    skos:prefLabel  "service"@en ;
+    skos:notation   "service" ;
+    skos:definition "A service."@en ;
+.
+
+:FeatureSetSystemType
+    a               owl:NamedIndividual, :SystemType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-system> ;
+    skos:prefLabel  "feature-set"@en ;
+    skos:notation   "feature-set" ;
+    skos:definition "A feature set."@en ;
+.
+
+:DomainType
+    a               owl:Class ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-domain> ;
+    rdfs:seeAlso    <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-domain> ;
+    skos:prefLabel  "Domain Type"@en ;
+    skos:definition "The kind of business domain, e.g. product-area."@en ;
+    skos:scopeNote  '''Illustrative, not normative. Unlike component and API type, where the documentation
+gives a "current set of well-known and common values", this field is described as having no enforced
+set and a nomenclature left to the adopting organization — the members below are the examples the
+documentation offers. They are minted anyway so that two catalogues lifting the same common value land
+on the same IRI instead of inventing one each, which is the interoperability the graph exists for.
+Adopters add their own individuals of this class in their own namespace.
+
+Member IRIs carry the vocabulary name as a suffix because the tokens collide across vocabularies:
+"service" is both a component type and a system type, "product-area" both a group type and a domain
+type. The bare token is on skos:notation, which is what a lift matches.'''@en ;
+.
+
+:domainType
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-domain> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-domain> ;
+    skos:prefLabel      "Domain Type"@en ;
+    skos:definition     "The type of this domain (spec.type, optional)."@en ;
+    skos:scopeNote      "At most one value, enforced in shapes rather than with owl:FunctionalProperty (DD-23)."@en ;
+    arch:domainIncludes :Domain ;
+    arch:rangeIncludes  :DomainType ;
+.
+
+:ProductAreaDomainType
+    a               owl:NamedIndividual, :DomainType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-domain> ;
+    skos:prefLabel  "product-area"@en ;
+    skos:notation   "product-area" ;
+    skos:definition "A product area."@en ;
+.
+
+:ProductGroupDomainType
+    a               owl:NamedIndividual, :DomainType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-domain> ;
+    skos:prefLabel  "product-group"@en ;
+    skos:notation   "product-group" ;
+    skos:definition "A product group."@en ;
+.
+
+:BundleDomainType
+    a               owl:NamedIndividual, :DomainType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-domain> ;
+    skos:prefLabel  "bundle"@en ;
+    skos:notation   "bundle" ;
+    skos:definition "A bundle."@en ;
+.

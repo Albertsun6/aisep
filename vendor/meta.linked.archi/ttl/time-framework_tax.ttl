@@ -1,0 +1,148 @@
+@prefix :        <https://meta.linked.archi/time-framework/tax#> .
+@prefix timetax: <https://meta.linked.archi/time-framework/tax#> .
+@prefix timefw:  <https://meta.linked.archi/time-framework/onto#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <https://schema.org/> .
+@prefix foaf:    <http://xmlns.com/foaf/0.1/> .
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/time-framework/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "TIME Framework Concept Scheme"@en ;
+    dcterms:description  "Classification of TIME framework controlled vocabularies: dispositions, fit ratings, fit dimensions, assessment statuses, evidence types, and lifecycle states."@en ;
+    skos:hasTopConcept
+        timetax:TimeDispositions ,
+        timetax:FitRatings ,
+        timetax:FitDimensions ,
+        timetax:AssessmentStatuses ,
+        timetax:EvidenceTypes ,
+        timetax:LifecycleStates ,
+        timetax:DispositionMovements ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespacePrefix "timetax" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/time-framework/tax#" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi TIME Framework Taxonomy"@en ;
+    dcterms:title                      "Linked.Archi TIME Framework Taxonomy"@en ;
+    dcterms:abstract              "SKOS taxonomy for TIME framework controlled vocabularies."@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2026-01-12"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.2.0" ;
+    prov:wasDerivedFrom           "Gartner TIME Model" ;
+    rdfs:seeAlso                  <https://www.leanix.net/en/wiki/apm/gartner-time-model> .
+
+
+#################################################################
+# TIME Dispositions
+#################################################################
+
+timetax:TimeDispositions
+    a                 skos:Concept ;
+    skos:prefLabel    "TIME Dispositions"@en ;
+    skos:definition   "Classification of applications by TIME disposition: Tolerate, Invest, Migrate, Eliminate."@en ;
+    skos:topConceptOf <https://meta.linked.archi/time-framework/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/time-framework/tax#> ;
+    skos:narrower     timefw:Tolerate, timefw:Invest, timefw:Migrate, timefw:Eliminate ;
+.
+
+#################################################################
+# Fit Ratings
+#################################################################
+
+timetax:FitRatings
+    a                 skos:Concept ;
+    skos:prefLabel    "Fit Ratings"@en ;
+    skos:definition   "HIGH/LOW ratings for functional, technical, and cost fitness dimensions."@en ;
+    skos:topConceptOf <https://meta.linked.archi/time-framework/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/time-framework/tax#> ;
+    skos:narrower     timefw:High, timefw:Low ;
+.
+
+#################################################################
+# Fit Dimensions
+#################################################################
+
+timetax:FitDimensions
+    a                 skos:Concept ;
+    skos:prefLabel    "Fit Dimensions"@en ;
+    skos:definition   "Dimensions along which application fit is assessed: Functional, Technical, Cost."@en ;
+    skos:topConceptOf <https://meta.linked.archi/time-framework/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/time-framework/tax#> ;
+    skos:narrower     timefw:Functional, timefw:Technical, timefw:Cost ;
+.
+
+#################################################################
+# Assessment Statuses
+#################################################################
+
+timetax:AssessmentStatuses
+    a                 skos:Concept ;
+    skos:prefLabel    "Assessment Statuses"@en ;
+    skos:definition   "Governance statuses for fit assessments: Draft, Approved, Superseded, Rejected."@en ;
+    skos:topConceptOf <https://meta.linked.archi/time-framework/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/time-framework/tax#> ;
+    skos:narrower     timefw:Draft, timefw:Approved, timefw:Superseded, timefw:Rejected ;
+.
+
+#################################################################
+# Evidence Types
+#################################################################
+
+timetax:EvidenceTypes
+    a                 skos:Concept ;
+    skos:prefLabel    "Evidence Types"@en ;
+    skos:definition   "Types of evidence supporting fit assessments."@en ;
+    skos:topConceptOf <https://meta.linked.archi/time-framework/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/time-framework/tax#> ;
+    skos:narrower
+        timefw:ArchitectureReview ,
+        timefw:SecurityAssessment ,
+        timefw:OperationsMetrics ,
+        timefw:CostAnalysis ,
+        timefw:BusinessStakeholderInput ,
+        timefw:VendorRoadmap ,
+        timefw:TechnicalDebtRegister ,
+        timefw:OtherEvidence ;
+.
+
+#################################################################
+# Lifecycle States
+#################################################################
+
+timetax:LifecycleStates
+    a                 skos:Concept ;
+    skos:prefLabel    "Lifecycle States"@en ;
+    skos:definition   "Application lifecycle states: Plan, Build, Run, Retire."@en ;
+    skos:topConceptOf <https://meta.linked.archi/time-framework/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/time-framework/tax#> ;
+    skos:narrower     timefw:Plan, timefw:Build, timefw:Run, timefw:Retire ;
+.
+
+#################################################################
+# Disposition Movements
+#################################################################
+
+timetax:DispositionMovements
+    a                 skos:Concept ;
+    skos:prefLabel    "Disposition Movements"@en ;
+    skos:definition   "Direction of disposition change between consecutive assessments: Improved, Degraded, Unchanged, New."@en ;
+    skos:topConceptOf <https://meta.linked.archi/time-framework/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/time-framework/tax#> ;
+    skos:narrower     timefw:Improved, timefw:Degraded, timefw:Unchanged, timefw:NewAssessment ;
+.

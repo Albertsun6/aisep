@@ -1,0 +1,2143 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix archvis: <https://meta.linked.archi/core-vis#> .
+@prefix bpmndi: <https://meta.linked.archi/bpmn/di#> .
+@prefix dc: <https://meta.linked.archi/bpmn/dc#> .
+@prefix di: <https://meta.linked.archi/bpmn/di-core#> .
+@prefix infra: <https://meta.linked.archi/bpmn/infra#> .
+@prefix : <https://meta.linked.archi/bpmn/onto-shapes#> .
+
+#################################################################
+# Shapes Graph Declaration
+#
+# Scope note — cardinality
+#
+# No blanket sh:minCount is asserted. These shapes were derived from the BPMN
+# CMOF metamodel, where attributes that carry a spec default (isForCompensation,
+# startQuantity, completionQuantity, ...) have lowerBound=1 even though they are
+# optional in serialized BPMN XML, and where bpmn:name was marked mandatory
+# although BPMN makes it optional on virtually every element. All 139 such
+# sh:minCount 1 assertions were removed.
+#
+# The two remaining sh:minCount 2 assertions on bpmn:participantRefs
+# (ChoreographyActivity, ConversationNode) are genuine spec multiplicities, not
+# CMOF defaults, and are deliberately kept.
+#
+# sh:maxCount, sh:datatype, sh:class and sh:in are retained, so type correctness
+# and single-valuedness are still enforced. Do not reintroduce CMOF lowerBound
+# cardinalities without checking them against actual converter output.
+#
+# Scope note — labels and relationship endpoints
+#
+# Relationship endpoints are enforced by core-shapes#QualifiedRelationshipShape,
+# because linkedarchi-bpmn-onto.ttl declares SequenceFlow, MessageFlow, Association
+# and the other connector classes to be arch:QualifiedRelationship, and converters
+# normalize bpmn:sourceRef / bpmn:targetRef into arch:source / arch:target.
+#
+# Label presence is enforced HERE, by :RequiredNameShape. There is no core label
+# shape — core-shapes deliberately carries none, because arch:Element means "a
+# node in a model" and BPMN gateways and events are nodes that the spec permits to
+# be unnamed. Naming policy is notation-owned; see DD-24.
+#
+# So :RequiredNameShape is the authoritative rule for BPMN, not a local copy of
+# something in core. It lists the classes BPMN requires to be named, and nothing
+# else constrains labels for this notation.
+#
+# Scope note — bpmn:name is not a label
+#
+# skos:prefLabel is the canonical Linked.Archi label. bpmn:name is the retained
+# BPMN XML source attribute: plain xsd:string, single-valued, no language tag.
+# :RequiredNameShape requires a language-tagged skos:prefLabel and does not accept
+# bpmn:name as a substitute.
+#
+# Converters MUST emit both — bpmn:name verbatim, and skos:prefLabel with a
+# language tag:
+#
+#   ex:t1 a bpmn:ServiceTask ;
+#       bpmn:name      "Charge card" ;
+#       skos:prefLabel "Charge card"@en .
+#
+# The full converter contract, including why bpmn:name is deliberately NOT
+# declared rdfs:subPropertyOf skos:prefLabel, is on the bpmn:name property in
+# linkedarchi-bpmn-onto.ttl.
+#
+# Scope note — do not target arch:Element from this file
+#
+# :RequiredNameShape targets BPMN classes, never arch:Element. In a merged
+# multi-notation graph, targeting arch:Element would apply BPMN's naming policy to
+# ArchiMate, C4 and every other notation's elements. Each notation constrains only
+# its own classes.
+#################################################################
+
+<https://meta.linked.archi/bpmn/onto-shapes#>
+    a owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/onto-shapes#" ;
+    vann:preferredNamespacePrefix "bpmnsh" ;
+    dcterms:title "Linked.Archi BPMN SHACL Shapes"@en ;
+    dcterms:description '''SHACL shapes validating BPMN 2.0.2 core semantic classes — activities,
+events, gateways, flows, data objects, and their structural constraints. Derived from the
+OMG BPMN 2.0.2 specification.'''@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    dcterms:modified "2026-08-04"^^xsd:date ;
+    dcterms:publisher "Linked.Archi"@en, <https://linked.archi> ;
+    owl:imports <https://meta.linked.archi/bpmn/infra#> ;
+    owl:imports <https://meta.linked.archi/bpmn/onto#> ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+#################################################################
+# Naming requirement — the authoritative BPMN label rule
+#
+# This is where BPMN's naming policy is defined. core-shapes carries no label
+# shape, so nothing else constrains labels for this notation.
+#
+# The 12 targets are the subset of BPMN's 49 arch:Element classes that the spec
+# and normal practice require to be named. Note that the target list is
+# deliberately NARROWER than the arch:Element set: being an element and being
+# required to have a name are separate questions.
+#
+# Elements that are NOT required to carry a name, because BPMN 2.0.2 makes name
+# optional and modellers routinely leave it off:
+#   - Gateway subtypes — conventionally unnamed; the question is usually on the
+#     outgoing flows, not the gateway. These ARE arch:Element.
+#   - Event subtypes — typed by their event definition rather than named. These
+#     ARE arch:Element.
+#
+# Not required, and not arch:Element either:
+#   - Connectors (SequenceFlow, MessageFlow, Association, DataAssociation) — these
+#     are arch:QualifiedRelationship; a name is the exception.
+#   - Documentation, TextAnnotation, Group — carry bpmn:text, not bpmn:name.
+#   - ItemDefinition, Expression, Error, Signal, EventDefinition, InputSet and
+#     the rest of the metamodel bookkeeping.
+#
+# The name must be on skos:prefLabel, language-tagged. bpmn:name is NOT accepted
+# as a substitute, even though it is where the BPMN XML attribute lands. See the
+# CONVERTER CONTRACT on bpmn:name in linkedarchi-bpmn-onto.ttl — converters must
+# emit BOTH: bpmn:name verbatim, and a language-tagged skos:prefLabel mirroring it.
+#
+# An earlier draft accepted either predicate via sh:or. That was withdrawn: it
+# blessed output carrying only bpmn:name, which is not canonical form, and hid the
+# problem until a consumer noticed the labels were missing.
+#
+# sh:targetClass on abstract classes (Activity, ChoreographyActivity,
+# ConversationNode) relies on rdfs:subClassOf reasoning to reach the concrete
+# subtypes, as the per-class shapes in this file already do. Without reasoning
+# enabled the shape matches nothing rather than reporting false violations.
+#################################################################
+
+:RequiredNameShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''The authoritative BPMN naming rule. core-shapes carries no label shape,
+so nothing else constrains labels for this notation.
+
+Targets the 12 BPMN classes that must be named, reaching their concrete subtypes through
+rdfs:subClassOf reasoning. This is deliberately narrower than BPMN's 49 arch:Element classes:
+Gateway and Event subtypes are elements but the spec leaves their name optional, so they are
+not targeted here.
+
+The label must be a language-tagged skos:prefLabel. bpmn:name does not satisfy it — see the
+converter contract on bpmn:name in linkedarchi-bpmn-onto.ttl.'''@en ;
+    sh:targetClass bpmn:Activity ,               # Task + 8 task subtypes, CallActivity,
+                                                 # SubProcess, Transaction, AdHocSubProcess
+                   bpmn:ChoreographyActivity ,   # ChoreographyTask, SubChoreography,
+                                                 # CallChoreography
+                   bpmn:Process ,
+                   bpmn:Collaboration ,          # also Choreography, GlobalChoreographyTask
+                   bpmn:ConversationNode ,       # Conversation, SubConversation,
+                                                 # CallConversation
+                   bpmn:Participant ,
+                   bpmn:Lane ,
+                   bpmn:DataObject ,
+                   bpmn:DataObjectReference ,
+                   bpmn:DataStore ,
+                   bpmn:DataStoreReference ,
+                   bpmn:Message ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  '''This BPMN element must carry a language-tagged skos:prefLabel, e.g.
+"Charge card"@en. bpmn:name alone is not sufficient — it is the retained source attribute,
+not the canonical label. Converters must emit both.'''@en ;
+    ] ;
+.
+
+:ActivityShape a sh:NodeShape ;
+    sh:targetClass bpmn:Activity ;
+    sh:property [
+        sh:path bpmn:isForCompensation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:loopCharacteristics ;
+        sh:maxCount 1 ;
+        sh:class bpmn:LoopCharacteristics ;
+    ] ;
+    sh:property [
+        sh:path bpmn:resources ;
+        sh:class bpmn:ResourceRole ;
+    ] ;
+    sh:property [
+        sh:path bpmn:default ;
+        sh:maxCount 1 ;
+        sh:class bpmn:SequenceFlow ;
+    ] ;
+    sh:property [
+        sh:path bpmn:properties ;
+        sh:class bpmn:Property ;
+    ] ;
+    sh:property [
+        sh:path bpmn:ioSpecification ;
+        sh:maxCount 1 ;
+        sh:class bpmn:InputOutputSpecification ;
+    ] ;
+    sh:property [
+        sh:path bpmn:boundaryEventRefs ;
+        sh:class bpmn:BoundaryEvent ;
+    ] ;
+    sh:property [
+        sh:path bpmn:dataInputAssociations ;
+        sh:class bpmn:DataInputAssociation ;
+    ] ;
+    sh:property [
+        sh:path bpmn:dataOutputAssociations ;
+        sh:class bpmn:DataOutputAssociation ;
+    ] ;
+    sh:property [
+        sh:path bpmn:startQuantity ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+    ] ;
+    sh:property [
+        sh:path bpmn:completionQuantity ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+    ] ;
+.
+
+:AdHocSubProcessShape a sh:NodeShape ;
+    sh:targetClass bpmn:AdHocSubProcess ;
+    sh:property [
+        sh:path bpmn:completionCondition ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:ordering ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "Parallel" "Sequential" ) ;
+    ] ;
+    sh:property [
+        sh:path bpmn:cancelRemainingInstances ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+.
+
+:ArtifactShape a sh:NodeShape ;
+    sh:targetClass bpmn:Artifact ;
+.
+
+:AssignmentShape a sh:NodeShape ;
+    sh:targetClass bpmn:Assignment ;
+    sh:property [
+        sh:path bpmn:from ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:to ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+.
+
+:AssociationShape a sh:NodeShape ;
+    sh:targetClass bpmn:Association ;
+    sh:property [
+        sh:path bpmn:associationDirection ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "None" "One" "Both" ) ;
+    ] ;
+    sh:property [
+        sh:path bpmn:sourceRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:BaseElement ;
+    ] ;
+    sh:property [
+        sh:path bpmn:targetRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:BaseElement ;
+    ] ;
+.
+
+:AuditingShape a sh:NodeShape ;
+    sh:targetClass bpmn:Auditing ;
+.
+
+:BaseElementShape a sh:NodeShape ;
+    sh:targetClass bpmn:BaseElement ;
+    sh:property [
+        sh:path bpmn:id ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:extensionDefinitions ;
+        sh:class bpmn:ExtensionDefinition ;
+    ] ;
+    sh:property [
+        sh:path bpmn:extensionValues ;
+        sh:class bpmn:ExtensionAttributeValue ;
+    ] ;
+    sh:property [
+        sh:path bpmn:documentation ;
+        sh:class bpmn:Documentation ;
+    ] ;
+.
+
+:BoundaryEventShape a sh:NodeShape ;
+    sh:targetClass bpmn:BoundaryEvent ;
+    sh:property [
+        sh:path bpmn:cancelActivity ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:attachedToRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Activity ;
+    ] ;
+.
+
+:BusinessRuleTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:BusinessRuleTask ;
+    sh:property [
+        sh:path bpmn:implementation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:CallActivityShape a sh:NodeShape ;
+    sh:targetClass bpmn:CallActivity ;
+    sh:property [
+        sh:path bpmn:calledElementRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:CallableElement ;
+    ] ;
+.
+
+:CallChoreographyShape a sh:NodeShape ;
+    sh:targetClass bpmn:CallChoreography ;
+    sh:property [
+        sh:path bpmn:calledChoreographyRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Choreography ;
+    ] ;
+    sh:property [
+        sh:path bpmn:participantAssociations ;
+        sh:class bpmn:ParticipantAssociation ;
+    ] ;
+.
+
+:CallConversationShape a sh:NodeShape ;
+    sh:targetClass bpmn:CallConversation ;
+    sh:property [
+        sh:path bpmn:calledCollaborationRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Collaboration ;
+    ] ;
+    sh:property [
+        sh:path bpmn:participantAssociations ;
+        sh:class bpmn:ParticipantAssociation ;
+    ] ;
+.
+
+:CallableElementShape a sh:NodeShape ;
+    sh:targetClass bpmn:CallableElement ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:ioSpecification ;
+        sh:maxCount 1 ;
+        sh:class bpmn:InputOutputSpecification ;
+    ] ;
+    sh:property [
+        sh:path bpmn:supportedInterfaceRefs ;
+        sh:class bpmn:Interface ;
+    ] ;
+    sh:property [
+        sh:path bpmn:ioBinding ;
+        sh:class bpmn:InputOutputBinding ;
+    ] ;
+.
+
+:CancelEventDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:CancelEventDefinition ;
+.
+
+:CatchEventShape a sh:NodeShape ;
+    sh:targetClass bpmn:CatchEvent ;
+    sh:property [
+        sh:path bpmn:parallelMultiple ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outputSet ;
+        sh:maxCount 1 ;
+        sh:class bpmn:OutputSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:eventDefinitionRefs ;
+        sh:class bpmn:EventDefinition ;
+    ] ;
+    sh:property [
+        sh:path bpmn:dataOutputAssociation ;
+        sh:class bpmn:DataOutputAssociation ;
+    ] ;
+    sh:property [
+        sh:path bpmn:dataOutputs ;
+        sh:class bpmn:DataOutput ;
+    ] ;
+    sh:property [
+        sh:path bpmn:eventDefinitions ;
+        sh:class bpmn:EventDefinition ;
+    ] ;
+.
+
+:CategoryShape a sh:NodeShape ;
+    sh:targetClass bpmn:Category ;
+    sh:property [
+        sh:path bpmn:categoryValue ;
+        sh:class bpmn:CategoryValue ;
+    ] ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:CategoryValueShape a sh:NodeShape ;
+    sh:targetClass bpmn:CategoryValue ;
+    sh:property [
+        sh:path bpmn:categorizedFlowElements ;
+        sh:class bpmn:FlowElement ;
+    ] ;
+    sh:property [
+        sh:path bpmn:value ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:ChoreographyShape a sh:NodeShape ;
+    sh:targetClass bpmn:Choreography ;
+.
+
+:ChoreographyActivityShape a sh:NodeShape ;
+    sh:targetClass bpmn:ChoreographyActivity ;
+    sh:property [
+        sh:path bpmn:participantRefs ;
+        sh:minCount 2 ;
+        sh:class bpmn:Participant ;
+    ] ;
+    sh:property [
+        sh:path bpmn:initiatingParticipantRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Participant ;
+    ] ;
+    sh:property [
+        sh:path bpmn:correlationKeys ;
+        sh:class bpmn:CorrelationKey ;
+    ] ;
+    sh:property [
+        sh:path bpmn:loopType ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "None" "Standard" "MultiInstanceSequential" "MultiInstanceParallel" ) ;
+    ] ;
+.
+
+:ChoreographyTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:ChoreographyTask ;
+    sh:property [
+        sh:path bpmn:messageFlowRef ;
+        sh:maxCount 2 ;
+        sh:class bpmn:MessageFlow ;
+    ] ;
+.
+
+:CollaborationShape a sh:NodeShape ;
+    sh:targetClass bpmn:Collaboration ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:isClosed ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:choreographyRef ;
+        sh:class bpmn:Choreography ;
+    ] ;
+    sh:property [
+        sh:path bpmn:artifacts ;
+        sh:class bpmn:Artifact ;
+    ] ;
+    sh:property [
+        sh:path bpmn:participantAssociations ;
+        sh:class bpmn:ParticipantAssociation ;
+    ] ;
+    sh:property [
+        sh:path bpmn:messageFlowAssociations ;
+        sh:class bpmn:MessageFlowAssociation ;
+    ] ;
+    sh:property [
+        sh:path bpmn:conversationAssociations ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ConversationAssociation ;
+    ] ;
+    sh:property [
+        sh:path bpmn:participants ;
+        sh:class bpmn:Participant ;
+    ] ;
+    sh:property [
+        sh:path bpmn:messageFlows ;
+        sh:class bpmn:MessageFlow ;
+    ] ;
+    sh:property [
+        sh:path bpmn:correlationKeys ;
+        sh:class bpmn:CorrelationKey ;
+    ] ;
+    sh:property [
+        sh:path bpmn:conversations ;
+        sh:class bpmn:ConversationNode ;
+    ] ;
+    sh:property [
+        sh:path bpmn:conversationLinks ;
+        sh:class bpmn:ConversationLink ;
+    ] ;
+.
+
+:CompensateEventDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:CompensateEventDefinition ;
+    sh:property [
+        sh:path bpmn:waitForCompletion ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:activityRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Activity ;
+    ] ;
+.
+
+:ComplexBehaviorDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:ComplexBehaviorDefinition ;
+    sh:property [
+        sh:path bpmn:condition ;
+        sh:maxCount 1 ;
+        sh:class bpmn:FormalExpression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:event ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ImplicitThrowEvent ;
+    ] ;
+.
+
+:ComplexGatewayShape a sh:NodeShape ;
+    sh:targetClass bpmn:ComplexGateway ;
+    sh:property [
+        sh:path bpmn:activationCondition ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:default ;
+        sh:maxCount 1 ;
+        sh:class bpmn:SequenceFlow ;
+    ] ;
+.
+
+:ConditionalEventDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:ConditionalEventDefinition ;
+    sh:property [
+        sh:path bpmn:condition ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+.
+
+:ConversationShape a sh:NodeShape ;
+    sh:targetClass bpmn:Conversation ;
+.
+
+:ConversationAssociationShape a sh:NodeShape ;
+    sh:targetClass bpmn:ConversationAssociation ;
+    sh:property [
+        sh:path bpmn:innerConversationNodeRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ConversationNode ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outerConversationNodeRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ConversationNode ;
+    ] ;
+.
+
+:ConversationLinkShape a sh:NodeShape ;
+    sh:targetClass bpmn:ConversationLink ;
+    sh:property [
+        sh:path bpmn:sourceRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:InteractionNode ;
+    ] ;
+    sh:property [
+        sh:path bpmn:targetRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:InteractionNode ;
+    ] ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:ConversationNodeShape a sh:NodeShape ;
+    sh:targetClass bpmn:ConversationNode ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:participantRefs ;
+        sh:minCount 2 ;
+        sh:class bpmn:Participant ;
+    ] ;
+    sh:property [
+        sh:path bpmn:messageFlowRefs ;
+        sh:class bpmn:MessageFlow ;
+    ] ;
+    sh:property [
+        sh:path bpmn:correlationKeys ;
+        sh:class bpmn:CorrelationKey ;
+    ] ;
+.
+
+:CorrelationKeyShape a sh:NodeShape ;
+    sh:targetClass bpmn:CorrelationKey ;
+    sh:property [
+        sh:path bpmn:correlationPropertyRef ;
+        sh:class bpmn:CorrelationProperty ;
+    ] ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:CorrelationPropertyShape a sh:NodeShape ;
+    sh:targetClass bpmn:CorrelationProperty ;
+    sh:property [
+        sh:path bpmn:correlationPropertyRetrievalExpression ;
+        sh:class bpmn:CorrelationPropertyRetrievalExpression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:type ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ItemDefinition ;
+    ] ;
+.
+
+:CorrelationPropertyBindingShape a sh:NodeShape ;
+    sh:targetClass bpmn:CorrelationPropertyBinding ;
+    sh:property [
+        sh:path bpmn:dataPath ;
+        sh:maxCount 1 ;
+        sh:class bpmn:FormalExpression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:correlationPropertyRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:CorrelationProperty ;
+    ] ;
+.
+
+:CorrelationPropertyRetrievalExpressionShape a sh:NodeShape ;
+    sh:targetClass bpmn:CorrelationPropertyRetrievalExpression ;
+    sh:property [
+        sh:path bpmn:messagePath ;
+        sh:maxCount 1 ;
+        sh:class bpmn:FormalExpression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:messageRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Message ;
+    ] ;
+.
+
+:CorrelationSubscriptionShape a sh:NodeShape ;
+    sh:targetClass bpmn:CorrelationSubscription ;
+    sh:property [
+        sh:path bpmn:correlationKeyRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:CorrelationKey ;
+    ] ;
+    sh:property [
+        sh:path bpmn:correlationPropertyBinding ;
+        sh:class bpmn:CorrelationPropertyBinding ;
+    ] ;
+.
+
+:DataAssociationShape a sh:NodeShape ;
+    sh:targetClass bpmn:DataAssociation ;
+    sh:property [
+        sh:path bpmn:transformation ;
+        sh:maxCount 1 ;
+        sh:class bpmn:FormalExpression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:assignment ;
+        sh:class bpmn:Assignment ;
+    ] ;
+    sh:property [
+        sh:path bpmn:targetRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ItemAwareElement ;
+    ] ;
+    sh:property [
+        sh:path bpmn:sourceRef ;
+        sh:class bpmn:ItemAwareElement ;
+    ] ;
+.
+
+:DataInputShape a sh:NodeShape ;
+    sh:targetClass bpmn:DataInput ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:isCollection ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:inputSetRefs ;
+        sh:class bpmn:InputSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:inputSetWithOptional ;
+        sh:class bpmn:InputSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:inputSetWithWhileExecuting ;
+        sh:class bpmn:InputSet ;
+    ] ;
+.
+
+:DataInputAssociationShape a sh:NodeShape ;
+    sh:targetClass bpmn:DataInputAssociation ;
+.
+
+:DataObjectShape a sh:NodeShape ;
+    sh:targetClass bpmn:DataObject ;
+    sh:property [
+        sh:path bpmn:isCollection ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+.
+
+:DataObjectReferenceShape a sh:NodeShape ;
+    sh:targetClass bpmn:DataObjectReference ;
+    sh:property [
+        sh:path bpmn:dataObjectRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:DataObject ;
+    ] ;
+.
+
+:DataOutputShape a sh:NodeShape ;
+    sh:targetClass bpmn:DataOutput ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:isCollection ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outputSetRefs ;
+        sh:class bpmn:OutputSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outputSetWithOptional ;
+        sh:class bpmn:OutputSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outputSetWithWhileExecuting ;
+        sh:class bpmn:OutputSet ;
+    ] ;
+.
+
+:DataOutputAssociationShape a sh:NodeShape ;
+    sh:targetClass bpmn:DataOutputAssociation ;
+.
+
+:DataStateShape a sh:NodeShape ;
+    sh:targetClass bpmn:DataState ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:DataStoreShape a sh:NodeShape ;
+    sh:targetClass bpmn:DataStore ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:capacity ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+    ] ;
+    sh:property [
+        sh:path bpmn:isUnlimited ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+.
+
+:DataStoreReferenceShape a sh:NodeShape ;
+    sh:targetClass bpmn:DataStoreReference ;
+    sh:property [
+        sh:path bpmn:dataStoreRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:DataStore ;
+    ] ;
+.
+
+:DocumentationShape a sh:NodeShape ;
+    sh:targetClass bpmn:Documentation ;
+    sh:property [
+        sh:path bpmn:text ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:textFormat ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:EndEventShape a sh:NodeShape ;
+    sh:targetClass bpmn:EndEvent ;
+.
+
+:EndPointShape a sh:NodeShape ;
+    sh:targetClass bpmn:EndPoint ;
+.
+
+:ErrorShape a sh:NodeShape ;
+    sh:targetClass bpmn:Error ;
+    sh:property [
+        sh:path bpmn:structureRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ItemDefinition ;
+    ] ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:errorCode ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:ErrorEventDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:ErrorEventDefinition ;
+    sh:property [
+        sh:path bpmn:errorRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Error ;
+    ] ;
+.
+
+:EscalationShape a sh:NodeShape ;
+    sh:targetClass bpmn:Escalation ;
+    sh:property [
+        sh:path bpmn:structureRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ItemDefinition ;
+    ] ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:escalationCode ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:EscalationEventDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:EscalationEventDefinition ;
+    sh:property [
+        sh:path bpmn:escalationRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Escalation ;
+    ] ;
+.
+
+:EventShape a sh:NodeShape ;
+    sh:targetClass bpmn:Event ;
+    sh:property [
+        sh:path bpmn:properties ;
+        sh:class bpmn:Property ;
+    ] ;
+.
+
+:EventBasedGatewayShape a sh:NodeShape ;
+    sh:targetClass bpmn:EventBasedGateway ;
+    sh:property [
+        sh:path bpmn:instantiate ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:eventGatewayType ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "Parallel" "Exclusive" ) ;
+    ] ;
+.
+
+:EventDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:EventDefinition ;
+.
+
+:ExclusiveGatewayShape a sh:NodeShape ;
+    sh:targetClass bpmn:ExclusiveGateway ;
+    sh:property [
+        sh:path bpmn:default ;
+        sh:maxCount 1 ;
+        sh:class bpmn:SequenceFlow ;
+    ] ;
+.
+
+:ExpressionShape a sh:NodeShape ;
+    sh:targetClass bpmn:Expression ;
+.
+
+:ExtensionShape a sh:NodeShape ;
+    sh:targetClass bpmn:Extension ;
+    sh:property [
+        sh:path bpmn:mustUnderstand ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:definition ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ExtensionDefinition ;
+    ] ;
+.
+
+:ExtensionAttributeDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:ExtensionAttributeDefinition ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:type ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:isReference ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:extensionDefinition ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ExtensionDefinition ;
+    ] ;
+.
+
+:ExtensionAttributeValueShape a sh:NodeShape ;
+    sh:targetClass bpmn:ExtensionAttributeValue ;
+    sh:property [
+        sh:path bpmn:valueRef ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+    sh:property [
+        sh:path bpmn:value ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+    sh:property [
+        sh:path bpmn:extensionAttributeDefinition ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ExtensionAttributeDefinition ;
+    ] ;
+.
+
+:ExtensionDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:ExtensionDefinition ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:extensionAttributeDefinitions ;
+        sh:class bpmn:ExtensionAttributeDefinition ;
+    ] ;
+.
+
+:FlowElementShape a sh:NodeShape ;
+    sh:targetClass bpmn:FlowElement ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:auditing ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Auditing ;
+    ] ;
+    sh:property [
+        sh:path bpmn:monitoring ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Monitoring ;
+    ] ;
+    sh:property [
+        sh:path bpmn:categoryValueRef ;
+        sh:class bpmn:CategoryValue ;
+    ] ;
+.
+
+:FlowElementsContainerShape a sh:NodeShape ;
+    sh:targetClass bpmn:FlowElementsContainer ;
+    sh:property [
+        sh:path bpmn:flowElements ;
+        sh:class bpmn:FlowElement ;
+    ] ;
+    sh:property [
+        sh:path bpmn:laneSets ;
+        sh:class bpmn:LaneSet ;
+    ] ;
+.
+
+:FlowNodeShape a sh:NodeShape ;
+    sh:targetClass bpmn:FlowNode ;
+    sh:property [
+        sh:path bpmn:outgoing ;
+        sh:class bpmn:SequenceFlow ;
+    ] ;
+    sh:property [
+        sh:path bpmn:incoming ;
+        sh:class bpmn:SequenceFlow ;
+    ] ;
+    sh:property [
+        sh:path bpmn:lanes ;
+        sh:class bpmn:Lane ;
+    ] ;
+.
+
+:FormalExpressionShape a sh:NodeShape ;
+    sh:targetClass bpmn:FormalExpression ;
+    sh:property [
+        sh:path bpmn:language ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:body ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+    sh:property [
+        sh:path bpmn:evaluatesToTypeRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ItemDefinition ;
+    ] ;
+.
+
+:GatewayShape a sh:NodeShape ;
+    sh:targetClass bpmn:Gateway ;
+    sh:property [
+        sh:path bpmn:gatewayDirection ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "Unspecified" "Converging" "Diverging" "Mixed" ) ;
+    ] ;
+.
+
+:GlobalBusinessRuleTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:GlobalBusinessRuleTask ;
+    sh:property [
+        sh:path bpmn:implementation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:GlobalChoreographyTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:GlobalChoreographyTask ;
+    sh:property [
+        sh:path bpmn:initiatingParticipantRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Participant ;
+    ] ;
+.
+
+:GlobalConversationShape a sh:NodeShape ;
+    sh:targetClass bpmn:GlobalConversation ;
+.
+
+:GlobalManualTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:GlobalManualTask ;
+.
+
+:GlobalScriptTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:GlobalScriptTask ;
+    sh:property [
+        sh:path bpmn:scriptLanguage ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:script ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:GlobalTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:GlobalTask ;
+    sh:property [
+        sh:path bpmn:resources ;
+        sh:class bpmn:ResourceRole ;
+    ] ;
+.
+
+:GlobalUserTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:GlobalUserTask ;
+    sh:property [
+        sh:path bpmn:implementation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:renderings ;
+        sh:class bpmn:Rendering ;
+    ] ;
+.
+
+:GroupShape a sh:NodeShape ;
+    sh:targetClass bpmn:Group ;
+    sh:property [
+        sh:path bpmn:categoryValueRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:CategoryValue ;
+    ] ;
+.
+
+:HumanPerformerShape a sh:NodeShape ;
+    sh:targetClass bpmn:HumanPerformer ;
+.
+
+:ImplicitThrowEventShape a sh:NodeShape ;
+    sh:targetClass bpmn:ImplicitThrowEvent ;
+.
+
+:InclusiveGatewayShape a sh:NodeShape ;
+    sh:targetClass bpmn:InclusiveGateway ;
+    sh:property [
+        sh:path bpmn:default ;
+        sh:maxCount 1 ;
+        sh:class bpmn:SequenceFlow ;
+    ] ;
+.
+
+:InputOutputBindingShape a sh:NodeShape ;
+    sh:targetClass bpmn:InputOutputBinding ;
+    sh:property [
+        sh:path bpmn:inputDataRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:InputSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outputDataRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:OutputSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:operationRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Operation ;
+    ] ;
+.
+
+:InputOutputSpecificationShape a sh:NodeShape ;
+    sh:targetClass bpmn:InputOutputSpecification ;
+    sh:property [
+        sh:path bpmn:inputSets ;
+        sh:class bpmn:InputSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outputSets ;
+        sh:class bpmn:OutputSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:dataInputs ;
+        sh:class bpmn:DataInput ;
+    ] ;
+    sh:property [
+        sh:path bpmn:dataOutputs ;
+        sh:class bpmn:DataOutput ;
+    ] ;
+.
+
+:InputSetShape a sh:NodeShape ;
+    sh:targetClass bpmn:InputSet ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:dataInputRefs ;
+        sh:class bpmn:DataInput ;
+    ] ;
+    sh:property [
+        sh:path bpmn:optionalInputRefs ;
+        sh:class bpmn:DataInput ;
+    ] ;
+    sh:property [
+        sh:path bpmn:whileExecutingInputRefs ;
+        sh:class bpmn:DataInput ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outputSetRefs ;
+        sh:class bpmn:OutputSet ;
+    ] ;
+.
+
+:InteractionNodeShape a sh:NodeShape ;
+    sh:targetClass bpmn:InteractionNode ;
+    sh:property [
+        sh:path bpmn:incomingConversationLinks ;
+        sh:class bpmn:ConversationLink ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outgoingConversationLinks ;
+        sh:class bpmn:ConversationLink ;
+    ] ;
+.
+
+:InterfaceShape a sh:NodeShape ;
+    sh:targetClass bpmn:Interface ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:operations ;
+        sh:class bpmn:Operation ;
+    ] ;
+    sh:property [
+        sh:path bpmn:implementationRef ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+.
+
+:IntermediateCatchEventShape a sh:NodeShape ;
+    sh:targetClass bpmn:IntermediateCatchEvent ;
+.
+
+:IntermediateThrowEventShape a sh:NodeShape ;
+    sh:targetClass bpmn:IntermediateThrowEvent ;
+.
+
+:ItemAwareElementShape a sh:NodeShape ;
+    sh:targetClass bpmn:ItemAwareElement ;
+    sh:property [
+        sh:path bpmn:itemSubjectRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ItemDefinition ;
+    ] ;
+    sh:property [
+        sh:path bpmn:dataState ;
+        sh:maxCount 1 ;
+        sh:class bpmn:DataState ;
+    ] ;
+.
+
+:ItemDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:ItemDefinition ;
+    sh:property [
+        sh:path bpmn:itemKind ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "Physical" "Information" ) ;
+    ] ;
+    sh:property [
+        sh:path bpmn:structureRef ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+    sh:property [
+        sh:path bpmn:isCollection ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:import ;
+        sh:maxCount 1 ;
+        sh:class infra:Import ;
+    ] ;
+.
+
+:LaneShape a sh:NodeShape ;
+    sh:targetClass bpmn:Lane ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:childLaneSet ;
+        sh:maxCount 1 ;
+        sh:class bpmn:LaneSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:partitionElementRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:BaseElement ;
+    ] ;
+    sh:property [
+        sh:path bpmn:flowNodeRefs ;
+        sh:class bpmn:FlowNode ;
+    ] ;
+    sh:property [
+        sh:path bpmn:partitionElement ;
+        sh:maxCount 1 ;
+        sh:class bpmn:BaseElement ;
+    ] ;
+.
+
+:LaneSetShape a sh:NodeShape ;
+    sh:targetClass bpmn:LaneSet ;
+    sh:property [
+        sh:path bpmn:lanes ;
+        sh:class bpmn:Lane ;
+    ] ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:LinkEventDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:LinkEventDefinition ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:target ;
+        sh:maxCount 1 ;
+        sh:class bpmn:LinkEventDefinition ;
+    ] ;
+    sh:property [
+        sh:path bpmn:source ;
+        sh:class bpmn:LinkEventDefinition ;
+    ] ;
+.
+
+:LoopCharacteristicsShape a sh:NodeShape ;
+    sh:targetClass bpmn:LoopCharacteristics ;
+.
+
+:ManualTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:ManualTask ;
+.
+
+:MessageShape a sh:NodeShape ;
+    sh:targetClass bpmn:Message ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:itemRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ItemDefinition ;
+    ] ;
+.
+
+:MessageEventDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:MessageEventDefinition ;
+    sh:property [
+        sh:path bpmn:messageRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Message ;
+    ] ;
+    sh:property [
+        sh:path bpmn:operationRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Operation ;
+    ] ;
+.
+
+:MessageFlowShape a sh:NodeShape ;
+    sh:targetClass bpmn:MessageFlow ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:sourceRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:InteractionNode ;
+    ] ;
+    sh:property [
+        sh:path bpmn:targetRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:InteractionNode ;
+    ] ;
+    sh:property [
+        sh:path bpmn:messageRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Message ;
+    ] ;
+.
+
+:MessageFlowAssociationShape a sh:NodeShape ;
+    sh:targetClass bpmn:MessageFlowAssociation ;
+    sh:property [
+        sh:path bpmn:innerMessageFlowRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:MessageFlow ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outerMessageFlowRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:MessageFlow ;
+    ] ;
+.
+
+:MonitoringShape a sh:NodeShape ;
+    sh:targetClass bpmn:Monitoring ;
+.
+
+:MultiInstanceLoopCharacteristicsShape a sh:NodeShape ;
+    sh:targetClass bpmn:MultiInstanceLoopCharacteristics ;
+    sh:property [
+        sh:path bpmn:isSequential ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:behavior ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "None" "One" "All" "Complex" ) ;
+    ] ;
+    sh:property [
+        sh:path bpmn:loopCardinality ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:loopDataInputRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ItemAwareElement ;
+    ] ;
+    sh:property [
+        sh:path bpmn:loopDataOutputRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ItemAwareElement ;
+    ] ;
+    sh:property [
+        sh:path bpmn:inputDataItem ;
+        sh:maxCount 1 ;
+        sh:class bpmn:DataInput ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outputDataItem ;
+        sh:maxCount 1 ;
+        sh:class bpmn:DataOutput ;
+    ] ;
+    sh:property [
+        sh:path bpmn:completionCondition ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:complexBehaviorDefinition ;
+        sh:class bpmn:ComplexBehaviorDefinition ;
+    ] ;
+    sh:property [
+        sh:path bpmn:oneBehaviorEventRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:EventDefinition ;
+    ] ;
+    sh:property [
+        sh:path bpmn:noneBehaviorEventRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:EventDefinition ;
+    ] ;
+.
+
+:OperationShape a sh:NodeShape ;
+    sh:targetClass bpmn:Operation ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:inMessageRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Message ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outMessageRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Message ;
+    ] ;
+    sh:property [
+        sh:path bpmn:errorRefs ;
+        sh:class bpmn:Error ;
+    ] ;
+    sh:property [
+        sh:path bpmn:implementationRef ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+.
+
+:OutputSetShape a sh:NodeShape ;
+    sh:targetClass bpmn:OutputSet ;
+    sh:property [
+        sh:path bpmn:dataOutputRefs ;
+        sh:class bpmn:DataOutput ;
+    ] ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:inputSetRefs ;
+        sh:class bpmn:InputSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:optionalOutputRefs ;
+        sh:class bpmn:DataOutput ;
+    ] ;
+    sh:property [
+        sh:path bpmn:whileExecutingOutputRefs ;
+        sh:class bpmn:DataOutput ;
+    ] ;
+.
+
+:ParallelGatewayShape a sh:NodeShape ;
+    sh:targetClass bpmn:ParallelGateway ;
+.
+
+:ParticipantShape a sh:NodeShape ;
+    sh:targetClass bpmn:Participant ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:interfaceRefs ;
+        sh:class bpmn:Interface ;
+    ] ;
+    sh:property [
+        sh:path bpmn:participantMultiplicity ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ParticipantMultiplicity ;
+    ] ;
+    sh:property [
+        sh:path bpmn:endPointRefs ;
+        sh:class bpmn:EndPoint ;
+    ] ;
+    sh:property [
+        sh:path bpmn:processRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Process ;
+    ] ;
+.
+
+:ParticipantAssociationShape a sh:NodeShape ;
+    sh:targetClass bpmn:ParticipantAssociation ;
+    sh:property [
+        sh:path bpmn:innerParticipantRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Participant ;
+    ] ;
+    sh:property [
+        sh:path bpmn:outerParticipantRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Participant ;
+    ] ;
+.
+
+:ParticipantMultiplicityShape a sh:NodeShape ;
+    sh:targetClass bpmn:ParticipantMultiplicity ;
+    sh:property [
+        sh:path bpmn:minimum ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:int ;
+        rdfs:comment "xsd:int per Semantic.xsd, not the CMOF-generic Integer."@en ;
+    ] ;
+    sh:property [
+        sh:path bpmn:maximum ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:int ;
+        rdfs:comment "xsd:int per Semantic.xsd, not the CMOF-generic Integer."@en ;
+    ] ;
+.
+
+:PartnerEntityShape a sh:NodeShape ;
+    sh:targetClass bpmn:PartnerEntity ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:participantRef ;
+        sh:class bpmn:Participant ;
+    ] ;
+.
+
+:PartnerRoleShape a sh:NodeShape ;
+    sh:targetClass bpmn:PartnerRole ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:participantRef ;
+        sh:class bpmn:Participant ;
+    ] ;
+.
+
+:PerformerShape a sh:NodeShape ;
+    sh:targetClass bpmn:Performer ;
+.
+
+:PotentialOwnerShape a sh:NodeShape ;
+    sh:targetClass bpmn:PotentialOwner ;
+.
+
+:ProcessShape a sh:NodeShape ;
+    sh:targetClass bpmn:Process ;
+    sh:property [
+        sh:path bpmn:processType ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "None" "Public" "Private" ) ;
+    ] ;
+    sh:property [
+        sh:path bpmn:isClosed ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:auditing ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Auditing ;
+    ] ;
+    sh:property [
+        sh:path bpmn:monitoring ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Monitoring ;
+    ] ;
+    sh:property [
+        sh:path bpmn:properties ;
+        sh:class bpmn:Property ;
+    ] ;
+    sh:property [
+        sh:path bpmn:supports ;
+        sh:class bpmn:Process ;
+    ] ;
+    sh:property [
+        sh:path bpmn:definitionalCollaborationRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Collaboration ;
+    ] ;
+    sh:property [
+        sh:path bpmn:isExecutable ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:resources ;
+        sh:class bpmn:ResourceRole ;
+    ] ;
+    sh:property [
+        sh:path bpmn:artifacts ;
+        sh:class bpmn:Artifact ;
+    ] ;
+    sh:property [
+        sh:path bpmn:correlationSubscriptions ;
+        sh:class bpmn:CorrelationSubscription ;
+    ] ;
+.
+
+:PropertyShape a sh:NodeShape ;
+    sh:targetClass bpmn:Property ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:ReceiveTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:ReceiveTask ;
+    sh:property [
+        sh:path bpmn:implementation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:instantiate ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:operationRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Operation ;
+    ] ;
+    sh:property [
+        sh:path bpmn:messageRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Message ;
+    ] ;
+.
+
+:RelationshipShape a sh:NodeShape ;
+    sh:targetClass bpmn:Relationship ;
+    sh:property [
+        sh:path bpmn:type ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:direction ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "None" "Forward" "Backward" "Both" ) ;
+    ] ;
+    sh:property [
+        sh:path bpmn:sources ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+    sh:property [
+        sh:path bpmn:targets ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+.
+
+:RenderingShape a sh:NodeShape ;
+    sh:targetClass bpmn:Rendering ;
+.
+
+:ResourceShape a sh:NodeShape ;
+    sh:targetClass bpmn:Resource ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:resourceParameters ;
+        sh:class bpmn:ResourceParameter ;
+    ] ;
+.
+
+:ResourceAssignmentExpressionShape a sh:NodeShape ;
+    sh:targetClass bpmn:ResourceAssignmentExpression ;
+    sh:property [
+        sh:path bpmn:expression ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+.
+
+:ResourceParameterShape a sh:NodeShape ;
+    sh:targetClass bpmn:ResourceParameter ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:isRequired ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:type ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ItemDefinition ;
+    ] ;
+.
+
+:ResourceParameterBindingShape a sh:NodeShape ;
+    sh:targetClass bpmn:ResourceParameterBinding ;
+    sh:property [
+        sh:path bpmn:expression ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:parameterRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ResourceParameter ;
+    ] ;
+.
+
+:ResourceRoleShape a sh:NodeShape ;
+    sh:targetClass bpmn:ResourceRole ;
+    sh:property [
+        sh:path bpmn:resourceRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Resource ;
+    ] ;
+    sh:property [
+        sh:path bpmn:resourceParameterBindings ;
+        sh:class bpmn:ResourceParameterBinding ;
+    ] ;
+    sh:property [
+        sh:path bpmn:resourceAssignmentExpression ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ResourceAssignmentExpression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:RootElementShape a sh:NodeShape ;
+    sh:targetClass bpmn:RootElement ;
+.
+
+:ScriptTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:ScriptTask ;
+    sh:property [
+        sh:path bpmn:scriptFormat ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:script ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:SendTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:SendTask ;
+    sh:property [
+        sh:path bpmn:implementation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:operationRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Operation ;
+    ] ;
+    sh:property [
+        sh:path bpmn:messageRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Message ;
+    ] ;
+.
+
+:SequenceFlowShape a sh:NodeShape ;
+    sh:targetClass bpmn:SequenceFlow ;
+    sh:property [
+        sh:path bpmn:isImmediate ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:conditionExpression ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:sourceRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:FlowNode ;
+    ] ;
+    sh:property [
+        sh:path bpmn:targetRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:FlowNode ;
+    ] ;
+.
+
+:ServiceTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:ServiceTask ;
+    sh:property [
+        sh:path bpmn:implementation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:operationRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Operation ;
+    ] ;
+.
+
+:SignalShape a sh:NodeShape ;
+    sh:targetClass bpmn:Signal ;
+    sh:property [
+        sh:path bpmn:structureRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:ItemDefinition ;
+    ] ;
+    sh:property [
+        sh:path bpmn:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:SignalEventDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:SignalEventDefinition ;
+    sh:property [
+        sh:path bpmn:signalRef ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Signal ;
+    ] ;
+.
+
+:StandardLoopCharacteristicsShape a sh:NodeShape ;
+    sh:targetClass bpmn:StandardLoopCharacteristics ;
+    sh:property [
+        sh:path bpmn:testBefore ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:loopCondition ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:loopMaximum ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+.
+
+:StartEventShape a sh:NodeShape ;
+    sh:targetClass bpmn:StartEvent ;
+    sh:property [
+        sh:path bpmn:isInterrupting ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+.
+
+:SubChoreographyShape a sh:NodeShape ;
+    sh:targetClass bpmn:SubChoreography ;
+    sh:property [
+        sh:path bpmn:artifacts ;
+        sh:class bpmn:Artifact ;
+    ] ;
+.
+
+:SubConversationShape a sh:NodeShape ;
+    sh:targetClass bpmn:SubConversation ;
+    sh:property [
+        sh:path bpmn:conversationNodes ;
+        sh:class bpmn:ConversationNode ;
+    ] ;
+.
+
+:SubProcessShape a sh:NodeShape ;
+    sh:targetClass bpmn:SubProcess ;
+    sh:property [
+        sh:path bpmn:triggeredByEvent ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path bpmn:artifacts ;
+        sh:class bpmn:Artifact ;
+    ] ;
+.
+
+:TaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:Task ;
+.
+
+:TerminateEventDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:TerminateEventDefinition ;
+.
+
+:TextAnnotationShape a sh:NodeShape ;
+    sh:targetClass bpmn:TextAnnotation ;
+    sh:property [
+        sh:path bpmn:text ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:textFormat ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:ThrowEventShape a sh:NodeShape ;
+    sh:targetClass bpmn:ThrowEvent ;
+    sh:property [
+        sh:path bpmn:inputSet ;
+        sh:maxCount 1 ;
+        sh:class bpmn:InputSet ;
+    ] ;
+    sh:property [
+        sh:path bpmn:eventDefinitionRefs ;
+        sh:class bpmn:EventDefinition ;
+    ] ;
+    sh:property [
+        sh:path bpmn:dataInputAssociation ;
+        sh:class bpmn:DataInputAssociation ;
+    ] ;
+    sh:property [
+        sh:path bpmn:dataInputs ;
+        sh:class bpmn:DataInput ;
+    ] ;
+    sh:property [
+        sh:path bpmn:eventDefinitions ;
+        sh:class bpmn:EventDefinition ;
+    ] ;
+.
+
+:TimerEventDefinitionShape a sh:NodeShape ;
+    sh:targetClass bpmn:TimerEventDefinition ;
+    sh:property [
+        sh:path bpmn:timeDate ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:timeCycle ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+    sh:property [
+        sh:path bpmn:timeDuration ;
+        sh:maxCount 1 ;
+        sh:class bpmn:Expression ;
+    ] ;
+.
+
+:TransactionShape a sh:NodeShape ;
+    sh:targetClass bpmn:Transaction ;
+    sh:property [
+        sh:path bpmn:protocol ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path bpmn:method ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.
+
+:UserTaskShape a sh:NodeShape ;
+    sh:targetClass bpmn:UserTask ;
+    sh:property [
+        sh:path bpmn:renderings ;
+        sh:class bpmn:Rendering ;
+    ] ;
+    sh:property [
+        sh:path bpmn:implementation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+.

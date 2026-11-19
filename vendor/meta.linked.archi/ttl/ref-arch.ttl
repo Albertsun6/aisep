@@ -1,0 +1,673 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <http://schema.org/> .
+
+@prefix book:    <https://model.linked.archi/books#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix :        <https://meta.linked.archi/ref-arch#> .
+
+<https://meta.linked.archi/ref-arch#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   arch: ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ref-arch#" ;
+    vann:preferredNamespacePrefix "refa" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Reference Architecture Ontology"@en ;
+    dcterms:description                '''Extension ontology for modeling reference architectures,
+reference models, architectural patterns, tactics,
+and building blocks (ABB/SBB). Use this extension to capture
+reusable architectural knowledge, classify patterns by type
+(module, integration, deployment), relate tactics to quality
+attributes, and trace how patterns and tactics interact.'''@en ;
+    dcterms:abstract              "Ontology for modeling reference architectures, patterns, tactics, and building blocks."@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-04-16"^^xsd:date ;
+    dcterms:publisher                  <https://linked.archi>,
+                                  "Linked.Archi"@en ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ref-arch/0.0.5#> ;
+    owl:versionInfo               "0.0.5"@en ;
+    schema:citation               "Linked.Archi Reference Architecture Ontology" ;
+    rdfs:seeAlso                  <https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513807>,
+                                  <http://dx.doi.org/10.1016/j.jss.2010.04.067>,
+                                  <http://dx.doi.org/10.1016/j.jss.2020.110714>,
+                                  <https://iasa-global.github.io/btabok/decisions.html>,
+                                  <https://iasa-global.github.io/btabok/quality_attributes.html> ;
+.
+
+:ReferenceArchitecture
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Model ;
+    skos:prefLabel   "Reference Architecture"@en ;
+    skos:definition  '''A reference architecture models the abstract architectural
+elements in the domain of interest independent of the
+technologies, protocols, and products that are used to
+implement a specific solution for the domain. It differs
+from a reference model in that a reference model describes
+the important concepts and relationships in the domain
+focusing on what distinguishes the elements of the domain;
+a reference architecture elaborates further on the model to
+show a complete picture that includes showing what is involved
+in realizing the modeled entities while staying independent of
+any particular solution but instead applies to a class of
+solutions. It is possible to define reference architectures at
+many levels of detail or abstraction and for many different
+purposes. A reference architecture is not a concrete
+architecture; depending on the requirements being addressed,
+it generally will not completely specify all the technologies,
+components, and their relationships in sufficient detail to
+enable direct implementation.'''@en ;
+    skos:example     '''Well-known reference architectures:
+   * OASIS SOA Reference Architecture
+   * BIAN Service Landscape (Banking)
+   * TM Forum Frameworx (Telecom)
+   * AWS Well-Architected Framework
+   * Azure Architecture Center'''@en ;
+    skos:example     '''ex:MicroservicesRefArch a refa:ReferenceArchitecture ;
+    skos:prefLabel "Microservices Reference Architecture"@en ;
+    refa:applicableTactic ex:CircuitBreakerTactic, ex:RetryTactic,
+                          ex:BulkheadTactic, ex:ServiceDiscoveryTactic .'''@en ;
+    arch:mentionedIn <http://docs.oasis-open.org/soa-rm/soa-ra/v1.0/cs01/soa-ra-v1.0-cs01.html#_Toc343761542> ;
+    skos:exactMatch  <http://docs.oasis-open.org/soa-rm/soa-ra/v1.0/cs01/soa-ra-v1.0-cs01.html#_Toc343761542> ;
+.
+
+:ReferenceModel
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Metamodel ;
+    skos:prefLabel   "Reference Model"@en ;
+    skos:definition  '''A reference model is an abstract framework for understanding
+significant relationships among the entities of some
+environment. It enables the development of specific reference
+or concrete architectures using consistent standards or
+specifications supporting that environment. A reference model
+consists of a minimal set of unifying concepts, axioms and
+relationships within a particular problem domain, and is
+independent of specific standards, technologies,
+implementations, or other concrete details.'''@en ;
+    arch:rationale   '''ReferenceModel is a subclass of Metamodel Class, which is a
+subclass of Ontology. The reason is that the content of
+Reference Models is usually abstract concepts and types
+defined as Classes. However this is not always the case and
+some may contain instances (individuals). Usually those
+individuals are universals common to a set of concepts or
+abstract particulars like tropes. Those instances could be
+provided ready to use in a Model (universals) or can be given
+as an example and be used as a source to derive new instances
+based on those (abstract tropes). When used for derivation
+prov:wasDerivedFrom should be used to refer to the original
+Concept in the ReferenceModel.'''@en ;
+    arch:mentionedIn <http://docs.oasis-open.org/soa-rm/v1.0/soa-rm.pdf>,
+                     <https://www.oasis-open.org/committees/soa-rm/faq.php> ;
+.
+
+:Pattern
+    a                       owl:Class ;
+    rdfs:subClassOf         arch:Model ;
+    skos:prefLabel          "Pattern"@en ;
+    skos:definition         '''An architectural pattern is a general, reusable solution to a
+commonly occurring problem in software architecture within a
+given context. A pattern addresses quality attributes via
+elements and participants, is composed of Context, Problem,
+and Solution descriptions, represents a package of design
+decisions, has known properties and is reusable, describes a
+class of architectures, is discovered in practice rather than
+invented, is constructed from tactics, and can be categorized
+by the dominant type of elements (module, integration,
+or deployment patterns).'''@en ;
+    skos:example            '''Well-known patterns:
+   * Layered Architecture — horizontal separation of concerns
+   * Microservices — independently deployable services
+   * Event-Driven — asynchronous event processing
+   * Pipe and Filter — sequential data transformation
+   * Broker — decoupled component communication
+   * Model-View-Controller — UI separation
+   * Circuit Breaker — fault tolerance for remote calls'''@en ;
+    arch:rationale          '''As Pattern is a subClass of arch:Model, participants of the
+pattern can be any ModelConcept related with arch:inModel.
+Pattern participants can also be classified as SBB, ABB,
+or ad:DecisionBlock, which means that this pattern may include
+Decision Options which can be a combination of arch:Element
+or other tactics or patterns.'''@en ;
+    schema:mainEntityOfPage <http://dx.doi.org/10.1016/j.jss.2010.04.067> ;
+    arch:mentionedIn        <http://dx.doi.org/10.1016/j.jss.2020.110714>,
+                            <https://hillside.net/index.php/a-pattern-language-for-pattern-writing> ;
+.
+
+:ArchitecturalPattern
+    a                owl:Class ;
+    rdfs:subClassOf  :Pattern ;
+    skos:prefLabel   "Architectural Pattern"@en ;
+    skos:definition  "An architectural pattern addressing structural concerns at the system level."@en ;
+.
+
+:IntegrationPattern
+    a                owl:Class ;
+    rdfs:subClassOf  :ArchitecturalPattern ;
+    skos:prefLabel   "Integration Pattern"@en ;
+    skos:altLabel    "ComponentAndConnectorPattern" ;
+    skos:definition  "A pattern for component-and-connector integration, addressing how runtime elements communicate."@en ;
+.
+
+:ModulePattern
+    a                owl:Class ;
+    rdfs:subClassOf  :ArchitecturalPattern ;
+    skos:prefLabel   "Module Pattern"@en ;
+    skos:definition  "A pattern for module decomposition and organization of code-time structures."@en ;
+.
+
+:AllocationPattern
+    a                owl:Class ;
+    rdfs:subClassOf  :ArchitecturalPattern ;
+    skos:prefLabel   "Allocation Pattern"@en ;
+    skos:definition  "A pattern for allocating software elements to hardware or organizational structures."@en ;
+.
+
+:DeploymentPattern
+    a                owl:Class ;
+    rdfs:subClassOf  :Pattern ;
+    skos:prefLabel   "Deployment Pattern"@en ;
+    skos:definition  "A pattern for deploying software to infrastructure environments."@en ;
+.
+
+:Tactic
+    a                       owl:Class ;
+    rdfs:subClassOf         arch:Element ;
+    skos:prefLabel          "Tactic"@en ;
+    skos:definition  '''A primitive design technique that architects employ to achieve
+a particular quality attribute response. Tactics are simpler
+and more abstract than patterns, use a single structure or
+computational mechanism, are meant to address a single quality
+attribute, give more precise control compared to patterns,
+and can be found within patterns or reference
+architectures.'''@en ;
+    skos:example     '''ex:CircuitBreaker a refa:Tactic ;
+       skos:prefLabel "Circuit Breaker"@en ;
+       refa:addressedQA qa:Availability ;
+       refa:impactedQA qa:Performance .'''@en ;
+    schema:mainEntityOfPage <http://dx.doi.org/10.1016/j.jss.2010.04.067> ;
+    arch:mentionedIn        <http://dx.doi.org/10.1016/j.jss.2020.110714>,
+                            book:978-0321815736 ;
+.
+
+:ImpactOfTactic
+    a                owl:Class ;
+    skos:prefLabel   "Impact of Tactic"@en ;
+    skos:definition  '''Describes the specific impact of a Tactic on an architecture
+Model. Can be used to create compatibility analyses for
+specific patterns and tactics.'''@en ;
+.
+
+:Standard
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    skos:prefLabel   "Standard"@en ;
+    skos:definition  '''A standard within the Standards Library, categorized according
+to building blocks. Each metamodel entity can potentially have
+standards associated with it (e.g., Business Service,
+Technology Component).'''@en ;
+.
+
+:SBB
+    a                owl:Class ;
+    skos:prefLabel   "SBB"@en ;
+    rdfs:subClassOf  arch:Element ;
+    skos:definition  '''Solution Building Block — a concrete, implementable component
+that realizes an Architecture Building Block.'''@en ;
+    skos:scopeNote   '''Aligned with TOGAF Solution Building Blocks — concrete,
+   implementable components that realize ABBs. SBBs exist in CMDBs,
+   ITSM solutions, and architecture landscape repositories.'''@en ;
+    skos:example     '''ex:KongGateway a refa:SBB ;
+    skos:prefLabel "Kong API Gateway"@en ;
+    refa:implementsPattern ex:APIGatewayPattern .
+
+ex:IstioMesh a refa:SBB ;
+    skos:prefLabel "Istio Service Mesh"@en ;
+    refa:implementsTactic ex:CircuitBreakerTactic, ex:LoadBalancingTactic .'''@en ;
+    rdfs:seeAlso     <https://pubs.opengroup.org/togaf-standard/> ;
+.
+
+:ABB
+    a                owl:Class ;
+    skos:prefLabel   "ABB"@en ;
+    rdfs:subClassOf  arch:Element ;
+    skos:definition  '''Architecture Building Block — an abstract, reusable component
+that captures a required capability.'''@en ;
+    skos:scopeNote   '''Aligned with TOGAF Architecture Building Blocks — abstract
+   components that capture required capabilities without specifying
+   implementation. ABBs are refined into SBBs during solution design.'''@en ;
+    skos:example     '''ex:APIGatewayABB a refa:ABB ;
+    skos:prefLabel "API Gateway"@en ;
+    skos:definition "Capability: unified API entry point with routing, auth, and rate limiting."@en ;
+    refa:implementsPattern ex:APIGatewayPattern .'''@en ;
+    rdfs:seeAlso     <https://pubs.opengroup.org/togaf-standard/> ;
+.
+
+### Properties
+
+:domainOfInterest
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "domain of interest"@en ;
+    skos:definition  '''Links a ReferenceModel to its domain of interest. Domains can
+be classified using a concept scheme and referenced in a
+MetaModel.'''@en ;
+    rdfs:domain      :ReferenceModel ;
+    rdfs:range       skos:Concept ;
+.
+
+:patternContext
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "pattern context"@en ;
+    skos:definition  '''An overview of the context in which the pattern applies.
+The actual elements describing the context and motivation and
+their relationship with other elements should be in the
+pattern itself, as the Pattern is an Architecture Model.'''@en ;
+    rdfs:domain      :Pattern ;
+    rdfs:range       xsd:string ;
+.
+
+:patternProblemOverview
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "pattern problem overview"@en ;
+    skos:definition  '''An overview of the problem the pattern solves. The actual
+elements describing the context, motivation, and requirements
+and their relationship with other elements should be in the
+pattern itself.'''@en ;
+    rdfs:domain      :Pattern ;
+    rdfs:range       xsd:string ;
+.
+
+:patternForcesOverview
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "pattern forces overview"@en ;
+    skos:definition  '''An overview of the forces that influence and are addressed by
+the pattern. The actual forces and their relationship with
+other elements should be in the pattern itself.'''@en ;
+    rdfs:domain      :Pattern ;
+    rdfs:range       xsd:string ;
+.
+
+:patternSolutionOverview
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "pattern solution overview"@en ;
+    skos:definition  '''An overview of the solution that the pattern provides.
+The actual solution is the pattern itself, as the Pattern
+is an Architecture Model.'''@en ;
+    rdfs:domain      :Pattern ;
+    rdfs:range       xsd:string ;
+.
+
+:patternConceptsOverview
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "pattern concepts overview"@en ;
+    skos:definition  '''An overview of the concept elements, relationships, and views
+that the pattern uses. The actual concepts should be described
+in the pattern itself or another metamodel referenced in the
+Pattern.'''@en ;
+    rdfs:domain      :Pattern ;
+    rdfs:range       xsd:string ;
+.
+
+:patternConstraintsOverview
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "pattern constraints overview"@en ;
+    skos:definition  '''An overview of the constraints that a pattern has. The exact
+constraints should be described in the pattern itself or
+another metamodel referenced in the Pattern.'''@en ;
+    rdfs:domain      :Pattern ;
+    rdfs:range       xsd:string ;
+.
+
+:basedOnPattern
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf skos:broader,
+                       :relatedPattern ;
+    skos:prefLabel     "based on pattern"@en ;
+    skos:definition    "Links a Pattern to a more general Pattern from which it is derived or on which it is based."@en ;
+    rdfs:domain        :Pattern ;
+    rdfs:range         :Pattern ;
+.
+
+:containsPattern
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :relatedPattern ;
+    skos:prefLabel     "contains pattern"@en ;
+    skos:definition    "Links a composite Pattern to a sub-pattern that it contains."@en ;
+    owl:inverseOf      :partOfPattern ;
+    rdfs:domain        :Pattern ;
+    rdfs:range         :Pattern ;
+.
+
+:partOfPattern
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :relatedPattern ;
+    skos:prefLabel     "part of pattern"@en ;
+    skos:definition    "Links a sub-pattern to the composite Pattern that contains it."@en ;
+    owl:inverseOf      :containsPattern ;
+    rdfs:domain        :Pattern ;
+    rdfs:range         :Pattern ;
+.
+
+:relatedPattern
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "related pattern"@en ;
+    skos:definition  "Links a Pattern to another Pattern that is related in some general way."@en ;
+    rdfs:domain      :Pattern ;
+    rdfs:range       :Pattern ;
+.
+
+:applicableTactic
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "applicable tactic"@en ;
+    skos:definition  '''Links a Pattern to a Tactic that can be applied within it.
+Not all tactics are available for all patterns. For qualifying
+and quantifying the actual impact of a Tactic onto a Pattern
+use the hasImpactOfTactic property.'''@en ;
+    rdfs:domain      :Pattern ;
+    rdfs:range       :Tactic ;
+.
+
+:appliedTactic
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "applied tactic"@en ;
+    skos:definition  '''Links a Pattern to a Tactic that is already applied and
+packaged into the pattern.'''@en ;
+    owl:inverseOf    :appliedInPattern ;
+    rdfs:domain      :Pattern ;
+    rdfs:range       :Tactic ;
+.
+
+:realizesTactic
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :realizedTactic ;
+    skos:prefLabel   "realizes tactic"@en ;
+    skos:definition  '''Links a Pattern to a Tactic that the pattern's main purpose
+is to realize. This distinguishes more concrete design patterns
+(e.g., circuit breaker) that realize a tactic from more generic
+patterns (e.g., service mesh) that merely apply it.'''@en ;
+    rdfs:domain      :Pattern ;
+    rdfs:range       :Tactic ;
+.
+
+:realizedTactic
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :realizesTactic ;
+    skos:prefLabel   "realized tactic"@en ;
+    skos:definition  "Links a Tactic to the Pattern that realizes it."@en ;
+    rdfs:domain      :Tactic ;
+    rdfs:range       :Pattern ;
+.
+
+:relatedTactic
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "related tactic"@en ;
+    skos:definition  "Links a Tactic to another Tactic that is related in some general way."@en ;
+    rdfs:domain      :Tactic ;
+    rdfs:range       :Tactic ;
+.
+
+:broaderTactic
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf skos:broader,
+                       :relatedTactic ;
+    skos:prefLabel     "broader tactic"@en ;
+    skos:definition    "Links a Tactic to a more general Tactic."@en ;
+    rdfs:domain        :Tactic ;
+    rdfs:range         :Tactic ;
+.
+
+:appliedWithTactic
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :relatedTactic ;
+    skos:prefLabel     "applied with tactic"@en ;
+    skos:definition    "Links a Tactic to another Tactic that is usually applied together with it."@en ;
+    rdfs:domain        :Tactic ;
+    rdfs:range         :Tactic ;
+.
+
+:appliedInPattern
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "applied in pattern"@en ;
+    skos:definition  '''Links a Tactic to a Pattern in which it is already applied
+and packaged.'''@en ;
+    owl:inverseOf    :appliedTactic ;
+    rdfs:domain      :Tactic ;
+    rdfs:range       :Pattern ;
+.
+
+:hasImpactOfTactic
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has impact of tactic"@en ;
+    skos:definition  '''Links an architecture Model to an ImpactOfTactic instance
+describing how a specific Tactic affects it. This includes
+reference architectures and patterns.'''@en ;
+    rdfs:domain      arch:Model ;
+    rdfs:range       :ImpactOfTactic ;
+.
+
+:impactOfTactic
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "impact of tactic"@en ;
+    skos:definition  '''Links an ImpactOfTactic instance to the Tactic whose impact
+it describes.'''@en ;
+    rdfs:domain      :ImpactOfTactic ;
+    rdfs:range       :Tactic ;
+.
+
+:impactMeasure
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "impact measure"@en ;
+    skos:definition  '''Quantifies the degree of impact that a Tactic has on a Model
+via an ImpactOfTactic instance.'''@en ;
+    rdfs:domain      :ImpactOfTactic ;
+.
+
+:affectsElement
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "affects element"@en ;
+    skos:definition  '''Links an ImpactOfTactic to an Element that is affected when
+the tactic is applied. This is usually in the context of
+pattern participants, however it is not necessary to have an
+explicitly modelled Pattern.'''@en ;
+    rdfs:domain      :ImpactOfTactic ;
+    rdfs:range       arch:Element ;
+    arch:mentionedIn <http://dx.doi.org/10.1016/j.jss.2010.04.067> ;
+.
+
+:implementedAlreadyInElement
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :affectsElement ;
+    skos:prefLabel     "implemented already in element"@en ;
+    skos:notation      "I" ;
+    skos:definition    '''Indicates that the Tactic is already implemented or very
+easy to implement in the Element. Only minor modifications
+or configurations are required.'''@en ;
+    rdfs:domain        :ImpactOfTactic ;
+    rdfs:range         arch:Element ;
+    arch:mentionedIn   <http://dx.doi.org/10.1016/j.jss.2010.04.067> ;
+.
+
+:replicatesElement
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :affectsElement ;
+    skos:prefLabel     "replicates element"@en ;
+    skos:notation      "R" ;
+    skos:definition    '''Indicates that applying the Tactic requires replicating the
+Element to achieve redundancy or distribution.'''@en ;
+    rdfs:domain        :ImpactOfTactic ;
+    rdfs:range         arch:Element ;
+    arch:mentionedIn   <http://dx.doi.org/10.1016/j.jss.2010.04.067> ;
+.
+
+:addsNewElement
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :affectsElement ;
+    skos:prefLabel     "adds new element"@en ;
+    skos:notation      "A" ;
+    skos:definition    '''Indicates that applying the Tactic requires adding a new
+Element to the architecture.'''@en ;
+    rdfs:domain        :ImpactOfTactic ;
+    rdfs:range         arch:Element ;
+    arch:mentionedIn   <http://dx.doi.org/10.1016/j.jss.2010.04.067> ;
+.
+
+:addsNewElementFollowingPattern
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :addsNewElement ;
+    skos:prefLabel     "adds new element following pattern"@en ;
+    skos:notation      "AI" ;
+    skos:definition    '''Indicates that applying the Tactic adds a new Element that
+follows an existing pattern structure.'''@en ;
+    rdfs:domain        :ImpactOfTactic ;
+    rdfs:range         arch:Element ;
+    arch:mentionedIn   <http://dx.doi.org/10.1016/j.jss.2010.04.067> ;
+.
+
+:addsNewElementOutOfPattern
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :addsNewElement ;
+    skos:prefLabel     "adds new element out of pattern"@en ;
+    skos:notation      "AO" ;
+    skos:definition    '''Indicates that applying the Tactic adds a new Element that
+falls outside the existing pattern structure.'''@en ;
+    rdfs:domain        :ImpactOfTactic ;
+    rdfs:range         arch:Element ;
+    arch:mentionedIn   <http://dx.doi.org/10.1016/j.jss.2010.04.067> ;
+.
+
+:modifiesElement
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :affectsElement ;
+    skos:prefLabel     "modifies element"@en ;
+    skos:notation      "M" ;
+    skos:definition    '''Indicates that applying the Tactic requires modifying an
+existing Element in the architecture.'''@en ;
+    rdfs:domain        :ImpactOfTactic ;
+    rdfs:range         arch:Element ;
+    arch:mentionedIn   <http://dx.doi.org/10.1016/j.jss.2010.04.067> ;
+.
+
+:implementsTactic
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "implements tactic"@en ;
+    skos:definition  "Links an Element to a Tactic that it implements or realizes."@en ;
+    rdfs:domain      arch:Element ;
+    rdfs:range       :Tactic ;
+.
+
+:implementedTactic
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :implementsTactic ;
+    skos:prefLabel   "implemented tactic"@en ;
+    skos:definition  "Links a Tactic to an Element in which it is implemented."@en ;
+    rdfs:domain      :Tactic ;
+    rdfs:range       arch:Element ;
+.
+
+:implementsPattern
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "implements pattern"@en ;
+    skos:definition  '''Links an Element to a Pattern that it realizes or partially
+implements. This property can also relate an ad:Option, SBB,
+or ABB to a particular pattern.'''@en ;
+    rdfs:domain      arch:Element ;
+    rdfs:range       :Pattern ;
+.
+
+:usesRefArchitecture
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "uses reference architecture"@en ;
+    skos:definition  '''Links an Element to a ReferenceArchitecture that it uses
+partially or completely.'''@en ;
+    rdfs:domain      arch:Element ;
+    rdfs:range       :ReferenceArchitecture ;
+.
+
+:addressedQA
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "addressed quality attribute"@en ;
+    skos:definition  '''Links a Tactic to the main QualityAttribute(s) it is designed
+to address. Normally this is a single or a couple of quality
+attributes. To model all impacted quality attributes use
+impactedQA.'''@en ;
+    rdfs:domain      :Tactic ;
+    rdfs:range       arch:QualityAttribute ;
+.
+
+:impactedQA
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "impacted quality attribute"@en ;
+    skos:definition  '''Links a Tactic to QualityAttribute(s) that it impacts either
+positively or negatively as a side effect. To model the main
+quality attribute that the tactic addresses use
+addressedQA.'''@en ;
+    rdfs:domain      :Tactic ;
+    rdfs:range       arch:QualityAttribute ;
+.
+
+### External property annotation
+
+arch:conformsToMetamodel
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "conforms to metamodel"@en ;
+    skos:definition  '''Links a Model to the Metamodel that it conforms to,
+establishing a conformance relationship between the instance
+level and the type level.'''@en ;
+    rdfs:domain      arch:Model ;
+    rdfs:range       arch:Metamodel ;
+.
+
+### Reference material
+
+<http://dx.doi.org/10.1016/j.jss.2010.04.067>
+    <http://prismstandard.org/namespaces/basic/2.1/doi>          "10.1016/j.jss.2010.04.067" ;
+    <http://prismstandard.org/namespaces/basic/2.1/endingPage>   "1758" ;
+    <http://prismstandard.org/namespaces/basic/2.1/startingPage> "1735" ;
+    <http://prismstandard.org/namespaces/basic/2.1/volume>       "83" ;
+    <http://purl.org/dc/terms/creator>
+            <http://id.crossref.org/contributor/neil-b-harrison-2049cbivq24mu>,
+            <http://id.crossref.org/contributor/paris-avgeriou-2049cbivq24mu> ;
+    <http://purl.org/dc/terms/date>
+            "2010-10"^^<http://www.w3.org/2001/XMLSchema#gYearMonth> ;
+    <http://purl.org/dc/terms/identifier>                        "10.1016/j.jss.2010.04.067" ;
+    <http://purl.org/dc/terms/isPartOf>                          <http://id.crossref.org/issn/0164-1212> ;
+    <http://purl.org/dc/terms/publisher>                         "Elsevier BV" ;
+    <http://purl.org/dc/terms/title>
+            "How do architecture patterns and tactics interact? A model and annotation" ;
+    <http://purl.org/ontology/bibo/doi>                          "10.1016/j.jss.2010.04.067" ;
+    <http://purl.org/ontology/bibo/pageEnd>                      "1758" ;
+    <http://purl.org/ontology/bibo/pageStart>                    "1735" ;
+    <http://purl.org/ontology/bibo/volume>                       "83" ;
+    <http://www.w3.org/2002/07/owl#sameAs>                       <info:doi/10.1016/j.jss.2010.04.067>,
+                                                                 <doi:10.1016/j.jss.2010.04.067> .
+
+<http://dx.doi.org/10.1016/j.jss.2020.110714>
+    <http://prismstandard.org/namespaces/basic/2.1/doi>          "10.1016/j.jss.2020.110714" ;
+    <http://prismstandard.org/namespaces/basic/2.1/startingPage> "110714" ;
+    <http://prismstandard.org/namespaces/basic/2.1/volume>       "169" ;
+    <http://purl.org/dc/terms/creator>
+            <http://id.crossref.org/contributor/siamak-farshidi-1mtnlfmpqxhfi>,
+            <http://id.crossref.org/contributor/jan-martijn-van-der-werf-1mtnlfmpqxhfi>,
+            <http://id.crossref.org/contributor/slinger-jansen-1mtnlfmpqxhfi> ;
+    <http://purl.org/dc/terms/date>
+            "2020-11"^^<http://www.w3.org/2001/XMLSchema#gYearMonth> ;
+    <http://purl.org/dc/terms/identifier>                        "10.1016/j.jss.2020.110714" ;
+    <http://purl.org/dc/terms/isPartOf>                          <http://id.crossref.org/issn/0164-1212> ;
+    <http://purl.org/dc/terms/publisher>                         "Elsevier BV" ;
+    <http://purl.org/dc/terms/title>
+            "Capturing software architecture knowledge for pattern-driven design" ;
+    <http://purl.org/ontology/bibo/doi>                          "10.1016/j.jss.2020.110714" ;
+    <http://purl.org/ontology/bibo/pageStart>                    "110714" ;
+    <http://purl.org/ontology/bibo/volume>                       "169" ;
+    <http://www.w3.org/2002/07/owl#sameAs>                       <info:doi/10.1016/j.jss.2020.110714>,
+                                                                 <doi:10.1016/j.jss.2020.110714> .

@@ -1,0 +1,136 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix iso-thes: <http://purl.org/iso25964/skos-thes#> .
+
+@prefix ap:      <https://meta.linked.archi/arch-processes#> .
+@prefix :        <https://meta.linked.archi/arch-processes/tax#> .
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/arch-processes/tax#>
+    a                             skos:ConceptScheme ;
+    skos:prefLabel                "Architecture Processes Concept Scheme"@en ;
+    dcterms:description           "Classification of the Architecture Processes element types — the structure of a process, its deliverables and its roles — and of the relationship types that draw its links."@en ;
+    skos:hasTopConcept            :ElementKind, :RelationshipKind ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/arch-processes/tax#" ;
+    vann:preferredNamespacePrefix "aptax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Architecture Processes Taxonomy"@en ;
+    dcterms:created               "2026-11-16"^^xsd:date ;
+    dcterms:modified              "2026-11-17"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+#################################################################
+# Element types
+#################################################################
+
+:ElementKind
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/arch-processes/tax#> ;
+    skos:prefLabel    "Element Kind"@en ;
+    skos:definition   "The Architecture Processes element types, by their part in a process."@en ;
+    skos:inScheme     <https://meta.linked.archi/arch-processes/tax#> ;
+.
+
+:ProcessStructure
+    a                 skos:Concept ;
+    skos:broader      :ElementKind ;
+    skos:prefLabel    "Process Structure"@en ;
+    skos:definition   "What a process is made of: the process, its activities and tasks, and the milestones that mark its progress."@en ;
+    skos:inScheme     <https://meta.linked.archi/arch-processes/tax#> ;
+    skos:narrower     ap:ArchitectureProcess, ap:ProcessActivity, ap:ProcessTask, ap:ProcessMilestone ;
+.
+
+:Deliverables
+    a                 skos:Concept ;
+    skos:broader      :ElementKind ;
+    skos:prefLabel    "Deliverables"@en ;
+    skos:definition   "What a process takes in and produces: deliverables and information items."@en ;
+    skos:inScheme     <https://meta.linked.archi/arch-processes/tax#> ;
+    skos:narrower     ap:ProcessDeliverable, ap:InformationItem ;
+.
+
+:Roles
+    a                 skos:Concept ;
+    skos:broader      :ElementKind ;
+    skos:prefLabel    "Roles"@en ;
+    skos:definition   "Who performs and approves the work of a process."@en ;
+    skos:inScheme     <https://meta.linked.archi/arch-processes/tax#> ;
+    skos:narrower     ap:ProcessRole ;
+.
+
+:ElementKindOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    iso-thes:superOrdinate :ElementKind ;
+    skos:prefLabel         "Element Kind Order"@en ;
+    skos:memberList        ( :ProcessStructure :Deliverables :Roles ) ;
+.
+
+
+#################################################################
+# Relationship types
+#################################################################
+
+:RelationshipKind
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/arch-processes/tax#> ;
+    skos:prefLabel    "Relationship Kind"@en ;
+    skos:definition   "The relationship types that draw the links of a process, by what they say."@en ;
+    skos:inScheme     <https://meta.linked.archi/arch-processes/tax#> ;
+.
+
+:StructureLinks
+    a                 skos:Concept ;
+    skos:broader      :RelationshipKind ;
+    skos:prefLabel    "Structure Links"@en ;
+    skos:definition   "How a process is put together: its activities, their tasks, its sub-processes and its milestones; and the processes related to it."@en ;
+    skos:inScheme     <https://meta.linked.archi/arch-processes/tax#> ;
+    skos:narrower     ap:HasActivity, ap:HasTask, ap:HasSubProcess, ap:MilestoneOfProcess, ap:RelatedProcess ;
+.
+
+:FlowLinks
+    a                 skos:Concept ;
+    skos:broader      :RelationshipKind ;
+    skos:prefLabel    "Flow Links"@en ;
+    skos:definition   "What follows what, what triggers a process, and what a process takes in and produces."@en ;
+    skos:inScheme     <https://meta.linked.archi/arch-processes/tax#> ;
+    skos:narrower     ap:Precedes, ap:TriggeredBy, ap:Input, ap:Output ;
+.
+
+:ResponsibilityLinks
+    a                 skos:Concept ;
+    skos:broader      :RelationshipKind ;
+    skos:prefLabel    "Responsibility Links"@en ;
+    skos:definition   "Who is responsible for a process, who performs an activity or a task, and who approves a deliverable or a milestone."@en ;
+    skos:inScheme     <https://meta.linked.archi/arch-processes/tax#> ;
+    skos:narrower     ap:ResponsibleFor, ap:PerformedBy, ap:ApprovedBy ;
+.
+
+:GovernanceLinks
+    a                 skos:Concept ;
+    skos:broader      :RelationshipKind ;
+    skos:prefLabel    "Governance Links"@en ;
+    skos:definition   "What a process governs in the architecture."@en ;
+    skos:inScheme     <https://meta.linked.archi/arch-processes/tax#> ;
+    skos:narrower     ap:Governs ;
+.
+
+:RelationshipKindOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    iso-thes:superOrdinate :RelationshipKind ;
+    skos:prefLabel         "Relationship Kind Order"@en ;
+    skos:memberList        ( :StructureLinks :FlowLinks :ResponsibilityLinks :GovernanceLinks ) ;
+.

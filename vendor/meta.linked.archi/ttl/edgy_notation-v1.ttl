@@ -1,0 +1,434 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix bibo:     <http://purl.org/ontology/bibo/> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix arch-vis: <https://meta.linked.archi/core-vis#> .
+@prefix edgy:     <https://meta.linked.archi/edgy/onto#> .
+@prefix :         <https://meta.linked.archi/edgy/notation-v1#> .
+
+<https://meta.linked.archi/edgy/notation-v1#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/core-vis#> ;
+    cc:license                    "http://creativecommons.org/licenses/by-sa/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/edgy/notation-v1#" ;
+    vann:preferredNamespacePrefix "edgynotv1" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi EDGY 23 Visual Notation Set (v1, circle-based)"@en ;
+    dcterms:description           '''Visual notation descriptors for EDGY 23 enterprise design
+elements and relationships. Alternative, circle-based rendering of the EDGY visual language:
+all elements are drawn as circles. The default set, https://meta.linked.archi/edgy/notation#,
+follows the canonical EDGY shapes. Base elements use a neutral grey palette. Facet elements are
+coloured by facet — yellow for Identity (Purpose, Story, Content), blue for Architecture
+(Capability, Process, Asset), red for Experience (Task, Journey, Channel). Intersection elements
+use the colour produced by mixing their two parent facets — green for Organisation (Identity ∩
+Architecture), orange for Brand (Identity ∩ Experience), and purple for Product (Architecture ∩
+Experience). Every element notation references both a composed icon (arch:prefVisNotation) and a
+glyph (arch-vis:iconSymbol) so it can be rendered either as a preview or as a
+shape-with-badge.'''@en ;
+    dcterms:created               "2026-05-16"^^xsd:date ;
+    dcterms:modified              "2026-10-06"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/edgy/notation-v1/23#> ;
+    owl:versionInfo               "23"@en ;
+    dcterms:source                <https://enterprise.design/wiki/Enterprise_Elements> ;
+    prov:wasDerivedFrom           <https://enterprise.design/wiki/Enterprise_Elements> ;
+.
+
+
+#################################################################
+# Notation Set
+#################################################################
+
+:EDGYStandardNotation
+    a               arch-vis:NotationSet ;
+    skos:prefLabel  "EDGY 23 Circle Notation (v1)"@en ;
+    skos:definition '''Alternative, circle-based EDGY 23 notation set (v1), in a compact, iconic
+style. Every element is an 80 × 80 circle rendered ShapeWithBadge, with its glyph centred inside.
+Base elements use a neutral grey palette. Facet elements are coloured by facet in Material tints:
+yellow for Identity, blue for Architecture, red for Experience. Intersection elements take the
+mixed colour of their two parent facets: green for Organisation (Identity ∩ Architecture), orange
+for Brand (Identity ∩ Experience), and purple for Product (Architecture ∩ Experience).
+Relationship descriptors carry no colour and differ by end decoration only.
+
+This is the alternative to https://meta.linked.archi/edgy/notation#EDGYStandardNotation, the
+default that the EDGY manifest names with arch:notationSet. It is selected by presentation
+context: the Overview map reader context in https://meta.linked.archi/edgy/presentation-contexts#
+names it with arch:usesNotationSet.'''@en ;
+.
+
+## ─────────────────────────────────────────────────────────────────
+## Icon URIs (arch:prefVisNotation, arch-vis:iconSymbol) reference
+## the published site at https://meta.linked.archi/edgy/notation-v1/icons/...
+## The source SVG files live in modelingLanguages/edgy/notation-v1/icons/
+## and are deployed to those URLs by the CI pipeline (pages job,
+## .scripts/copy-icon-assets.sh). For local/offline use, resolve
+## https://meta.linked.archi/edgy/notation-v1/icons/ to
+## modelingLanguages/edgy/notation-v1/icons/.
+##
+## Palette (canonical EDGY mapped onto Material tints):
+##   Identity     yellow  line=#FFC107 fill=#FFF3CD
+##   Architecture blue    line=#2196F3 fill=#BBDEFB
+##   Experience   red     line=#F44336 fill=#FFCDD2
+##   Organisation green   line=#4CAF50 fill=#C8E6C9   (Identity ∩ Architecture)
+##   Brand        orange  line=#FF9800 fill=#FFE0B2   (Identity ∩ Experience)
+##   Product      purple  line=#9C27B0 fill=#E1BEE7   (Architecture ∩ Experience)
+##   Base         neutral line=#424242 fill=#F5F5F5
+## ─────────────────────────────────────────────────────────────────
+
+
+#################################################################
+# Base Elements — Neutral circles (no facet colour)
+#################################################################
+
+:PeopleNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:People ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/people.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#F5F5F5" ;
+        arch-vis:lineColor     "#424242" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/people.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+:OutcomeNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Outcome ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/outcome.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#F5F5F5" ;
+        arch-vis:lineColor     "#424242" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/target.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+:ActivityNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Activity ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/activity.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#F5F5F5" ;
+        arch-vis:lineColor     "#424242" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/activity.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+:ObjectNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Object ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/object.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#F5F5F5" ;
+        arch-vis:lineColor     "#424242" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/object.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+
+#################################################################
+# Identity Facet — Yellow (line #FFC107, fill #FFF3CD)
+#################################################################
+
+:PurposeNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Purpose ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/purpose.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#FFF3CD" ;
+        arch-vis:lineColor     "#FFC107" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/purpose.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+:StoryNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Story ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/story.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#FFF3CD" ;
+        arch-vis:lineColor     "#FFC107" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/story.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+:ContentNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Content ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/content.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#FFF3CD" ;
+        arch-vis:lineColor     "#FFC107" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/content.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+
+#################################################################
+# Architecture Facet — Blue (line #2196F3, fill #BBDEFB)
+#################################################################
+
+:CapabilityNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Capability ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/capability.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#BBDEFB" ;
+        arch-vis:lineColor     "#2196F3" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/capability.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+:ProcessNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Process ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/process.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#BBDEFB" ;
+        arch-vis:lineColor     "#2196F3" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/process.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+:AssetNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Asset ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/asset.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#BBDEFB" ;
+        arch-vis:lineColor     "#2196F3" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/asset.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+
+#################################################################
+# Experience Facet — Red (line #F44336, fill #FFCDD2)
+#################################################################
+
+:TaskNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Task ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/task.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#FFCDD2" ;
+        arch-vis:lineColor     "#F44336" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/task.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+:JourneyNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Journey ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/journey.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#FFCDD2" ;
+        arch-vis:lineColor     "#F44336" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/journey.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+:ChannelNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Channel ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/channel.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#FFCDD2" ;
+        arch-vis:lineColor     "#F44336" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/channel.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+
+#################################################################
+# Intersection Elements — each takes the mixed colour of its two parent facets
+#################################################################
+
+## Organisation = Identity ∩ Architecture → Green (line #4CAF50, fill #C8E6C9)
+:OrganisationNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Organisation ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/organisation.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#C8E6C9" ;
+        arch-vis:lineColor     "#4CAF50" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/organisation.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+## Brand = Identity ∩ Experience → Orange (line #FF9800, fill #FFE0B2)
+:BrandNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Brand ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/brand.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#FFE0B2" ;
+        arch-vis:lineColor     "#FF9800" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/brand.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+## Product = Architecture ∩ Experience → Purple (line #9C27B0, fill #E1BEE7)
+:ProductNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Product ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch:prefVisNotation  <https://meta.linked.archi/edgy/notation-v1/icons/product.svg> ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:shapeType     arch-vis:Circle ;
+        arch-vis:fillColor     "#E1BEE7" ;
+        arch-vis:lineColor     "#9C27B0" ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/edgy/notation-v1/icons/glyphs/product.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:Center ;
+        arch-vis:defaultWidth  "80.0"^^xsd:double ;
+        arch-vis:defaultHeight "80.0"^^xsd:double ;
+    ] ;
+.
+
+
+#################################################################
+# Relationship Visual Notations
+#################################################################
+
+:LinkNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Link ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch-vis:lineStyle    arch-vis:SolidLine ;
+    arch-vis:sourceDecor  arch-vis:NoDecoration ;
+    arch-vis:targetDecor  arch-vis:NoDecoration ;
+.
+
+:FlowNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Flow ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch-vis:lineStyle    arch-vis:SolidLine ;
+    arch-vis:sourceDecor  arch-vis:NoDecoration ;
+    arch-vis:targetDecor  arch-vis:OpenArrowhead ;
+.
+
+:TreeNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor edgy:Tree ;
+    arch-vis:inNotationSet :EDGYStandardNotation ;
+    arch-vis:lineStyle    arch-vis:SolidLine ;
+    arch-vis:sourceDecor  arch-vis:FilledDiamond ;
+    arch-vis:targetDecor  arch-vis:NoDecoration ;
+.

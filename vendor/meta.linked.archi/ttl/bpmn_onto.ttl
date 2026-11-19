@@ -1,0 +1,1539 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix archvis: <https://meta.linked.archi/core-vis#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix :     <https://meta.linked.archi/bpmn/onto#> .
+@prefix bpmndi: <https://meta.linked.archi/bpmn/di#> .
+@prefix di: <https://meta.linked.archi/bpmn/di-core#> .
+@prefix infra: <https://meta.linked.archi/bpmn/infra#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+
+
+<https://meta.linked.archi/bpmn/onto#>
+    a owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/onto#" ;
+    vann:preferredNamespacePrefix "bpmn" ;
+    dcterms:title "Linked.Archi BPMN 2.0.2 Ontology"@en ;
+    dcterms:description               '''OWL mapping of the OMG BPMN 2.0.2 semantic model.
+This is not an official OMG document.'''@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    dcterms:modified              "2026-05-06"^^xsd:date ;
+    dcterms:publisher                 "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source  <https://www.omg.org/spec/BPMN/2.0.2/About-BPMN/> ;
+    rdfs:seeAlso <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    dcterms:references <https://www.omg.org/spec/BPMN/2.0.2/PDF> ;
+    rdfs:comment """Validated against:
+  • Semantic.xsd (BPMN20.xsd) — element/type hierarchy
+  • BPMN20.cmof — class/property metamodel
+  • Infrastructure.cmof — Definitions/Import
+Source: BPMN 2.0.2 (OMG formal/13-12-09) and its machine-readable files, https://www.omg.org/spec/BPMN/2.0.2/About-BPMN"""@en ;
+    owl:imports <https://meta.linked.archi/bpmn/infra#> ;
+    owl:imports <https://meta.linked.archi/core-vis#> ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+#################################################################
+# Alignment to the Linked.Archi core
+#
+# arch:Element means "a node in a model". It is declared on 11 roots, which reach
+# 49 classes through rdfs:subClassOf:
+#
+#   FlowNode              activities and their 12 task/sub-process subtypes,
+#                         choreography activities, and — because they are nodes
+#                         in the process graph — all Gateway and Event subtypes
+#   Process, Collaboration (also Choreography, GlobalChoreographyTask)
+#   ConversationNode      Conversation, SubConversation, CallConversation
+#   Participant, Lane
+#   DataObject, DataObjectReference, DataStore, DataStoreReference
+#   Message
+#
+# Gateways and events are elements. They have identity, they render on diagrams,
+# and they belong in element counts. BPMN 2.0.2 makes their name optional, but
+# that is a naming question, not a question about what they are: the naming rule
+# lives in bpmnsh:RequiredNameShape (linkedarchi-bpmn-shacl.ttl), which lists only
+# the classes that must be named and therefore does not target them.
+#
+# NOT arch:Element:
+#   - Connectors (SequenceFlow, MessageFlow, Association, ...) — these are
+#     arch:QualifiedRelationship, declared on the 12 connector classes below.
+#     Those a diagram draws between two elements — SequenceFlow, MessageFlow,
+#     Association, ConversationLink and the data associations — also have a
+#     direct predicate (arch:unqualifiedForm), declared with their qualified
+#     properties at the end of this file. The others have none: they map a
+#     choreography to a collaboration (ConversationAssociation,
+#     MessageFlowAssociation, ParticipantAssociation), pair link events
+#     (LinkEventDefinition) or join many sources to many targets
+#     (Relationship).
+#   - Serialization carriers and metamodel bookkeeping — Documentation,
+#     TextAnnotation, Group, ItemDefinition, Expression, EventDefinition,
+#     Correlation*, InputSet and the rest. These are artefacts of the BPMN file
+#     format, not components of an architecture.
+#   - bpmn:BaseElement, the abstract metamodel root. Aligning it would make every
+#     serialization artefact an architecture element and inflate every element
+#     count and arch:Element query.
+#################################################################
+
+bpmn:Activity a owl:Class ;
+    arch:isAbstractClass true ;
+    skos:prefLabel "Activity"@en ;
+    skos:definition "An Activity is work performed within a business process."@en ;
+    rdfs:subClassOf bpmn:FlowNode ;
+.
+
+bpmn:AdHocSubProcess a owl:Class ;
+    skos:prefLabel "AdHocSubProcess"@en ;
+    skos:definition "An ad-hoc sub-process contains activities with no required sequence relationships."@en ;
+    rdfs:subClassOf bpmn:SubProcess ;
+.
+
+bpmn:Artifact a owl:Class ;
+    skos:prefLabel "Artifact"@en ;
+    skos:definition "An Artifact provides additional information about a process."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:Assignment a owl:Class ;
+    skos:prefLabel "Assignment"@en ;
+    skos:definition "An Assignment defines a data mapping between a source and target."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:Association a owl:Class ;
+    skos:prefLabel "Association"@en ;
+    skos:definition "An Association links an Artifact to a flow object."@en ;
+    rdfs:subClassOf bpmn:Artifact ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm bpmn:association ;
+.
+
+bpmn:Auditing a owl:Class ;
+    skos:prefLabel "Auditing"@en ;
+    skos:definition "Auditing captures audit trail information for a flow element."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:BaseElement a owl:Class ;
+    skos:prefLabel "BaseElement"@en ;
+    skos:definition "Base class for all BPMN model elements."@en ;
+.
+
+bpmn:BoundaryEvent a owl:Class ;
+    skos:prefLabel "BoundaryEvent"@en ;
+    skos:definition "A Boundary Event is attached to the boundary of an activity."@en ;
+    rdfs:subClassOf bpmn:CatchEvent ;
+.
+
+bpmn:BusinessRuleTask a owl:Class ;
+    skos:prefLabel "BusinessRuleTask"@en ;
+    skos:definition "A Business Rule Task provides a mechanism for a process to invoke a business rules engine."@en ;
+    rdfs:subClassOf bpmn:Task ;
+.
+
+bpmn:CallActivity a owl:Class ;
+    skos:prefLabel "CallActivity"@en ;
+    skos:definition "A Call Activity identifies a point in the process where a global process or task is used."@en ;
+    rdfs:subClassOf bpmn:Activity ;
+.
+
+bpmn:CallChoreography a owl:Class ;
+    skos:prefLabel "CallChoreography"@en ;
+    skos:definition "A Call Choreography identifies a point where a global choreography is used."@en ;
+    rdfs:subClassOf bpmn:ChoreographyActivity ;
+.
+
+bpmn:CallConversation a owl:Class ;
+    skos:prefLabel "CallConversation"@en ;
+    skos:definition "A Call Conversation identifies a point where a global conversation is used."@en ;
+    rdfs:subClassOf bpmn:ConversationNode ;
+.
+
+bpmn:CallableElement a owl:Class ;
+    skos:prefLabel "CallableElement"@en ;
+    skos:definition "A Callable Element is an element that can be invoked by a call activity."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:CancelEventDefinition a owl:Class ;
+    skos:prefLabel "CancelEventDefinition"@en ;
+    skos:definition "Defines a cancel event trigger."@en ;
+    rdfs:subClassOf bpmn:EventDefinition ;
+.
+
+bpmn:CatchEvent a owl:Class ;
+    arch:isAbstractClass true ;
+    skos:prefLabel "CatchEvent"@en ;
+    skos:definition "A Catch Event catches a trigger."@en ;
+    rdfs:subClassOf bpmn:Event ;
+.
+
+bpmn:Category a owl:Class ;
+    skos:prefLabel "Category"@en ;
+    skos:definition "A Category groups flow elements for documentation or analysis purposes."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:CategoryValue a owl:Class ;
+    skos:prefLabel "CategoryValue"@en ;
+    skos:definition "A Category Value is a value within a Category."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:Choreography a owl:Class ;
+    skos:prefLabel "Choreography"@en ;
+    skos:definition "A Choreography defines the expected behavior between interacting participants."@en ;
+    rdfs:subClassOf bpmn:FlowElementsContainer ;
+    rdfs:subClassOf bpmn:Collaboration ;
+.
+
+bpmn:ChoreographyActivity a owl:Class ;
+    arch:isAbstractClass true ;
+    skos:prefLabel "ChoreographyActivity"@en ;
+    skos:definition "A Choreography Activity represents an interaction between participants."@en ;
+    rdfs:subClassOf bpmn:FlowNode ;
+.
+
+bpmn:ChoreographyTask a owl:Class ;
+    skos:prefLabel "ChoreographyTask"@en ;
+    skos:definition "A Choreography Task is an atomic activity in a choreography."@en ;
+    rdfs:subClassOf bpmn:ChoreographyActivity ;
+.
+
+bpmn:Collaboration a owl:Class ;
+    skos:prefLabel "Collaboration"@en ;
+    skos:definition "A Collaboration defines the interactions between two or more participants."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+    rdfs:subClassOf arch:Element ;
+.
+
+bpmn:CompensateEventDefinition a owl:Class ;
+    skos:prefLabel "CompensateEventDefinition"@en ;
+    skos:definition "Defines a compensation event trigger."@en ;
+    rdfs:subClassOf bpmn:EventDefinition ;
+.
+
+bpmn:ComplexBehaviorDefinition a owl:Class ;
+    skos:prefLabel "ComplexBehaviorDefinition"@en ;
+    skos:definition "Defines the complex behavior of a multi-instance activity."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:ComplexGateway a owl:Class ;
+    skos:prefLabel "ComplexGateway"@en ;
+    skos:definition "A Complex Gateway handles complex merging and branching behavior."@en ;
+    rdfs:subClassOf bpmn:Gateway ;
+.
+
+bpmn:ConditionalEventDefinition a owl:Class ;
+    skos:prefLabel "ConditionalEventDefinition"@en ;
+    skos:definition "Defines a conditional event trigger based on a boolean expression."@en ;
+    rdfs:subClassOf bpmn:EventDefinition ;
+.
+
+bpmn:Conversation a owl:Class ;
+    skos:prefLabel "Conversation"@en ;
+    skos:definition "A Conversation is a logical grouping of message exchanges."@en ;
+    rdfs:subClassOf bpmn:ConversationNode ;
+.
+
+bpmn:ConversationAssociation a owl:Class ;
+    skos:prefLabel "ConversationAssociation"@en ;
+    skos:definition "Associates a conversation with a collaboration."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+.
+
+bpmn:ConversationLink a owl:Class ;
+    skos:prefLabel "ConversationLink"@en ;
+    skos:definition "A Conversation Link connects a participant to a conversation."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm bpmn:conversationLink ;
+.
+
+bpmn:ConversationNode a owl:Class ;
+    skos:prefLabel "ConversationNode"@en ;
+    skos:definition "A Conversation Node is a node in a conversation diagram."@en ;
+    rdfs:subClassOf bpmn:InteractionNode ;
+    rdfs:subClassOf bpmn:BaseElement ;
+    rdfs:subClassOf arch:Element ;
+.
+
+bpmn:CorrelationKey a owl:Class ;
+    skos:prefLabel "CorrelationKey"@en ;
+    skos:definition "A Correlation Key groups correlation properties for message correlation."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:CorrelationProperty a owl:Class ;
+    skos:prefLabel "CorrelationProperty"@en ;
+    skos:definition "A Correlation Property defines a key used for message correlation."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:CorrelationPropertyBinding a owl:Class ;
+    skos:prefLabel "CorrelationPropertyBinding"@en ;
+    skos:definition "Binds a correlation property to a specific data path in a message."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:CorrelationPropertyRetrievalExpression a owl:Class ;
+    skos:prefLabel "CorrelationPropertyRetrievalExpression"@en ;
+    skos:definition "Defines how to extract a correlation property value from a message."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:CorrelationSubscription a owl:Class ;
+    skos:prefLabel "CorrelationSubscription"@en ;
+    skos:definition "A Correlation Subscription binds correlation keys to a process."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:DataAssociation a owl:Class ;
+    skos:prefLabel "DataAssociation"@en ;
+    skos:definition "A Data Association moves data between data objects and activities."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm bpmn:dataAssociation ;
+.
+
+bpmn:DataInput a owl:Class ;
+    skos:prefLabel "DataInput"@en ;
+    skos:definition "A Data Input is a declaration of input data for an activity."@en ;
+    rdfs:subClassOf bpmn:ItemAwareElement ;
+.
+
+bpmn:DataInputAssociation a owl:Class ;
+    skos:prefLabel "DataInputAssociation"@en ;
+    skos:definition "A Data Input Association routes data into an activity input."@en ;
+    rdfs:subClassOf bpmn:DataAssociation ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm bpmn:dataAssociation ;
+.
+
+bpmn:DataObject a owl:Class ;
+    skos:prefLabel "DataObject"@en ;
+    skos:definition "A Data Object represents information flowing through a process."@en ;
+    rdfs:subClassOf bpmn:FlowElement ;
+    rdfs:subClassOf bpmn:ItemAwareElement ;
+    rdfs:subClassOf arch:Element ;
+.
+
+bpmn:DataObjectReference a owl:Class ;
+    skos:prefLabel "DataObjectReference"@en ;
+    skos:definition "A Data Object Reference provides a reference to a data object."@en ;
+    rdfs:subClassOf bpmn:ItemAwareElement ;
+    rdfs:subClassOf bpmn:FlowElement ;
+    rdfs:subClassOf arch:Element ;
+.
+
+bpmn:DataOutput a owl:Class ;
+    skos:prefLabel "DataOutput"@en ;
+    skos:definition "A Data Output is a declaration of output data from an activity."@en ;
+    rdfs:subClassOf bpmn:ItemAwareElement ;
+.
+
+bpmn:DataOutputAssociation a owl:Class ;
+    skos:prefLabel "DataOutputAssociation"@en ;
+    skos:definition "A Data Output Association routes data from an activity output."@en ;
+    rdfs:subClassOf bpmn:DataAssociation ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm bpmn:dataAssociation ;
+.
+
+bpmn:DataState a owl:Class ;
+    skos:prefLabel "DataState"@en ;
+    skos:definition "A Data State represents the state of a data object at a point in the process."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:DataStore a owl:Class ;
+    skos:prefLabel "DataStore"@en ;
+    skos:definition "A Data Store provides a mechanism for activities to persist data beyond the process scope."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+    rdfs:subClassOf bpmn:ItemAwareElement ;
+    rdfs:subClassOf arch:Element ;
+.
+
+bpmn:DataStoreReference a owl:Class ;
+    skos:prefLabel "DataStoreReference"@en ;
+    skos:definition "A Data Store Reference provides a reference to a data store."@en ;
+    rdfs:subClassOf bpmn:ItemAwareElement ;
+    rdfs:subClassOf bpmn:FlowElement ;
+    rdfs:subClassOf arch:Element ;
+.
+
+bpmn:Documentation a owl:Class ;
+    skos:prefLabel "Documentation"@en ;
+    skos:definition "Documentation provides a description for BPMN elements."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:EndEvent a owl:Class ;
+    skos:prefLabel "EndEvent"@en ;
+    skos:definition "An End Event indicates where a process or choreography ends."@en ;
+    rdfs:subClassOf bpmn:ThrowEvent ;
+.
+
+bpmn:EndPoint a owl:Class ;
+    skos:prefLabel "EndPoint"@en ;
+    skos:definition "An End Point specifies an address used for communication."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:Error a owl:Class ;
+    skos:prefLabel "Error"@en ;
+    skos:definition "An Error represents a named error condition."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:ErrorEventDefinition a owl:Class ;
+    skos:prefLabel "ErrorEventDefinition"@en ;
+    skos:definition "Defines an error event trigger."@en ;
+    rdfs:subClassOf bpmn:EventDefinition ;
+.
+
+bpmn:Escalation a owl:Class ;
+    skos:prefLabel "Escalation"@en ;
+    skos:definition "An Escalation represents a named escalation condition."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:EscalationEventDefinition a owl:Class ;
+    skos:prefLabel "EscalationEventDefinition"@en ;
+    skos:definition "Defines an escalation event trigger."@en ;
+    rdfs:subClassOf bpmn:EventDefinition ;
+.
+
+bpmn:Event a owl:Class ;
+    arch:isAbstractClass true ;
+    skos:prefLabel "Event"@en ;
+    skos:definition "An Event is something that happens during the course of a process."@en ;
+    rdfs:subClassOf bpmn:FlowNode ;
+    rdfs:subClassOf bpmn:InteractionNode ;
+.
+
+bpmn:EventBasedGateway a owl:Class ;
+    skos:prefLabel "EventBasedGateway"@en ;
+    skos:definition "An Event-Based Gateway routes based on which event occurs first."@en ;
+    rdfs:subClassOf bpmn:Gateway ;
+.
+
+bpmn:EventDefinition a owl:Class ;
+    skos:prefLabel "EventDefinition"@en ;
+    skos:definition "An Event Definition specifies the trigger for an event."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:ExclusiveGateway a owl:Class ;
+    skos:prefLabel "ExclusiveGateway"@en ;
+    skos:definition "An Exclusive Gateway routes the sequence flow to exactly one outgoing branch."@en ;
+    rdfs:subClassOf bpmn:Gateway ;
+.
+
+bpmn:Expression a owl:Class ;
+    skos:prefLabel "Expression"@en ;
+    skos:definition "An Expression defines a condition or computation."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:Extension a owl:Class ;
+    skos:prefLabel "Extension"@en ;
+    skos:definition "An Extension adds custom attributes to BPMN elements."@en ;
+.
+
+bpmn:ExtensionAttributeDefinition a owl:Class ;
+    skos:prefLabel "ExtensionAttributeDefinition"@en ;
+    skos:definition "Defines a custom attribute for a BPMN extension."@en ;
+.
+
+bpmn:ExtensionAttributeValue a owl:Class ;
+    skos:prefLabel "ExtensionAttributeValue"@en ;
+    skos:definition "Holds the value of a custom extension attribute."@en ;
+.
+
+bpmn:ExtensionDefinition a owl:Class ;
+    skos:prefLabel "ExtensionDefinition"@en ;
+    skos:definition "Defines a named extension to the BPMN metamodel."@en ;
+.
+
+bpmn:FlowElement a owl:Class ;
+    skos:prefLabel "FlowElement"@en ;
+    skos:definition "A Flow Element is an element that can be contained in a flow elements container."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:FlowElementsContainer a owl:Class ;
+    skos:prefLabel "FlowElementsContainer"@en ;
+    skos:definition "A Flow Elements Container holds flow elements such as activities, gateways, and events."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:FlowNode a owl:Class ;
+    arch:isAbstractClass true ;
+    skos:prefLabel "FlowNode"@en ;
+    skos:definition "A Flow Node is a node in a process flow that can be connected by sequence flows."@en ;
+    rdfs:subClassOf bpmn:FlowElement ;
+    rdfs:subClassOf arch:Element ;
+.
+
+bpmn:FormalExpression a owl:Class ;
+    skos:prefLabel "FormalExpression"@en ;
+    skos:definition "A Formal Expression is an expression with a defined language and body."@en ;
+    rdfs:subClassOf bpmn:Expression ;
+.
+
+bpmn:Gateway a owl:Class ;
+    arch:isAbstractClass true ;
+    skos:prefLabel "Gateway"@en ;
+    skos:definition "A Gateway controls the divergence and convergence of sequence flows."@en ;
+    rdfs:subClassOf bpmn:FlowNode ;
+.
+
+bpmn:GlobalBusinessRuleTask a owl:Class ;
+    skos:prefLabel "GlobalBusinessRuleTask"@en ;
+    skos:definition "A reusable business rule task definition."@en ;
+    rdfs:subClassOf bpmn:GlobalTask ;
+.
+
+bpmn:GlobalChoreographyTask a owl:Class ;
+    skos:prefLabel "GlobalChoreographyTask"@en ;
+    skos:definition "A reusable choreography task definition."@en ;
+    rdfs:subClassOf bpmn:Choreography ;
+.
+
+bpmn:GlobalConversation a owl:Class ;
+    skos:prefLabel "GlobalConversation"@en ;
+    skos:definition "A reusable conversation definition."@en ;
+    rdfs:subClassOf bpmn:Collaboration ;
+.
+
+bpmn:GlobalManualTask a owl:Class ;
+    skos:prefLabel "GlobalManualTask"@en ;
+    skos:definition "A reusable manual task definition."@en ;
+    rdfs:subClassOf bpmn:GlobalTask ;
+.
+
+bpmn:GlobalScriptTask a owl:Class ;
+    skos:prefLabel "GlobalScriptTask"@en ;
+    skos:definition "A reusable script task definition."@en ;
+    rdfs:subClassOf bpmn:GlobalTask ;
+.
+
+bpmn:GlobalTask a owl:Class ;
+    skos:prefLabel "GlobalTask"@en ;
+    skos:definition "A reusable task definition that can be called from a call activity."@en ;
+    rdfs:subClassOf bpmn:CallableElement ;
+.
+
+bpmn:GlobalUserTask a owl:Class ;
+    skos:prefLabel "GlobalUserTask"@en ;
+    skos:definition "A reusable user task definition."@en ;
+    rdfs:subClassOf bpmn:GlobalTask ;
+.
+
+bpmn:Group a owl:Class ;
+    skos:prefLabel "Group"@en ;
+    skos:definition "A Group visually groups elements for documentation purposes without affecting the flow."@en ;
+    rdfs:subClassOf bpmn:Artifact ;
+.
+
+bpmn:HumanPerformer a owl:Class ;
+    skos:prefLabel "HumanPerformer"@en ;
+    skos:definition "A Human Performer identifies a human resource that performs an activity."@en ;
+    rdfs:subClassOf bpmn:Performer ;
+.
+
+bpmn:ImplicitThrowEvent a owl:Class ;
+    skos:prefLabel "ImplicitThrowEvent"@en ;
+    skos:definition "An Implicit Throw Event is a throw event without a visible event marker."@en ;
+    rdfs:subClassOf bpmn:ThrowEvent ;
+.
+
+bpmn:InclusiveGateway a owl:Class ;
+    skos:prefLabel "InclusiveGateway"@en ;
+    skos:definition "An Inclusive Gateway activates one or more outgoing branches based on conditions."@en ;
+    rdfs:subClassOf bpmn:Gateway ;
+.
+
+bpmn:InputOutputBinding a owl:Class ;
+    skos:prefLabel "InputOutputBinding"@en ;
+    skos:definition "Binds input/output specifications to an operation."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:InputOutputSpecification a owl:Class ;
+    skos:prefLabel "InputOutputSpecification"@en ;
+    skos:definition "Defines the input and output data requirements of an activity."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:InputSet a owl:Class ;
+    skos:prefLabel "InputSet"@en ;
+    skos:definition "An Input Set defines a valid combination of data inputs for an activity."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:InteractionNode a owl:Class ;
+    skos:prefLabel "InteractionNode"@en ;
+    skos:definition "An Interaction Node is a node that can participate in message exchanges."@en ;
+.
+
+bpmn:Interface a owl:Class ;
+    skos:prefLabel "Interface"@en ;
+    skos:definition "An Interface defines a service contract with operations."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:IntermediateCatchEvent a owl:Class ;
+    skos:prefLabel "IntermediateCatchEvent"@en ;
+    skos:definition "An Intermediate Catch Event catches a trigger during process execution."@en ;
+    rdfs:subClassOf bpmn:CatchEvent ;
+.
+
+bpmn:IntermediateThrowEvent a owl:Class ;
+    skos:prefLabel "IntermediateThrowEvent"@en ;
+    skos:definition "An Intermediate Throw Event throws a trigger during process execution."@en ;
+    rdfs:subClassOf bpmn:ThrowEvent ;
+.
+
+bpmn:ItemAwareElement a owl:Class ;
+    skos:prefLabel "ItemAwareElement"@en ;
+    skos:definition "An Item Aware Element represents an element that holds or references data."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:ItemDefinition a owl:Class ;
+    skos:prefLabel "ItemDefinition"@en ;
+    skos:definition "An Item Definition specifies the structure and nature of data items."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:Lane a owl:Class ;
+    skos:prefLabel "Lane"@en ;
+    skos:definition "A Lane partitions a pool to organize activities by role or responsibility."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+    rdfs:subClassOf arch:Element ;
+.
+
+bpmn:LaneSet a owl:Class ;
+    skos:prefLabel "LaneSet"@en ;
+    skos:definition "A Lane Set contains a set of lanes within a pool."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:LinkEventDefinition a owl:Class ;
+    skos:prefLabel "LinkEventDefinition"@en ;
+    skos:definition "Defines a link event trigger used to connect parts of a process."@en ;
+    rdfs:subClassOf bpmn:EventDefinition ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+.
+
+bpmn:LoopCharacteristics a owl:Class ;
+    skos:prefLabel "LoopCharacteristics"@en ;
+    skos:definition "Loop Characteristics define the repetition behavior of an activity."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:ManualTask a owl:Class ;
+    skos:prefLabel "ManualTask"@en ;
+    skos:definition "A Manual Task is performed without the aid of any business process execution engine."@en ;
+    rdfs:subClassOf bpmn:Task ;
+.
+
+bpmn:Message a owl:Class ;
+    skos:prefLabel "Message"@en ;
+    skos:definition "A Message represents the content of a communication between participants."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+    rdfs:subClassOf arch:Element ;
+.
+
+bpmn:MessageEventDefinition a owl:Class ;
+    skos:prefLabel "MessageEventDefinition"@en ;
+    skos:definition "Defines a message event trigger."@en ;
+    rdfs:subClassOf bpmn:EventDefinition ;
+.
+
+bpmn:MessageFlow a owl:Class ;
+    skos:prefLabel "MessageFlow"@en ;
+    skos:definition "A Message Flow shows the flow of messages between participants."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm bpmn:messageFlow ;
+.
+
+bpmn:MessageFlowAssociation a owl:Class ;
+    skos:prefLabel "MessageFlowAssociation"@en ;
+    skos:definition "Associates a message flow with a conversation."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+.
+
+bpmn:Monitoring a owl:Class ;
+    skos:prefLabel "Monitoring"@en ;
+    skos:definition "Monitoring captures monitoring information for a flow element."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:MultiInstanceLoopCharacteristics a owl:Class ;
+    skos:prefLabel "MultiInstanceLoopCharacteristics"@en ;
+    skos:definition "Defines multi-instance repetition behavior for an activity."@en ;
+    rdfs:subClassOf bpmn:LoopCharacteristics ;
+.
+
+bpmn:Operation a owl:Class ;
+    skos:prefLabel "Operation"@en ;
+    skos:definition "An Operation defines a service operation within an interface."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:OutputSet a owl:Class ;
+    skos:prefLabel "OutputSet"@en ;
+    skos:definition "An Output Set defines a valid combination of data outputs from an activity."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:ParallelGateway a owl:Class ;
+    skos:prefLabel "ParallelGateway"@en ;
+    skos:definition "A Parallel Gateway creates or synchronizes parallel flows."@en ;
+    rdfs:subClassOf bpmn:Gateway ;
+.
+
+bpmn:Participant a owl:Class ;
+    skos:prefLabel "Participant"@en ;
+    skos:definition "A Participant represents an entity that interacts in a collaboration."@en ;
+    rdfs:subClassOf bpmn:InteractionNode ;
+    rdfs:subClassOf bpmn:BaseElement ;
+    rdfs:subClassOf arch:Element ;
+.
+
+bpmn:ParticipantAssociation a owl:Class ;
+    skos:prefLabel "ParticipantAssociation"@en ;
+    skos:definition "Associates a participant with a choreography participant."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+.
+
+bpmn:ParticipantMultiplicity a owl:Class ;
+    skos:prefLabel "ParticipantMultiplicity"@en ;
+    skos:definition "Defines the multiplicity of a participant in a collaboration."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:PartnerEntity a owl:Class ;
+    skos:prefLabel "PartnerEntity"@en ;
+    skos:definition "A Partner Entity identifies an external entity that participates in a collaboration."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:PartnerRole a owl:Class ;
+    skos:prefLabel "PartnerRole"@en ;
+    skos:definition "A Partner Role identifies the role an external entity plays in a collaboration."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:Performer a owl:Class ;
+    skos:prefLabel "Performer"@en ;
+    skos:definition "A Performer identifies a resource that performs an activity."@en ;
+    rdfs:subClassOf bpmn:ResourceRole ;
+.
+
+bpmn:PotentialOwner a owl:Class ;
+    skos:prefLabel "PotentialOwner"@en ;
+    skos:definition "A Potential Owner identifies a resource that may claim and perform a user task."@en ;
+    rdfs:subClassOf bpmn:HumanPerformer ;
+.
+
+bpmn:Process a owl:Class ;
+    skos:prefLabel "Process"@en ;
+    skos:definition "A Process describes a sequence or flow of activities in an organization."@en ;
+    rdfs:subClassOf bpmn:FlowElementsContainer ;
+    rdfs:subClassOf bpmn:CallableElement ;
+    rdfs:subClassOf arch:Element ;
+.
+
+bpmn:Property a owl:Class ;
+    skos:prefLabel "Property"@en ;
+    skos:definition "A Property is a named value associated with a BPMN element."@en ;
+    rdfs:subClassOf bpmn:ItemAwareElement ;
+.
+
+bpmn:ReceiveTask a owl:Class ;
+    skos:prefLabel "ReceiveTask"@en ;
+    skos:definition "A Receive Task waits for a message from an external participant."@en ;
+    rdfs:subClassOf bpmn:Task ;
+.
+
+bpmn:Relationship a owl:Class ;
+    skos:prefLabel "Relationship"@en ;
+    skos:definition "A Relationship defines a connection between BPMN elements."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+.
+
+bpmn:Rendering a owl:Class ;
+    skos:prefLabel "Rendering"@en ;
+    skos:definition "A Rendering defines how a user task form is presented."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:Resource a owl:Class ;
+    skos:prefLabel "Resource"@en ;
+    skos:definition "A Resource represents a resource used in process execution."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:ResourceAssignmentExpression a owl:Class ;
+    skos:prefLabel "ResourceAssignmentExpression"@en ;
+    skos:definition "Defines an expression for assigning resources to activities."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:ResourceParameter a owl:Class ;
+    skos:prefLabel "ResourceParameter"@en ;
+    skos:definition "A Resource Parameter defines a parameter for a resource."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:ResourceParameterBinding a owl:Class ;
+    skos:prefLabel "ResourceParameterBinding"@en ;
+    skos:definition "Binds a resource parameter to a specific expression."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:ResourceRole a owl:Class ;
+    skos:prefLabel "ResourceRole"@en ;
+    skos:definition "A Resource Role associates a resource with an activity."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:RootElement a owl:Class ;
+    skos:prefLabel "RootElement"@en ;
+    skos:definition "A Root Element is a top-level element in a BPMN definitions."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+.
+
+bpmn:ScriptTask a owl:Class ;
+    skos:prefLabel "ScriptTask"@en ;
+    skos:definition "A Script Task executes a script when it is performed."@en ;
+    rdfs:subClassOf bpmn:Task ;
+.
+
+bpmn:SendTask a owl:Class ;
+    skos:prefLabel "SendTask"@en ;
+    skos:definition "A Send Task sends a message to an external participant."@en ;
+    rdfs:subClassOf bpmn:Task ;
+.
+
+bpmn:SequenceFlow a owl:Class ;
+    skos:prefLabel "SequenceFlow"@en ;
+    skos:definition "A Sequence Flow shows the order of flow elements in a process."@en ;
+    rdfs:subClassOf bpmn:FlowElement ;
+    rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm bpmn:sequenceFlow ;
+.
+
+bpmn:ServiceTask a owl:Class ;
+    skos:prefLabel "ServiceTask"@en ;
+    skos:definition "A Service Task invokes a service when it is performed."@en ;
+    rdfs:subClassOf bpmn:Task ;
+.
+
+bpmn:Signal a owl:Class ;
+    skos:prefLabel "Signal"@en ;
+    skos:definition "A Signal represents a named signal used for communication across processes."@en ;
+    rdfs:subClassOf bpmn:RootElement ;
+.
+
+bpmn:SignalEventDefinition a owl:Class ;
+    skos:prefLabel "SignalEventDefinition"@en ;
+    skos:definition "Defines a signal event trigger."@en ;
+    rdfs:subClassOf bpmn:EventDefinition ;
+.
+
+bpmn:StandardLoopCharacteristics a owl:Class ;
+    skos:prefLabel "StandardLoopCharacteristics"@en ;
+    skos:definition "Defines standard loop repetition behavior for an activity."@en ;
+    rdfs:subClassOf bpmn:LoopCharacteristics ;
+.
+
+bpmn:StartEvent a owl:Class ;
+    skos:prefLabel "StartEvent"@en ;
+    skos:definition "A Start Event indicates where a process or choreography begins."@en ;
+    rdfs:subClassOf bpmn:CatchEvent ;
+.
+
+bpmn:SubChoreography a owl:Class ;
+    skos:prefLabel "SubChoreography"@en ;
+    skos:definition "A Sub-Choreography is a compound choreography activity containing other activities."@en ;
+    rdfs:subClassOf bpmn:ChoreographyActivity ;
+    rdfs:subClassOf bpmn:FlowElementsContainer ;
+.
+
+bpmn:SubConversation a owl:Class ;
+    skos:prefLabel "SubConversation"@en ;
+    skos:definition "A Sub-Conversation is a compound conversation containing other conversations."@en ;
+    rdfs:subClassOf bpmn:ConversationNode ;
+.
+
+bpmn:SubProcess a owl:Class ;
+    skos:prefLabel "SubProcess"@en ;
+    skos:definition "A Sub-Process is a compound activity that contains other flow elements."@en ;
+    rdfs:subClassOf bpmn:Activity ;
+    rdfs:subClassOf bpmn:FlowElementsContainer ;
+.
+
+bpmn:Task a owl:Class ;
+    skos:prefLabel "Task"@en ;
+    skos:definition "A Task is an atomic activity within a process."@en ;
+    rdfs:subClassOf bpmn:Activity ;
+    rdfs:subClassOf bpmn:InteractionNode ;
+.
+
+bpmn:TerminateEventDefinition a owl:Class ;
+    skos:prefLabel "TerminateEventDefinition"@en ;
+    skos:definition "Defines a terminate event trigger that ends the entire process."@en ;
+    rdfs:subClassOf bpmn:EventDefinition ;
+.
+
+bpmn:TextAnnotation a owl:Class ;
+    skos:prefLabel "TextAnnotation"@en ;
+    skos:definition "A Text Annotation provides additional text information for the reader."@en ;
+    rdfs:subClassOf bpmn:Artifact ;
+.
+
+bpmn:ThrowEvent a owl:Class ;
+    arch:isAbstractClass true ;
+    skos:prefLabel "ThrowEvent"@en ;
+    skos:definition "A Throw Event throws a trigger."@en ;
+    rdfs:subClassOf bpmn:Event ;
+.
+
+bpmn:TimerEventDefinition a owl:Class ;
+    skos:prefLabel "TimerEventDefinition"@en ;
+    skos:definition "Defines a timer event trigger based on time conditions."@en ;
+    rdfs:subClassOf bpmn:EventDefinition ;
+.
+
+bpmn:Transaction a owl:Class ;
+    skos:prefLabel "Transaction"@en ;
+    skos:definition "A Transaction is a sub-process with special completion and compensation behavior."@en ;
+    rdfs:subClassOf bpmn:SubProcess ;
+.
+
+bpmn:UserTask a owl:Class ;
+    skos:prefLabel "UserTask"@en ;
+    skos:definition "A User Task is performed by a human with the assistance of a software application."@en ;
+    rdfs:subClassOf bpmn:Task ;
+.
+
+bpmn:AdHocOrdering a owl:Class ; skos:prefLabel "AdHocOrdering"@en ; skos:definition "Specifies the ordering of activities within an ad-hoc sub-process."@en .
+
+bpmn:AdHocOrdering_Parallel a bpmn:AdHocOrdering ; skos:prefLabel "Parallel"@en .
+bpmn:AdHocOrdering_Sequential a bpmn:AdHocOrdering ; skos:prefLabel "Sequential"@en .
+
+
+bpmn:AssociationDirection a owl:Class ; skos:prefLabel "AssociationDirection"@en ; skos:definition "Specifies the direction of an association."@en .
+
+bpmn:AssociationDirection_None a bpmn:AssociationDirection ; skos:prefLabel "None"@en .
+bpmn:AssociationDirection_One a bpmn:AssociationDirection ; skos:prefLabel "One"@en .
+bpmn:AssociationDirection_Both a bpmn:AssociationDirection ; skos:prefLabel "Both"@en .
+
+
+bpmn:ChoreographyLoopType a owl:Class ; skos:prefLabel "ChoreographyLoopType"@en ; skos:definition "Specifies the loop type of a choreography activity."@en .
+
+bpmn:ChoreographyLoopType_None a bpmn:ChoreographyLoopType ; skos:prefLabel "None"@en .
+bpmn:ChoreographyLoopType_Standard a bpmn:ChoreographyLoopType ; skos:prefLabel "Standard"@en .
+bpmn:ChoreographyLoopType_MultiInstanceSequential a bpmn:ChoreographyLoopType ; skos:prefLabel "MultiInstanceSequential"@en .
+bpmn:ChoreographyLoopType_MultiInstanceParallel a bpmn:ChoreographyLoopType ; skos:prefLabel "MultiInstanceParallel"@en .
+
+
+bpmn:EventBasedGatewayType a owl:Class ; skos:prefLabel "EventBasedGatewayType"@en ; skos:definition "Specifies the type of an event-based gateway."@en .
+
+bpmn:EventBasedGatewayType_Parallel a bpmn:EventBasedGatewayType ; skos:prefLabel "Parallel"@en .
+bpmn:EventBasedGatewayType_Exclusive a bpmn:EventBasedGatewayType ; skos:prefLabel "Exclusive"@en .
+
+
+bpmn:GatewayDirection a owl:Class ; skos:prefLabel "GatewayDirection"@en ; skos:definition "Specifies the direction of a gateway (converging, diverging, mixed, unspecified)."@en .
+
+bpmn:GatewayDirection_Unspecified a bpmn:GatewayDirection ; skos:prefLabel "Unspecified"@en .
+bpmn:GatewayDirection_Converging a bpmn:GatewayDirection ; skos:prefLabel "Converging"@en .
+bpmn:GatewayDirection_Diverging a bpmn:GatewayDirection ; skos:prefLabel "Diverging"@en .
+bpmn:GatewayDirection_Mixed a bpmn:GatewayDirection ; skos:prefLabel "Mixed"@en .
+
+
+bpmn:ItemKind a owl:Class ; skos:prefLabel "ItemKind"@en ; skos:definition "Specifies whether a data item is physical or informational."@en .
+
+bpmn:ItemKind_Physical a bpmn:ItemKind ; skos:prefLabel "Physical"@en .
+bpmn:ItemKind_Information a bpmn:ItemKind ; skos:prefLabel "Information"@en .
+
+
+bpmn:MultiInstanceBehavior a owl:Class ; skos:prefLabel "MultiInstanceBehavior"@en ; skos:definition "Specifies the completion behavior of a multi-instance activity."@en .
+
+bpmn:MultiInstanceBehavior_None a bpmn:MultiInstanceBehavior ; skos:prefLabel "None"@en .
+bpmn:MultiInstanceBehavior_One a bpmn:MultiInstanceBehavior ; skos:prefLabel "One"@en .
+bpmn:MultiInstanceBehavior_All a bpmn:MultiInstanceBehavior ; skos:prefLabel "All"@en .
+bpmn:MultiInstanceBehavior_Complex a bpmn:MultiInstanceBehavior ; skos:prefLabel "Complex"@en .
+
+
+bpmn:ProcessType a owl:Class ; skos:prefLabel "ProcessType"@en ; skos:definition "Specifies the type of a process (none, public, or private)."@en .
+
+bpmn:ProcessType_None a bpmn:ProcessType ; skos:prefLabel "None"@en .
+bpmn:ProcessType_Public a bpmn:ProcessType ; skos:prefLabel "Public"@en .
+bpmn:ProcessType_Private a bpmn:ProcessType ; skos:prefLabel "Private"@en .
+
+
+bpmn:RelationshipDirection a owl:Class ; skos:prefLabel "RelationshipDirection"@en ; skos:definition "Specifies the direction of a relationship."@en .
+
+bpmn:RelationshipDirection_None a bpmn:RelationshipDirection ; skos:prefLabel "None"@en .
+bpmn:RelationshipDirection_Forward a bpmn:RelationshipDirection ; skos:prefLabel "Forward"@en .
+bpmn:RelationshipDirection_Backward a bpmn:RelationshipDirection ; skos:prefLabel "Backward"@en .
+bpmn:RelationshipDirection_Both a bpmn:RelationshipDirection ; skos:prefLabel "Both"@en .
+
+
+bpmn:activationCondition a owl:ObjectProperty ; skos:prefLabel "activationCondition"@en ; skos:definition "The activation condition of an ad-hoc sub-process."@en .
+
+bpmn:activityRef a owl:ObjectProperty ; skos:prefLabel "activityRef"@en ; skos:definition "A reference to an activity."@en .
+
+bpmn:artifacts a owl:ObjectProperty ; skos:prefLabel "artifacts"@en ; skos:definition "The artifacts contained in a process or collaboration."@en .
+
+bpmn:assignment a owl:ObjectProperty ; skos:prefLabel "assignment"@en ; skos:definition "The assignment associated with a data association."@en .
+
+bpmn:associationDirection a owl:DatatypeProperty ; skos:prefLabel "associationDirection"@en ; skos:definition "The direction of an association."@en .
+
+bpmn:attachedToRef a owl:ObjectProperty ; skos:prefLabel "attachedToRef"@en ; skos:definition "A reference to the activity a boundary event is attached to."@en .
+
+bpmn:auditing a owl:ObjectProperty ; skos:prefLabel "auditing"@en ; skos:definition "The auditing configuration of a flow element."@en .
+
+bpmn:behavior a owl:DatatypeProperty ; skos:prefLabel "behavior"@en ; skos:definition "The completion behavior of a multi-instance activity."@en .
+
+bpmn:body a owl:ObjectProperty ; skos:prefLabel "body"@en ; skos:definition "The body content of an expression."@en .
+
+bpmn:boundaryEventRefs a owl:ObjectProperty ; skos:prefLabel "boundaryEventRefs"@en ; skos:definition "References to boundary events attached to an activity."@en .
+
+bpmn:calledChoreographyRef a owl:ObjectProperty ; skos:prefLabel "calledChoreographyRef"@en ; skos:definition "A reference to the called choreography."@en .
+
+bpmn:calledCollaborationRef a owl:ObjectProperty ; skos:prefLabel "calledCollaborationRef"@en ; skos:definition "A reference to the called collaboration."@en .
+
+bpmn:calledElementRef a owl:ObjectProperty ; skos:prefLabel "calledElementRef"@en ; skos:definition "A reference to the called element."@en .
+
+bpmn:cancelActivity a owl:DatatypeProperty ; skos:prefLabel "cancelActivity"@en ; skos:definition "Indicates whether the activity should be cancelled when the event is triggered."@en .
+
+bpmn:cancelRemainingInstances a owl:DatatypeProperty ; skos:prefLabel "cancelRemainingInstances"@en ; skos:definition "Indicates whether remaining instances should be cancelled."@en .
+
+bpmn:capacity a owl:DatatypeProperty ; skos:prefLabel "capacity"@en ; skos:definition "The capacity of a data store."@en .
+
+bpmn:categorizedFlowElements a owl:ObjectProperty ; skos:prefLabel "categorizedFlowElements"@en ; skos:definition "The flow elements categorized by a category value."@en .
+
+bpmn:categoryValue a owl:ObjectProperty ; skos:prefLabel "categoryValue"@en ; skos:definition "The category values of a category."@en .
+
+bpmn:categoryValueRef a owl:ObjectProperty ; skos:prefLabel "categoryValueRef"@en ; skos:definition "A reference to a category value."@en .
+
+bpmn:childLaneSet a owl:ObjectProperty ; skos:prefLabel "childLaneSet"@en ; skos:definition "The child lane set nested within a lane."@en .
+
+bpmn:choreographyRef a owl:ObjectProperty ; skos:prefLabel "choreographyRef"@en ; skos:definition "A reference to a choreography."@en .
+
+bpmn:completionCondition a owl:ObjectProperty ; skos:prefLabel "completionCondition"@en ; skos:definition "The completion condition of a multi-instance or ad-hoc activity."@en .
+
+bpmn:completionQuantity a owl:DatatypeProperty ; skos:prefLabel "completionQuantity"@en ; skos:definition "The number of tokens produced when the activity completes."@en .
+
+bpmn:complexBehaviorDefinition a owl:ObjectProperty ; skos:prefLabel "complexBehaviorDefinition"@en ; skos:definition "The complex behavior definitions of a multi-instance activity."@en .
+
+bpmn:condition a owl:ObjectProperty ; skos:prefLabel "condition"@en ; skos:definition "A condition expression."@en .
+
+bpmn:conditionExpression a owl:ObjectProperty ; skos:prefLabel "conditionExpression"@en ; skos:definition "The condition expression of a sequence flow."@en .
+
+bpmn:conversationAssociations a owl:ObjectProperty ; skos:prefLabel "conversationAssociations"@en ; skos:definition "The conversation associations of a collaboration."@en .
+
+bpmn:conversationLinks a owl:ObjectProperty ; skos:prefLabel "conversationLinks"@en ; skos:definition "The conversation links of a collaboration."@en .
+
+bpmn:conversationNodes a owl:ObjectProperty ; skos:prefLabel "conversationNodes"@en ; skos:definition "The conversation nodes of a collaboration."@en .
+
+bpmn:conversations a owl:ObjectProperty ; skos:prefLabel "conversations"@en ; skos:definition "The conversations within a sub-conversation."@en .
+
+bpmn:correlationKeyRef a owl:ObjectProperty ; skos:prefLabel "correlationKeyRef"@en ; skos:definition "A reference to a correlation key."@en .
+
+bpmn:correlationKeys a owl:ObjectProperty ; skos:prefLabel "correlationKeys"@en ; skos:definition "The correlation keys of a collaboration."@en .
+
+bpmn:correlationPropertyBinding a owl:ObjectProperty ; skos:prefLabel "correlationPropertyBinding"@en ; skos:definition "The correlation property bindings of a correlation subscription."@en .
+
+bpmn:correlationPropertyRef a owl:ObjectProperty ; skos:prefLabel "correlationPropertyRef"@en ; skos:definition "A reference to a correlation property."@en .
+
+bpmn:correlationPropertyRetrievalExpression a owl:ObjectProperty ; skos:prefLabel "correlationPropertyRetrievalExpression"@en ; skos:definition "The retrieval expressions of a correlation property."@en .
+
+bpmn:correlationSubscriptions a owl:ObjectProperty ; skos:prefLabel "correlationSubscriptions"@en ; skos:definition "The correlation subscriptions of a process."@en .
+
+bpmn:dataInputAssociation a owl:ObjectProperty ; skos:prefLabel "dataInputAssociation"@en ; skos:definition "A data input association of an event."@en .
+
+bpmn:dataInputAssociations a owl:ObjectProperty ; skos:prefLabel "dataInputAssociations"@en ; skos:definition "The data input associations of an activity."@en .
+
+bpmn:dataInputRefs a owl:ObjectProperty ; skos:prefLabel "dataInputRefs"@en ; skos:definition "References to data inputs in an input set."@en .
+
+bpmn:dataInputs a owl:ObjectProperty ; skos:prefLabel "dataInputs"@en ; skos:definition "The data inputs of an input/output specification."@en .
+
+bpmn:dataObjectRef a owl:ObjectProperty ; skos:prefLabel "dataObjectRef"@en ; skos:definition "A reference to a data object."@en .
+
+bpmn:dataOutputAssociation a owl:ObjectProperty ; skos:prefLabel "dataOutputAssociation"@en ; skos:definition "A data output association of an event."@en .
+
+bpmn:dataOutputAssociations a owl:ObjectProperty ; skos:prefLabel "dataOutputAssociations"@en ; skos:definition "The data output associations of an activity."@en .
+
+bpmn:dataOutputRefs a owl:ObjectProperty ; skos:prefLabel "dataOutputRefs"@en ; skos:definition "References to data outputs in an output set."@en .
+
+bpmn:dataOutputs a owl:ObjectProperty ; skos:prefLabel "dataOutputs"@en ; skos:definition "The data outputs of an input/output specification."@en .
+
+bpmn:dataPath a owl:ObjectProperty ; skos:prefLabel "dataPath"@en ; skos:definition "The data path expression for extracting correlation data."@en .
+
+bpmn:dataState a owl:ObjectProperty ; skos:prefLabel "dataState"@en ; skos:definition "The state of a data object."@en .
+
+bpmn:dataStoreRef a owl:ObjectProperty ; skos:prefLabel "dataStoreRef"@en ; skos:definition "A reference to a data store."@en .
+
+bpmn:default a owl:ObjectProperty ; skos:prefLabel "default"@en ; skos:definition "The default sequence flow from a gateway or activity."@en .
+
+bpmn:definition a owl:ObjectProperty ; skos:prefLabel "definition"@en ; skos:definition "The definition associated with a BPMN element."@en .
+
+bpmn:definitionalCollaborationRef a owl:ObjectProperty ; skos:prefLabel "definitionalCollaborationRef"@en ; skos:definition "A reference to the definitional collaboration of a choreography."@en .
+
+bpmn:direction a owl:DatatypeProperty ; skos:prefLabel "direction"@en ; skos:definition "The direction of a relationship or association."@en .
+
+bpmn:documentation a owl:ObjectProperty ; skos:prefLabel "documentation"@en ; skos:definition "The documentation elements of a BPMN element."@en .
+
+bpmn:endPointRefs a owl:ObjectProperty ; skos:prefLabel "endPointRefs"@en ; skos:definition "References to end points of a participant."@en .
+
+bpmn:errorCode a owl:DatatypeProperty ; skos:prefLabel "errorCode"@en ; skos:definition "The error code of an error."@en .
+
+bpmn:errorRef a owl:ObjectProperty ; skos:prefLabel "errorRef"@en ; skos:definition "A reference to an error."@en .
+
+bpmn:errorRefs a owl:ObjectProperty ; skos:prefLabel "errorRefs"@en ; skos:definition "References to errors of an operation."@en .
+
+bpmn:escalationCode a owl:DatatypeProperty ; skos:prefLabel "escalationCode"@en ; skos:definition "The escalation code of an escalation."@en .
+
+bpmn:escalationRef a owl:ObjectProperty ; skos:prefLabel "escalationRef"@en ; skos:definition "A reference to an escalation."@en .
+
+bpmn:evaluatesToTypeRef a owl:ObjectProperty ; skos:prefLabel "evaluatesToTypeRef"@en ; skos:definition "A reference to the type the expression evaluates to."@en .
+
+bpmn:event a owl:ObjectProperty ; skos:prefLabel "event"@en ; skos:definition "The event associated with a complex behavior definition."@en .
+
+bpmn:eventDefinitionRefs a owl:ObjectProperty ; skos:prefLabel "eventDefinitionRefs"@en ; skos:definition "References to event definitions."@en .
+
+bpmn:eventDefinitions a owl:ObjectProperty ; skos:prefLabel "eventDefinitions"@en ; skos:definition "The event definitions of an event."@en .
+
+bpmn:eventGatewayType a owl:DatatypeProperty ; skos:prefLabel "eventGatewayType"@en ; skos:definition "The type of an event-based gateway."@en .
+
+bpmn:expression a owl:ObjectProperty ; skos:prefLabel "expression"@en ; skos:definition "The expression of a resource assignment or formal expression."@en .
+
+bpmn:extensionAttributeDefinition a owl:ObjectProperty ; skos:prefLabel "extensionAttributeDefinition"@en ; skos:definition "A reference to an extension attribute definition."@en .
+
+bpmn:extensionAttributeDefinitions a owl:ObjectProperty ; skos:prefLabel "extensionAttributeDefinitions"@en ; skos:definition "The attribute definitions of an extension definition."@en .
+
+bpmn:extensionDefinition a owl:ObjectProperty ; skos:prefLabel "extensionDefinition"@en ; skos:definition "A reference to an extension definition."@en .
+
+bpmn:extensionDefinitions a owl:ObjectProperty ; skos:prefLabel "extensionDefinitions"@en ; skos:definition "The extension definitions of a BPMN model."@en .
+
+bpmn:extensionValues a owl:ObjectProperty ; skos:prefLabel "extensionValues"@en ; skos:definition "The extension attribute values of a BPMN element."@en .
+
+bpmn:flowElements a owl:ObjectProperty ; skos:prefLabel "flowElements"@en ; skos:definition "The flow elements contained in a flow elements container."@en .
+
+bpmn:flowNodeRefs a owl:ObjectProperty ; skos:prefLabel "flowNodeRefs"@en ; skos:definition "References to flow nodes within a lane."@en .
+
+bpmn:from a owl:ObjectProperty ; skos:prefLabel "from"@en ; skos:definition "The source of an assignment."@en .
+
+bpmn:gatewayDirection a owl:DatatypeProperty ; skos:prefLabel "gatewayDirection"@en ; skos:definition "The direction of a gateway."@en .
+
+bpmn:id a owl:DatatypeProperty ; skos:prefLabel "id"@en ; skos:definition "The unique identifier of a BPMN element."@en .
+
+bpmn:implementation a owl:DatatypeProperty ; skos:prefLabel "implementation"@en ; skos:definition "The implementation technology of a task or operation."@en .
+
+bpmn:implementationRef a owl:ObjectProperty ; skos:prefLabel "implementationRef"@en ; skos:definition "A reference to the implementation of a task."@en .
+
+bpmn:import a owl:ObjectProperty ; skos:prefLabel "import"@en ; skos:definition "An import of external definitions."@en .
+
+bpmn:inMessageRef a owl:ObjectProperty ; skos:prefLabel "inMessageRef"@en ; skos:definition "A reference to the input message of an operation."@en .
+
+bpmn:incoming a owl:ObjectProperty ; skos:prefLabel "incoming"@en ; skos:definition "The incoming sequence flows of a flow node."@en .
+
+bpmn:incomingConversationLinks a owl:ObjectProperty ; skos:prefLabel "incomingConversationLinks"@en ; skos:definition "The incoming conversation links of an interaction node."@en .
+
+bpmn:initiatingParticipantRef a owl:ObjectProperty ; skos:prefLabel "initiatingParticipantRef"@en ; skos:definition "A reference to the initiating participant."@en .
+
+bpmn:innerConversationNodeRef a owl:ObjectProperty ; skos:prefLabel "innerConversationNodeRef"@en ; skos:definition "A reference to an inner conversation node."@en .
+
+bpmn:innerMessageFlowRef a owl:ObjectProperty ; skos:prefLabel "innerMessageFlowRef"@en ; skos:definition "A reference to an inner message flow."@en .
+
+bpmn:innerParticipantRef a owl:ObjectProperty ; skos:prefLabel "innerParticipantRef"@en ; skos:definition "A reference to an inner participant."@en .
+
+bpmn:inputDataItem a owl:ObjectProperty ; skos:prefLabel "inputDataItem"@en ; skos:definition "The input data item of a multi-instance activity."@en .
+
+bpmn:inputDataRef a owl:ObjectProperty ; skos:prefLabel "inputDataRef"@en ; skos:definition "A reference to an input data element."@en .
+
+bpmn:inputSet a owl:ObjectProperty ; skos:prefLabel "inputSet"@en ; skos:definition "The input set of an event."@en .
+
+bpmn:inputSetRefs a owl:ObjectProperty ; skos:prefLabel "inputSetRefs"@en ; skos:definition "References to input sets."@en .
+
+bpmn:inputSetWithOptional a owl:ObjectProperty ; skos:prefLabel "inputSetWithOptional"@en ; skos:definition "The input sets where this data input is optional."@en .
+
+bpmn:inputSetWithWhileExecuting a owl:ObjectProperty ; skos:prefLabel "inputSetWithWhileExecuting"@en ; skos:definition "The input sets where this data input is available while executing."@en .
+
+bpmn:inputSets a owl:ObjectProperty ; skos:prefLabel "inputSets"@en ; skos:definition "The input sets of an input/output specification."@en .
+
+bpmn:instantiate a owl:DatatypeProperty ; skos:prefLabel "instantiate"@en ; skos:definition "Indicates whether the gateway can instantiate a process."@en .
+
+bpmn:interfaceRefs a owl:ObjectProperty ; skos:prefLabel "interfaceRefs"@en ; skos:definition "References to interfaces of a participant."@en .
+
+bpmn:ioBinding a owl:ObjectProperty ; skos:prefLabel "ioBinding"@en ; skos:definition "The input/output binding of a callable element."@en .
+
+bpmn:ioSpecification a owl:ObjectProperty ; skos:prefLabel "ioSpecification"@en ; skos:definition "The input/output specification of an activity."@en .
+
+bpmn:isClosed a owl:DatatypeProperty ; skos:prefLabel "isClosed"@en ; skos:definition "Indicates whether the process or collaboration is closed to additional participants."@en .
+
+bpmn:isCollection a owl:DatatypeProperty ; skos:prefLabel "isCollection"@en ; skos:definition "Indicates whether the data object represents a collection."@en .
+
+bpmn:isExecutable a owl:DatatypeProperty ; skos:prefLabel "isExecutable"@en ; skos:definition "Indicates whether the process is executable."@en .
+
+bpmn:isForCompensation a owl:DatatypeProperty ; skos:prefLabel "isForCompensation"@en ; skos:definition "Indicates whether the activity is used for compensation."@en .
+
+bpmn:isImmediate a owl:DatatypeProperty ; skos:prefLabel "isImmediate"@en ; skos:definition "Indicates whether the sequence flow condition is evaluated immediately."@en .
+
+bpmn:isInterrupting a owl:DatatypeProperty ; skos:prefLabel "isInterrupting"@en ; skos:definition "Indicates whether the event interrupts the activity it is attached to."@en .
+
+bpmn:isReference a owl:DatatypeProperty ; skos:prefLabel "isReference"@en ; skos:definition "Indicates whether the element is a reference."@en .
+
+bpmn:isRequired a owl:DatatypeProperty ; skos:prefLabel "isRequired"@en ; skos:definition "Indicates whether the element is required."@en .
+
+bpmn:isSequential a owl:DatatypeProperty ; skos:prefLabel "isSequential"@en ; skos:definition "Indicates whether multi-instance execution is sequential."@en .
+
+bpmn:isUnlimited a owl:DatatypeProperty ; skos:prefLabel "isUnlimited"@en ; skos:definition "Indicates whether the data store has unlimited capacity."@en .
+
+bpmn:itemKind a owl:DatatypeProperty ; skos:prefLabel "itemKind"@en ; skos:definition "The kind of an item (physical or information)."@en .
+
+bpmn:itemRef a owl:ObjectProperty ; skos:prefLabel "itemRef"@en ; skos:definition "A reference to an item definition."@en .
+
+bpmn:itemSubjectRef a owl:ObjectProperty ; skos:prefLabel "itemSubjectRef"@en ; skos:definition "A reference to the item definition of the subject."@en .
+
+bpmn:laneSets a owl:ObjectProperty ; skos:prefLabel "laneSets"@en ; skos:definition "The lane sets of a process or sub-process."@en .
+
+bpmn:lanes a owl:ObjectProperty ; skos:prefLabel "lanes"@en ; skos:definition "The lanes within a lane set."@en .
+
+bpmn:language a owl:DatatypeProperty ; skos:prefLabel "language"@en ; skos:definition "The language of an expression or script."@en .
+
+bpmn:loopCardinality a owl:ObjectProperty ; skos:prefLabel "loopCardinality"@en ; skos:definition "The number of instances to create in a multi-instance loop."@en .
+
+bpmn:loopCharacteristics a owl:ObjectProperty ; skos:prefLabel "loopCharacteristics"@en ; skos:definition "The loop characteristics of an activity."@en .
+
+bpmn:loopCondition a owl:ObjectProperty ; skos:prefLabel "loopCondition"@en ; skos:definition "The loop condition expression."@en .
+
+bpmn:loopDataInputRef a owl:ObjectProperty ; skos:prefLabel "loopDataInputRef"@en ; skos:definition "A reference to the input data of a multi-instance loop."@en .
+
+bpmn:loopDataOutputRef a owl:ObjectProperty ; skos:prefLabel "loopDataOutputRef"@en ; skos:definition "A reference to the output data of a multi-instance loop."@en .
+
+bpmn:loopMaximum a owl:ObjectProperty ; skos:prefLabel "loopMaximum"@en ; skos:definition "The maximum number of loop iterations."@en .
+
+bpmn:loopType a owl:DatatypeProperty ; skos:prefLabel "loopType"@en ; skos:definition "The type of loop for a choreography activity."@en .
+
+bpmn:maximum a owl:DatatypeProperty ; skos:prefLabel "maximum"@en ; skos:definition "The maximum multiplicity of a participant."@en .
+
+bpmn:messageFlowAssociations a owl:ObjectProperty ; skos:prefLabel "messageFlowAssociations"@en ; skos:definition "The message flow associations of a collaboration."@en .
+
+bpmn:messageFlowRef a owl:ObjectProperty ; skos:prefLabel "messageFlowRef"@en ; skos:definition "A reference to a message flow."@en .
+
+bpmn:messageFlowRefs a owl:ObjectProperty ; skos:prefLabel "messageFlowRefs"@en ; skos:definition "References to message flows of a conversation node."@en .
+
+bpmn:messageFlows a owl:ObjectProperty ; skos:prefLabel "messageFlows"@en ; skos:definition "The message flows of a collaboration."@en .
+
+bpmn:messagePath a owl:ObjectProperty ; skos:prefLabel "messagePath"@en ; skos:definition "The message path expression for extracting correlation data."@en .
+
+bpmn:messageRef a owl:ObjectProperty ; skos:prefLabel "messageRef"@en ; skos:definition "A reference to a message."@en .
+
+bpmn:method a owl:DatatypeProperty ; skos:prefLabel "method"@en ; skos:definition "The method used for multi-instance activity completion."@en .
+
+bpmn:minimum a owl:DatatypeProperty ; skos:prefLabel "minimum"@en ; skos:definition "The minimum multiplicity of a participant."@en .
+
+bpmn:monitoring a owl:ObjectProperty ; skos:prefLabel "monitoring"@en ; skos:definition "The monitoring configuration of a flow element."@en .
+
+bpmn:mustUnderstand a owl:DatatypeProperty ; skos:prefLabel "mustUnderstand"@en ; skos:definition "Indicates whether the extension must be understood by the consumer."@en .
+
+bpmn:name
+    a                  owl:DatatypeProperty ;
+    skos:prefLabel     "name"@en ;
+    skos:definition    "The name of a BPMN element."@en ;
+    skos:scopeNote     '''Faithful record of the BPMN XML `name` attribute: a plain xsd:string,
+single-valued, with no language tag. This is a serialization-level property, not the canonical
+Linked.Archi label.
+
+skos:prefLabel is the canonical label. Every Linked.Archi consumer — documentation generators,
+palette builders, deliverable templates, SPARQL reporting, SHACL validation — reads
+skos:prefLabel and does not read bpmn:name. A graph that carries only bpmn:name is valid BPMN
+but is not yet in Linked.Archi canonical form.
+
+The two are not redundant. Of the 33 classes that carry a bpmn:name constraint, only 6 are
+aligned to arch:Element (Collaboration, ConversationNode, DataStore, Lane, Message,
+Participant). For the other 27 — Error, Signal, Interface, Operation, Resource, PartnerEntity,
+PartnerRole, CorrelationKey, InputSet, OutputSet, DataInput, DataOutput, DataState, LaneSet,
+Property, Category, MessageFlow, ConversationLink and the rest — bpmn:name is the only
+name-bearing property, and no label shape applies to them because they are not architecture
+elements.'''@en ;
+    skos:editorialNote '''CONVERTER CONTRACT — emit both.
+
+  1. skos:prefLabel — REQUIRED, and MUST carry a language tag. Mirror the BPMN name here for
+     every class bpmnsh:RequiredNameShape targets (linkedarchi-bpmn-shacl.ttl). An untagged
+     xsd:string literal does NOT satisfy it — the shape requires rdf:langString. Use the
+     document language where the source declares one, "en" otherwise.
+  2. bpmn:name — SHOULD be retained, unchanged, for round-trip fidelity and for the 27
+     non-element classes above.
+
+  ex:t1 a bpmn:ServiceTask ;
+      bpmn:name      "Charge card" ;        # source attribute, verbatim
+      skos:prefLabel "Charge card"@en .     # canonical label, language-tagged
+
+Emitting bpmn:name alone leaves every element that must be named failing
+bpmnsh:RequiredNameShape. Emitting skos:prefLabel alone validates cleanly but loses the
+verbatim source attribute.
+
+Note that not every arch:Element must be named: BPMN has 49 arch:Element classes and
+bpmnsh:RequiredNameShape requires a label on 33 of them. Gateway and Event subtypes are
+elements whose name BPMN leaves optional, so no label is required for them.
+
+Deliberately NOT declared rdfs:subPropertyOf skos:prefLabel. That axiom looks like it would
+bridge the two, but it does not: the entailed prefLabel inherits the plain xsd:string
+datatype, so a correctly named element still fails — the failure merely moves from
+sh:MinCountConstraintComponent to sh:DatatypeConstraintComponent, with a message that no
+longer points at the real problem. The relationship between the two properties is policy,
+stated here, not an inference.'''@en ;
+.
+
+bpmn:noneBehaviorEventRef a owl:ObjectProperty ; skos:prefLabel "noneBehaviorEventRef"@en ; skos:definition "A reference to the event triggered when no instances complete."@en .
+
+bpmn:oneBehaviorEventRef a owl:ObjectProperty ; skos:prefLabel "oneBehaviorEventRef"@en ; skos:definition "A reference to the event triggered when one instance completes."@en .
+
+bpmn:operationRef a owl:ObjectProperty ; skos:prefLabel "operationRef"@en ; skos:definition "A reference to an operation."@en .
+
+bpmn:operations a owl:ObjectProperty ; skos:prefLabel "operations"@en ; skos:definition "The operations of an interface."@en .
+
+bpmn:optionalInputRefs a owl:ObjectProperty ; skos:prefLabel "optionalInputRefs"@en ; skos:definition "References to optional data inputs in an input set."@en .
+
+bpmn:optionalOutputRefs a owl:ObjectProperty ; skos:prefLabel "optionalOutputRefs"@en ; skos:definition "References to optional data outputs in an output set."@en .
+
+bpmn:ordering a owl:DatatypeProperty ; skos:prefLabel "ordering"@en ; skos:definition "The ordering of activities in an ad-hoc sub-process."@en .
+
+bpmn:outMessageRef a owl:ObjectProperty ; skos:prefLabel "outMessageRef"@en ; skos:definition "A reference to the output message of an operation."@en .
+
+bpmn:outerConversationNodeRef a owl:ObjectProperty ; skos:prefLabel "outerConversationNodeRef"@en ; skos:definition "A reference to an outer conversation node."@en .
+
+bpmn:outerMessageFlowRef a owl:ObjectProperty ; skos:prefLabel "outerMessageFlowRef"@en ; skos:definition "A reference to an outer message flow."@en .
+
+bpmn:outerParticipantRef a owl:ObjectProperty ; skos:prefLabel "outerParticipantRef"@en ; skos:definition "A reference to an outer participant."@en .
+
+bpmn:outgoing a owl:ObjectProperty ; skos:prefLabel "outgoing"@en ; skos:definition "The outgoing sequence flows of a flow node."@en .
+
+bpmn:outgoingConversationLinks a owl:ObjectProperty ; skos:prefLabel "outgoingConversationLinks"@en ; skos:definition "The outgoing conversation links of an interaction node."@en .
+
+bpmn:outputDataItem a owl:ObjectProperty ; skos:prefLabel "outputDataItem"@en ; skos:definition "The output data item of a multi-instance activity."@en .
+
+bpmn:outputDataRef a owl:ObjectProperty ; skos:prefLabel "outputDataRef"@en ; skos:definition "A reference to an output data element."@en .
+
+bpmn:outputSet a owl:ObjectProperty ; skos:prefLabel "outputSet"@en ; skos:definition "The output set of an event."@en .
+
+bpmn:outputSetRefs a owl:ObjectProperty ; skos:prefLabel "outputSetRefs"@en ; skos:definition "References to output sets."@en .
+
+bpmn:outputSetWithOptional a owl:ObjectProperty ; skos:prefLabel "outputSetWithOptional"@en ; skos:definition "The output sets where this data output is optional."@en .
+
+bpmn:outputSetWithWhileExecuting a owl:ObjectProperty ; skos:prefLabel "outputSetWithWhileExecuting"@en ; skos:definition "The output sets where this data output is available while executing."@en .
+
+bpmn:outputSets a owl:ObjectProperty ; skos:prefLabel "outputSets"@en ; skos:definition "The output sets of an input/output specification."@en .
+
+bpmn:parallelMultiple a owl:DatatypeProperty ; skos:prefLabel "parallelMultiple"@en ; skos:definition "Indicates whether multiple event triggers must all occur."@en .
+
+bpmn:parameterRef a owl:ObjectProperty ; skos:prefLabel "parameterRef"@en ; skos:definition "A reference to a resource parameter."@en .
+
+bpmn:participantAssociations a owl:ObjectProperty ; skos:prefLabel "participantAssociations"@en ; skos:definition "The participant associations of a call choreography."@en .
+
+bpmn:participantMultiplicity a owl:ObjectProperty ; skos:prefLabel "participantMultiplicity"@en ; skos:definition "The multiplicity of a participant."@en .
+
+bpmn:participantRef a owl:ObjectProperty ; skos:prefLabel "participantRef"@en ; skos:definition "A reference to a participant."@en .
+
+bpmn:participantRefs a owl:ObjectProperty ; skos:prefLabel "participantRefs"@en ; skos:definition "References to participants of a conversation node."@en .
+
+bpmn:participants a owl:ObjectProperty ; skos:prefLabel "participants"@en ; skos:definition "The participants of a collaboration."@en .
+
+bpmn:partitionElement a owl:ObjectProperty ; skos:prefLabel "partitionElement"@en ; skos:definition "The element that partitions a lane."@en .
+
+bpmn:partitionElementRef a owl:ObjectProperty ; skos:prefLabel "partitionElementRef"@en ; skos:definition "A reference to the element that partitions a lane."@en .
+
+bpmn:processRef a owl:ObjectProperty ; skos:prefLabel "processRef"@en ; skos:definition "A reference to a process."@en .
+
+bpmn:processType a owl:DatatypeProperty ; skos:prefLabel "processType"@en ; skos:definition "The type of a process."@en .
+
+bpmn:properties a owl:ObjectProperty ; skos:prefLabel "properties"@en ; skos:definition "The properties of a BPMN element."@en .
+
+bpmn:protocol a owl:DatatypeProperty ; skos:prefLabel "protocol"@en ; skos:definition "The protocol used for a transaction."@en .
+
+bpmn:renderings a owl:ObjectProperty ; skos:prefLabel "renderings"@en ; skos:definition "The renderings of a user task."@en .
+
+bpmn:resourceAssignmentExpression a owl:ObjectProperty ; skos:prefLabel "resourceAssignmentExpression"@en ; skos:definition "The resource assignment expression of a resource role."@en .
+
+bpmn:resourceParameterBindings a owl:ObjectProperty ; skos:prefLabel "resourceParameterBindings"@en ; skos:definition "The resource parameter bindings of a resource role."@en .
+
+bpmn:resourceParameters a owl:ObjectProperty ; skos:prefLabel "resourceParameters"@en ; skos:definition "The parameters of a resource."@en .
+
+bpmn:resourceRef a owl:ObjectProperty ; skos:prefLabel "resourceRef"@en ; skos:definition "A reference to a resource."@en .
+
+bpmn:resources a owl:ObjectProperty ; skos:prefLabel "resources"@en ; skos:definition "The resources of a BPMN element."@en .
+
+bpmn:script a owl:DatatypeProperty ; skos:prefLabel "script"@en ; skos:definition "The script content of a script task."@en .
+
+bpmn:scriptFormat a owl:DatatypeProperty ; skos:prefLabel "scriptFormat"@en ; skos:definition "The format of a script."@en .
+
+bpmn:scriptLanguage a owl:DatatypeProperty ; skos:prefLabel "scriptLanguage"@en ; skos:definition "The language of a script."@en .
+
+bpmn:signalRef a owl:ObjectProperty ; skos:prefLabel "signalRef"@en ; skos:definition "A reference to a signal."@en .
+
+bpmn:source a owl:ObjectProperty ; skos:prefLabel "source"@en ; skos:definition "The source element of a flow or association."@en .
+
+bpmn:sourceRef a owl:ObjectProperty ; skos:prefLabel "sourceRef"@en ; skos:definition "A reference to the source element."@en .
+
+bpmn:sources a owl:ObjectProperty ; skos:prefLabel "sources"@en ; skos:definition "The source elements of a relationship."@en .
+
+bpmn:startQuantity a owl:DatatypeProperty ; skos:prefLabel "startQuantity"@en ; skos:definition "The number of tokens required to start an activity."@en .
+
+bpmn:structureRef a owl:ObjectProperty ; skos:prefLabel "structureRef"@en ; skos:definition "A reference to the structure of an item definition."@en .
+
+bpmn:supportedInterfaceRefs a owl:ObjectProperty ; skos:prefLabel "supportedInterfaceRefs"@en ; skos:definition "References to interfaces supported by a callable element."@en .
+
+bpmn:supports a owl:ObjectProperty ; skos:prefLabel "supports"@en ; skos:definition "The processes supported by a process."@en .
+
+bpmn:target a owl:ObjectProperty ; skos:prefLabel "target"@en ; skos:definition "The target element of a flow or association."@en .
+
+bpmn:targetRef a owl:ObjectProperty ; skos:prefLabel "targetRef"@en ; skos:definition "A reference to the target element."@en .
+
+bpmn:targets a owl:ObjectProperty ; skos:prefLabel "targets"@en ; skos:definition "The target elements of a relationship."@en .
+
+bpmn:testBefore a owl:DatatypeProperty ; skos:prefLabel "testBefore"@en ; skos:definition "Indicates whether the loop condition is tested before execution."@en .
+
+bpmn:text a owl:DatatypeProperty ; skos:prefLabel "text"@en ; skos:definition "The text content of a documentation or annotation element."@en .
+
+bpmn:textFormat a owl:DatatypeProperty ; skos:prefLabel "textFormat"@en ; skos:definition "The format of text content."@en .
+
+bpmn:timeCycle a owl:ObjectProperty ; skos:prefLabel "timeCycle"@en ; skos:definition "The time cycle expression of a timer event."@en .
+
+bpmn:timeDate a owl:ObjectProperty ; skos:prefLabel "timeDate"@en ; skos:definition "The time date expression of a timer event."@en .
+
+bpmn:timeDuration a owl:ObjectProperty ; skos:prefLabel "timeDuration"@en ; skos:definition "The time duration expression of a timer event."@en .
+
+bpmn:to a owl:ObjectProperty ; skos:prefLabel "to"@en ; skos:definition "The target of an assignment."@en .
+
+bpmn:transformation a owl:ObjectProperty ; skos:prefLabel "transformation"@en ; skos:definition "The transformation expression of a data association."@en .
+
+bpmn:triggeredByEvent a owl:DatatypeProperty ; skos:prefLabel "triggeredByEvent"@en ; skos:definition "Indicates whether the sub-process is triggered by an event."@en .
+
+bpmn:type a owl:ObjectProperty ; skos:prefLabel "type"@en ; skos:definition "The type of a BPMN element."@en .
+
+bpmn:value a owl:ObjectProperty ; skos:prefLabel "value"@en ; skos:definition "The value of a category value or extension attribute."@en .
+
+bpmn:valueRef a owl:ObjectProperty ; skos:prefLabel "valueRef"@en ; skos:definition "A reference to a value."@en .
+
+bpmn:waitForCompletion a owl:DatatypeProperty ; skos:prefLabel "waitForCompletion"@en ; skos:definition "Indicates whether the activity waits for compensation to complete."@en .
+
+bpmn:whileExecutingInputRefs a owl:ObjectProperty ; skos:prefLabel "whileExecutingInputRefs"@en ; skos:definition "References to data inputs available while the activity is executing."@en .
+
+bpmn:whileExecutingOutputRefs a owl:ObjectProperty ; skos:prefLabel "whileExecutingOutputRefs"@en ; skos:definition "References to data outputs available while the activity is executing."@en .
+
+#################################################################
+# Relationship predicates
+#
+# The direct triple of each connector a diagram draws between two
+# elements, and the qualified properties that lead from its source to its
+# resource. The data associations share one predicate: its direction tells
+# an input (data to an activity or event) from an output (from one).
+#################################################################
+
+bpmn:sequenceFlow
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "sequence flow"@en ;
+    skos:definition      "The direct form of a sequence flow: in a process, the target flow node follows the source."@en ;
+    arch:domainIncludes  bpmn:FlowNode ;
+    arch:rangeIncludes   bpmn:FlowNode ;
+.
+
+bpmn:qualifiedSequenceFlow
+    a                    owl:ObjectProperty ;
+    rdfs:range           bpmn:SequenceFlow ;
+    arch:unqualifiedForm bpmn:sequenceFlow ;
+.
+
+bpmn:messageFlow
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "message flow"@en ;
+    skos:definition      "The direct form of a message flow: the source sends a message that the target receives."@en ;
+    arch:domainIncludes  bpmn:InteractionNode ;
+    arch:rangeIncludes   bpmn:InteractionNode ;
+.
+
+bpmn:qualifiedMessageFlow
+    a                    owl:ObjectProperty ;
+    rdfs:range           bpmn:MessageFlow ;
+    arch:unqualifiedForm bpmn:messageFlow ;
+.
+
+bpmn:association
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "association"@en ;
+    skos:definition      "The direct form of an association: an artifact, such as a text annotation, is linked to the element it is about."@en ;
+    arch:domainIncludes  bpmn:BaseElement ;
+    arch:rangeIncludes   bpmn:BaseElement ;
+.
+
+bpmn:qualifiedAssociation
+    a                    owl:ObjectProperty ;
+    rdfs:range           bpmn:Association ;
+    arch:unqualifiedForm bpmn:association ;
+.
+
+bpmn:conversationLink
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "conversation link"@en ;
+    skos:definition      "The direct form of a conversation link: the participant takes part in the conversation."@en ;
+    arch:domainIncludes  bpmn:InteractionNode ;
+    arch:rangeIncludes   bpmn:ConversationNode ;
+.
+
+bpmn:qualifiedConversationLink
+    a                    owl:ObjectProperty ;
+    rdfs:range           bpmn:ConversationLink ;
+    arch:unqualifiedForm bpmn:conversationLink ;
+.
+
+bpmn:dataAssociation
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "data association"@en ;
+    skos:definition      "The direct form of a data association, input or output: data moves from the source to the target."@en ;
+    arch:domainIncludes  bpmn:ItemAwareElement, bpmn:Activity, bpmn:Event ;
+    arch:rangeIncludes   bpmn:ItemAwareElement, bpmn:Activity, bpmn:Event ;
+.
+
+bpmn:qualifiedDataAssociation
+    a                    owl:ObjectProperty ;
+    rdfs:range           bpmn:DataAssociation ;
+    arch:unqualifiedForm bpmn:dataAssociation ;
+.
+
+bpmn:qualifiedDataInputAssociation
+    a                    owl:ObjectProperty ;
+    rdfs:range           bpmn:DataInputAssociation ;
+    arch:unqualifiedForm bpmn:dataAssociation ;
+.
+
+bpmn:qualifiedDataOutputAssociation
+    a                    owl:ObjectProperty ;
+    rdfs:range           bpmn:DataOutputAssociation ;
+    arch:unqualifiedForm bpmn:dataAssociation ;
+.

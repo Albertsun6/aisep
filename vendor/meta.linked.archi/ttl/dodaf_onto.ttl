@@ -1,0 +1,387 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix schema:  <http://schema.org/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix :        <https://meta.linked.archi/dodaf/onto#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/dodaf/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/dodaf/onto#" ;
+    vann:preferredNamespacePrefix "dodaf" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi DoDAF Ontology"@en ;
+    dcterms:description                '''Linked.Archi ontology aligned to the U.S. Department of Defense
+Architecture Framework (DoDAF) version 2.02. Models the core entity types used
+across DoDAF viewpoints as OWL classes extending arch:Element, and the key
+relationships as owl:ObjectProperty. DoDAF 2.0 shifted focus from static products
+to architectural data — this ontology captures the underlying data model that
+the viewpoints present.
+
+This is not an official U.S. Department of Defense document.'''@en ;
+    dcterms:abstract              '''OWL representation of DoDAF 2.02 core entity types and relationships.
+All entity classes extend arch:Element from the Linked.Archi core ontology.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/> ;
+    prov:wasDerivedFrom <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/> ;
+    prov:wasDerivedFrom           "DoDAF V2.02 (U.S. Department of Defense, 2010)" ;
+    owl:versionIRI                <https://meta.linked.archi/dodaf/onto/2.02#> ;
+    owl:versionInfo               "2.02"@en ;
+    schema:citation               "Linked.Archi DoDAF Ontology" ;
+    rdfs:seeAlso                  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/> ;
+.
+
+
+#################################################################
+# Capability Entities
+#################################################################
+
+:Capability
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Capability"@en ;
+    skos:definition '''The ability to achieve a desired effect under specified standards and
+conditions through a combination of ways and means to perform a set of activities.'''@en ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/dodaf20_models/> ;
+.
+
+:CapabilityIncrement
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Capability Increment"@en ;
+    skos:definition '''A planned phase of capability delivery representing a discrete step
+in the achievement of a full capability over time.'''@en ;
+.
+
+:DesiredEffect
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Desired Effect"@en ;
+    skos:definition '''An outcome or result that a capability is intended to achieve.'''@en ;
+.
+
+
+#################################################################
+# Operational Entities
+#################################################################
+
+:OperationalActivity
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Operational Activity"@en ;
+    skos:definition '''An activity performed in the conduct of an operation or business
+function. Operational activities may be decomposed hierarchically and
+may produce or consume resources.'''@en ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/dodaf20_models/> ;
+.
+
+:OperationalNode
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Operational Node"@en ;
+    skos:definition '''An element of the operational architecture that produces, consumes,
+or processes information. Operational nodes may represent organizations,
+roles, or logical groupings of operational activities.'''@en ;
+.
+
+:ResourceFlow
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Resource Flow"@en ;
+    skos:definition '''A flow of resources (information, materiel, personnel, energy)
+between operational activities or nodes.'''@en ;
+.
+
+:OperationalRule
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Operational Rule"@en ;
+    skos:definition '''A constraint or business rule that governs operational activities,
+including sequencing, conditions, and decision logic.'''@en ;
+.
+
+:Performer
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Performer"@en ;
+    skos:definition '''Any entity — human, automated, or organizational — that performs
+an activity. Performers are assigned to operational activities and
+may be organizations, roles, or systems.'''@en ;
+.
+
+:Condition
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Condition"@en ;
+    skos:definition '''A state or circumstance that affects the execution of operational
+activities or the achievement of desired effects.'''@en ;
+.
+
+:Location
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Location"@en ;
+    skos:definition '''A geographic or logical place where operational activities occur
+or where systems and services are deployed.'''@en ;
+.
+
+
+#################################################################
+# Data and Information Entities
+#################################################################
+
+:ConceptualDataEntity
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Conceptual Data Entity"@en ;
+    skos:definition '''A high-level data concept and its relationships, independent of
+implementation. Intended for non-technical stakeholders. Corresponds
+to DIV-1 content.'''@en ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/dodaf20_models/> ;
+.
+
+:LogicalDataEntity
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Logical Data Entity"@en ;
+    skos:definition '''A data entity with attributes and structural business process rules,
+bridging the conceptual and physical levels. Intended for system
+architects and analysts. Corresponds to DIV-2 content.'''@en ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/dodaf20_models/> ;
+.
+
+:PhysicalDataEntity
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Physical Data Entity"@en ;
+    skos:definition '''The physical implementation format of a logical data entity — tables,
+records, keys, message formats, file structures. Intended for database
+engineers, software developers, and system engineers. Corresponds to
+DIV-3 content.'''@en ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/dodaf20_models/> ;
+.
+
+
+#################################################################
+# Systems Entities
+#################################################################
+
+:System
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "System"@en ;
+    skos:definition '''A combination of interacting elements organized to achieve one or
+more stated purposes. In DoDAF, systems are the legacy solution
+elements that provide or support operational and capability functions.'''@en ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/dodaf20_models/> ;
+.
+
+:SystemFunction
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "System Function"@en ;
+    skos:definition '''A function performed by a system, traceable to operational activities.'''@en ;
+.
+
+:SystemInterface
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "System Interface"@en ;
+    skos:definition '''A point of interaction between systems through which resources
+(data, control signals) are exchanged.'''@en ;
+.
+
+
+#################################################################
+# Services Entities
+#################################################################
+
+:Service
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Service"@en ;
+    skos:definition '''A mechanism to enable access to one or more capabilities, where the
+access is provided using a prescribed interface and is exercised
+consistent with constraints and policies as specified by the service
+description. DoDAF 2.0 separates services from legacy systems.'''@en ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/dodaf20_models/> ;
+.
+
+:ServiceFunction
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Service Function"@en ;
+    skos:definition '''A function performed by a service, traceable to operational activities.'''@en ;
+.
+
+:ServiceInterface
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Service Interface"@en ;
+    skos:definition '''A point of interaction through which a service is accessed.'''@en ;
+.
+
+
+#################################################################
+# Standards Entities
+#################################################################
+
+:Standard
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Standard"@en ;
+    skos:definition '''An operational, business, technical, or industry standard that
+applies to solution elements. DoDAF 2.0 broadened standards beyond
+technical to include business and doctrinal standards.'''@en ;
+.
+
+:StandardsForecast
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Standards Forecast"@en ;
+    skos:definition '''A description of emerging standards and their potential impact on
+current solution elements within a set of time frames.'''@en ;
+.
+
+
+#################################################################
+# Project Entities
+#################################################################
+
+:Project
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Project"@en ;
+    skos:definition '''A temporary endeavor undertaken to create a unique product, service,
+or result that delivers capability increments.'''@en ;
+.
+
+:Milestone
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Milestone"@en ;
+    skos:definition '''A significant point or event in a project timeline.'''@en ;
+.
+
+:Organization
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Organization"@en ;
+    skos:definition '''A specific real-world assemblage of people and other resources
+organized for an ongoing purpose.'''@en ;
+.
+
+
+#################################################################
+# Measure
+#################################################################
+
+:Measure
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Measure"@en ;
+    skos:definition '''A metric used to assess the performance, effectiveness, or
+suitability of systems, services, or capabilities.'''@en ;
+.
+
+
+#################################################################
+# Relationships
+#################################################################
+
+:performs
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "performs"@en ;
+    skos:definition     "Links a performer to the operational activity it performs."@en ;
+    arch:domainIncludes :Performer ;
+    arch:rangeIncludes  :OperationalActivity ;
+.
+
+:supports
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "supports"@en ;
+    skos:definition     "Links a system or service to the capability or operational activity it supports."@en ;
+    arch:domainIncludes :System, :Service ;
+    arch:rangeIncludes  :Capability, :OperationalActivity ;
+.
+
+:exchanges
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "exchanges"@en ;
+    skos:definition     "Links two elements that exchange resources (information, materiel)."@en ;
+    arch:domainIncludes :OperationalNode, :System, :Service ;
+    arch:rangeIncludes  :OperationalNode, :System, :Service ;
+.
+
+:tracesTo
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "traces to"@en ;
+    skos:definition     "Links a system function or service function to the operational activity it traces to."@en ;
+    arch:domainIncludes :SystemFunction, :ServiceFunction ;
+    arch:rangeIncludes  :OperationalActivity ;
+.
+
+:realizes
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "realizes"@en ;
+    skos:definition     "Links a physical data entity to the logical entity it realizes."@en ;
+    arch:domainIncludes :PhysicalDataEntity ;
+    arch:rangeIncludes  :LogicalDataEntity ;
+.
+
+:delivers
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "delivers"@en ;
+    skos:definition     "Links a project to the capability increment it delivers."@en ;
+    arch:domainIncludes :Project ;
+    arch:rangeIncludes  :CapabilityIncrement ;
+.
+
+:appliesTo
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "applies to"@en ;
+    skos:definition     "Links a standard to the solution element it applies to."@en ;
+    arch:domainIncludes :Standard ;
+    arch:rangeIncludes  :System, :Service ;
+.
+
+:decomposesInto
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "decomposes into"@en ;
+    skos:definition     "Links an element to its sub-elements in a hierarchical decomposition."@en ;
+    arch:domainIncludes :OperationalActivity, :Capability, :System, :Service ;
+    arch:rangeIncludes  :OperationalActivity, :Capability, :System, :Service ;
+.
+
+:deployedAt
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "deployed at"@en ;
+    skos:definition     "Links a system or service to the location where it is deployed."@en ;
+    arch:domainIncludes :System, :Service ;
+    arch:rangeIncludes  :Location ;
+.
+
+:constrainedBy
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "constrained by"@en ;
+    skos:definition     "Links an operational activity to the rule that constrains it."@en ;
+    arch:domainIncludes :OperationalActivity ;
+    arch:rangeIncludes  :OperationalRule ;
+.

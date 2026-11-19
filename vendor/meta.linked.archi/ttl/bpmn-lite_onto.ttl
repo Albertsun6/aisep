@@ -1,0 +1,394 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix :        <https://meta.linked.archi/bpmn-lite/onto#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/bpmn-lite/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn-lite/onto#" ;
+    vann:preferredNamespacePrefix "bpmnl" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi BPMN Lite Ontology"@en ;
+    dcterms:description                '''A simplified BPMN ontology for enterprise architecture use cases.
+Covers only the BPMN constructs that carry semantic value at the EA level —
+processes, tasks, events, gateways, participants, data objects, and message flows.
+Omits execution-level detail (diagram interchange geometry, waypoints, marker styles,
+I/O specifications, correlation, loop characteristics) that adds triple density
+without supporting cross-model reasoning.
+
+Use this ontology when the goal is to query, validate, or reason across BPMN and
+other models (ArchiMate, C4, TOGAF). For full BPMN 2.0.2 fidelity — including
+diagram interchange and all 144 metamodel classes — use the complete BPMN suite
+(modelingLanguages/bpmn/).
+
+Design rationale: BPMN is execution-oriented and much denser than ArchiMate.
+A faithful 1:1 lift of every BPMN-XML element creates many triples whose semantic
+value at EA level is near zero. The value of RDF over native XML materializes only
+when you intend to query, validate, or reason across BPMN and other models.'''@en ;
+    dcterms:created               "2026-05-06"^^xsd:date ;
+    dcterms:modified              "2026-05-06"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/bpmn-lite/onto/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    rdfs:seeAlso                  <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    dcterms:source  <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    rdfs:comment """Simplified BPMN profile for EA-level reasoning. Maps to the subset of
+BPMN 2.0.2 that has analogues or anchors in ArchiMate and other EA notations.
+Layout and notation detail stays in the original .bpmn file, referenced by URI.
+
+For the full spec-faithful BPMN 2.0.2 ontology (144 classes, 199 properties,
+diagram interchange, SHACL shapes), see modelingLanguages/bpmn/."""@en ;
+.
+
+
+#################################################################
+# Element Classes
+#################################################################
+
+:Process
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Process"@en ;
+    skos:definition '''A sequence or flow of activities in an organization. The top-level
+behavioral container — analogous to ArchiMate BusinessProcess.'''@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#Process> ;
+.
+
+:SubProcess
+    a               owl:Class ;
+    rdfs:subClassOf :Process ;
+    skos:prefLabel  "SubProcess"@en ;
+    skos:definition "A compound activity that contains other flow elements."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#SubProcess> ;
+.
+
+:Task
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Task"@en ;
+    skos:definition "An atomic unit of work within a process."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#Task> ;
+.
+
+:UserTask
+    a               owl:Class ;
+    rdfs:subClassOf :Task ;
+    skos:prefLabel  "User Task"@en ;
+    skos:definition "A task performed by a human with the assistance of a software application."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#UserTask> ;
+.
+
+:ServiceTask
+    a               owl:Class ;
+    rdfs:subClassOf :Task ;
+    skos:prefLabel  "Service Task"@en ;
+    skos:definition "A task that invokes an automated service."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#ServiceTask> ;
+.
+
+:SendTask
+    a               owl:Class ;
+    rdfs:subClassOf :Task ;
+    skos:prefLabel  "Send Task"@en ;
+    skos:definition "A task that sends a message to an external participant."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#SendTask> ;
+.
+
+:ReceiveTask
+    a               owl:Class ;
+    rdfs:subClassOf :Task ;
+    skos:prefLabel  "Receive Task"@en ;
+    skos:definition "A task that waits for a message from an external participant."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#ReceiveTask> ;
+.
+
+:ScriptTask
+    a               owl:Class ;
+    rdfs:subClassOf :Task ;
+    skos:prefLabel  "Script Task"@en ;
+    skos:definition "A task that executes a script."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#ScriptTask> ;
+.
+
+:BusinessRuleTask
+    a               owl:Class ;
+    rdfs:subClassOf :Task ;
+    skos:prefLabel  "Business Rule Task"@en ;
+    skos:definition "A task that invokes a business rules engine."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#BusinessRuleTask> ;
+.
+
+:ManualTask
+    a               owl:Class ;
+    rdfs:subClassOf :Task ;
+    skos:prefLabel  "Manual Task"@en ;
+    skos:definition "A task performed without the aid of any execution engine."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#ManualTask> ;
+.
+
+:CallActivity
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Call Activity"@en ;
+    skos:definition "Invokes a globally defined process or task."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#CallActivity> ;
+.
+
+:Event
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Event"@en ;
+    skos:definition "Something that happens during the course of a process — start, intermediate, or end."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#Event> ;
+.
+
+:StartEvent
+    a               owl:Class ;
+    rdfs:subClassOf :Event ;
+    skos:prefLabel  "Start Event"@en ;
+    skos:definition "Indicates where a process begins."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#StartEvent> ;
+.
+
+:EndEvent
+    a               owl:Class ;
+    rdfs:subClassOf :Event ;
+    skos:prefLabel  "End Event"@en ;
+    skos:definition "Indicates where a process ends."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#EndEvent> ;
+.
+
+:IntermediateEvent
+    a               owl:Class ;
+    rdfs:subClassOf :Event ;
+    skos:prefLabel  "Intermediate Event"@en ;
+    skos:definition "An event that occurs between a start and end — catches or throws a trigger."@en ;
+    rdfs:comment    "Covers both IntermediateCatchEvent and IntermediateThrowEvent from the full spec."@en ;
+.
+
+:BoundaryEvent
+    a               owl:Class ;
+    rdfs:subClassOf :Event ;
+    skos:prefLabel  "Boundary Event"@en ;
+    skos:definition "An event attached to the boundary of an activity."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#BoundaryEvent> ;
+.
+
+:Gateway
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Gateway"@en ;
+    skos:definition "Controls the divergence and convergence of sequence flows."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#Gateway> ;
+.
+
+:ExclusiveGateway
+    a               owl:Class ;
+    rdfs:subClassOf :Gateway ;
+    skos:prefLabel  "Exclusive Gateway"@en ;
+    skos:definition "Routes to exactly one outgoing branch."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#ExclusiveGateway> ;
+.
+
+:ParallelGateway
+    a               owl:Class ;
+    rdfs:subClassOf :Gateway ;
+    skos:prefLabel  "Parallel Gateway"@en ;
+    skos:definition "Creates or synchronizes parallel flows."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#ParallelGateway> ;
+.
+
+:InclusiveGateway
+    a               owl:Class ;
+    rdfs:subClassOf :Gateway ;
+    skos:prefLabel  "Inclusive Gateway"@en ;
+    skos:definition "Activates one or more outgoing branches based on conditions."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#InclusiveGateway> ;
+.
+
+:EventBasedGateway
+    a               owl:Class ;
+    rdfs:subClassOf :Gateway ;
+    skos:prefLabel  "Event-Based Gateway"@en ;
+    skos:definition "Routes based on which event occurs first."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#EventBasedGateway> ;
+.
+
+:Participant
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Participant"@en ;
+    skos:definition '''An entity (pool) that interacts in a collaboration.
+Analogous to ArchiMate BusinessActor or ApplicationComponent depending on context.'''@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#Participant> ;
+.
+
+:Lane
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Lane"@en ;
+    skos:definition "A partition within a pool organizing activities by role or responsibility."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#Lane> ;
+.
+
+:DataObject
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Data Object"@en ;
+    skos:definition "Information flowing through or produced by a process."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#DataObject> ;
+.
+
+:DataStore
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Data Store"@en ;
+    skos:definition "A persistent data repository accessed by the process."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#DataStore> ;
+.
+
+:Message
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Message"@en ;
+    skos:definition "The content of a communication between participants."@en ;
+    skos:exactMatch <https://meta.linked.archi/bpmn/onto#Message> ;
+.
+
+
+#################################################################
+# Relationship Types
+#################################################################
+
+## ── Sequence Flow ──
+
+:sequenceFlow
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Sequence Flow"@en ;
+    skos:definition      "Shows the order of flow elements in a process."@en ;
+    arch:domainIncludes  arch:Element ;
+    arch:rangeIncludes   arch:Element ;
+.
+
+:SequenceFlow
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :sequenceFlow ;
+    skos:prefLabel       "Sequence Flow"@en ;
+    skos:definition      "A directed connection showing execution order between flow nodes."@en ;
+    skos:exactMatch      <https://meta.linked.archi/bpmn/onto#SequenceFlow> ;
+.
+
+:qualifiedSequenceFlow
+    a                    owl:ObjectProperty ;
+    rdfs:range           :SequenceFlow ;
+    arch:unqualifiedForm :sequenceFlow ;
+.
+
+## ── Message Flow ──
+
+:messageFlow
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Message Flow"@en ;
+    skos:definition      "Shows the flow of messages between participants."@en ;
+    arch:domainIncludes  :Participant ;
+    arch:rangeIncludes   :Participant ;
+.
+
+:MessageFlow
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :messageFlow ;
+    skos:prefLabel       "Message Flow"@en ;
+    skos:definition      "A connection showing message exchange between participants (pools)."@en ;
+    skos:exactMatch      <https://meta.linked.archi/bpmn/onto#MessageFlow> ;
+.
+
+:qualifiedMessageFlow
+    a                    owl:ObjectProperty ;
+    rdfs:range           :MessageFlow ;
+    arch:unqualifiedForm :messageFlow ;
+.
+
+## ── Data Association ──
+
+:dataAssociation
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Data Association"@en ;
+    skos:definition      "Moves data between data objects and activities."@en ;
+    arch:domainIncludes  arch:Element ;
+    arch:rangeIncludes   arch:Element ;
+.
+
+:DataAssociation
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :dataAssociation ;
+    skos:prefLabel       "Data Association"@en ;
+    skos:definition      "A directed connection routing data between activities and data objects."@en ;
+    skos:exactMatch      <https://meta.linked.archi/bpmn/onto#DataAssociation> ;
+.
+
+:qualifiedDataAssociation
+    a                    owl:ObjectProperty ;
+    rdfs:range           :DataAssociation ;
+    arch:unqualifiedForm :dataAssociation ;
+.
+
+
+#################################################################
+# Attribute Properties
+#################################################################
+
+:eventType
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Event Type"@en ;
+    skos:definition '''The trigger type of an event (timer, message, signal, error, etc.).
+Captures the event definition type without requiring a separate EventDefinition instance.'''@en ;
+    arch:domainIncludes :Event ;
+    rdfs:range      xsd:string ;
+.
+
+:isInterrupting
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Interrupting"@en ;
+    skos:definition "Whether the event interrupts the activity it is attached to."@en ;
+    arch:domainIncludes :BoundaryEvent ;
+    rdfs:range      xsd:boolean ;
+.
+
+:condition
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Condition"@en ;
+    skos:definition "A condition expression on a sequence flow or gateway."@en ;
+    arch:domainIncludes :SequenceFlow, :Gateway ;
+    rdfs:range      xsd:string ;
+.
+
+:sourceRef
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Source Ref"@en ;
+    skos:definition "Reference to the source .bpmn file for full diagram detail."@en ;
+    rdfs:range      xsd:anyURI ;
+.
+

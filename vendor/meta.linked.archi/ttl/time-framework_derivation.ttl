@@ -1,0 +1,194 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix timefw:  <https://meta.linked.archi/time-framework/onto#> .
+@prefix :        <https://meta.linked.archi/time-framework/derivation#> .
+
+<https://meta.linked.archi/time-framework/derivation#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/time-framework/onto#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/time-framework/derivation#" ;
+    vann:preferredNamespacePrefix "timederiv" ;
+    dcterms:title                 "Linked.Archi TIME Framework Derivation Rules"@en ;
+    dcterms:description           '''SHACL Rules (sh:SPARQLRule) implementing disposition movement
+derivation for the TIME framework. Computes previousDisposition and
+dispositionMovement from the assessment history of each application,
+ordered by assessmentDate.
+
+Derived triples are annotated with PROV-O provenance:
+* prov:wasGeneratedBy — the derivation activity that produced the triple:
+  an activity whose plan is the derivation rule (prov:qualifiedAssociation,
+  prov:hadPlan); what runs the rules may record its run, an activity with
+  its agent and when it ran, of which the derivation activity is part
+  (dcterms:isPartOf)
+* prov:wasDerivedFrom — the source assessments used for derivation
+
+This follows the same pattern as the ArchiMate derivation rules
+(archimate3.2-derivation-rules.ttl) — derived facts are traceable
+and distinguishable from manually asserted facts.
+
+Usage:
+  Run these rules AFTER loading assessment data.
+  Derived triples supplement (do not replace) any manually asserted
+  dispositionMovement or previousDisposition values.'''@en ;
+    dcterms:created               "2026-05-05"^^xsd:date ;
+    dcterms:modified              "2026-05-05"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/time-framework/derivation/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    sh:declare [
+        sh:prefix "timefw" ;
+        sh:namespace "https://meta.linked.archi/time-framework/onto#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "prov" ;
+        sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "" ;
+        sh:namespace "https://meta.linked.archi/time-framework/derivation#"^^xsd:anyURI ;
+    ] ;
+.
+
+
+#################################################################
+# Derivation rule individuals (prov:Plan)
+#
+# Each derivation rule is a named prov:Plan: a definition, applied
+# again and again. What generates a derived triple is a derivation
+# activity, whose association names the rule as its plan.
+#################################################################
+
+:DeriveDispositionMovement
+    a              prov:Plan ;
+    skos:prefLabel "Derive disposition movement"@en ;
+    skos:definition '''Computes previousDisposition and dispositionMovement for a
+FitAssessment by finding the most recent prior assessment of the same
+application (ordered by assessmentDate) and comparing dispositions.
+
+Movement direction logic:
+  Same disposition → Unchanged
+  No prior assessment → New
+  Prior disposition less favourable → Improved
+  Prior disposition more favourable → Degraded
+
+Favourability order: Eliminate(1) < Tolerate(2) < Migrate(3) < Invest(4)
+  (Migrate ranks above Tolerate because High functional fit is preserved)'''@en ;
+.
+
+
+#################################################################
+# Derivation Rule: Previous Disposition
+#
+# For each FitAssessment, find the most recent prior assessment
+# of the same application and derive previousDisposition.
+# Fires only when the assessment does NOT already have a
+# manually asserted previousDisposition.
+#################################################################
+
+:PreviousDispositionRule
+    a sh:NodeShape ;
+    sh:targetClass timefw:FitAssessment ;
+    sh:rule [
+        a sh:SPARQLRule ;
+        rdfs:label "Derive previousDisposition from assessment history"@en ;
+        sh:prefixes <https://meta.linked.archi/time-framework/derivation#> ;
+        sh:construct """
+            CONSTRUCT {
+                $this timefw:previousDisposition ?prevDisposition .
+                <<$this timefw:previousDisposition ?prevDisposition>>
+                    prov:wasGeneratedBy [ a prov:Activity ;
+                        prov:qualifiedAssociation [ a prov:Association ; prov:hadPlan :DeriveDispositionMovement ] ] ;
+                    prov:wasDerivedFrom ?prevAssessment .
+            }
+            WHERE {
+                $this timefw:assessedApplication ?app ;
+                      timefw:assessmentDate ?thisDate .
+                ?prevAssessment timefw:assessedApplication ?app ;
+                                timefw:assessmentDate ?prevDate ;
+                                timefw:timeDisposition ?prevDisposition .
+                FILTER (?prevDate < ?thisDate)
+                FILTER NOT EXISTS {
+                    ?newerPrev timefw:assessedApplication ?app ;
+                               timefw:assessmentDate ?newerDate .
+                    FILTER (?newerDate < ?thisDate && ?newerDate > ?prevDate)
+                }
+                FILTER NOT EXISTS { $this timefw:previousDisposition ?any }
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+# Derivation Rule: Disposition Movement
+#
+# For each FitAssessment, compute the movement direction based on
+# comparing current disposition with previousDisposition.
+# Fires only when the assessment does NOT already have a
+# manually asserted dispositionMovement.
+#
+# Favourability ranking:
+#   Eliminate = 1, Tolerate = 2, Migrate = 3, Invest = 4
+#   Higher = more favourable
+#   Migrate > Tolerate because functional fit (business value) preserved
+#################################################################
+
+:DispositionMovementRule
+    a sh:NodeShape ;
+    sh:targetClass timefw:FitAssessment ;
+    sh:rule [
+        a sh:SPARQLRule ;
+        rdfs:label "Derive dispositionMovement from current vs previous disposition"@en ;
+        sh:prefixes <https://meta.linked.archi/time-framework/derivation#> ;
+        sh:construct """
+            CONSTRUCT {
+                $this timefw:dispositionMovement ?movement .
+                <<$this timefw:dispositionMovement ?movement>>
+                    prov:wasGeneratedBy [ a prov:Activity ;
+                        prov:qualifiedAssociation [ a prov:Association ; prov:hadPlan :DeriveDispositionMovement ] ] ;
+                    prov:wasDerivedFrom $this .
+            }
+            WHERE {
+                $this timefw:timeDisposition ?currentDisp .
+                OPTIONAL { $this timefw:previousDisposition ?prevDisp }
+
+                # Rank dispositions by favourability
+                BIND(
+                    IF(?currentDisp = timefw:Eliminate, 1,
+                    IF(?currentDisp = timefw:Tolerate, 2,
+                    IF(?currentDisp = timefw:Migrate, 3,
+                    IF(?currentDisp = timefw:Invest, 4, 0))))
+                    AS ?currentRank)
+                BIND(
+                    IF(?prevDisp = timefw:Eliminate, 1,
+                    IF(?prevDisp = timefw:Tolerate, 2,
+                    IF(?prevDisp = timefw:Migrate, 3,
+                    IF(?prevDisp = timefw:Invest, 4, 0))))
+                    AS ?prevRank)
+
+                # Determine movement
+                BIND(
+                    IF(!BOUND(?prevDisp), timefw:NewAssessment,
+                    IF(?currentRank > ?prevRank, timefw:Improved,
+                    IF(?currentRank < ?prevRank, timefw:Degraded,
+                    timefw:Unchanged)))
+                    AS ?movement)
+
+                FILTER NOT EXISTS { $this timefw:dispositionMovement ?any }
+            }
+        """ ;
+    ] ;
+.

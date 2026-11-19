@@ -1,0 +1,118 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix bpmn:    <https://meta.linked.archi/bpmn/onto#> .
+@prefix :        <https://meta.linked.archi/bpmn/viewpoints#> .
+
+<https://meta.linked.archi/bpmn/viewpoints#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/viewpoints#" ;
+    vann:preferredNamespacePrefix "bpmnvp" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi BPMN 2.0.2 Viewpoints"@en ;
+    dcterms:description                '''BPMN 2.0.2 viewpoints corresponding to the four diagram types
+defined by the OMG specification: Process, Collaboration, Choreography,
+and Conversation.'''@en ;
+    dcterms:created               "2026-04-16"^^xsd:date ;
+    dcterms:modified              "2026-04-16"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/bpmn/viewpoints/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    rdfs:seeAlso                  <https://www.omg.org/spec/BPMN/2.0.2/> ;
+.
+
+
+#################################################################
+# Viewpoint Catalog
+#################################################################
+
+:ViewpointCatalog
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "BPMN 2.0.2 Viewpoint Catalog"@en ;
+    dcterms:description  '''The four BPMN diagram types as defined by the OMG BPMN 2.0.2
+specification: Process, Collaboration, Choreography, and Conversation.'''@en ;
+    skos:scopeNote   '''BPMN defines a fixed set of diagram types for modeling business
+processes and their interactions. Each diagram type focuses on a different
+aspect of process modeling.'''@en ;
+    skos:hasTopConcept :ProcessFlow, :CollaborationDiagram,
+                       :ChoreographyDiagram, :ConversationDiagram ;
+.
+
+
+#################################################################
+# BPMN Viewpoints
+#################################################################
+
+:ProcessFlow
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Process Flow Diagram"@en ;
+    skos:definition         '''Shows the sequence of activities within a single business process,
+including tasks, gateways, events, and sequence flows. Answers:
+"What steps does this process follow and in what order?"'''@en ;
+    arch:includesConcept    bpmn:Process, bpmn:Task, bpmn:Gateway,
+                            bpmn:Event, bpmn:SequenceFlow ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern, archvp:StructureConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:topConceptOf       :ViewpointCatalog ;
+    skos:inScheme           :ViewpointCatalog ;
+.
+
+:CollaborationDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Collaboration Diagram"@en ;
+    skos:definition         '''Shows the interactions between two or more participants
+(pools) via message flows. Each participant contains its own process.
+Answers: "How do different parties interact in this business scenario?"'''@en ;
+    arch:includesConcept    bpmn:Collaboration, bpmn:Participant,
+                            bpmn:MessageFlow ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:IntegrationConcern, archvp:BehaviorConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:topConceptOf       :ViewpointCatalog ;
+    skos:inScheme           :ViewpointCatalog ;
+.
+
+:ChoreographyDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Choreography Diagram"@en ;
+    skos:definition         '''Shows the expected message exchange behavior between participants
+without revealing internal process details. Focuses on the contract between
+parties. Answers: "What is the agreed interaction protocol between participants?"'''@en ;
+    arch:includesConcept    bpmn:Choreography, bpmn:ChoreographyTask,
+                            bpmn:ChoreographyActivity ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern, archvp:IntegrationConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:topConceptOf       :ViewpointCatalog ;
+    skos:inScheme           :ViewpointCatalog ;
+.
+
+:ConversationDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Conversation Diagram"@en ;
+    skos:definition         '''Shows a high-level overview of message exchanges grouped into
+conversations between participants. A simplified view of collaboration.
+Answers: "What are the major communication topics between participants?"'''@en ;
+    arch:includesConcept    bpmn:Conversation, bpmn:ConversationNode,
+                            bpmn:Participant ;
+    arch:viewpointHasPurpose archvp:Informing ;
+    arch:viewpointFramesConcern archvp:IntegrationConcern, archvp:StructureConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:topConceptOf       :ViewpointCatalog ;
+    skos:inScheme           :ViewpointCatalog ;
+.

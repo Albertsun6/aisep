@@ -1,0 +1,109 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ad:      <https://meta.linked.archi/arch-decision#> .
+@prefix :        <https://meta.linked.archi/ml-systems/quality-attributes#> .
+
+<https://meta.linked.archi/ml-systems/quality-attributes#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/arch-decision#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ml-systems/quality-attributes#" ;
+    vann:preferredNamespacePrefix "mlqa" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ML-Specific Quality Attributes"@en ;
+    dcterms:description                '''Quality attribute individuals specific to ML-enabled systems.
+Extends the base quality-attributes extension with ML-specific concerns
+identified by Moin et al. (2023) and Lewis et al. (2021).'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ml-systems/quality-attributes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://arxiv.org/abs/2308.05239> ;
+    prov:wasDerivedFrom <https://arxiv.org/abs/2308.05239> ;
+.
+
+
+:Explainability
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Explainability"@en ;
+    skos:definition  '''The degree to which an ML model's predictions can be understood,
+interpreted, and communicated to stakeholders. Includes local explanations
+(why this specific prediction) and global explanations (how the model
+generally behaves). Critical for regulatory compliance (GDPR Article 22),
+stakeholder trust, and debugging.'''@en ;
+    skos:scopeNote   "Also known as Interpretability. Related to Trustworthiness."@en ;
+.
+
+:Fairness
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Fairness"@en ;
+    skos:definition  '''The degree to which an ML model treats individuals or groups
+equitably, without systematic discrimination based on protected attributes.
+Includes demographic parity, equalized odds, and individual fairness
+metrics.'''@en ;
+.
+
+:AdversarialRobustness
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Adversarial Robustness"@en ;
+    skos:definition  '''The degree to which an ML model maintains correct behavior
+when subjected to adversarial inputs — deliberately crafted perturbations
+designed to cause misclassification. Includes robustness against evasion
+attacks, data poisoning, and model extraction.'''@en ;
+.
+
+:MLMonitorability
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "ML Monitorability"@en ;
+    skos:definition  '''The degree to which an ML model's production behavior can be
+observed, measured, and alerted on. Includes prediction distribution
+monitoring, feature drift detection, data quality checks, and
+serving performance tracking.'''@en ;
+    skos:scopeNote   '''Identified by Lewis et al. (2021) as a new quality attribute
+concern specific to ML-enabled systems.'''@en ;
+.
+
+:Reproducibility
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Reproducibility"@en ;
+    skos:definition  '''The degree to which an ML experiment or training run can be
+exactly reproduced given the same data, code, and configuration.
+Requires versioning of data, code, hyperparameters, and environment.'''@en ;
+.
+
+:DataPrivacy
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Data Privacy (ML)"@en ;
+    skos:definition  '''The degree to which an ML system protects the privacy of
+individuals whose data was used for training. Includes resistance
+to model inversion attacks, membership inference attacks, and
+training data memorization.'''@en ;
+    skos:scopeNote   "Extends general privacy concerns with ML-specific attack vectors."@en ;
+.
+
+:Trustworthiness
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Trustworthiness"@en ;
+    skos:definition  '''The degree to which stakeholders can rely on an ML system's
+predictions and behavior. A composite quality attribute encompassing
+explainability, fairness, robustness, privacy, and accountability.'''@en ;
+.
+
+:ModelFreshness
+    a                ad:QualityAttribute ;
+    skos:prefLabel   "Model Freshness"@en ;
+    skos:definition  '''The degree to which an ML model reflects current real-world
+conditions. Inversely related to model staleness — a model trained
+on old data may not capture recent distribution shifts.'''@en ;
+.

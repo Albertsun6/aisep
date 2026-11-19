@@ -1,0 +1,100 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix togaftax: <https://meta.linked.archi/togaf/tax#> .
+@prefix togafvp: <https://meta.linked.archi/togaf/viewpoints#> .
+@prefix togafdt: <https://meta.linked.archi/togaf/deliverable-templates#> .
+@prefix :        <https://meta.linked.archi/togaf/metamodel#> .
+
+<https://meta.linked.archi/togaf/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/togaf/metamodel#" ;
+    vann:preferredNamespacePrefix "togafmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi TOGAF Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for TOGAF. Ties together the Content Metamodel
+ontology, ADM taxonomy, viewpoints, deliverable templates, and SHACL shapes
+into a single discoverable resource.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-04-24"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/togaf/metamodel/10.0#> ;
+    owl:versionInfo               "10.0"@en ;
+    dcterms:source  <https://pubs.opengroup.org/togaf-standard/> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/togaf-standard/> ;
+.
+
+:TOGAFFramework
+    a               arch:Framework ;
+    skos:prefLabel  "TOGAF"@en ;
+    skos:definition '''The Open Group Architecture Framework (TOGAF) — a comprehensive
+framework for enterprise architecture that provides an approach for designing,
+planning, implementing, and governing enterprise information technology
+architecture. Includes the Architecture Development Method (ADM), Content
+Metamodel, and Architecture Content Framework.'''@en ;
+    dcterms:publisher    "The Open Group"@en ;
+    rdfs:seeAlso    <https://www.opengroup.org/togaf> ;
+.
+
+:TOGAF10
+    a                             arch:Metamodel ;
+    skos:prefLabel                "TOGAF Metamodel"@en ;
+    dcterms:description               '''The complete TOGAF metamodel definition, aggregating the Content
+Metamodel ontology, ADM taxonomy, viewpoints (catalogs, matrices, diagrams),
+and deliverable templates.'''@en ;
+
+    arch:basedOnFramework         :TOGAFFramework ;
+
+    ## Content Metamodel — entity types and relationships
+    arch:modelConcepts            <https://meta.linked.archi/togaf/onto#> ;
+
+    ## SHACL shapes — element naming (TOGAF 10 and 9.2 namespaces)
+    ## File: togaf-shapes.ttl
+    arch:formalRules              <https://meta.linked.archi/togaf/shapes#> ;
+
+    ## Cross-language mappings — TOGAF ↔ ArchiMate 3.2, TOGAF ↔ ArchiMate 4.0
+    ## File: togaf-crossmappings.ttl
+    arch:crossLanguageMappings    <https://meta.linked.archi/togaf/crossmappings#> ;
+
+    ## Viewpoints — catalogs, matrices, diagrams by ADM phase
+    arch:architectureViewpoints   <https://meta.linked.archi/togaf/viewpoints#> ;
+
+    ## Concept classification — SKOS taxonomy
+    arch:conceptClassification    <https://meta.linked.archi/togaf/tax#> ;
+
+    ## Viewpoint library
+    arch:viewpointLibrary         togafvp:ViewpointCatalog ;
+
+    ## Deliverable templates
+    arch:hasDeliverableTemplate
+        togafdt:ArchitectureVisionDocument,
+        togafdt:ArchitectureDefinitionDocument,
+        togafdt:ArchitectureRequirementsSpecification,
+        togafdt:ArchitectureRoadmap,
+        togafdt:ImplementationGovernanceModel ;
+
+    ## Stakeholders
+    arch:metamodelIdentifiesStakeholder
+        togafvp:EnterpriseArchitect, togafvp:BusinessArchitect,
+        togafvp:DataArchitect, togafvp:ApplicationArchitect,
+        togafvp:TechnologyArchitect, togafvp:CIO,
+        togafvp:ProjectManager, togafvp:BusinessOwner ;
+
+    ## Concerns
+    arch:metamodelIdentifiesConsideration
+        archvp:StructureConcern, archvp:BehaviorConcern,
+        archvp:IntegrationConcern, archvp:GovernanceConcern,
+        archvp:EvolutionConcern, archvp:DependencyConcern ;
+.

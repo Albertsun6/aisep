@@ -1,0 +1,106 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix lmmmm:   <https://meta.linked.archi/leanix/metamodel#> .
+@prefix :        <https://meta.linked.archi/leanix/v3/metamodel#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/leanix/v3/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/leanix/metamodel#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/leanix/v3/metamodel#" ;
+    vann:preferredNamespacePrefix "lmm3mm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi LeanIX Meta Model v3 Metamodel Definition"@en ;
+    dcterms:description           '''Metamodel manifest for the SAP LeanIX Meta Model v3. Gives a
+workspace still shaped by v3 fact sheet types something to point arch:modelConformsToMetamodel at,
+which it otherwise lacked: leanix/v3/onto# is published and leanix/shapes# targets it, so v3 is a
+supported namespace rather than an archive, but there was no arch:Metamodel individual for it.
+
+Deliberately thin. v3 publishes fact sheet classes only — no relationships, no taxonomy, no
+viewpoints, no notation set — so this manifest declares the two resources that exist and omits the
+rest rather than pointing them at v4 assets that describe different fact sheet types.
+
+This is not an official SAP document.'''@en ;
+    dcterms:created               "2026-08-16"^^xsd:date ;
+    dcterms:modified              "2026-08-16"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/leanix/v3/metamodel/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source                <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    prov:wasDerivedFrom           <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    rdfs:seeAlso                  <https://help.sap.com/docs/leanix/ea/meta-model>,
+                                  <https://help.sap.com/docs/leanix/ea/modeling-guidelines-v3> ;
+.
+
+
+#################################################################
+# LeanIX Metamodel Instance — v3
+#
+# The arch:Framework individual is NOT re-minted here. lmmmm:LeanIXFramework
+# in leanix/metamodel# is the one framework IRI for SAP LeanIX, and it carries
+# no version in its IRI or its label, so both versions' manifests point at it
+# and "every model in a LeanIX-shaped language" is one hop:
+#
+#   ?model arch:modelConformsToMetamodel/arch:basedOnFramework
+#          lmmmm:LeanIXFramework .
+#
+# See DD-25 in doc/guide/design-decisions.md, and bpmn-lite/metamodel#BPMNLite
+# for the same arrangement — the framework stays in the primary manifest's
+# namespace and the second manifest references it.
+#################################################################
+
+:LeanIXv3
+    a                             arch:Metamodel ;
+    skos:prefLabel                "LeanIX Meta Model v3 Metamodel"@en ;
+    owl:versionInfo               "3"@en ;
+    dcterms:description           '''The SAP LeanIX Meta Model v3 metamodel — 13 fact sheet types
+including User Group, Project, Process and Tech Platform, the types v4 replaced.'''@en ;
+    skos:historyNote              '''Superseded by lmmmm:LeanIXv4. Retained because leanix/v3/onto#
+is published and validated: a workspace that has not migrated needs a metamodel to conform to, and
+naming v4 for v3-shaped data would be wrong.'''@en ;
+    dcterms:isReplacedBy          lmmmm:LeanIXv4 ;
+
+    ## Foundation — shared with v4, one framework per language (DD-25)
+    arch:basedOnFramework         lmmmm:LeanIXFramework ;
+
+    ## Model concepts — v3 fact sheet types
+    ## File: leanIX-v3-onto.ttl
+    arch:modelConcepts            <https://meta.linked.archi/leanix/v3/onto#> ;
+
+    ## SHACL shapes — the same document as v4, which targets lmm3:FactSheet
+    ## as well as lmm:FactSheet
+    ## File: leanIX-shapes.ttl
+    arch:formalRules              <https://meta.linked.archi/leanix/shapes#> ;
+    arch:conceptClassification    <https://meta.linked.archi/leanix/v3/tax#> ;
+    arch:notationSet              <https://meta.linked.archi/leanix/v3/notation#LeanIXv3StandardNotation> ;
+
+    ## Stakeholders (referencing core viewpoint individuals)
+    arch:metamodelIdentifiesStakeholder
+        archvp:EnterpriseArchitect,
+        archvp:ApplicationArchitect,
+        archvp:BusinessArchitect,
+        archvp:CIO ;
+
+    ## Concerns (referencing core viewpoint individuals)
+    arch:metamodelIdentifiesConsideration
+        archvp:StructureConcern,
+        archvp:DependencyConcern,
+        archvp:GovernanceConcern,
+        archvp:EvolutionConcern ;
+.

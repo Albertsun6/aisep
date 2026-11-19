@@ -1,0 +1,198 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix c4vp:    <https://meta.linked.archi/c4/viewpoints#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix archdt:  <https://meta.linked.archi/core-deliverable-templates#> .
+@prefix c4mm:    <https://meta.linked.archi/c4/metamodel#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix :        <https://meta.linked.archi/c4/deliverable-templates#> .
+
+#################################################################
+# C4 Deliverable Templates
+#################################################################
+
+:SystemOverviewDocument
+    a                       arch:DeliverableTemplate ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/c4/deliverable-templates#" ;
+    vann:preferredNamespacePrefix "c4dt" ;
+    dcterms:title                 "Linked.Archi C4 Deliverable Templates"@en ;
+    owl:versionInfo               "0.1.0"@en ;
+    skos:prefLabel          "System Overview Document"@en ;
+    dcterms:description          "Deliverable template definitions for generating architecture documents from C4 models."@en ;
+    dcterms:creator         "Kalin Maldzhanski"^^xsd:string ;
+    skos:definition         '''A C4-based system overview document progressing from high-level
+context through containers to deployment. Suitable for onboarding new team members
+and architecture reviews.'''@en ;
+    arch:templateResource   "templates/system-overview-document.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        c4vp:SystemContext, c4vp:ContainerDiagram, c4vp:C4Deployment ;
+    arch:templateHasSection :SOD-S1, :SOD-S2, :SOD-S3 ;
+    arch:templateTargetsPurpose archvp:Informing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:HTMLFormat ;
+.
+
+:SOD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint c4vp:SystemContext ;
+    arch:sectionResultKey "systemContext" ;
+    skos:prefLabel "1. System Context"@en ;
+    skos:definition "Who uses the system and what other systems does it interact with."@en ;
+    arch:sectionQuery """
+PREFIX c4:   <https://meta.linked.archi/c4/onto#>
+PREFIX arch: <https://meta.linked.archi/core#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description ?uses WHERE {
+    ?element a ?type ;
+             skos:prefLabel ?label .
+    VALUES ?type { c4:Person c4:SoftwareSystem }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element c4:uses ?target .
+        ?target skos:prefLabel ?uses .
+        FILTER(lang(?uses) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+:SOD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint c4vp:ContainerDiagram ;
+    arch:sectionResultKey "containers" ;
+    skos:prefLabel "2. Container Architecture"@en ;
+    skos:definition "Major technical building blocks and their communication."@en ;
+    arch:sectionQuery """
+PREFIX c4:   <https://meta.linked.archi/c4/onto#>
+PREFIX arch: <https://meta.linked.archi/core#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?description ?technology ?system ?uses WHERE {
+    ?element a c4:Container ;
+             skos:prefLabel ?label .
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL { ?element c4:technology ?technology }
+    OPTIONAL {
+        ?sys c4:hasContainer ?element .
+        ?sys skos:prefLabel ?system .
+        FILTER(lang(?system) = "en")
+    }
+    OPTIONAL {
+        ?element c4:uses ?target .
+        ?target skos:prefLabel ?uses .
+        FILTER(lang(?uses) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?system ?label
+"""^^xsd:string .
+
+:SOD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint c4vp:C4Deployment ;
+    arch:sectionResultKey "deployment" ;
+    skos:prefLabel "3. Deployment Topology"@en ;
+    skos:definition "How containers are mapped to infrastructure."@en ;
+    arch:sectionQuery """
+PREFIX c4:   <https://meta.linked.archi/c4/onto#>
+PREFIX arch: <https://meta.linked.archi/core#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?container ?containerLabel ?node ?nodeLabel ?environment WHERE {
+    ?container a c4:Container ;
+               skos:prefLabel ?containerLabel .
+    OPTIONAL {
+        ?node c4:deploys ?container .
+        ?node skos:prefLabel ?nodeLabel .
+        FILTER(lang(?nodeLabel) = "en")
+    }
+    OPTIONAL { ?node c4:environment ?environment }
+    FILTER(lang(?containerLabel) = "en")
+} ORDER BY ?environment ?nodeLabel ?containerLabel
+"""^^xsd:string .
+
+:ComponentDesignDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Component Design Document"@en ;
+    skos:definition         '''A detailed design document for a specific container, showing its
+internal component structure and dynamic behavior.'''@en ;
+    arch:templateResource   "templates/component-design-document.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        c4vp:ContainerDiagram, c4vp:ComponentDiagram, c4vp:DynamicDiagram ;
+    arch:templateHasSection :CDD-S1, :CDD-S2, :CDD-S3 ;
+    arch:templateTargetsPurpose archvp:Designing ;
+    arch:templateHasFormat archdt:MarkdownFormat ;
+.
+
+:CDD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint c4vp:ContainerDiagram ;
+    arch:sectionResultKey "containerContext" ;
+    skos:prefLabel "1. Container Context"@en ;
+    skos:definition "The container within its system context."@en ;
+    arch:sectionQuery """
+PREFIX c4:   <https://meta.linked.archi/c4/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description ?technology WHERE {
+    ?element a ?type ;
+             skos:prefLabel ?label .
+    VALUES ?type { c4:Container c4:SoftwareSystem }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL { ?element c4:technology ?technology }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+:CDD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint c4vp:ComponentDiagram ;
+    arch:sectionResultKey "components" ;
+    skos:prefLabel "2. Component Structure"@en ;
+    skos:definition "Internal components and their relationships."@en ;
+    arch:sectionQuery """
+PREFIX c4:   <https://meta.linked.archi/c4/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?description ?technology ?container ?uses WHERE {
+    ?element a c4:Component ;
+             skos:prefLabel ?label .
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL { ?element c4:technology ?technology }
+    OPTIONAL {
+        ?cont c4:hasComponent ?element .
+        ?cont skos:prefLabel ?container .
+        FILTER(lang(?container) = "en")
+    }
+    OPTIONAL {
+        ?element c4:uses ?target .
+        ?target skos:prefLabel ?uses .
+        FILTER(lang(?uses) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?container ?label
+"""^^xsd:string .
+
+:CDD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint c4vp:DynamicDiagram ;
+    arch:sectionResultKey "dynamicBehavior" ;
+    skos:prefLabel "3. Dynamic Behavior"@en ;
+    skos:definition "Runtime interactions for key use cases."@en ;
+    arch:sectionQuery """
+PREFIX c4:   <https://meta.linked.archi/c4/onto#>
+PREFIX arch: <https://meta.linked.archi/core#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?source ?sourceLabel ?target ?targetLabel ?description WHERE {
+    ?source c4:uses ?target .
+    ?source skos:prefLabel ?sourceLabel .
+    ?target skos:prefLabel ?targetLabel .
+    OPTIONAL {
+        ?rel a c4:Using ;
+             arch:source ?source ;
+             arch:target ?target ;
+             skos:definition ?description .
+    }
+    FILTER(lang(?sourceLabel) = "en")
+    FILTER(lang(?targetLabel) = "en")
+} ORDER BY ?sourceLabel ?targetLabel
+"""^^xsd:string .

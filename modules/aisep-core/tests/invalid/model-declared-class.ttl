@@ -1,0 +1,10 @@
+# expect: is not a class declared by a loaded ontology
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+# A model may specialise a declared class, but may not invent a root class of its own.
+:Widget a owl:Class .
+:w1 a :Widget ; arch:inModel :t ; skos:prefLabel "小部件"@zh .

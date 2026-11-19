@@ -1,0 +1,154 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix :        <https://meta.linked.archi/platform-design#> .
+
+
+<https://meta.linked.archi/platform-design#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "Platform Design"@en ;
+    skos:hasTopConcept :stakeholder, :asset, :capability, :story, :need, :solution,
+                       :touchpoint, :value, :compensation, :channel ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/platform-design#" ;
+    vann:preferredNamespacePrefix "platd" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Platform Design Taxonomy"@en ;
+    dcterms:description                '''SKOS taxonomy for platform design concepts based on the Platform Design
+Toolkit methodology. Covers stakeholders (consumer, producer, enabler, keystone),
+assets, capabilities, stories, needs, solutions, touchpoints, value exchange,
+compensation, and channels.'''@en ;
+    dcterms:abstract              "A SKOS concept scheme capturing the key concepts of platform business design."@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-05-02"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.2.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/platform-design/0.1.0#> ;
+    prov:wasDerivedFrom           "Platform Design Toolkit (Simone Cicero)" ;
+    rdfs:seeAlso                  <https://platformdesigntoolkit.com/> .
+
+
+:stakeholder
+    a              skos:Concept ;
+    skos:prefLabel "Stakeholder"@en ;
+    skos:definition "An entity that participates in or is affected by the platform ecosystem."@en ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:role
+    a              skos:Concept ;
+    skos:prefLabel "Role"@en ;
+    skos:definition "A role played by a stakeholder in the platform."@en ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:consumer
+    a              skos:Concept ;
+    skos:prefLabel "Consumer"@en ;
+    skos:definition "A stakeholder that consumes value from the platform."@en ;
+    skos:broader   :stakeholder ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:producer
+    a              skos:Concept ;
+    skos:prefLabel "Producer"@en ;
+    skos:definition "A stakeholder that creates and provides value on the platform."@en ;
+    skos:broader   :stakeholder ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:enabler
+    a              skos:Concept ;
+    skos:prefLabel "Enabler"@en ;
+    skos:definition "A stakeholder that facilitates interactions between producers and consumers."@en ;
+    skos:broader   :stakeholder ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:keystone
+    a              skos:Concept ;
+    skos:prefLabel "Keystone"@en ;
+    skos:definition "The central stakeholder that governs and orchestrates the platform ecosystem."@en ;
+    skos:broader   :stakeholder ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:indirect
+    a              skos:Concept ;
+    skos:prefLabel "Indirect Stakeholder"@en ;
+    skos:definition "A stakeholder outside the direct platform interaction but affected by it."@en ;
+    skos:broader   :stakeholder ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:asset
+    a              skos:Concept ;
+    skos:prefLabel "Asset"@en ;
+    skos:definition "A resource or capability that creates value within the platform."@en ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:capability
+    a              skos:Concept ;
+    skos:prefLabel "Capability"@en ;
+    skos:definition "An ability that the platform provides to its stakeholders."@en ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:story
+    a              skos:Concept ;
+    skos:prefLabel "Story"@en ;
+    skos:definition "A narrative describing a stakeholder interaction with the platform."@en ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:need
+    a              skos:Concept ;
+    skos:prefLabel "Need"@en ;
+    skos:definition "A requirement or desire of a stakeholder that the platform addresses."@en ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:solution
+    a              skos:Concept ;
+    skos:prefLabel "Solution"@en ;
+    skos:definition "A platform offering that addresses a stakeholder need."@en ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:touchpoint
+    a              skos:Concept ;
+    skos:prefLabel "Touchpoint"@en ;
+    skos:definition "A point of interaction between a stakeholder and the platform."@en ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:value
+    a              skos:Concept ;
+    skos:prefLabel "Value"@en ;
+    skos:definition "The benefit exchanged through a platform transaction."@en ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:compensation
+    a              skos:Concept ;
+    skos:prefLabel "Compensation"@en ;
+    skos:definition "The return or payment received in exchange for value provided."@en ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.
+
+:channel
+    a              skos:Concept ;
+    skos:prefLabel "Channel"@en ;
+    skos:definition "A medium through which platform interactions occur."@en ;
+    skos:inScheme  <https://meta.linked.archi/platform-design#> ;
+.

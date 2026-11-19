@@ -1,0 +1,3169 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix umltax:  <https://meta.linked.archi/uml/tax#> .
+@prefix :        <https://meta.linked.archi/uml/onto#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/uml/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uml/onto#" ;
+    vann:preferredNamespacePrefix "uml" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi UML 2.5.1 Ontology"@en ;
+    dcterms:description                '''RDF/OWL formalization of the OMG Unified Modeling Language (UML) 2.5.1
+metamodel for use in the Linked.Archi architecture knowledge graph. Covers structural
+classifiers (Class, Interface, Component, Package), behavioral elements (Activity,
+StateMachine, Interaction), deployment concepts (Node, Artifact), and use cases
+(Actor, UseCase). Relationship types follow the Linked.Archi three-declaration
+qualified relationship pattern.
+
+This ontology is INFORMED BY the OMG Ontology Definition Metamodel (ODM, formal/2014-09-02)
+but does NOT apply ODM directly. ODM Annex D maps UML model instances (M1) to OWL;
+this ontology represents the UML metamodel itself (M2) as OWL classes so that UML model
+data can be typed in a knowledge graph. We adopt ODM principles (Class→owl:Class,
+Generalization→rdfs:subClassOf, Package→owl:Ontology) but depart from ODM for
+associations (three-declaration pattern), enumerations (SKOS), constraints (SHACL),
+and domain/range (arch:domainIncludes). See the skos:scopeNote for the full comparison.
+
+This is not an official OMG document. It is a Linked.Archi interpretation of the UML
+specification for semantic architecture modeling.'''@en ;
+    dcterms:created               "2025-12-01"^^xsd:date ;
+    dcterms:modified              "2026-08-13"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/uml/onto/0.3.0#> ;
+    owl:versionInfo               "0.3.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/uml/onto/0.2.0#> ;
+    dcterms:source  <https://www.omg.org/spec/UML/2.5.1/>,
+                                  <https://www.omg.org/spec/ODM/1.1/>,
+                                  <https://www.omg.org/spec/MOF/2.5.1/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UML/2.5.1/>,
+                                  <https://www.omg.org/spec/ODM/1.1/>,
+                                  <https://www.omg.org/spec/MOF/2.5.1/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UML/2.5.1/> ;
+    rdfs:seeAlso                  <https://www.omg.org/spec/UML/2.5.1/>,
+                                  <https://www.omg.org/spec/ODM/1.1/>,
+                                  <https://www.omg.org/spec/MOF/2.5.1/>,
+                                  <https://www.iso.org/standard/32624.html>,
+                                  <https://www.iso.org/standard/52854.html> ;
+    skos:editorialNote            '''Source materials:
+  UML 2.5.1 (OMG formal/17-12-05) — the specification, https://www.omg.org/spec/UML/2.5.1/
+  UML.xmi, PrimitiveTypes.xmi, StandardProfile.xmi, UMLDI.xmi (OMG ptc/18-01-01 to ptc/18-01-04) — the
+    machine-readable metamodel (242 metaclasses), https://www.omg.org/spec/UML/20161101/
+  ODM 1.1 (OMG formal/14-09-02) — informative reference for the MOF↔OWL principles (UML-DD-1),
+    https://www.omg.org/spec/ODM/1.1/; its UML profiles and model libraries for OWL and RDF are not used'''@en ;
+    skos:historyNote              '''0.3.0: Placed the qualified relationship classes in the UML
+metaclass hierarchy they belong to. Added the abstract roots :Relationship and
+:DirectedRelationship (UML 2.5.1 §7.8), and gave every
+relationship class its specification superclasses alongside arch:QualifiedRelationship:
+:Association → :Classifier, :Relationship (§11.5); :Generalization → :DirectedRelationship
+(§9.9); :Dependency → :PackageableElement, :DirectedRelationship (§7.8.3); :Realization →
+:Abstraction (§7.8.5); :Deployment → :Dependency (§19.2); :Include and :Extend →
+:NamedElement, :DirectedRelationship (§18.2); :PackageImport and :PackageMerge →
+:DirectedRelationship (§12.2); :InformationFlow → :PackageableElement,
+:DirectedRelationship (§20.2); :Transition also → :RedefinableElement (§14.2). See UML-DD-13.
+
+0.2.0: Enumeration values as named individuals in the ontology (UML-DD-12); uml:visibility
+and the other enumeration-valued attributes take IRIs rather than strings.
+
+0.1.0: Initial version. Covers UML 2.5.1 structural classifiers,
+behavioral elements, deployment, use cases, and interactions. Follows ODM mapping
+rules for MOF→OWL. Relationship types use the Linked.Archi three-declaration pattern.'''@en ;
+    skos:scopeNote                '''This ontology uses OWL/RDFS to model the UML metamodel — the inverse
+of what ODM does. The duality:
+
+  OMG Stack                           Linked.Archi (W3C-rooted)
+  ─────────                           ────────────────────────────
+  M3: MOF                             M3: RDFS/OWL (reflective)
+      (defines metamodels)                (defines ontologies)
+  M2: UML, BPMN, SysML, OWL           M2: uml-onto.ttl
+      (all defined using MOF)             (UML metamodel expressed IN OWL)
+  M1: UML model instances             M1: RDF individuals
+      (conform to M2)                    (typed with M2 classes)
+  M0: The real world                  M0: The real world
+
+ODM treats MOF as the universal spine and slots OWL into it as just another M2 metamodel
+(alongside UML, BPMN, etc.). You author ontologies in UML tools using OWL/RDF profiles.
+The lingua franca is MOF/XMI; OWL is the payload.
+
+Linked.Archi does the inverse: RDFS/OWL is the spine — already reflective, already
+self-describing — and UML is just one M2 vocabulary expressed in it. The lingua franca
+is RDF/Turtle; UML (and architectural models) is the payload. This gets you SPARQL,
+OWL reasoners, SHACL validation, dereferenceable URIs, and the linked-data ecosystem
+"for free" because models are just RDF.
+
+ODM primary use case (authoring OWL ontologies in UML tools) is irrelevant to this stack.
+What IS relevant: ODM mapping rules (Annex D) as a peer-reviewed reference for how UML
+constructs should surface in OWL. Where this ontology disagrees with ODM, it is deliberate
+(three-declaration pattern, SHACL, SKOS, arch:domainIncludes).
+
+Note on the M3 framing: The W3C stack is flatter than the four-layer MOF tower. RDFS is
+reflective (rdfs:Class rdf:type rdfs:Class) and does not need a separate M3 in the OMG
+sense. We keep the four-layer framing for didactic continuity with OMG-trained colleagues,
+not because it is structurally necessary. Everything is in one RDF graph; layers are a
+viewpoint, not a structural fact.
+
+See UML-DD-1 for the full comparison: https://meta.linked.archi/docs/guide/uml/design-decisions/#uml-dd-1-odm-as-informative-reference-not-direct-application
+'''@en ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 1: ABSTRACT BASE CLASSES
+# UML 2.5.1 Chapter 7 — Common Structure
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+## ── Root Metaclasses ──
+
+:Element
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Element"@en ;
+    skos:definition '''The root metaclass for all UML model elements. Maps to UML 2.5.1
+§7.2 Element. In the ODM mapping, this corresponds to the root MOF::Element
+mapped to owl:Class.'''@en ;
+.
+
+:NamedElement
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :Element ;
+    skos:prefLabel  "Named Element"@en ;
+    skos:definition '''An element that has a name and visibility within a namespace.
+Maps to UML 2.5.1 §7.4 NamedElement.'''@en ;
+.
+
+:Namespace
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Namespace"@en ;
+    skos:definition '''A named element that can own other named elements, providing
+a naming scope. Maps to UML 2.5.1 §7.4 Namespace.'''@en ;
+.
+
+:TypedElement
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Typed Element"@en ;
+    skos:definition '''A named element that has a type. Maps to UML 2.5.1 §7.5
+TypedElement.'''@en ;
+.
+
+:RedefinableElement
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Redefinable Element"@en ;
+    skos:definition '''An element that, when defined in the context of a classifier,
+can be redefined more specifically in the context of another classifier that
+specializes the first. Maps to UML 2.5.1 §7.6 RedefinableElement.'''@en ;
+.
+
+:PackageableElement
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Packageable Element"@en ;
+    skos:definition '''A named element that may be owned directly by a Package.
+Maps to UML 2.5.1 §7.4 PackageableElement.'''@en ;
+.
+
+:Comment
+    a               owl:Class ;
+    rdfs:subClassOf :Element ;
+    skos:prefLabel  "Comment"@en ;
+    skos:definition '''A textual annotation attached to a set of elements.
+Maps to UML 2.5.1 §7.2 Comment.'''@en ;
+.
+
+:Constraint
+    a               owl:Class ;
+    rdfs:subClassOf :PackageableElement ;
+    skos:prefLabel  "Constraint"@en ;
+    skos:definition '''A condition or restriction expressed in natural language or
+in a machine-readable language for the purpose of declaring some of the
+semantics of an element. Maps to UML 2.5.1 §7.6 Constraint.'''@en ;
+.
+
+## ── Relationship Root Metaclasses (UML 2.5.1 §7.8) ──
+##
+## These two exist so that the qualified relationship classes in PART 13 can be
+## placed where UML puts them instead of hanging directly off
+## arch:QualifiedRelationship. Without them :Association reached neither
+## :NamedElement nor :Element, and an unlabelled association escaped checks that
+## an unlabelled :Transition — declared with its UML superclasses — failed. Same
+## modelling situation, opposite validation outcome, for no reason in UML.
+##
+## Note which side of the hierarchy each class lands on, because it decides
+## whether a name is even meaningful: a Generalization is a DirectedRelationship
+## and nothing more, so it has no name; a Dependency is also a
+## PackageableElement, so it has one, optionally.
+
+:Relationship
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :Element ;
+    skos:prefLabel  "Relationship"@en ;
+    skos:definition '''An abstract Element that specifies some kind of relationship
+between other Elements. Maps to UML 2.5.1 §7.8 Relationship.'''@en ;
+    skos:scopeNote  '''Purely a UML classification: it says an element relates other
+elements, nothing about direction, arity or naming. A UML Relationship is not by itself
+a Linked.Archi arch:QualifiedRelationship — the concrete classes in PART 13 assert both
+superclasses, one describing what the construct is in UML and the other how it behaves
+as an edge in the knowledge graph.'''@en ;
+.
+
+:DirectedRelationship
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :Relationship ;
+    skos:prefLabel  "Directed Relationship"@en ;
+    skos:definition '''An abstract Relationship between a collection of source model
+Elements and a collection of target model Elements. Maps to UML 2.5.1 §7.8
+DirectedRelationship.'''@en ;
+    skos:scopeNote  '''The UML counterpart of the arch:source / arch:target pair that
+core-shapes requires on every arch:QualifiedRelationship. UML permits collections at
+each end; Linked.Archi's qualified form carries exactly one of each, so a UML
+DirectedRelationship with multiple sources becomes several qualified resources.'''@en ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 2: CLASSIFIERS
+# UML 2.5.1 Chapter 9 — Classification, Chapter 10 — Simple Classifiers,
+# Chapter 11 — Structured Classifiers
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+## ── Abstract Classifier Hierarchy ──
+
+:Type
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :PackageableElement ;
+    skos:prefLabel  "Type"@en ;
+    skos:definition '''A Type constrains the values represented by a TypedElement.
+Maps to UML 2.5.1 §7.5 Type.'''@en ;
+.
+
+:Classifier
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :Type, :Namespace, :RedefinableElement ;
+    skos:prefLabel  "Classifier"@en ;
+    skos:definition '''A Classifier represents a classification of instances according
+to their features. It is the abstract base for Class, Interface, DataType,
+Component, and other concrete classifiers. Maps to UML 2.5.1 §9.2 Classifier.
+ODM maps MOF::Class to owl:Class; Classifier is the UML-level abstraction.'''@en ;
+.
+
+:StructuredClassifier
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :Classifier ;
+    skos:prefLabel  "Structured Classifier"@en ;
+    skos:definition '''A Classifier whose behavior can be fully or partly described
+by the collaboration of owned or referenced instances. Maps to UML 2.5.1
+§11.2 StructuredClassifier.'''@en ;
+.
+
+:EncapsulatedClassifier
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :StructuredClassifier ;
+    skos:prefLabel  "Encapsulated Classifier"@en ;
+    skos:definition '''A StructuredClassifier that may have Ports. Maps to UML 2.5.1
+§11.2 EncapsulatedClassifier.'''@en ;
+.
+
+:BehavioredClassifier
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :Classifier ;
+    skos:prefLabel  "Behaviored Classifier"@en ;
+    skos:definition '''A Classifier that may have InterfaceRealizations and owned
+Behaviors. Maps to UML 2.5.1 §10.5 BehavioredClassifier.'''@en ;
+.
+
+## ── Concrete Classifiers ──
+
+:Class
+    a               owl:Class ;
+    rdfs:subClassOf :EncapsulatedClassifier, :BehavioredClassifier ;
+    skos:prefLabel  "Class"@en ;
+    skos:definition '''A Class is a kind of EncapsulatedClassifier whose Features are
+Properties, Operations, Receptions, Ports, and Connectors. A Class may have
+attributes (Properties owned by the Class), some of which may represent the
+ends of binary Associations.'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §11.4.3: "Class is a kind of EncapsulatedClassifier whose
+Features are Properties, Operations, Receptions, Ports and Connectors." Objects of a
+Class must contain values for each attribute that is a member of that Class, in
+accordance with the characteristics of the attribute (type, multiplicity).'''@en ;
+    rdfs:seeAlso    <https://www.omg.org/spec/ODM/1.1/> ;
+.
+
+:Interface
+    a               owl:Class ;
+    rdfs:subClassOf :Classifier ;
+    skos:prefLabel  "Interface"@en ;
+    skos:definition '''An Interface is a kind of Classifier that represents a declaration
+of a set of public Features and obligations that together constitute a coherent
+service. An Interface specifies a contract; any instance of a Classifier that
+realizes the Interface shall fulfill that contract.'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §10.4.3: "An Interface specifies a contract; any instance
+of a Classifier that realizes the Interface shall fulfill that contract. The
+obligations associated with an Interface are in the form of constraints (such as
+pre- and postconditions) or protocol specifications." Interfaces may not be
+instantiated directly.'''@en ;
+.
+
+:DataType
+    a               owl:Class ;
+    rdfs:subClassOf :Classifier ;
+    skos:prefLabel  "Data Type"@en ;
+    skos:definition '''A DataType is a type whose instances are identified only by
+their value. Maps to UML 2.5.1 §10.2 DataType. ODM Annex D.2.4 (Table D.10) maps
+to rdfs:Datatype or owl:Class depending on whether it has structural features.'''@en ;
+    rdfs:seeAlso    <https://www.omg.org/spec/ODM/1.1/> ;
+.
+
+:PrimitiveType
+    a               owl:Class ;
+    rdfs:subClassOf :DataType ;
+    skos:prefLabel  "Primitive Type"@en ;
+    skos:definition '''A PrimitiveType defines a predefined DataType without any
+substructure. Typical examples are Integer, Boolean, String, and
+UnlimitedNatural. Maps to UML 2.5.1 §10.2 PrimitiveType.'''@en ;
+.
+
+:Enumeration
+    a               owl:Class ;
+    rdfs:subClassOf :DataType ;
+    skos:prefLabel  "Enumeration"@en ;
+    skos:definition '''An Enumeration is a DataType whose values are enumerated in
+the model as EnumerationLiterals. Maps to UML 2.5.1 §10.2 Enumeration.
+In Linked.Archi, enumeration values are modeled as SKOS concepts in the
+reference data (see DD-7).'''@en ;
+.
+
+:EnumerationLiteral
+    a               owl:Class ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Enumeration Literal"@en ;
+    skos:definition '''A user-defined data value for an Enumeration.
+Maps to UML 2.5.1 §10.2 EnumerationLiteral.'''@en ;
+.
+
+:Signal
+    a               owl:Class ;
+    rdfs:subClassOf :Classifier ;
+    skos:prefLabel  "Signal"@en ;
+    skos:definition '''A Signal is a specification of a kind of communication between
+objects in which a reaction is asynchronously triggered in the receiver
+without a reply. Maps to UML 2.5.1 §10.3 Signal.'''@en ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 3: FEATURES AND PROPERTIES
+# UML 2.5.1 Chapter 9 — Classification
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+:Feature
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :RedefinableElement ;
+    skos:prefLabel  "Feature"@en ;
+    skos:definition '''A Feature declares a behavioral or structural characteristic
+of Classifiers. Maps to UML 2.5.1 §9.4 Feature.'''@en ;
+.
+
+:StructuralFeature
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :Feature, :TypedElement ;
+    skos:prefLabel  "Structural Feature"@en ;
+    skos:definition '''A typed feature of a Classifier that specifies the structure
+of instances. Maps to UML 2.5.1 §9.4 StructuralFeature.'''@en ;
+.
+
+:Property
+    a               owl:Class ;
+    rdfs:subClassOf :StructuralFeature ;
+    skos:prefLabel  "Property"@en ;
+    skos:definition '''A Property is a StructuralFeature that represents an attribute
+of a Classifier or an end of an Association. Maps to UML 2.5.1 §9.5 Property.
+ODM Annex D.3.4 maps UML Property to owl:DatatypeProperty (for attributes) or
+owl:ObjectProperty (for association ends).'''@en ;
+    rdfs:seeAlso    <https://www.omg.org/spec/ODM/1.1/> ;
+.
+
+:Operation
+    a               owl:Class ;
+    rdfs:subClassOf :Feature, :Namespace ;
+    skos:prefLabel  "Operation"@en ;
+    skos:definition '''A behavioral feature of a Classifier that specifies the name,
+type, parameters, and constraints for invoking an associated Behavior.
+Maps to UML 2.5.1 §9.6 Operation.'''@en ;
+.
+
+:Parameter
+    a               owl:Class ;
+    rdfs:subClassOf :TypedElement ;
+    skos:prefLabel  "Parameter"@en ;
+    skos:definition '''A specification of an argument used to pass information into
+or out of an invocation of a BehavioralFeature. Maps to UML 2.5.1
+§9.4 Parameter.'''@en ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 4: STRUCTURED CLASSIFIERS
+# UML 2.5.1 Chapter 11 — Structured Classifiers
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+:Component
+    a               owl:Class ;
+    rdfs:subClassOf :Class ;
+    skos:prefLabel  "Component"@en ;
+    skos:definition '''A Component represents a modular part of a system that encapsulates
+its contents and whose manifestation is replaceable within its environment. A
+Component specifies a formal contract of the services that it provides to its
+clients and those that it requires from other Components or services in the system
+in terms of its provided and required Interfaces.'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §11.6.3: "A Component is a self-contained unit that
+encapsulates the state and behavior of a number of Classifiers. A Component is a
+substitutable unit that can be replaced at design time or run-time by a Component
+that offers equivalent functionality based on compatibility of its Interfaces."
+A Component may be manifested by one or more Artifacts, and that Artifact may be
+deployed to its execution environment.'''@en ;
+.
+
+:Port
+    a               owl:Class ;
+    rdfs:subClassOf :Property ;
+    skos:prefLabel  "Port"@en ;
+    skos:definition '''A Port is a property of an EncapsulatedClassifier that specifies
+a distinct interaction point between the classifier and its environment
+or between the classifier and its internal parts. Maps to UML 2.5.1
+§11.3 Port.'''@en ;
+.
+
+:Connector
+    a               owl:Class ;
+    rdfs:subClassOf :Feature ;
+    skos:prefLabel  "Connector"@en ;
+    skos:definition '''A Connector specifies links that enable communication between
+two or more instances. Each Connector may be attached to two or more
+ConnectableElements (Ports, Properties). Maps to UML 2.5.1 §11.2
+Connector.'''@en ;
+.
+
+:ConnectorEnd
+    a               owl:Class ;
+    rdfs:subClassOf :Element ;
+    skos:prefLabel  "Connector End"@en ;
+    skos:definition '''A ConnectorEnd is an endpoint of a Connector, which attaches
+the Connector to a ConnectableElement. Maps to UML 2.5.1 §11.2
+ConnectorEnd.'''@en ;
+.
+
+:Collaboration
+    a               owl:Class ;
+    rdfs:subClassOf :StructuredClassifier, :BehavioredClassifier ;
+    skos:prefLabel  "Collaboration"@en ;
+    skos:definition '''A Collaboration defines a set of cooperating roles and their
+connectors. It represents a pattern of interaction. Maps to UML 2.5.1
+§11.7 Collaboration.'''@en ;
+.
+
+:CollaborationUse
+    a               owl:Class ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Collaboration Use"@en ;
+    skos:definition '''A CollaborationUse represents the application of a pattern
+described by a Collaboration to a specific situation. Maps to UML 2.5.1
+§11.7 CollaborationUse.'''@en ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 5: PACKAGES
+# UML 2.5.1 Chapter 12 — Packages
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+:Package
+    a               owl:Class ;
+    rdfs:subClassOf :Namespace, :PackageableElement ;
+    skos:prefLabel  "Package"@en ;
+    skos:definition '''A Package is used to group elements and provides a namespace
+for the grouped elements. Maps to UML 2.5.1 §12.2 Package. ODM Annex D.3.2
+maps MOF::Package to owl:Ontology.'''@en ;
+    rdfs:seeAlso    <https://www.omg.org/spec/ODM/1.1/> ;
+.
+
+:Model
+    a               owl:Class ;
+    rdfs:subClassOf :Package ;
+    skos:prefLabel  "Model"@en ;
+    skos:definition '''A Model is a Package that contains a complete description of
+the modeled system from a particular viewpoint. Maps to UML 2.5.1
+§12.2 Model.'''@en ;
+.
+
+:Profile
+    a               owl:Class ;
+    rdfs:subClassOf :Package ;
+    skos:prefLabel  "Profile"@en ;
+    skos:definition '''A Profile defines limited extensions to a reference metamodel
+with the purpose of adapting the metamodel to a specific platform or
+domain. Maps to UML 2.5.1 §12.3 Profile.'''@en ;
+.
+
+:Stereotype
+    a               owl:Class ;
+    rdfs:subClassOf :Class ;
+    skos:prefLabel  "Stereotype"@en ;
+    skos:definition '''A Stereotype defines how an existing metaclass may be extended
+as part of a Profile. Maps to UML 2.5.1 §12.3 Stereotype. In the ODM
+mapping, stereotypes become OWL classes that extend the stereotyped
+metaclass via rdfs:subClassOf.'''@en ;
+    rdfs:seeAlso    <https://www.omg.org/spec/ODM/1.1/> ;
+.
+
+:ProfileApplication
+    a               owl:Class ;
+    rdfs:subClassOf :Element ;
+    skos:prefLabel  "Profile Application"@en ;
+    skos:definition '''A ProfileApplication is used to show which Profiles have been
+applied to a Package. Maps to UML 2.5.1 §12.3 ProfileApplication.'''@en ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 6: USE CASES
+# UML 2.5.1 Chapter 18 — Use Cases
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+:Actor
+    a               owl:Class ;
+    rdfs:subClassOf :BehavioredClassifier ;
+    skos:prefLabel  "Actor"@en ;
+    skos:definition '''An Actor specifies a role played by a user or any other system
+that interacts with the subject. Actors model a type of role played by an
+entity that interacts with the subject but which is external to it.'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §18.2: Actors may represent roles played by human users,
+external hardware, or other systems. An Actor does not necessarily represent a
+specific physical entity but a particular role of some entity relevant to the
+specification of its associated UseCases.'''@en ;
+.
+
+:UseCase
+    a               owl:Class ;
+    rdfs:subClassOf :BehavioredClassifier ;
+    skos:prefLabel  "Use Case"@en ;
+    skos:definition '''A UseCase specifies a set of actions performed by its subjects,
+which yields an observable result that is of value for one or more Actors or
+other stakeholders of the subject.'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §18.2: "A UseCase is a kind of BehavioredClassifier that
+represents a declaration of a set of offered Behaviors. Each UseCase specifies
+some behavior that a subject can perform in collaboration with one or more Actors."
+UseCases define the offered behavior of the subject without reference to its
+internal structure.'''@en ;
+.
+
+:ExtensionPoint
+    a               owl:Class ;
+    rdfs:subClassOf :RedefinableElement ;
+    skos:prefLabel  "Extension Point"@en ;
+    skos:definition '''An ExtensionPoint identifies a point in the behavior of a
+UseCase where that behavior can be extended by the behavior of some
+other UseCase. Maps to UML 2.5.1 §18.2 ExtensionPoint.'''@en ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 7: DEPLOYMENTS
+# UML 2.5.1 Chapter 19 — Deployments
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+:DeploymentTarget
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Deployment Target"@en ;
+    skos:definition '''A DeploymentTarget is the general concept of a location in
+which a DeployedArtifact can be deployed. Maps to UML 2.5.1 §19.2
+DeploymentTarget.'''@en ;
+.
+
+:Node
+    a               owl:Class ;
+    rdfs:subClassOf :Class, :DeploymentTarget ;
+    skos:prefLabel  "Node"@en ;
+    skos:definition '''A Node is a computational resource upon which Artifacts may be
+deployed, via Deployment relationships, for execution. Nodes can be
+interconnected through communication paths.'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §19.4.3: "A Node is computational resource upon which
+Artifacts may be deployed, via Deployment relationships, for execution. For
+advanced modeling applications, Nodes may have complex internal structure
+defined by nested Nodes." Nodes form a deployment topology.'''@en ;
+.
+
+:Device
+    a               owl:Class ;
+    rdfs:subClassOf :Node ;
+    skos:prefLabel  "Device"@en ;
+    skos:definition '''A Device is a physical computational resource with processing
+capability upon which artifacts may be deployed. Maps to UML 2.5.1
+§19.4 Device.'''@en ;
+.
+
+:ExecutionEnvironment
+    a               owl:Class ;
+    rdfs:subClassOf :Node ;
+    skos:prefLabel  "Execution Environment"@en ;
+    skos:definition '''An ExecutionEnvironment is a Node that offers an execution
+environment for specific types of components that are deployed on it
+in the form of executable artifacts. Maps to UML 2.5.1 §19.4
+ExecutionEnvironment.'''@en ;
+.
+
+:Artifact
+    a               owl:Class ;
+    rdfs:subClassOf :Classifier, :DeploymentTarget ;
+    skos:prefLabel  "Artifact"@en ;
+    skos:definition '''An Artifact is the specification of a physical piece of information
+that is used or produced by a software development process, or by deployment and
+operation of a system. Examples of Artifacts include model files, source files,
+scripts, and binary executable files.'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §19.5.1: "An artifact is the specification of a physical
+piece of information that is used or produced by a software development process, or
+by deployment and operation of a system." An Artifact is the source of a Deployment
+to a Node.'''@en ;
+.
+
+:DeploymentSpecification
+    a               owl:Class ;
+    rdfs:subClassOf :Artifact ;
+    skos:prefLabel  "Deployment Specification"@en ;
+    skos:definition '''A DeploymentSpecification specifies a set of properties that
+determine execution parameters of a component artifact deployed on a
+node. Maps to UML 2.5.1 §19.3 DeploymentSpecification.'''@en ;
+.
+
+:Manifestation
+    a               owl:Class ;
+    rdfs:subClassOf :Element ;
+    skos:prefLabel  "Manifestation"@en ;
+    skos:definition '''A Manifestation is the concrete physical rendering of one or
+more model elements by an artifact. Maps to UML 2.5.1 §19.3
+Manifestation.'''@en ;
+.
+
+:CommunicationPath
+    a               owl:Class ;
+    rdfs:subClassOf :Element ;
+    skos:prefLabel  "Communication Path"@en ;
+    skos:definition '''A CommunicationPath is an association between two
+DeploymentTargets, through which they are able to exchange signals
+and messages. Maps to UML 2.5.1 §19.4 CommunicationPath.'''@en ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 8: COMMON BEHAVIOR
+# UML 2.5.1 Chapter 13 — Common Behavior
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+:Behavior
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :Class ;
+    skos:prefLabel  "Behavior"@en ;
+    skos:definition '''A Behavior is a specification of how its context BehavioredClassifier
+changes state over time. It is the abstract base for Activity, StateMachine,
+Interaction, and OpaqueBehavior. Maps to UML 2.5.1 §13.2 Behavior.'''@en ;
+.
+
+:Event
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :PackageableElement ;
+    skos:prefLabel  "Event"@en ;
+    skos:definition '''An Event is the specification of some occurrence that may
+potentially trigger effects by an object. Maps to UML 2.5.1 §13.3
+Event.'''@en ;
+.
+
+:Trigger
+    a               owl:Class ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Trigger"@en ;
+    skos:definition '''A Trigger specifies an Event that may cause the execution of
+an associated Behavior. Maps to UML 2.5.1 §13.3 Trigger.'''@en ;
+.
+
+:OpaqueBehavior
+    a               owl:Class ;
+    rdfs:subClassOf :Behavior ;
+    skos:prefLabel  "Opaque Behavior"@en ;
+    skos:definition '''An OpaqueBehavior is a Behavior whose specification is given
+in a textual language other than UML. Maps to UML 2.5.1 §13.2
+OpaqueBehavior.'''@en ;
+.
+
+:FunctionBehavior
+    a               owl:Class ;
+    rdfs:subClassOf :OpaqueBehavior ;
+    skos:prefLabel  "Function Behavior"@en ;
+    skos:definition '''A FunctionBehavior is an OpaqueBehavior that does not access
+or modify any objects or other external data. Maps to UML 2.5.1
+§13.2 FunctionBehavior.'''@en ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 9: ACTIVITIES
+# UML 2.5.1 Chapter 15 — Activities
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+:Activity
+    a               owl:Class ;
+    rdfs:subClassOf :Behavior ;
+    skos:prefLabel  "Activity"@en ;
+    skos:definition '''An Activity specifies the coordination of executions of
+subordinate Behaviors, using a control and data flow model.
+Maps to UML 2.5.1 §15.2 Activity.'''@en ;
+.
+
+:ActivityNode
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :RedefinableElement ;
+    skos:prefLabel  "Activity Node"@en ;
+    skos:definition '''An ActivityNode is an abstract class for points in the flow
+of an Activity connected by ActivityEdges. Maps to UML 2.5.1
+§15.2 ActivityNode.'''@en ;
+.
+
+:Action
+    a               owl:Class ;
+    rdfs:subClassOf :ActivityNode ;
+    skos:prefLabel  "Action"@en ;
+    skos:definition '''An Action is the fundamental unit of executable functionality.
+The execution of an Action represents some transformation or processing
+in the modeled system. Maps to UML 2.5.1 §16.2 Action.'''@en ;
+.
+
+:CallAction
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :Action ;
+    skos:prefLabel  "Call Action"@en ;
+    skos:definition '''A CallAction is an Action that invokes a Behavior or Operation.
+Maps to UML 2.5.1 §16.3 CallAction.'''@en ;
+.
+
+:SendSignalAction
+    a               owl:Class ;
+    rdfs:subClassOf :Action ;
+    skos:prefLabel  "Send Signal Action"@en ;
+    skos:definition '''A SendSignalAction creates a Signal instance and transmits it
+to the target object. Maps to UML 2.5.1 §16.3 SendSignalAction.'''@en ;
+.
+
+:AcceptEventAction
+    a               owl:Class ;
+    rdfs:subClassOf :Action ;
+    skos:prefLabel  "Accept Event Action"@en ;
+    skos:definition '''An AcceptEventAction waits for the occurrence of one or more
+specific events. Maps to UML 2.5.1 §16.10 AcceptEventAction.'''@en ;
+.
+
+:ControlNode
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :ActivityNode ;
+    skos:prefLabel  "Control Node"@en ;
+    skos:definition '''A ControlNode is an abstract ActivityNode used to coordinate
+the flows between other nodes. Maps to UML 2.5.1 §15.3
+ControlNode.'''@en ;
+.
+
+:InitialNode
+    a               owl:Class ;
+    rdfs:subClassOf :ControlNode ;
+    skos:prefLabel  "Initial Node"@en ;
+    skos:definition '''An InitialNode is a ControlNode at which flow starts when
+the Activity is invoked. Maps to UML 2.5.1 §15.3 InitialNode.'''@en ;
+.
+
+:FinalNode
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :ControlNode ;
+    skos:prefLabel  "Final Node"@en ;
+    skos:definition '''A FinalNode is an abstract ControlNode at which a flow in an
+Activity stops. Maps to UML 2.5.1 §15.3 FinalNode.'''@en ;
+.
+
+:ActivityFinalNode
+    a               owl:Class ;
+    rdfs:subClassOf :FinalNode ;
+    skos:prefLabel  "Activity Final Node"@en ;
+    skos:definition '''An ActivityFinalNode is a FinalNode that stops all flows in
+an Activity. Maps to UML 2.5.1 §15.3 ActivityFinalNode.'''@en ;
+.
+
+:FlowFinalNode
+    a               owl:Class ;
+    rdfs:subClassOf :FinalNode ;
+    skos:prefLabel  "Flow Final Node"@en ;
+    skos:definition '''A FlowFinalNode is a FinalNode that terminates a flow without
+terminating the overall Activity. Maps to UML 2.5.1 §15.3
+FlowFinalNode.'''@en ;
+.
+
+:DecisionNode
+    a               owl:Class ;
+    rdfs:subClassOf :ControlNode ;
+    skos:prefLabel  "Decision Node"@en ;
+    skos:definition '''A DecisionNode is a ControlNode that chooses between outgoing
+flows. Maps to UML 2.5.1 §15.3 DecisionNode.'''@en ;
+.
+
+:MergeNode
+    a               owl:Class ;
+    rdfs:subClassOf :ControlNode ;
+    skos:prefLabel  "Merge Node"@en ;
+    skos:definition '''A MergeNode is a ControlNode that brings together multiple
+alternate flows without synchronization. Maps to UML 2.5.1 §15.3
+MergeNode.'''@en ;
+.
+
+:ForkNode
+    a               owl:Class ;
+    rdfs:subClassOf :ControlNode ;
+    skos:prefLabel  "Fork Node"@en ;
+    skos:definition '''A ForkNode is a ControlNode that splits a flow into multiple
+concurrent flows. Maps to UML 2.5.1 §15.3 ForkNode.'''@en ;
+.
+
+:JoinNode
+    a               owl:Class ;
+    rdfs:subClassOf :ControlNode ;
+    skos:prefLabel  "Join Node"@en ;
+    skos:definition '''A JoinNode is a ControlNode that synchronizes multiple flows.
+Maps to UML 2.5.1 §15.3 JoinNode.'''@en ;
+.
+
+:ObjectNode
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :ActivityNode, :TypedElement ;
+    skos:prefLabel  "Object Node"@en ;
+    skos:definition '''An ObjectNode is an ActivityNode that indicates an instance
+of a particular Classifier, possibly in a particular state, may be
+available at a particular point in the Activity. Maps to UML 2.5.1
+§15.4 ObjectNode.'''@en ;
+.
+
+:ActivityPartition
+    a               owl:Class ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Activity Partition"@en ;
+    skos:definition '''An ActivityPartition is a kind of ActivityGroup for identifying
+ActivityNodes that have some characteristic in common (swim lanes).
+Maps to UML 2.5.1 §15.6 ActivityPartition.'''@en ;
+.
+
+:ActivityEdge
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :RedefinableElement,
+                    arch:QualifiedRelationship ;
+    skos:prefLabel  "Activity Edge"@en ;
+    skos:definition '''An ActivityEdge is an abstract class for directed connections
+between two ActivityNodes. Maps to UML 2.5.1 §15.2 ActivityEdge.'''@en ;
+.
+
+:ControlFlow
+    a                    owl:Class ;
+    rdfs:subClassOf      :ActivityEdge ;
+    arch:unqualifiedForm :controlFlowsTo ;
+    skos:prefLabel       "Control Flow"@en ;
+    skos:definition      '''A ControlFlow is an ActivityEdge traversed by control tokens
+only. Maps to UML 2.5.1 §15.2 ControlFlow.'''@en ;
+.
+
+:controlFlowsTo
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Control Flows To"@en ;
+    skos:definition      '''The direct form of a ControlFlow: control passes from the source activity node to the target. Maps to
+UML 2.5.1 §15.2 ControlFlow.'''@en ;
+    arch:domainIncludes  :ActivityNode ;
+    arch:rangeIncludes   :ActivityNode ;
+.
+
+:qualifiedControlFlow
+    a                    owl:ObjectProperty ;
+    rdfs:range           :ControlFlow ;
+    arch:unqualifiedForm :controlFlowsTo ;
+.
+
+:ObjectFlow
+    a                    owl:Class ;
+    rdfs:subClassOf      :ActivityEdge ;
+    arch:unqualifiedForm :objectFlowsTo ;
+    skos:prefLabel       "Object Flow"@en ;
+    skos:definition      '''An ObjectFlow is an ActivityEdge that can have objects or data
+passing along it. Maps to UML 2.5.1 §15.2 ObjectFlow.'''@en ;
+.
+
+:objectFlowsTo
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Object Flows To"@en ;
+    skos:definition      '''The direct form of an ObjectFlow: objects or data pass from the source activity node to the target. Maps
+to UML 2.5.1 §15.2 ObjectFlow.'''@en ;
+    arch:domainIncludes  :ActivityNode ;
+    arch:rangeIncludes   :ActivityNode ;
+.
+
+:qualifiedObjectFlow
+    a                    owl:ObjectProperty ;
+    rdfs:range           :ObjectFlow ;
+    arch:unqualifiedForm :objectFlowsTo ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 10: STATE MACHINES
+# UML 2.5.1 Chapter 14 — State Machines
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+:StateMachine
+    a               owl:Class ;
+    rdfs:subClassOf :Behavior ;
+    skos:prefLabel  "State Machine"@en ;
+    skos:definition '''A StateMachine specifies the behavior of a part of a system
+through a finite state-transition system. Maps to UML 2.5.1 §14.2
+StateMachine.'''@en ;
+.
+
+:Region
+    a               owl:Class ;
+    rdfs:subClassOf :Namespace ;
+    skos:prefLabel  "Region"@en ;
+    skos:definition '''A Region is a top-level part of a StateMachine or a composite
+State, containing States and Transitions. Maps to UML 2.5.1 §14.2
+Region.'''@en ;
+.
+
+:Vertex
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Vertex"@en ;
+    skos:definition '''A Vertex is an abstraction of a node in a StateMachine graph.
+It can be the source or target of any number of Transitions.
+Maps to UML 2.5.1 §14.2 Vertex.'''@en ;
+.
+
+:State
+    a               owl:Class ;
+    rdfs:subClassOf :Vertex, :Namespace ;
+    skos:prefLabel  "State"@en ;
+    skos:definition '''A State models a situation during which some invariant condition
+holds. The invariant may represent a static situation such as an object
+waiting for some external event. Maps to UML 2.5.1 §14.2 State.'''@en ;
+.
+
+:FinalState
+    a               owl:Class ;
+    rdfs:subClassOf :State ;
+    skos:prefLabel  "Final State"@en ;
+    skos:definition '''A FinalState represents the completion of activity in the
+enclosing Region. Maps to UML 2.5.1 §14.2 FinalState.'''@en ;
+.
+
+:Pseudostate
+    a               owl:Class ;
+    rdfs:subClassOf :Vertex ;
+    skos:prefLabel  "Pseudostate"@en ;
+    skos:definition '''A Pseudostate is an abstraction that encompasses different
+types of transient Vertices in the StateMachine graph (initial, choice,
+junction, fork, join, etc.). Maps to UML 2.5.1 §14.3 Pseudostate.'''@en ;
+.
+
+:Transition
+    a               owl:Class ;
+    rdfs:subClassOf :Namespace,
+                    :RedefinableElement,
+                    arch:QualifiedRelationship ;
+    skos:prefLabel  "Transition"@en ;
+    skos:definition '''A Transition is a directed relationship between a source Vertex
+and a target Vertex. It may be part of a compound transition, which
+takes the StateMachine from one stable State configuration to another.
+Maps to UML 2.5.1 §14.2 Transition.'''@en ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 11: INTERACTIONS
+# UML 2.5.1 Chapter 17 — Interactions
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+## ── Abstract Interaction Hierarchy ──
+
+:InteractionFragment
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Interaction Fragment"@en ;
+    skos:definition '''InteractionFragment is the abstract base metaclass for all elements
+that can appear in the ordered fragment list of an Interaction or InteractionOperand.
+Every InteractionFragment is conceptually like an Interaction by itself — it covers
+one or more Lifelines and occupies a position in the temporal ordering of the enclosing
+Interaction. Concrete subclasses include OccurrenceSpecification, CombinedFragment,
+InteractionUse, ExecutionSpecification, and StateInvariant.
+Maps to UML 2.5.1 §17.3 InteractionFragment.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="InteractionFragment".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.3.1: "InteractionFragment is an abstract notion of the
+most general interaction unit. An InteractionFragment is a piece of an Interaction.
+Each InteractionFragment is conceptually like an Interaction by itself."
+The fragment list on Interaction and InteractionOperand is {ordered} — the position
+in the list defines the top-to-bottom temporal ordering in a sequence diagram.
+In RDF (which has no inherent document order), this ordering is captured via the
+:sequenceNumber datatype property on each fragment instance.'''@en ;
+    skos:editorialNote '''Key properties from the UML metamodel:
+  - covered : Lifeline [0..*] — the lifelines this fragment involves
+  - enclosingInteraction : Interaction [0..1] — the owning Interaction
+  - enclosingOperand : InteractionOperand [0..1] — the owning operand (if nested)
+  - generalOrdering : GeneralOrdering [0..*] {composite} — explicit ordering constraints
+See UML.xmi (OMG ptc/18-01-01), lines 10157–10215.'''@en ;
+.
+
+:OccurrenceSpecification
+    a               owl:Class ;
+    rdfs:subClassOf :InteractionFragment ;
+    skos:prefLabel  "Occurrence Specification"@en ;
+    skos:definition '''An OccurrenceSpecification is the basic semantic unit of Interactions.
+The sequences of occurrences specified by them are the meanings of Interactions.
+Each OccurrenceSpecification covers exactly one Lifeline and represents a single
+point in time on that Lifeline — typically the sending or receiving of a Message,
+or the start/finish of an ExecutionSpecification.
+Maps to UML 2.5.1 §17.4 OccurrenceSpecification.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="OccurrenceSpecification".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.4.1: "An OccurrenceSpecification is the basic semantic
+unit of Interactions. The sequences of occurrences specified by them are the meanings
+of Interactions." OccurrenceSpecifications are ordered along a Lifeline — this ordering
+(combined with GeneralOrdering constraints) defines the valid traces of the Interaction.
+In the XMI serialisation, ordering is implicit in the position within the {ordered}
+fragment collection. In Linked.Archi RDF, ordering is explicit via :sequenceNumber.'''@en ;
+    skos:editorialNote '''Key properties:
+  - covered : Lifeline [1] — redefines InteractionFragment::covered to exactly one
+  - toAfter : GeneralOrdering [0..*] — orderings where this is the "before" element
+  - toBefore : GeneralOrdering [0..*] — orderings where this is the "after" element
+See UML.xmi (OMG ptc/18-01-01), lines 10986–11035.'''@en ;
+.
+
+:MessageEnd
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Message End"@en ;
+    skos:definition '''MessageEnd is an abstract specialization of NamedElement that
+represents what can occur at the end of a Message. A MessageEnd is either a
+MessageOccurrenceSpecification (on a Lifeline) or a Gate (at an Interaction or
+CombinedFragment boundary). The sendEvent and receiveEvent properties of Message
+point to MessageEnd instances.
+Maps to UML 2.5.1 §17.4 MessageEnd.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="MessageEnd".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.4.3: "MessageEnd is an abstract specialization of
+NamedElement that represents what can occur at the end of a Message." The two
+concrete subclasses are MessageOccurrenceSpecification (the common case — a point
+on a Lifeline) and Gate (a message endpoint at the boundary of an Interaction or
+CombinedFragment, used for InteractionUse and CombinedFragment gates).'''@en ;
+.
+
+## ── Concrete Interaction Elements ──
+
+:Interaction
+    a               owl:Class ;
+    rdfs:subClassOf :Behavior, :InteractionFragment ;
+    skos:prefLabel  "Interaction"@en ;
+    skos:definition '''An Interaction is a unit of Behavior that focuses on the observable
+exchange of information between connectable elements. It owns an ordered set of
+InteractionFragments (the fragment property), a set of Lifelines (the participants),
+and a set of Messages (the communications). An Interaction is itself an
+InteractionFragment, allowing nesting.
+Maps to UML 2.5.1 §17.2 Interaction.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Interaction".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.2.1: "An Interaction is a unit of Behavior that focuses
+on the observable exchange of information between connectable elements." Interactions
+are the semantic foundation for Sequence Diagrams, Communication Diagrams, Timing
+Diagrams, and Interaction Overview Diagrams. The Interaction owns:
+  - lifeline [0..*] {composite} — the participants
+  - message [0..*] {composite} — the communications
+  - fragment [0..*] {ordered, composite} — the temporal ordering of events
+  - formalGate [0..*] {composite} — gates for InteractionUse binding
+  - action [0..*] {composite} — actions owned by the Interaction
+An Interaction instance must not be contained within another Interaction instance
+(constraint: not_contained).'''@en ;
+    skos:example    '''A "Login" sequence diagram is modeled as:
+  ex:LoginInteraction a uml:Interaction ;
+      skos:prefLabel "Login"@en ;
+      uml:hasLifeline ex:ll-user, ex:ll-auth, ex:ll-db ;
+      uml:hasMessage ex:msg-authenticate, ex:msg-validate, ex:msg-result, ex:msg-token ;
+      uml:hasFragment ex:mos1-send, ex:mos1-recv, ex:mos2-send, ex:mos2-recv .'''@en ;
+.
+
+:Lifeline
+    a               owl:Class ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Lifeline"@en ;
+    skos:definition '''A Lifeline represents an individual participant in the Interaction.
+While parts and structural features may have multiplicity greater than 1, Lifelines
+represent only one interacting entity. A Lifeline is depicted as a vertical dashed
+line with a header box showing the participant name and type. It references a
+ConnectableElement (Property, Port, Parameter) within the classifier that contains
+the enclosing Interaction.
+Maps to UML 2.5.1 §17.3 Lifeline.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Lifeline".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.3.1: "A Lifeline represents an individual participant
+in the Interaction. While parts and structural features may have multiplicity greater
+than 1, Lifelines represent only one interacting entity." Key properties:
+  - represents : ConnectableElement [0..1] — what the lifeline stands for
+  - interaction : Interaction [1] — the owning Interaction
+  - coveredBy : InteractionFragment [0..*] — fragments covering this lifeline
+  - selector : ValueSpecification [0..1] — index if represents is multivalued
+  - decomposedAs : PartDecomposition [0..1] — decomposition reference
+The coveredBy association is the inverse of InteractionFragment::covered — it links
+a Lifeline to all the OccurrenceSpecifications and other fragments that occur on it.
+The ordering of events on a Lifeline is determined by the sequenceNumber of the
+OccurrenceSpecifications that cover it.'''@en ;
+.
+
+:Message
+    a               owl:Class ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "Message"@en ;
+    skos:definition '''A Message defines a particular communication between Lifelines of an
+Interaction. Each Message has a sendEvent and a receiveEvent (both MessageEnd instances),
+a messageSort indicating the type of communication (synchCall, asynchCall, asynchSignal,
+createMessage, deleteMessage, reply), and an optional signature referencing the Operation
+or Signal being invoked. Messages are the arrows in a sequence diagram.
+Maps to UML 2.5.1 §17.4 Message.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Message".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.4.3: "A Message defines a particular communication
+between Lifelines of an Interaction." Key properties:
+  - sendEvent : MessageEnd [0..1] — the sending occurrence (on the source lifeline)
+  - receiveEvent : MessageEnd [0..1] — the receiving occurrence (on the target lifeline)
+  - messageSort : MessageSort — synchCall (default), asynchCall, asynchSignal,
+    createMessage, deleteMessage, reply
+  - messageKind : MessageKind {derived} — complete, lost, found, or unknown
+  - signature : NamedElement [0..1] — the Operation or Signal
+  - argument : ValueSpecification [0..*] {ordered, composite} — message arguments
+  - connector : Connector [0..1] — the connector carrying the message
+  - interaction : Interaction [1] — the owning Interaction
+Ordering constraint: "If the sendEvent and the receiveEvent of the same Message are
+on the same Lifeline, the sendEvent must be ordered before the receiveEvent."
+Messages cannot cross boundaries of CombinedFragments or their operands.'''@en ;
+    skos:editorialNote '''Message ordering in a sequence diagram is NOT a property of the
+Message itself — it is determined by the position (sequenceNumber) of the
+MessageOccurrenceSpecifications that serve as its sendEvent and receiveEvent within
+the Interaction::fragment ordered collection. Message M1 precedes M2 if
+M1.sendEvent.sequenceNumber < M2.sendEvent.sequenceNumber.
+See UML-DD-9 in design-decisions.md for the full rationale.'''@en ;
+.
+
+:MessageOccurrenceSpecification
+    a               owl:Class ;
+    rdfs:subClassOf :OccurrenceSpecification, :MessageEnd ;
+    skos:prefLabel  "Message Occurrence Specification"@en ;
+    skos:definition '''A MessageOccurrenceSpecification represents the sending or receiving
+of a Message on a specific Lifeline. It is both an OccurrenceSpecification (a point
+in time on a Lifeline) and a MessageEnd (an endpoint of a Message). This dual
+inheritance is the key structural element that connects Messages to the temporal
+ordering: the sequenceNumber of the MessageOccurrenceSpecification determines when
+the send or receive occurs relative to other events on the same Lifeline.
+Maps to UML 2.5.1 §17.4 MessageOccurrenceSpecification.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="MessageOccurrenceSpecification".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.4.4: A MessageOccurrenceSpecification inherits from both
+OccurrenceSpecification and MessageEnd. It covers exactly one Lifeline (from
+OccurrenceSpecification) and references exactly one Message (from MessageEnd).
+In a sequence diagram, each message arrow has two MessageOccurrenceSpecifications:
+one at the tail (sendEvent) and one at the arrowhead (receiveEvent). Their positions
+in the Interaction::fragment ordered list define the temporal ordering.'''@en ;
+    skos:example    '''For a synchronous call "authenticate" from User to AuthService:
+  ex:mos1-send a uml:MessageOccurrenceSpecification ;
+      uml:covered ex:ll-user ;
+      uml:sequenceNumber 1 .
+  ex:mos1-recv a uml:MessageOccurrenceSpecification ;
+      uml:covered ex:ll-auth ;
+      uml:sequenceNumber 2 .
+  ex:msg-authenticate uml:sendEvent ex:mos1-send ;
+      uml:receiveEvent ex:mos1-recv .'''@en ;
+.
+
+:CombinedFragment
+    a               owl:Class ;
+    rdfs:subClassOf :InteractionFragment ;
+    skos:prefLabel  "Combined Fragment"@en ;
+    skos:definition '''A CombinedFragment defines an expression of InteractionFragments
+governed by an interaction operator. The operator (alt, opt, loop, break, par, seq,
+strict, critical, neg, assert, ignore, consider) determines the semantics of how
+the contained InteractionOperands are combined. A CombinedFragment is the mechanism
+for expressing control flow (conditionals, loops, parallelism) within a sequence
+diagram.
+Maps to UML 2.5.1 §17.6 CombinedFragment.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="CombinedFragment".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.6.1: "A CombinedFragment defines an expression of
+InteractionFragments. A CombinedFragment is defined by an interaction operator and
+corresponding InteractionOperands. Through the use of CombinedFragments the user
+will be able to describe a number of traces in a compact and concise manner."
+Key properties:
+  - interactionOperator : InteractionOperatorKind — the operator (alt, opt, loop, etc.)
+  - operand : InteractionOperand [1..*] {ordered, composite} — the operands
+  - cfragmentGate : Gate [0..*] {composite} — gates for messages crossing the boundary
+Constraint: if interactionOperator is break, the operand must cover all Lifelines
+covered by the enclosing InteractionFragment.'''@en ;
+    skos:example    '''An "alt" fragment for login success/failure:
+  ex:alt-login a uml:CombinedFragment ;
+      uml:interactionOperator uml:Alt ;
+      uml:hasOperand ex:operand-success, ex:operand-failure ;
+      uml:sequenceNumber 5 .'''@en ;
+.
+
+:InteractionOperand
+    a               owl:Class ;
+    rdfs:subClassOf :InteractionFragment, :Namespace ;
+    skos:prefLabel  "Interaction Operand"@en ;
+    skos:definition '''An InteractionOperand is contained in a CombinedFragment and represents
+one operand of the expression given by the enclosing CombinedFragment. It owns an
+ordered set of InteractionFragments (its own fragment list) and may have a guard
+(InteractionConstraint) that determines whether the operand is executed.
+Maps to UML 2.5.1 §17.6 InteractionOperand.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="InteractionOperand".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.6.3: "An InteractionOperand is contained in a
+CombinedFragment. An InteractionOperand represents one operand of the expression
+given by the enclosing CombinedFragment." Key properties:
+  - fragment : InteractionFragment [0..*] {ordered, composite} — nested fragments
+  - guard : InteractionConstraint [0..1] {composite} — the guard condition
+The fragment property is {ordered} — the position of fragments within an operand
+defines their temporal ordering, just as in the top-level Interaction. In RDF,
+this is captured via :sequenceNumber on each nested fragment.'''@en ;
+.
+
+:InteractionUse
+    a               owl:Class ;
+    rdfs:subClassOf :InteractionFragment ;
+    skos:prefLabel  "Interaction Use"@en ;
+    skos:definition '''An InteractionUse refers to another Interaction. It is a means of
+copying a portion of the referred Interaction into the enclosing Interaction — the
+"ref" fragment in sequence diagram notation. InteractionUse enables modular
+composition of interactions by referencing reusable sub-sequences.
+Maps to UML 2.5.1 §17.7 InteractionUse.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="InteractionUse".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.7.1: "An InteractionUse refers to an Interaction.
+The InteractionUse is a shorthand for copying the contents of the referred
+Interaction where the InteractionUse is." Key properties:
+  - refersTo : Interaction [1] — the referenced Interaction
+  - actualGate : Gate [0..*] {composite} — gates binding to the referred formalGates
+  - argument : ValueSpecification [0..*] {ordered, composite} — actual arguments
+  - returnValue : ValueSpecification [0..1] — the return value
+In a sequence diagram, an InteractionUse appears as a frame labeled "ref" with the
+name of the referenced Interaction.'''@en ;
+.
+
+:ExecutionSpecification
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :InteractionFragment ;
+    skos:prefLabel  "Execution Specification"@en ;
+    skos:definition '''An ExecutionSpecification is a specification of the execution of a
+unit of Behavior or Action within a Lifeline. It is depicted as the activation bar
+(thin rectangle) on a Lifeline in a sequence diagram. An ExecutionSpecification has
+a start OccurrenceSpecification and a finish OccurrenceSpecification that delimit
+the period during which the Lifeline is actively executing.
+Maps to UML 2.5.1 §17.5 ExecutionSpecification.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="ExecutionSpecification".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.5.1: "An ExecutionSpecification is a specification of
+the execution of a unit of Behavior or Action within the Lifeline." Key properties:
+  - start : OccurrenceSpecification [1] — the occurrence starting the execution
+  - finish : OccurrenceSpecification [1] — the occurrence ending the execution
+The start and finish OccurrenceSpecifications are typically the receiveEvent of an
+incoming message and the sendEvent of the reply message, respectively. Nested
+ExecutionSpecifications represent nested calls (stacked activation bars).'''@en ;
+.
+
+:BehaviorExecutionSpecification
+    a               owl:Class ;
+    rdfs:subClassOf :ExecutionSpecification ;
+    skos:prefLabel  "Behavior Execution Specification"@en ;
+    skos:definition '''A BehaviorExecutionSpecification is an ExecutionSpecification
+that represents the execution of a Behavior (as opposed to an opaque action).
+It references the Behavior being executed.
+Maps to UML 2.5.1 §17.5 BehaviorExecutionSpecification.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="BehaviorExecutionSpecification".'''@en ;
+.
+
+:StateInvariant
+    a               owl:Class ;
+    rdfs:subClassOf :InteractionFragment ;
+    skos:prefLabel  "State Invariant"@en ;
+    skos:definition '''A StateInvariant is a runtime constraint on the participants of the
+Interaction. It specifies a condition that must hold at the point in time where the
+StateInvariant appears on a Lifeline. It covers exactly one Lifeline.
+Maps to UML 2.5.1 §17.8 StateInvariant.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="StateInvariant".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.8.1: "A StateInvariant is a runtime constraint on the
+participants of the Interaction." Key properties:
+  - invariant : Constraint [1] {composite} — the constraint expression
+  - covered : Lifeline [1] — redefines InteractionFragment::covered to exactly one
+In a sequence diagram, a StateInvariant is shown as a state symbol or constraint
+notation on a Lifeline between two OccurrenceSpecifications.'''@en ;
+.
+
+## ── Ordering and Gate Elements ──
+
+:GeneralOrdering
+    a               owl:Class ;
+    rdfs:subClassOf :NamedElement ;
+    skos:prefLabel  "General Ordering"@en ;
+    skos:definition '''A GeneralOrdering represents a binary relation between two
+OccurrenceSpecifications, to describe that one OccurrenceSpecification must occur
+before the other in a valid trace. This mechanism provides the ability to define
+partial orders of OccurrenceSpecifications that may otherwise not have a specified
+order — for example, events on different Lifelines that are not connected by a
+Message but must still be ordered.
+Maps to UML 2.5.1 §17.3 GeneralOrdering.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="GeneralOrdering".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.3.4: "A GeneralOrdering represents a binary relation
+between two OccurrenceSpecifications, to describe that one OccurrenceSpecification
+must occur before the other in a valid trace. This mechanism provides the ability to
+define partial orders of OccurrenceSpecifications that may otherwise not have a
+specified order."
+Constraint: the transitive closure of GeneralOrderings must be irreflexive (no cycles).
+GeneralOrdering is owned by an InteractionFragment (via the generalOrdering composite
+property). It is the secondary ordering mechanism — the primary mechanism is the
+position (sequenceNumber) of fragments in the Interaction::fragment ordered list.
+GeneralOrdering is used when:
+  1. Events on different Lifelines need explicit ordering beyond what Messages imply
+  2. Partial orders need to be expressed (not all events are totally ordered)
+  3. Tools need to record ordering constraints that are not captured by the linear list'''@en ;
+    skos:editorialNote '''In UML XMI, GeneralOrdering has two properties:
+  - before : OccurrenceSpecification [1] — the occurrence that must happen first
+  - after : OccurrenceSpecification [1] — the occurrence that must happen second
+In Linked.Archi RDF, these are modeled as :orderingBefore and :orderingAfter
+object properties on the GeneralOrdering instance.
+See UML.xmi (OMG ptc/18-01-01), lines 9928–9963.'''@en ;
+.
+
+:Gate
+    a               owl:Class ;
+    rdfs:subClassOf :MessageEnd ;
+    skos:prefLabel  "Gate"@en ;
+    skos:definition '''A Gate is a MessageEnd that serves as a connection point for relating
+a Message outside an InteractionFragment with a Message inside the InteractionFragment.
+Gates are used at the boundary of Interactions (formalGate) and CombinedFragments
+(cfragmentGate) to allow Messages to cross those boundaries, and at InteractionUse
+boundaries (actualGate) to bind to the referenced Interaction's formalGates.
+Maps to UML 2.5.1 §17.4 Gate.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Gate".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.4.5: "A Gate is a MessageEnd which serves as a
+connection point for relating a Message outside an InteractionFragment with a Message
+inside the InteractionFragment." Gates enable modular composition:
+  - formalGate (on Interaction) — the "interface" of a reusable Interaction
+  - actualGate (on InteractionUse) — binds to formalGates when referencing
+  - cfragmentGate (on CombinedFragment) — allows messages to enter/exit the fragment'''@en ;
+.
+
+:InteractionConstraint
+    a               owl:Class ;
+    rdfs:subClassOf :Constraint ;
+    skos:prefLabel  "Interaction Constraint"@en ;
+    skos:definition '''An InteractionConstraint is a Boolean expression that guards an
+operand in a CombinedFragment. It determines whether the InteractionOperand is
+executed. For loop CombinedFragments, it may also specify minint and maxint bounds.
+Maps to UML 2.5.1 §17.6 InteractionConstraint.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="InteractionConstraint".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.6.4: "An InteractionConstraint is a Boolean expression
+that guards an operand in a CombinedFragment." Key properties:
+  - minint : ValueSpecification [0..1] — minimum iterations (loop only)
+  - maxint : ValueSpecification [0..1] — maximum iterations (loop only)
+Constraints:
+  - minint/maxint can only be present if the enclosing CombinedFragment is a loop
+  - minint must evaluate to a non-negative integer
+  - maxint must evaluate to a positive integer >= minint
+  - The guard must contain only references to values local to the covered Lifeline
+    or values global to the whole Interaction'''@en ;
+.
+
+:DestructionOccurrenceSpecification
+    a               owl:Class ;
+    rdfs:subClassOf :MessageOccurrenceSpecification ;
+    skos:prefLabel  "Destruction Occurrence Specification"@en ;
+    skos:definition '''A DestructionOccurrenceSpecification models the destruction of an
+object. It is shown as an X at the bottom of a Lifeline. No other
+OccurrenceSpecifications on the same Lifeline may appear below a
+DestructionOccurrenceSpecification within the same InteractionOperand.
+Maps to UML 2.5.1 §17.4 DestructionOccurrenceSpecification.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="DestructionOccurrenceSpecification".'''@en ;
+.
+
+:Continuation
+    a               owl:Class ;
+    rdfs:subClassOf :InteractionFragment ;
+    skos:prefLabel  "Continuation"@en ;
+    skos:definition '''A Continuation is an InteractionFragment that defines a continuation
+label within a CombinedFragment with operator "alt". Continuations always occur as
+the very first or very last InteractionFragment of the enclosing InteractionOperand,
+and are global (cover all Lifelines covered by the enclosing operator).
+Maps to UML 2.5.1 §17.6 Continuation.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Continuation".'''@en ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 12: INFORMATION FLOWS
+# UML 2.5.1 Chapter 20 — Information Flows
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+:InformationItem
+    a               owl:Class ;
+    rdfs:subClassOf :Classifier ;
+    skos:prefLabel  "Information Item"@en ;
+    skos:definition '''An InformationItem represents an abstraction of data that can
+be conveyed between two entities. Maps to UML 2.5.1 §20.2
+InformationItem.'''@en ;
+.
+
+:InformationFlow
+    a                    owl:Class ;
+    rdfs:subClassOf      :PackageableElement,
+                         :DirectedRelationship,
+                         arch:QualifiedRelationship ;
+    arch:unqualifiedForm :informationFlowsTo ;
+    skos:prefLabel       "Information Flow"@en ;
+    skos:definition      '''An InformationFlow specifies that one or more information items
+circulate from its sources to its targets. Maps to UML 2.5.1 §20.2
+InformationFlow.'''@en ;
+    skos:editorialNote   '''UML 2.5.1 §20.2 makes an InformationFlow a PackageableElement and a
+DirectedRelationship. Declared as :Element until 0.3.0, which reached :Element by the
+shortest route but skipped :NamedElement, so an InformationFlow could not be named.'''@en ;
+.
+
+:informationFlowsTo
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Information Flows To"@en ;
+    skos:definition      '''The direct form of an InformationFlow: information items circulate from the source to the target. Maps
+to UML 2.5.1 §20.2 InformationFlow.'''@en ;
+    arch:domainIncludes  :NamedElement ;
+    arch:rangeIncludes   :NamedElement ;
+.
+
+:qualifiedInformationFlow
+    a                    owl:ObjectProperty ;
+    rdfs:range           :InformationFlow ;
+    arch:unqualifiedForm :informationFlowsTo ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 13: RELATIONSHIP TYPES — THREE-DECLARATION PATTERN
+# Following Linked.Archi conventions (DD-10, STEERING.md)
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+## ── Association (UML 2.5.1 §11.5) ──
+
+:associatedWith
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Associated With"@en ;
+    skos:definition      '''A semantic connection between Classifiers. Maps to UML 2.5.1
+§11.5 Association. ODM Annex D.3.5 maps UML binary Association to owl:ObjectProperty.'''@en ;
+    arch:domainIncludes  :Classifier ;
+    arch:rangeIncludes   :Classifier ;
+.
+
+:Association
+    a                    owl:Class ;
+    rdfs:subClassOf      :Classifier,
+                         :Relationship,
+                         arch:QualifiedRelationship ;
+    arch:unqualifiedForm :associatedWith ;
+    skos:prefLabel       "Association"@en ;
+    skos:definition      '''A qualified relationship representing a UML Association — a
+structural relationship between Classifiers that specifies connections among
+their instances. Maps to UML 2.5.1 §11.5 Association.'''@en ;
+    skos:editorialNote   '''UML 2.5.1 §11.5 makes an Association both a Classifier and a
+Relationship, which is what gives it a name: Classifier ⊑ Namespace ⊑ NamedElement ⊑
+Element. The Classifier superclass is also why an Association can itself be typed, be
+generalized and own Properties — an AssociationClass is not a special case bolted on, it
+is what being a Classifier already permits.
+
+Do not read :associatedWith's arch:domainIncludes :Classifier as saying the same thing. That
+states what an Association *relates*; rdfs:subClassOf states what it *is*. The two were conflated here
+until 0.3.0, and the result was that an unlabelled association passed
+umlsh:NamedElementShape while an unlabelled transition failed it.'''@en ;
+.
+
+:qualifiedAssociation
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Association ;
+    arch:unqualifiedForm :associatedWith ;
+.
+
+
+## ── Aggregation (UML 2.5.1 §11.5 — shared aggregation) ──
+
+:aggregates
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Aggregates"@en ;
+    skos:definition      '''A whole-part relationship where the part can exist independently
+of the whole (shared aggregation). Maps to UML 2.5.1 §11.5 Property::aggregation
+= shared.'''@en ;
+    arch:domainIncludes  :Classifier ;
+    arch:rangeIncludes   :Classifier ;
+.
+
+:Aggregation
+    a                    owl:Class ;
+    rdfs:subClassOf      :Association ;
+    arch:unqualifiedForm :aggregates ;
+    skos:prefLabel       "Aggregation"@en ;
+    skos:definition      '''A qualified relationship representing a UML shared aggregation —
+a whole-part relationship where the part can exist independently.'''@en ;
+.
+
+:qualifiedAggregation
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Aggregation ;
+    arch:unqualifiedForm :aggregates ;
+.
+
+
+## ── Composition (UML 2.5.1 §11.5 — composite aggregation) ──
+
+:composedOf
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Composed Of"@en ;
+    skos:definition      '''A strong whole-part relationship where the part cannot exist
+without the whole (composite aggregation). Deletion of the whole cascades
+to the parts. Maps to UML 2.5.1 §11.5 Property::aggregation = composite.'''@en ;
+    arch:domainIncludes  :Classifier ;
+    arch:rangeIncludes   :Classifier ;
+.
+
+:Composition
+    a                    owl:Class ;
+    rdfs:subClassOf      :Association ;
+    arch:unqualifiedForm :composedOf ;
+    skos:prefLabel       "Composition"@en ;
+    skos:definition      '''A qualified relationship representing a UML composite aggregation —
+a strong whole-part relationship where the part cannot exist without the whole.'''@en ;
+.
+
+:qualifiedComposition
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Composition ;
+    arch:unqualifiedForm :composedOf ;
+.
+
+
+## ── Generalization (UML 2.5.1 §9.7) ──
+
+:generalizes
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Generalizes"@en ;
+    skos:definition      '''A taxonomic relationship between a more general Classifier and
+a more specific Classifier. Maps to UML 2.5.1 §9.7 Generalization.
+ODM Annex D.3.3 maps UML Generalization to rdfs:subClassOf. The direct triple
+uses this predicate; the qualified form carries metadata.'''@en ;
+    arch:domainIncludes  :Classifier ;
+    arch:rangeIncludes   :Classifier ;
+    rdfs:seeAlso         <https://www.omg.org/spec/ODM/1.1/> ;
+.
+
+:Generalization
+    a                    owl:Class ;
+    rdfs:subClassOf      :DirectedRelationship,
+                         arch:QualifiedRelationship ;
+    arch:unqualifiedForm :generalizes ;
+    skos:prefLabel       "Generalization"@en ;
+    skos:definition      '''A qualified relationship representing a UML Generalization —
+a taxonomic relationship from specific to general Classifier.'''@en ;
+    skos:editorialNote   '''A DirectedRelationship and nothing more. UML 2.5.1 §9.9 does not
+make Generalization a NamedElement, so it has no name — deliberately, and unlike
+:Association and :Dependency. Nothing should require a skos:prefLabel on one.'''@en ;
+.
+
+:qualifiedGeneralization
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Generalization ;
+    arch:unqualifiedForm :generalizes ;
+.
+
+
+## ── Realization (UML 2.5.1 §7.7) ──
+
+:realizes
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Realizes"@en ;
+    skos:definition      '''A relationship between a specification (e.g., Interface) and
+its implementation (e.g., Class). Maps to UML 2.5.1 §7.7 Realization.'''@en ;
+    arch:domainIncludes  :Classifier ;
+    arch:rangeIncludes   :Classifier ;
+.
+
+:Realization
+    a                    owl:Class ;
+    rdfs:subClassOf      :Abstraction,
+                         arch:QualifiedRelationship ;
+    arch:unqualifiedForm :realizes ;
+    skos:prefLabel       "Realization"@en ;
+    skos:definition      '''A qualified relationship representing a UML Realization —
+a relationship between a specification and its implementation.'''@en ;
+    skos:editorialNote   '''UML 2.5.1 §7.8.5 makes Realization a specialized Abstraction, so
+the chain is Realization ⊑ Abstraction ⊑ Dependency ⊑ PackageableElement /
+DirectedRelationship. :Abstraction is declared further down this file, under the Dependency
+family; the forward reference is deliberate, so that each relationship type stays in the
+section its specification chapter puts it in.'''@en ;
+.
+
+:qualifiedRealization
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Realization ;
+    arch:unqualifiedForm :realizes ;
+.
+
+
+## ── InterfaceRealization (UML 2.5.1 §10.4) ──
+
+:realizesInterface
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Realizes Interface"@en ;
+    skos:definition      '''A specialized Realization between a BehavioredClassifier and
+an Interface. Maps to UML 2.5.1 §10.4 InterfaceRealization.'''@en ;
+    arch:domainIncludes  :BehavioredClassifier ;
+    arch:rangeIncludes   :Interface ;
+.
+
+:InterfaceRealization
+    a                    owl:Class ;
+    rdfs:subClassOf      :Realization ;
+    arch:unqualifiedForm :realizesInterface ;
+    skos:prefLabel       "Interface Realization"@en ;
+    skos:definition      '''A qualified relationship representing a UML InterfaceRealization —
+a BehavioredClassifier fulfills the contract of an Interface.'''@en ;
+.
+
+:qualifiedInterfaceRealization
+    a                    owl:ObjectProperty ;
+    rdfs:range           :InterfaceRealization ;
+    arch:unqualifiedForm :realizesInterface ;
+.
+
+
+## ── Dependency (UML 2.5.1 §7.7) ──
+
+:dependsOn
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Depends On"@en ;
+    skos:definition      '''A relationship where a change to the supplier may affect the
+client. Maps to UML 2.5.1 §7.7 Dependency.'''@en ;
+    arch:domainIncludes  :NamedElement ;
+    arch:rangeIncludes   :NamedElement ;
+.
+
+:Dependency
+    a                    owl:Class ;
+    rdfs:subClassOf      :PackageableElement,
+                         :DirectedRelationship,
+                         arch:QualifiedRelationship ;
+    arch:unqualifiedForm :dependsOn ;
+    skos:prefLabel       "Dependency"@en ;
+    skos:definition      '''A qualified relationship representing a UML Dependency —
+a supplier/client relationship where changes to the supplier may affect
+the client.'''@en ;
+    skos:editorialNote   '''UML 2.5.1 §7.8.3 makes a Dependency a PackageableElement as well
+as a DirectedRelationship, so it can be owned by a Package and it can be named — a
+Dependency may carry a skos:prefLabel, and usually does not. The whole Dependency family
+(:Usage, :Abstraction, :Realization, :InterfaceRealization, :Deployment) inherits both
+superclasses from here.'''@en ;
+.
+
+:qualifiedDependency
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Dependency ;
+    arch:unqualifiedForm :dependsOn ;
+.
+
+
+## ── Usage (UML 2.5.1 §7.7) ──
+
+:uses
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Uses"@en ;
+    skos:definition      '''A Dependency where the client requires the supplier for its
+full implementation or operation. Maps to UML 2.5.1 §7.7 Usage.'''@en ;
+    arch:domainIncludes  :NamedElement ;
+    arch:rangeIncludes   :NamedElement ;
+.
+
+:Usage
+    a                    owl:Class ;
+    rdfs:subClassOf      :Dependency ;
+    arch:unqualifiedForm :uses ;
+    skos:prefLabel       "Usage"@en ;
+    skos:definition      '''A qualified relationship representing a UML Usage — a Dependency
+where the client requires the supplier for its implementation.'''@en ;
+.
+
+:qualifiedUsage
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Usage ;
+    arch:unqualifiedForm :uses ;
+.
+
+
+## ── Abstraction (UML 2.5.1 §7.7) ──
+
+:abstracts
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Abstracts"@en ;
+    skos:definition      '''A Dependency relating two elements at different abstraction
+levels. Maps to UML 2.5.1 §7.7 Abstraction.'''@en ;
+    arch:domainIncludes  :NamedElement ;
+    arch:rangeIncludes   :NamedElement ;
+.
+
+:Abstraction
+    a                    owl:Class ;
+    rdfs:subClassOf      :Dependency ;
+    arch:unqualifiedForm :abstracts ;
+    skos:prefLabel       "Abstraction"@en ;
+    skos:definition      '''A qualified relationship representing a UML Abstraction —
+a Dependency relating elements at different abstraction levels.'''@en ;
+.
+
+:qualifiedAbstraction
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Abstraction ;
+    arch:unqualifiedForm :abstracts ;
+.
+
+
+## ── Include (UML 2.5.1 §18.2) ──
+
+:includes
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Includes"@en ;
+    skos:definition      '''A relationship from a base UseCase to an included UseCase.
+Maps to UML 2.5.1 §18.2 Include.'''@en ;
+    arch:domainIncludes  :UseCase ;
+    arch:rangeIncludes   :UseCase ;
+.
+
+:Include
+    a                    owl:Class ;
+    rdfs:subClassOf      :NamedElement,
+                         :DirectedRelationship,
+                         arch:QualifiedRelationship ;
+    arch:unqualifiedForm :includes ;
+    skos:prefLabel       "Include"@en ;
+    skos:definition      '''A qualified relationship representing a UML Include —
+a base UseCase incorporates the behavior of an included UseCase.'''@en ;
+.
+
+:qualifiedInclude
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Include ;
+    arch:unqualifiedForm :includes ;
+.
+
+
+## ── Extend (UML 2.5.1 §18.2) ──
+
+:extends
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Extends"@en ;
+    skos:definition      '''A relationship from an extending UseCase to an extended UseCase.
+Maps to UML 2.5.1 §18.2 Extend.'''@en ;
+    arch:domainIncludes  :UseCase ;
+    arch:rangeIncludes   :UseCase ;
+.
+
+:Extend
+    a                    owl:Class ;
+    rdfs:subClassOf      :NamedElement,
+                         :DirectedRelationship,
+                         arch:QualifiedRelationship ;
+    arch:unqualifiedForm :extends ;
+    skos:prefLabel       "Extend"@en ;
+    skos:definition      '''A qualified relationship representing a UML Extend —
+an extending UseCase conditionally augments the behavior of an extended UseCase.'''@en ;
+.
+
+:qualifiedExtend
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Extend ;
+    arch:unqualifiedForm :extends ;
+.
+
+
+## ── Deployment (UML 2.5.1 §19.2) ──
+
+:deployedOn
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Deployed On"@en ;
+    skos:definition      '''A relationship from a DeployedArtifact to a DeploymentTarget.
+Maps to UML 2.5.1 §19.2 Deployment.'''@en ;
+    arch:domainIncludes  :Artifact ;
+    arch:rangeIncludes   :DeploymentTarget ;
+.
+
+:Deployment
+    a                    owl:Class ;
+    rdfs:subClassOf      :Dependency,
+                         arch:QualifiedRelationship ;
+    arch:unqualifiedForm :deployedOn ;
+    skos:prefLabel       "Deployment"@en ;
+    skos:definition      '''A qualified relationship representing a UML Deployment —
+an Artifact is deployed on a DeploymentTarget (Node, Device,
+ExecutionEnvironment).'''@en ;
+.
+
+:qualifiedDeployment
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Deployment ;
+    arch:unqualifiedForm :deployedOn ;
+.
+
+
+## ── PackageImport (UML 2.5.1 §12.2) ──
+
+:importsPackage
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Imports Package"@en ;
+    skos:definition      '''A relationship that allows the use of unqualified names to
+refer to members of the imported Package. Maps to UML 2.5.1 §12.2
+PackageImport.'''@en ;
+    arch:domainIncludes  :Namespace ;
+    arch:rangeIncludes   :Package ;
+.
+
+:PackageImport
+    a                    owl:Class ;
+    rdfs:subClassOf      :DirectedRelationship,
+                         arch:QualifiedRelationship ;
+    arch:unqualifiedForm :importsPackage ;
+    skos:prefLabel       "Package Import"@en ;
+    skos:definition      '''A qualified relationship representing a UML PackageImport.'''@en ;
+.
+
+:qualifiedPackageImport
+    a                    owl:ObjectProperty ;
+    rdfs:range           :PackageImport ;
+    arch:unqualifiedForm :importsPackage ;
+.
+
+
+## ── PackageMerge (UML 2.5.1 §12.2) ──
+
+:mergesPackage
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Merges Package"@en ;
+    skos:definition      '''A directed relationship between two Packages that indicates
+that the contents of the merged Package are combined into the receiving
+Package. Maps to UML 2.5.1 §12.2 PackageMerge.'''@en ;
+    arch:domainIncludes  :Package ;
+    arch:rangeIncludes   :Package ;
+.
+
+:PackageMerge
+    a                    owl:Class ;
+    rdfs:subClassOf      :DirectedRelationship,
+                         arch:QualifiedRelationship ;
+    arch:unqualifiedForm :mergesPackage ;
+    skos:prefLabel       "Package Merge"@en ;
+    skos:definition      '''A qualified relationship representing a UML PackageMerge.'''@en ;
+.
+
+:qualifiedPackageMerge
+    a                    owl:ObjectProperty ;
+    rdfs:range           :PackageMerge ;
+    arch:unqualifiedForm :mergesPackage ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 14: ATTRIBUTE PROPERTIES
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+:name
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Name"@en ;
+    skos:definition "The name of a NamedElement. Maps to UML 2.5.1 §7.4 NamedElement::name."@en ;
+    arch:domainIncludes :NamedElement ;
+    rdfs:range      xsd:string ;
+.
+
+:namespace
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Namespace"@en ;
+    skos:definition '''The Namespace that owns this NamedElement: the Package a Class
+is declared in, for instance. Maps to UML 2.5.1 §7.4 NamedElement::namespace [0..1],
+the opposite end of Namespace::ownedMember.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="NamedElement-namespace".'''@en ;
+    arch:domainIncludes :NamedElement ;
+    arch:rangeIncludes  :Namespace ;
+.
+
+:visibility
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Visibility"@en ;
+    skos:definition '''The visibility of a NamedElement (public, private, protected, package).
+Maps to UML 2.5.1 §7.4 NamedElement::visibility. Values are the named individuals
+of :VisibilityKind: :Public, :Private, :Protected, :PackageVisibility.'''@en ;
+    skos:editorialNote '''An ObjectProperty over the closed :VisibilityKind enumeration (uml:Private, …),
+not a string.'''@en ;
+    arch:domainIncludes :NamedElement ;
+    arch:rangeIncludes  :VisibilityKind ;
+.
+
+:isAbstract
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Abstract"@en ;
+    skos:definition "Whether the Classifier is abstract. Maps to UML 2.5.1 §9.2 Classifier::isAbstract."@en ;
+    arch:domainIncludes :Classifier ;
+    rdfs:range      xsd:boolean ;
+.
+
+:isLeaf
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Leaf"@en ;
+    skos:definition "Whether the RedefinableElement cannot be further redefined. Maps to UML 2.5.1 §7.6 RedefinableElement::isLeaf."@en ;
+    arch:domainIncludes :RedefinableElement ;
+    rdfs:range      xsd:boolean ;
+.
+
+:isStatic
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Static"@en ;
+    skos:definition "Whether the Feature is a classifier-level feature. Maps to UML 2.5.1 §9.4 Feature::isStatic."@en ;
+    arch:domainIncludes :Feature ;
+    rdfs:range      xsd:boolean ;
+.
+
+:isReadOnly
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Read Only"@en ;
+    skos:definition "Whether the StructuralFeature is read-only. Maps to UML 2.5.1 §9.4 StructuralFeature::isReadOnly."@en ;
+    arch:domainIncludes :StructuralFeature ;
+    rdfs:range      xsd:boolean ;
+.
+
+:isDerived
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Derived"@en ;
+    skos:definition "Whether the Property value is derived from other information. Maps to UML 2.5.1 §9.5 Property::isDerived."@en ;
+    arch:domainIncludes :Property ;
+    rdfs:range      xsd:boolean ;
+.
+
+:isOrdered
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Ordered"@en ;
+    skos:definition "Whether the values of a multi-valued property are ordered. Maps to UML 2.5.1 §7.5 MultiplicityElement::isOrdered."@en ;
+    arch:domainIncludes :Property ;
+    rdfs:range      xsd:boolean ;
+.
+
+:isUnique
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Unique"@en ;
+    skos:definition "Whether the values of a multi-valued property must be unique. Maps to UML 2.5.1 §7.5 MultiplicityElement::isUnique."@en ;
+    arch:domainIncludes :Property ;
+    rdfs:range      xsd:boolean ;
+.
+
+:lower
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Lower Bound"@en ;
+    skos:definition "The lower bound of the multiplicity interval. Maps to UML 2.5.1 §7.5 MultiplicityElement::lower."@en ;
+    arch:domainIncludes :Property ;
+    rdfs:range      xsd:integer ;
+.
+
+:upper
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Upper Bound"@en ;
+    skos:definition "The upper bound of the multiplicity interval. Use -1 for unlimited (*). Maps to UML 2.5.1 §7.5 MultiplicityElement::upper."@en ;
+    arch:domainIncludes :Property ;
+    rdfs:range      xsd:integer ;
+.
+
+:defaultValue
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Default Value"@en ;
+    skos:definition "The default value of a Property. Maps to UML 2.5.1 §9.5 Property::defaultValue."@en ;
+    arch:domainIncludes :Property ;
+    rdfs:range      xsd:string ;
+.
+
+:body
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Body"@en ;
+    skos:definition "The textual body of a Comment or Constraint. Maps to UML 2.5.1 §7.2 Comment::body."@en ;
+    arch:domainIncludes :Comment, :Constraint ;
+    rdfs:range      xsd:string ;
+.
+
+:guard
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Guard"@en ;
+    skos:definition "A guard condition on a Transition or ActivityEdge. Maps to UML 2.5.1 §14.2 Transition::guard."@en ;
+    arch:domainIncludes :Transition, :ActivityEdge ;
+    rdfs:range      xsd:string ;
+.
+
+:effect
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Effect"@en ;
+    skos:definition "An effect Behavior executed when a Transition fires. Maps to UML 2.5.1 §14.2 Transition::effect."@en ;
+    arch:domainIncludes :Transition ;
+    rdfs:range      xsd:string ;
+.
+
+:isComposite
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Composite"@en ;
+    skos:definition "Whether the State is a composite state containing Regions. Maps to UML 2.5.1 §14.2 State::isComposite."@en ;
+    arch:domainIncludes :State ;
+    rdfs:range      xsd:boolean ;
+.
+
+:isOrthogonal
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Orthogonal"@en ;
+    skos:definition "Whether the State has multiple Regions (orthogonal). Maps to UML 2.5.1 §14.2 State::isOrthogonal."@en ;
+    arch:domainIncludes :State ;
+    rdfs:range      xsd:boolean ;
+.
+
+:fileName
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "File Name"@en ;
+    skos:definition "The file name of an Artifact. Maps to UML 2.5.1 §19.3 Artifact::fileName."@en ;
+    arch:domainIncludes :Artifact ;
+    rdfs:range      xsd:string ;
+.
+
+:isIndirectlyInstantiated
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Indirectly Instantiated"@en ;
+    skos:definition "Whether the Component is instantiated indirectly. Maps to UML 2.5.1 §11.6 Component::isIndirectlyInstantiated."@en ;
+    arch:domainIncludes :Component ;
+    rdfs:range      xsd:boolean ;
+.
+
+:isBehavior
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Behavior"@en ;
+    skos:definition "Whether the Port provides the published functionality of the owning EncapsulatedClassifier. Maps to UML 2.5.1 §11.3 Port::isBehavior."@en ;
+    arch:domainIncludes :Port ;
+    rdfs:range      xsd:boolean ;
+.
+
+:isService
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Service"@en ;
+    skos:definition "Whether the Port is used to provide the published functionality of the owning Component. Maps to UML 2.5.1 §11.3 Port::isService."@en ;
+    arch:domainIncludes :Port ;
+    rdfs:range      xsd:boolean ;
+.
+
+:isConjugated
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Is Conjugated"@en ;
+    skos:definition "Whether the Port is conjugated (provided and required interfaces are swapped). Maps to UML 2.5.1 §11.3 Port::isConjugated."@en ;
+    arch:domainIncludes :Port ;
+    rdfs:range      xsd:boolean ;
+.
+
+
+#################################################################
+# ═══════════════════════════════════════════════════════════════
+# PART 15: INTERACTION PROPERTIES AND RELATIONSHIPS
+# UML 2.5.1 Chapter 17 — Interactions (structural wiring)
+# ═══════════════════════════════════════════════════════════════
+#################################################################
+
+## ── Interaction Composition Properties ──
+
+:hasLifeline
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Has Lifeline"@en ;
+    skos:definition '''The Lifelines owned by this Interaction. Maps to UML 2.5.1 §17.2
+Interaction::lifeline [0..*] {composite}. In the UML metamodel this is a composite
+association — the Interaction owns its Lifelines.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Interaction-lifeline".'''@en ;
+    arch:domainIncludes :Interaction ;
+    arch:rangeIncludes  :Lifeline ;
+.
+
+:hasMessage
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Has Message"@en ;
+    skos:definition '''The Messages owned by this Interaction. Maps to UML 2.5.1 §17.2
+Interaction::message [0..*] {composite}. The Interaction owns all Messages that
+define communications between its Lifelines.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Interaction-message".'''@en ;
+    arch:domainIncludes :Interaction ;
+    arch:rangeIncludes  :Message ;
+.
+
+:hasFragment
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Has Fragment"@en ;
+    skos:definition '''The ordered set of InteractionFragments owned by this Interaction or
+InteractionOperand. Maps to UML 2.5.1 §17.2 Interaction::fragment [0..*]
+{ordered, composite} and §17.6 InteractionOperand::fragment [0..*] {ordered, composite}.
+The ordering of fragments defines the top-to-bottom temporal sequence in a sequence
+diagram. In RDF, the ordering is captured by :sequenceNumber on each fragment instance
+rather than by collection position.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Interaction-fragment",
+"InteractionOperand-fragment".'''@en ;
+    skos:editorialNote '''In UML XMI, the fragment property is {ordered} — the XML document
+order of <fragment> elements defines temporal ordering. In RDF there is no inherent
+document order, so each fragment carries a :sequenceNumber integer. See UML-DD-9
+in design-decisions.md for the rationale.'''@en ;
+    arch:domainIncludes :Interaction, :InteractionOperand ;
+    arch:rangeIncludes  :InteractionFragment ;
+.
+
+## ── Message Endpoint Properties ──
+
+:sendEvent
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Send Event"@en ;
+    skos:definition '''References the MessageEnd (typically a MessageOccurrenceSpecification)
+that represents the sending of this Message. The sendEvent is the point on the
+source Lifeline where the message arrow originates. If absent, the Message is "found"
+(messageKind = found).
+Maps to UML 2.5.1 §17.4 Message::sendEvent [0..1].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Message-sendEvent".'''@en ;
+    arch:domainIncludes :Message ;
+    arch:rangeIncludes  :MessageEnd ;
+.
+
+:receiveEvent
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Receive Event"@en ;
+    skos:definition '''References the MessageEnd (typically a MessageOccurrenceSpecification)
+that represents the receiving of this Message. The receiveEvent is the point on the
+target Lifeline where the message arrow terminates. If absent, the Message is "lost"
+(messageKind = lost).
+Maps to UML 2.5.1 §17.4 Message::receiveEvent [0..1].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Message-receiveEvent".'''@en ;
+    arch:domainIncludes :Message ;
+    arch:rangeIncludes  :MessageEnd ;
+.
+
+:messageSort
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Message Sort"@en ;
+    skos:definition '''The sort of communication reflected by the Message. Values are the
+named individuals of :MessageSort: synchCall (default),
+asynchCall, asynchSignal, createMessage, deleteMessage, reply. The messageSort
+determines the visual notation (solid vs. dashed arrow, filled vs. open arrowhead)
+and the behavioral semantics (blocking vs. non-blocking, creation vs. destruction).
+Maps to UML 2.5.1 §17.4 Message::messageSort.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Message-messageSort".'''@en ;
+    skos:editorialNote '''Default value is synchCall. The signature must refer to an
+Operation (for synchCall, asynchCall, reply) or a Signal (for asynchSignal).
+See UML.xmi (OMG ptc/18-01-01), constraint "signature_refer_to".'''@en ;
+    arch:domainIncludes :Message ;
+    arch:rangeIncludes  :MessageSort ;
+.
+
+:messageKind
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Message Kind"@en ;
+    skos:definition '''The derived kind of the Message: complete, lost, found, or unknown.
+A Message is "complete" if both sendEvent and receiveEvent are present; "lost" if
+sendEvent is present but receiveEvent is absent; "found" if receiveEvent is present
+but sendEvent is absent; "unknown" if neither can be resolved.
+Maps to UML 2.5.1 §17.4 Message::messageKind {derived, readOnly}.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Message-messageKind".'''@en ;
+    skos:scopeNote  '''In UML, messageKind is a derived property — its value is computed from
+the presence/absence of sendEvent and receiveEvent. In Linked.Archi RDF, it may be
+materialised explicitly for query convenience, or left to SPARQL/SHACL rules to derive.
+Values are the named individuals of :MessageKind: :Complete, :Lost, :Found, :Unknown.'''@en ;
+    arch:domainIncludes :Message ;
+    arch:rangeIncludes  :MessageKind ;
+.
+
+:message
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Message"@en ;
+    skos:definition '''References the Message of which this MessageEnd is an endpoint.
+This is the inverse navigation from a MessageOccurrenceSpecification (or Gate) back
+to the Message it belongs to. In UML XMI, this appears as the "message" attribute on
+MessageOccurrenceSpecification elements.
+Maps to UML 2.5.1 §17.4 MessageEnd::message [0..1].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="MessageEnd-message".'''@en ;
+    skos:editorialNote '''This property is the inverse of sendEvent/receiveEvent. Both
+directions are provided for query convenience: from Message to its endpoints
+(sendEvent/receiveEvent) and from endpoint back to its Message (message).
+In strict UML, the authoritative direction is Message→MessageEnd; this inverse
+is a convenience property.'''@en ;
+    arch:domainIncludes :MessageEnd ;
+    arch:rangeIncludes  :Message ;
+.
+
+:signature
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Signature"@en ;
+    skos:definition '''The signature of the Message — the specification of its content.
+It refers either to an Operation (for call/reply messages) or a Signal (for
+asynchronous signal messages). The name of the referenced element must match the
+name of the Message.
+Maps to UML 2.5.1 §17.4 Message::signature [0..1].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Message-signature".'''@en ;
+    arch:domainIncludes :Message ;
+    arch:rangeIncludes  :Operation, :Signal ;
+.
+
+## ── Lifeline Properties ──
+
+:covered
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Covered"@en ;
+    skos:definition '''References the Lifeline(s) that an InteractionFragment involves.
+For OccurrenceSpecification, this is exactly one Lifeline (the one on which the
+event occurs). For CombinedFragment, it may be multiple Lifelines (all those
+spanned by the fragment box).
+Maps to UML 2.5.1 §17.3 InteractionFragment::covered [0..*] and §17.4
+OccurrenceSpecification::covered [1] (redefines to exactly one).
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="InteractionFragment-covered",
+"OccurrenceSpecification-covered".'''@en ;
+    arch:domainIncludes :InteractionFragment ;
+    arch:rangeIncludes  :Lifeline ;
+.
+
+:represents
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Represents"@en ;
+    skos:definition '''References the ConnectableElement (Property, Port, or Parameter)
+within the classifier that contains the enclosing Interaction. This is what the
+Lifeline "stands for" — the participant whose behavior is being described.
+Maps to UML 2.5.1 §17.3 Lifeline::represents [0..1].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Lifeline-represents".'''@en ;
+    skos:scopeNote  '''The classifier containing the referenced ConnectableElement must be
+the same classifier, or an ancestor, of the classifier that contains the Interaction
+enclosing this Lifeline (constraint: same_classifier). If represents is absent, the
+Lifeline represents the classifier itself (the "self" lifeline).'''@en ;
+    arch:domainIncludes :Lifeline ;
+    arch:rangeIncludes  :Property ;
+.
+
+## ── Ordering Properties ──
+
+:sequenceNumber
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Sequence Number"@en ;
+    skos:definition '''The ordinal position of an InteractionFragment within its enclosing
+Interaction or InteractionOperand. This property captures the temporal ordering that
+UML XMI encodes via document order of the {ordered} fragment collection. Fragment
+with sequenceNumber 1 occurs before fragment with sequenceNumber 2, and so on.
+This is the primary ordering mechanism for sequence diagrams in Linked.Archi RDF.'''@en ;
+    skos:scopeNote  '''In UML 2.5.1, the Interaction::fragment and InteractionOperand::fragment
+properties are both {ordered} — meaning the position of each InteractionFragment in
+the collection defines its temporal position. In XMI serialisation, this ordering is
+implicit in the XML document order of <fragment> elements. Since RDF has no inherent
+document order (triples in a graph are unordered), Linked.Archi uses an explicit
+integer index to preserve this semantics.
+The sequenceNumber is scoped to the immediately enclosing container (Interaction or
+InteractionOperand). Fragments in different containers have independent numbering.
+Message ordering is derived: Message M1 precedes M2 if
+M1.sendEvent.sequenceNumber < M2.sendEvent.sequenceNumber (within the same container).
+See UML-DD-9 in design-decisions.md for the full rationale.'''@en ;
+    skos:editorialNote '''Alternative approaches considered:
+  1. rdf:List — rejected because lists are awkward to query in SPARQL and don't
+     support random access or insertion
+  2. rdf:Seq — deprecated in modern RDF usage
+  3. Blank node chains — rejected for the same SPARQL ergonomics reasons
+The integer index approach is simple, queryable (ORDER BY ?seq), and consistent
+with how BPMN SequenceFlow uses explicit ordering in Linked.Archi.'''@en ;
+    arch:domainIncludes :InteractionFragment ;
+    rdfs:range      xsd:integer ;
+.
+
+:orderingBefore
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Ordering Before"@en ;
+    skos:definition '''The OccurrenceSpecification that must occur first in a GeneralOrdering
+constraint. This is the "before" end of the ordering relation.
+Maps to UML 2.5.1 §17.3 GeneralOrdering::before [1].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="GeneralOrdering-before".'''@en ;
+    arch:domainIncludes :GeneralOrdering ;
+    arch:rangeIncludes  :OccurrenceSpecification ;
+.
+
+:orderingAfter
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Ordering After"@en ;
+    skos:definition '''The OccurrenceSpecification that must occur second in a GeneralOrdering
+constraint. This is the "after" end of the ordering relation.
+Maps to UML 2.5.1 §17.3 GeneralOrdering::after [1].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="GeneralOrdering-after".'''@en ;
+    arch:domainIncludes :GeneralOrdering ;
+    arch:rangeIncludes  :OccurrenceSpecification ;
+.
+
+## ── Execution Specification Properties ──
+
+:executionStart
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Execution Start"@en ;
+    skos:definition '''The OccurrenceSpecification that marks the beginning of this
+ExecutionSpecification (the top of the activation bar). Typically this is the
+receiveEvent of an incoming message.
+Maps to UML 2.5.1 §17.5 ExecutionSpecification::start [1].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="ExecutionSpecification-start".'''@en ;
+    arch:domainIncludes :ExecutionSpecification ;
+    arch:rangeIncludes  :OccurrenceSpecification ;
+.
+
+:executionFinish
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Execution Finish"@en ;
+    skos:definition '''The OccurrenceSpecification that marks the end of this
+ExecutionSpecification (the bottom of the activation bar). Typically this is the
+sendEvent of the reply message.
+Maps to UML 2.5.1 §17.5 ExecutionSpecification::finish [1].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="ExecutionSpecification-finish".'''@en ;
+    arch:domainIncludes :ExecutionSpecification ;
+    arch:rangeIncludes  :OccurrenceSpecification ;
+.
+
+## ── CombinedFragment Properties ──
+
+:interactionOperator
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Interaction Operator"@en ;
+    skos:definition '''The interaction operator that determines the semantics of this
+CombinedFragment. Values are the named individuals of :InteractionOperatorKind:
+alt, opt, loop, break, par, seq, strict, critical, neg, assert, ignore, consider.
+Maps to UML 2.5.1 §17.6 CombinedFragment::interactionOperator.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="CombinedFragment-interactionOperator".'''@en ;
+    arch:domainIncludes :CombinedFragment ;
+    arch:rangeIncludes  :InteractionOperatorKind ;
+.
+
+:hasOperand
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Has Operand"@en ;
+    skos:definition '''The ordered set of InteractionOperands contained in this
+CombinedFragment. Each operand represents one branch (for alt), one iteration body
+(for loop), or one parallel track (for par).
+Maps to UML 2.5.1 §17.6 CombinedFragment::operand [1..*] {ordered, composite}.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="CombinedFragment-operand".'''@en ;
+    arch:domainIncludes :CombinedFragment ;
+    arch:rangeIncludes  :InteractionOperand ;
+.
+
+## ── InteractionUse Properties ──
+
+:refersTo
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Refers To"@en ;
+    skos:definition '''The Interaction that this InteractionUse references. The semantics
+is that the contents of the referred Interaction are copied into the enclosing
+Interaction at the position of the InteractionUse.
+Maps to UML 2.5.1 §17.7 InteractionUse::refersTo [1].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="InteractionUse-refersTo".'''@en ;
+    arch:domainIncludes :InteractionUse ;
+    arch:rangeIncludes  :Interaction ;
+.
+
+## ── Guard Property ──
+
+:guard
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Guard"@en ;
+    skos:definition '''A guard condition expressed as a string. For InteractionOperands,
+this is the Boolean expression that determines whether the operand is executed.
+For Transitions (state machines), this is the condition that must be true for the
+transition to fire.
+Maps to UML 2.5.1 §17.6 InteractionOperand (via InteractionConstraint) and
+§14.2 Transition::guard.'''@en ;
+    arch:domainIncludes :InteractionOperand, :Transition ;
+    rdfs:range      xsd:string ;
+.
+
+## ── Guard Object Property (strict UML form) ──
+
+:guardConstraint
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Guard Constraint"@en ;
+    skos:definition '''The InteractionConstraint that guards an InteractionOperand. In UML,
+InteractionOperand::guard points to an InteractionConstraint instance (not directly
+to a string). This property provides the strict UML form; the :guard datatype property
+provides a pragmatic shortcut for simple cases.
+Maps to UML 2.5.1 §17.6 InteractionOperand::guard [0..1] {composite}.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="InteractionOperand-guard".'''@en ;
+    skos:editorialNote '''Both :guard (string shortcut) and :guardConstraint (object form)
+are supported. Use :guard for simple textual guards in architecture models. Use
+:guardConstraint when you need to attach minint/maxint (for loops) or when
+round-tripping from XMI where the guard is a full InteractionConstraint.'''@en ;
+    arch:domainIncludes :InteractionOperand ;
+    arch:rangeIncludes  :InteractionConstraint ;
+.
+
+## ── GeneralOrdering Containment ──
+
+:hasGeneralOrdering
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Has General Ordering"@en ;
+    skos:definition '''The GeneralOrdering constraints owned by this InteractionFragment.
+Maps to UML 2.5.1 §17.3 InteractionFragment::generalOrdering [0..*] {composite}.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="InteractionFragment-generalOrdering".'''@en ;
+    arch:domainIncludes :InteractionFragment ;
+    arch:rangeIncludes  :GeneralOrdering ;
+.
+
+:toAfter
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "To After"@en ;
+    skos:definition '''References the GeneralOrderings that specify OccurrenceSpecifications
+that must occur after this OccurrenceSpecification. This is the inverse navigation
+from an OccurrenceSpecification to the GeneralOrderings where it is the "before" element.
+Maps to UML 2.5.1 §17.4 OccurrenceSpecification::toAfter [0..*].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="OccurrenceSpecification-toAfter".'''@en ;
+    arch:domainIncludes :OccurrenceSpecification ;
+    arch:rangeIncludes  :GeneralOrdering ;
+.
+
+:toBefore
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "To Before"@en ;
+    skos:definition '''References the GeneralOrderings that specify OccurrenceSpecifications
+that must occur before this OccurrenceSpecification. This is the inverse navigation
+from an OccurrenceSpecification to the GeneralOrderings where it is the "after" element.
+Maps to UML 2.5.1 §17.4 OccurrenceSpecification::toBefore [0..*].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="OccurrenceSpecification-toBefore".'''@en ;
+    arch:domainIncludes :OccurrenceSpecification ;
+    arch:rangeIncludes  :GeneralOrdering ;
+.
+
+## ── Gate-Bearing Properties ──
+
+:formalGate
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Formal Gate"@en ;
+    skos:definition '''The Gates that form the message interface between this Interaction
+and any InteractionUses which reference it. Formal gates define the "ports" through
+which messages can enter or leave a reusable Interaction.
+Maps to UML 2.5.1 §17.2 Interaction::formalGate [0..*] {composite}.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Interaction-formalGate".'''@en ;
+    arch:domainIncludes :Interaction ;
+    arch:rangeIncludes  :Gate ;
+.
+
+:cfragmentGate
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "CFragment Gate"@en ;
+    skos:definition '''The Gates owned by a CombinedFragment, through which messages can
+cross the CombinedFragment boundary. These gates connect messages outside the
+fragment to messages inside its operands.
+Maps to UML 2.5.1 §17.6 CombinedFragment::cfragmentGate [0..*] {composite}.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="CombinedFragment-cfragmentGate".'''@en ;
+    arch:domainIncludes :CombinedFragment ;
+    arch:rangeIncludes  :Gate ;
+.
+
+:actualGate
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Actual Gate"@en ;
+    skos:definition '''The Gates on an InteractionUse that bind to the formalGates of the
+referenced Interaction. Actual gates connect messages in the enclosing Interaction
+to the formal interface of the referenced Interaction.
+Maps to UML 2.5.1 §17.7 InteractionUse::actualGate [0..*] {composite}.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="InteractionUse-actualGate".'''@en ;
+    arch:domainIncludes :InteractionUse ;
+    arch:rangeIncludes  :Gate ;
+.
+
+## ── ExecutionOccurrenceSpecification ──
+## (Class defined here as it was identified as a gap after initial implementation)
+
+:ExecutionOccurrenceSpecification
+    a               owl:Class ;
+    rdfs:subClassOf :OccurrenceSpecification ;
+    skos:prefLabel  "Execution Occurrence Specification"@en ;
+    skos:definition '''An ExecutionOccurrenceSpecification represents moments in time at
+which Actions or Behaviors start or finish. It is the concrete OccurrenceSpecification
+subclass used as the start and finish points of an ExecutionSpecification (activation
+bar). Unlike MessageOccurrenceSpecification (which represents message send/receive),
+ExecutionOccurrenceSpecification represents the beginning or end of an execution
+period on a Lifeline.
+Maps to UML 2.5.1 §17.5 ExecutionOccurrenceSpecification.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="ExecutionOccurrenceSpecification".'''@en ;
+    skos:scopeNote  '''UML 2.5.1 §17.5.2: "An ExecutionOccurrenceSpecification represents
+moments in time at which Actions or Behaviors start or finish." Key property:
+  - execution : ExecutionSpecification [1] — the execution that starts or finishes here
+This class allows distinguishing execution start/finish occurrences from message
+send/receive occurrences in the fragment ordering. The executionStart and
+executionFinish properties on ExecutionSpecification typically point to instances
+of this class.'''@en ;
+.
+
+:execution
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Execution"@en ;
+    skos:definition '''The ExecutionSpecification that this ExecutionOccurrenceSpecification
+starts or finishes. This links the occurrence (a point in time) to the execution
+period it delimits.
+Maps to UML 2.5.1 §17.5 ExecutionOccurrenceSpecification::execution [1].
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="ExecutionOccurrenceSpecification-execution".'''@en ;
+    arch:domainIncludes :ExecutionOccurrenceSpecification ;
+    arch:rangeIncludes  :ExecutionSpecification ;
+.
+
+#################################################################
+# Enumeration-Valued Attributes
+#################################################################
+##
+## UML attributes whose type is an Enumeration and which had no property
+## declaration until 0.2.0, leaving the corresponding value sets unreachable
+## from the ontology. Names are disambiguated (the spec calls three of these
+## simply "kind"), following the precedent set by :messageSort / :messageKind.
+
+:aggregationKind
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Aggregation Kind"@en ;
+    skos:definition '''The kind of aggregation carried by a Property that is an
+association end: none, shared, or composite. Values are the named individuals of
+:AggregationKind: :None, :Shared, :Composite.
+Maps to UML 2.5.1 §9.5 Property::aggregation.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Property-aggregation".'''@en ;
+    skos:editorialNote '''Named :aggregationKind rather than :aggregation to keep it
+visibly distinct from the :Aggregation qualified relationship class. Default is
+none. The reified form (:Aggregation, :Composition) is preferred when the whole-part
+link itself needs identity; this attribute form is for XMI round-tripping.'''@en ;
+    arch:domainIncludes :Property ;
+    arch:rangeIncludes  :AggregationKind ;
+.
+
+:parameterDirection
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Parameter Direction"@en ;
+    skos:definition '''The direction of a Parameter: in, out, inout, or return. Values are
+the named individuals of :ParameterDirectionKind: :In, :Out, :InOut, :Return.
+Maps to UML 2.5.1 §9.4 Parameter::direction.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Parameter-direction".'''@en ;
+    skos:editorialNote "Default is in."@en ;
+    arch:domainIncludes :Parameter ;
+    arch:rangeIncludes  :ParameterDirectionKind ;
+.
+
+:pseudostateKind
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Pseudostate Kind"@en ;
+    skos:definition '''The kind of a Pseudostate: initial, deepHistory, shallowHistory,
+join, fork, junction, choice, entryPoint, exitPoint, or terminate. Values are the
+named individuals of :PseudostateKind.
+Maps to UML 2.5.1 §14.3 Pseudostate::kind.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Pseudostate-kind".'''@en ;
+    skos:editorialNote '''Named :pseudostateKind rather than :kind because UML reuses the
+attribute name "kind" on Pseudostate, Transition and Connector, which would collapse
+into a single RDF predicate with three unrelated value sets. Default is initial.'''@en ;
+    arch:domainIncludes :Pseudostate ;
+    arch:rangeIncludes  :PseudostateKind ;
+.
+
+:transitionKind
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Transition Kind"@en ;
+    skos:definition '''The kind of a Transition: external, internal, or local. Values are
+the named individuals of :TransitionKind: :ExternalTransition, :InternalTransition,
+:LocalTransition.
+Maps to UML 2.5.1 §14.2 Transition::kind.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Transition-kind".'''@en ;
+    skos:editorialNote "Default is external."@en ;
+    arch:domainIncludes :Transition ;
+    arch:rangeIncludes  :TransitionKind ;
+.
+
+:connectorKind
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "Connector Kind"@en ;
+    skos:definition '''The kind of a Connector: assembly or delegation. Values are the
+named individuals of :ConnectorKind: :AssemblyConnector, :DelegationConnector.
+Maps to UML 2.5.1 §11.2 Connector::kind {derived, readOnly}.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="Connector-kind".'''@en ;
+    skos:editorialNote '''Derived in UML from the Connector's ends: delegation when one end
+attaches to a Port on the containing Classifier, assembly otherwise. May be
+materialised explicitly in RDF for query convenience.'''@en ;
+    arch:domainIncludes :Connector ;
+    arch:rangeIncludes  :ConnectorKind ;
+.
+
+
+#################################################################
+# Controlled Vocabularies — UML Enumerations as Closed OWL Classes
+#################################################################
+##
+## UML 2.5.1 Enumerations (§7.4 VisibilityKind, §9.4 ParameterDirectionKind,
+## §9.5 AggregationKind, §11.2 ConnectorKind, §14.2 TransitionKind,
+## §14.3 PseudostateKind, §17.4 MessageSort / MessageKind,
+## §17.6 InteractionOperatorKind).
+##
+## Each Enumeration becomes an owl:Class closed with owl:oneOf over its
+## values, and each value is declared here as an owl:NamedIndividual of that
+## class which is also a skos:Concept. This is the closed enumeration pattern
+## described in DD-7: the individuals live with the vocabulary that types
+## them, not in a separate reference-data document, so a consumer loading this
+## ontology alone gets the complete closed value sets. Also used by
+## frameworks/TIME and frameworks/tech-radar.
+##
+## Navigation lives in uml-tax.ttl, which groups the values under
+## umltax:ByEnumerationValue and points at them with skos:narrower. Each
+## individual carries the matching skos:broader and skos:inScheme.
+##
+## SKOS remains the primary mechanism for enumerated value sets (DD-7);
+## owl:oneOf is added because UML Enumerations are closed by the
+## specification — only the OMG can add a literal (UML-DD-12).
+##
+## No punning (DD-6): the enumeration class (:MessageSort), its values
+## (:SynchCall …) and the taxonomy concept that groups them
+## (umltax:MessageSorts) are three distinct IRIs in three distinct roles.
+##
+## Deliberately NOT rdfs:subClassOf :EnumerationLiteral: that class is a
+## :NamedElement, hence an arch:Element, and typing enumeration values as
+## architecture elements would place them in element queries and palettes.
+## :Enumeration / :EnumerationLiteral remain reserved for user-defined
+## enumerations appearing inside an M1 UML model.
+##
+## Local names follow the specification's literal names except where one
+## would collide with a metaclass in this namespace: the VisibilityKind
+## literal "package" is :PackageVisibility because :Package is the metaclass.
+## The Pseudostate, Transition and Connector kinds keep the disambiguating
+## suffixes they need for the same reason.
+
+## ── VisibilityKind (UML 2.5.1 §7.4) ──
+
+:VisibilityKind
+    a               owl:Class ;
+    skos:prefLabel  "Visibility Kind"@en ;
+    skos:definition '''The visibility options available to a NamedElement: public,
+private, protected, or package. Maps to UML 2.5.1 §7.4 VisibilityKind.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="VisibilityKind".'''@en ;
+    owl:oneOf       ( :Public :Private :Protected :PackageVisibility ) ;
+.
+
+:Public a owl:NamedIndividual, :VisibilityKind, skos:Concept ;
+    skos:prefLabel  "public"@en ;
+    skos:notation   "+" ;
+    skos:definition "The NamedElement is visible to all elements that can access the Namespace."@en ;
+    skos:broader    umltax:VisibilityKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Private a owl:NamedIndividual, :VisibilityKind, skos:Concept ;
+    skos:prefLabel  "private"@en ;
+    skos:notation   "-" ;
+    skos:definition "The NamedElement is only visible inside the Namespace that owns it."@en ;
+    skos:broader    umltax:VisibilityKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Protected a owl:NamedIndividual, :VisibilityKind, skos:Concept ;
+    skos:prefLabel  "protected"@en ;
+    skos:notation   "#" ;
+    skos:definition "The NamedElement is visible to elements that have a generalization relationship to the Namespace."@en ;
+    skos:broader    umltax:VisibilityKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:PackageVisibility a owl:NamedIndividual, :VisibilityKind, skos:Concept ;
+    skos:prefLabel  "package"@en ;
+    skos:notation   "~" ;
+    skos:definition "The NamedElement is visible to elements within the same Package."@en ;
+    skos:editorialNote '''Named :PackageVisibility because :Package is the UML metaclass in
+this namespace. The specification literal is "package", carried by skos:prefLabel.'''@en ;
+    skos:broader    umltax:VisibilityKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+## ── AggregationKind (UML 2.5.1 §9.5) ──
+
+:AggregationKind
+    a               owl:Class ;
+    skos:prefLabel  "Aggregation Kind"@en ;
+    skos:definition '''The kind of aggregation carried by a Property that is an
+association end: none, shared, or composite. Maps to UML 2.5.1 §9.5
+AggregationKind.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="AggregationKind".'''@en ;
+    skos:editorialNote '''Linked.Archi also reifies shared and composite aggregation as
+the qualified relationship classes :Aggregation and :Composition. This enumeration
+covers the Property::aggregation attribute form of the same distinction.'''@en ;
+    owl:oneOf       ( :None :Shared :Composite ) ;
+.
+
+:None a owl:NamedIndividual, :AggregationKind, skos:Concept ;
+    skos:prefLabel  "none"@en ;
+    skos:definition "The Property has no aggregation semantics."@en ;
+    skos:broader    umltax:AggregationKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Shared a owl:NamedIndividual, :AggregationKind, skos:Concept ;
+    skos:prefLabel  "shared"@en ;
+    skos:definition "The Property has shared aggregation semantics (hollow diamond)."@en ;
+    skos:broader    umltax:AggregationKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Composite a owl:NamedIndividual, :AggregationKind, skos:Concept ;
+    skos:prefLabel  "composite"@en ;
+    skos:definition '''The Property has composite aggregation semantics (filled diamond).
+Deletion of the whole cascades to parts.'''@en ;
+    skos:broader    umltax:AggregationKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+## ── ParameterDirectionKind (UML 2.5.1 §9.4) ──
+
+:ParameterDirectionKind
+    a               owl:Class ;
+    skos:prefLabel  "Parameter Direction Kind"@en ;
+    skos:definition '''The direction of a Parameter, indicating whether it is an input,
+an output, both, or the return value: in, out, inout, or return.
+Maps to UML 2.5.1 §9.4 ParameterDirectionKind.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="ParameterDirectionKind".'''@en ;
+    owl:oneOf       ( :In :Out :InOut :Return ) ;
+.
+
+:In a owl:NamedIndividual, :ParameterDirectionKind, skos:Concept ;
+    skos:prefLabel  "in"@en ;
+    skos:definition "An input Parameter (may not be modified)."@en ;
+    skos:broader    umltax:ParameterDirectionKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Out a owl:NamedIndividual, :ParameterDirectionKind, skos:Concept ;
+    skos:prefLabel  "out"@en ;
+    skos:definition '''An output Parameter (may be modified to communicate information to
+the caller).'''@en ;
+    skos:broader    umltax:ParameterDirectionKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:InOut a owl:NamedIndividual, :ParameterDirectionKind, skos:Concept ;
+    skos:prefLabel  "inout"@en ;
+    skos:definition "An input Parameter that may be modified."@en ;
+    skos:broader    umltax:ParameterDirectionKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Return a owl:NamedIndividual, :ParameterDirectionKind, skos:Concept ;
+    skos:prefLabel  "return"@en ;
+    skos:definition "A return Parameter."@en ;
+    skos:broader    umltax:ParameterDirectionKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+## ── MessageSort (UML 2.5.1 §17.4) ──
+
+:MessageSort
+    a               owl:Class ;
+    skos:prefLabel  "Message Sort"@en ;
+    skos:definition '''The sort of communication reflected by a Message: synchCall,
+asynchCall, asynchSignal, createMessage, deleteMessage, or reply.
+Maps to UML 2.5.1 §17.4 MessageSort.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="MessageSort".'''@en ;
+    owl:oneOf       ( :SynchCall :AsynchCall :AsynchSignal
+                      :CreateMessage :DeleteMessage :Reply ) ;
+.
+
+:SynchCall a owl:NamedIndividual, :MessageSort, skos:Concept ;
+    skos:prefLabel  "synchCall"@en ;
+    skos:definition "A synchronous call — the sender waits for a reply."@en ;
+    skos:broader    umltax:MessageSorts ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:AsynchCall a owl:NamedIndividual, :MessageSort, skos:Concept ;
+    skos:prefLabel  "asynchCall"@en ;
+    skos:definition "An asynchronous call — the sender does not wait."@en ;
+    skos:broader    umltax:MessageSorts ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:AsynchSignal a owl:NamedIndividual, :MessageSort, skos:Concept ;
+    skos:prefLabel  "asynchSignal"@en ;
+    skos:definition "An asynchronous signal — a one-way communication."@en ;
+    skos:broader    umltax:MessageSorts ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:CreateMessage a owl:NamedIndividual, :MessageSort, skos:Concept ;
+    skos:prefLabel  "createMessage"@en ;
+    skos:definition "A message that creates the target lifeline."@en ;
+    skos:broader    umltax:MessageSorts ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:DeleteMessage a owl:NamedIndividual, :MessageSort, skos:Concept ;
+    skos:prefLabel  "deleteMessage"@en ;
+    skos:definition "A message that destroys the target lifeline."@en ;
+    skos:broader    umltax:MessageSorts ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Reply a owl:NamedIndividual, :MessageSort, skos:Concept ;
+    skos:prefLabel  "reply"@en ;
+    skos:definition "A reply message to a synchronous call."@en ;
+    skos:broader    umltax:MessageSorts ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+## ── MessageKind (UML 2.5.1 §17.4) ──
+
+:MessageKind
+    a               owl:Class ;
+    skos:prefLabel  "Message Kind"@en ;
+    skos:definition '''The derived kind of a Message, determined by the presence or
+absence of sendEvent and receiveEvent: complete, lost, found, or unknown.
+Maps to UML 2.5.1 §17.4 MessageKind.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="MessageKind".'''@en ;
+    owl:oneOf       ( :Complete :Lost :Found :Unknown ) ;
+.
+
+:Complete a owl:NamedIndividual, :MessageKind, skos:Concept ;
+    skos:prefLabel  "complete"@en ;
+    skos:definition "Both sendEvent and receiveEvent are present — a normal message."@en ;
+    skos:broader    umltax:MessageKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Lost a owl:NamedIndividual, :MessageKind, skos:Concept ;
+    skos:prefLabel  "lost"@en ;
+    skos:definition '''The sendEvent is present but the receiveEvent is absent — the message
+was sent but never received.'''@en ;
+    skos:broader    umltax:MessageKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Found a owl:NamedIndividual, :MessageKind, skos:Concept ;
+    skos:prefLabel  "found"@en ;
+    skos:definition '''The receiveEvent is present but the sendEvent is absent — the message
+was received but the sender is unknown.'''@en ;
+    skos:broader    umltax:MessageKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Unknown a owl:NamedIndividual, :MessageKind, skos:Concept ;
+    skos:prefLabel  "unknown"@en ;
+    skos:definition "Neither sendEvent nor receiveEvent can be resolved."@en ;
+    skos:broader    umltax:MessageKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+## ── PseudostateKind (UML 2.5.1 §14.3) ──
+
+:PseudostateKind
+    a               owl:Class ;
+    skos:prefLabel  "Pseudostate Kind"@en ;
+    skos:definition '''The kind of a Pseudostate vertex: initial, deepHistory,
+shallowHistory, join, fork, junction, choice, entryPoint, exitPoint, or terminate.
+Maps to UML 2.5.1 §14.3 PseudostateKind.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="PseudostateKind".'''@en ;
+    owl:oneOf       ( :InitialPseudostate :DeepHistory :ShallowHistory
+                      :JoinPseudostate :ForkPseudostate
+                      :JunctionPseudostate :ChoicePseudostate
+                      :EntryPoint :ExitPoint :Terminate ) ;
+.
+
+:InitialPseudostate a owl:NamedIndividual, :PseudostateKind, skos:Concept ;
+    skos:prefLabel  "initial"@en ;
+    skos:definition '''The default vertex that is the source for a single Transition to the
+default State.'''@en ;
+    skos:broader    umltax:PseudostateKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:DeepHistory a owl:NamedIndividual, :PseudostateKind, skos:Concept ;
+    skos:prefLabel  "deepHistory"@en ;
+    skos:definition "Represents the most recent active configuration of the composite State."@en ;
+    skos:broader    umltax:PseudostateKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:ShallowHistory a owl:NamedIndividual, :PseudostateKind, skos:Concept ;
+    skos:prefLabel  "shallowHistory"@en ;
+    skos:definition '''Represents the most recent active substate of the composite State
+(one level).'''@en ;
+    skos:broader    umltax:PseudostateKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:JoinPseudostate a owl:NamedIndividual, :PseudostateKind, skos:Concept ;
+    skos:prefLabel  "join"@en ;
+    skos:definition '''Merges several transitions emanating from source vertices in different
+orthogonal Regions.'''@en ;
+    skos:broader    umltax:PseudostateKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:ForkPseudostate a owl:NamedIndividual, :PseudostateKind, skos:Concept ;
+    skos:prefLabel  "fork"@en ;
+    skos:definition '''Splits an incoming transition into two or more transitions terminating
+on orthogonal target vertices.'''@en ;
+    skos:broader    umltax:PseudostateKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:JunctionPseudostate a owl:NamedIndividual, :PseudostateKind, skos:Concept ;
+    skos:prefLabel  "junction"@en ;
+    skos:definition '''A common target vertex for merging transitions from different source
+vertices.'''@en ;
+    skos:broader    umltax:PseudostateKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:ChoicePseudostate a owl:NamedIndividual, :PseudostateKind, skos:Concept ;
+    skos:prefLabel  "choice"@en ;
+    skos:definition "A dynamic conditional branch evaluated at runtime."@en ;
+    skos:broader    umltax:PseudostateKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:EntryPoint a owl:NamedIndividual, :PseudostateKind, skos:Concept ;
+    skos:prefLabel  "entryPoint"@en ;
+    skos:definition "An entry point of a StateMachine or composite State."@en ;
+    skos:broader    umltax:PseudostateKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:ExitPoint a owl:NamedIndividual, :PseudostateKind, skos:Concept ;
+    skos:prefLabel  "exitPoint"@en ;
+    skos:definition "An exit point of a StateMachine or composite State."@en ;
+    skos:broader    umltax:PseudostateKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Terminate a owl:NamedIndividual, :PseudostateKind, skos:Concept ;
+    skos:prefLabel  "terminate"@en ;
+    skos:definition '''Entering a terminate Pseudostate implies that the execution of the
+StateMachine is terminated.'''@en ;
+    skos:broader    umltax:PseudostateKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+## ── TransitionKind (UML 2.5.1 §14.2) ──
+
+:TransitionKind
+    a               owl:Class ;
+    skos:prefLabel  "Transition Kind"@en ;
+    skos:definition '''The kind of a Transition: external, internal, or local.
+Maps to UML 2.5.1 §14.2 TransitionKind.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="TransitionKind".'''@en ;
+    owl:oneOf       ( :ExternalTransition :InternalTransition :LocalTransition ) ;
+.
+
+:ExternalTransition a owl:NamedIndividual, :TransitionKind, skos:Concept ;
+    skos:prefLabel  "external"@en ;
+    skos:definition "The Transition exits the source State."@en ;
+    skos:broader    umltax:TransitionKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:InternalTransition a owl:NamedIndividual, :TransitionKind, skos:Concept ;
+    skos:prefLabel  "internal"@en ;
+    skos:definition "The Transition does not exit or enter any State."@en ;
+    skos:broader    umltax:TransitionKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:LocalTransition a owl:NamedIndividual, :TransitionKind, skos:Concept ;
+    skos:prefLabel  "local"@en ;
+    skos:definition '''The Transition does not exit the composite source State but does exit
+and enter substates.'''@en ;
+    skos:broader    umltax:TransitionKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+## ── InteractionOperatorKind (UML 2.5.1 §17.6) ──
+
+:InteractionOperatorKind
+    a               owl:Class ;
+    skos:prefLabel  "Interaction Operator Kind"@en ;
+    skos:definition '''The interaction operator of a CombinedFragment: alt, opt, loop,
+break, par, seq, strict, critical, neg, assert, ignore, or consider.
+Maps to UML 2.5.1 §17.6 InteractionOperatorKind.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="InteractionOperatorKind".'''@en ;
+    owl:oneOf       ( :Alt :Opt :Loop :Break :Par :Seq
+                      :Strict :Critical :Neg :Assert :Ignore :Consider ) ;
+.
+
+:Alt a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "alt"@en ;
+    skos:definition "Alternative — choose one operand whose guard is true."@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Opt a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "opt"@en ;
+    skos:definition "Option — execute the operand if the guard is true."@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Loop a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "loop"@en ;
+    skos:definition "Loop — repeat the operand while the guard is true."@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Break a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "break"@en ;
+    skos:definition '''Break — if the guard is true, execute the operand and leave the
+enclosing fragment.'''@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Par a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "par"@en ;
+    skos:definition "Parallel — execute operands concurrently."@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Seq a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "seq"@en ;
+    skos:definition "Weak sequencing — default ordering."@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Strict a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "strict"@en ;
+    skos:definition "Strict sequencing — operands execute in strict order."@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Critical a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "critical"@en ;
+    skos:definition "Critical region — the operand must execute atomically."@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Neg a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "neg"@en ;
+    skos:definition "Negative — the operand defines invalid traces."@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Assert a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "assert"@en ;
+    skos:definition "Assertion — the operand defines the only valid continuation."@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Ignore a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "ignore"@en ;
+    skos:definition "Ignore — certain messages are insignificant."@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:Consider a owl:NamedIndividual, :InteractionOperatorKind, skos:Concept ;
+    skos:prefLabel  "consider"@en ;
+    skos:definition "Consider — only certain messages are significant."@en ;
+    skos:broader    umltax:InteractionOperatorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+## ── ConnectorKind (UML 2.5.1 §11.2) ──
+
+:ConnectorKind
+    a               owl:Class ;
+    skos:prefLabel  "Connector Kind"@en ;
+    skos:definition '''The kind of a Connector, distinguishing assembly from delegation.
+Maps to UML 2.5.1 §11.2 ConnectorKind.
+Source: UML.xmi (OMG ptc/18-01-01), xmi:id="ConnectorKind".'''@en ;
+    owl:oneOf       ( :AssemblyConnector :DelegationConnector ) ;
+.
+
+:AssemblyConnector a owl:NamedIndividual, :ConnectorKind, skos:Concept ;
+    skos:prefLabel  "assembly"@en ;
+    skos:definition '''Connects a provided interface to a required interface
+(ball-and-socket).'''@en ;
+    skos:broader    umltax:ConnectorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.
+
+:DelegationConnector a owl:NamedIndividual, :ConnectorKind, skos:Concept ;
+    skos:prefLabel  "delegation"@en ;
+    skos:definition "Connects an external Port to an internal part."@en ;
+    skos:broader    umltax:ConnectorKinds ;
+    skos:inScheme   <https://meta.linked.archi/uml/tax#> ;
+.

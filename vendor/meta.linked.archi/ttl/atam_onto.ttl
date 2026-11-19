@@ -1,0 +1,626 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix schema:  <http://schema.org/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ad:      <https://meta.linked.archi/arch-decision#> .
+@prefix refa:    <https://meta.linked.archi/ref-arch#> .
+@prefix :        <https://meta.linked.archi/atam/onto#> .
+
+<https://meta.linked.archi/atam/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/atam/onto#" ;
+    vann:preferredNamespacePrefix "atam" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ATAM Ontology"@en ;
+    dcterms:description                '''Ontology for the Architecture Tradeoff Analysis Method (ATAM) from
+the Software Engineering Institute (SEI) at Carnegie Mellon University.
+Models the evaluation-specific concepts that ATAM adds beyond the core
+decision and quality attribute vocabulary: utility trees, sensitivity points,
+tradeoff points, risks, non-risks, and risk themes.
+
+ATAM is a method for evaluating software architectures relative to quality
+attribute goals. It exposes architectural risks that potentially inhibit the
+achievement of business goals by systematically analyzing quality attribute
+scenarios against architectural approaches.
+
+Use together with:
+* ad:arch-decision — for decisions, forces, options, and QA scenarios
+* refa:ref-arch — for patterns and tactics (architectural approaches)
+* iso25010 — for quality attribute definitions
+This is not an official SEI/Carnegie Mellon document.'''@en ;
+    dcterms:abstract              '''OWL ontology for ATAM evaluation concepts — utility trees, sensitivity
+points, tradeoff points, risks, and risk themes.'''@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/atam/onto/0.2.0#> ;
+    owl:priorVersion              <https://meta.linked.archi/atam/onto/0.1.0#> ;
+    owl:versionInfo               "0.2.0"@en ;
+    schema:citation               '''Kazman, R., Klein, M., Clements, P. (2000). ATAM: Method for
+Architecture Evaluation. CMU/SEI-2000-TR-004.'''@en ;
+    prov:wasDerivedFrom           "ATAM (SEI/CMU, 2000)" ;
+    rdfs:seeAlso                  <https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513908>,
+                                  <https://resources.sei.cmu.edu/asset_files/TechnicalReport/2000_005_001_13706.pdf>,
+                                  <https://iasa-global.github.io/btabok/quality_attributes.html>,
+                                  <https://iasa-global.github.io/btabok/boqa.html> ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Utility Tree — hierarchical decomposition of quality attributes into scenarios
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:UtilityTree
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Utility Tree"@en ;
+    skos:definition '''A hierarchical decomposition of the system's overall "utility" into
+quality attributes, quality attribute refinements, and concrete quality
+attribute scenarios. The root is the system's overall goodness. The first
+level branches are quality attributes (performance, availability, security,
+etc.). Leaves are prioritized QA scenarios.
+
+The utility tree is the primary tool for eliciting and prioritizing
+architecturally significant requirements in ATAM.'''@en ;
+    skos:example    '''ex:PortalUtilityTree a atam:UtilityTree ;
+    skos:prefLabel "Customer Portal Utility Tree"@en ;
+    atam:hasQABranch ex:PerformanceBranch, ex:AvailabilityBranch,
+                     ex:SecurityBranch, ex:ModifiabilityBranch .'''@en ;
+    rdfs:seeAlso    <https://resources.sei.cmu.edu/asset_files/TechnicalReport/2000_005_001_13706.pdf> ;
+.
+
+:QualityAttributeBranch
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Quality Attribute Branch"@en ;
+    skos:definition '''A branch in the utility tree representing a quality attribute
+(e.g., Performance, Availability, Security). Contains refinements
+and leaf scenarios.'''@en ;
+    skos:example    '''ex:PerformanceBranch a atam:QualityAttributeBranch ;
+    skos:prefLabel "Performance"@en ;
+    atam:branchQualityAttribute iso25010:PerformanceEfficiency ;
+    atam:hasScenario ex:PeakLoadScenario, ex:DataQueryScenario .'''@en ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Sensitivity and Tradeoff Points
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:SensitivityPoint
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Sensitivity Point"@en ;
+    skos:definition '''An architectural element or property where a small change has a
+significant effect on a quality attribute. Sensitivity points reveal
+where the architecture is fragile with respect to a specific quality
+concern.'''@en ;
+    skos:example    '''ex:SP-01 a atam:SensitivityPoint ;
+    skos:prefLabel "Database connection pool size"@en ;
+    atam:sensitiveToQA iso25010:TimeBehaviour ;
+    atam:affectsElement ex:OrdersDB ;
+    atam:identifiedInScenario ex:PeakLoadScenario .'''@en ;
+    rdfs:seeAlso    <https://resources.sei.cmu.edu/asset_files/TechnicalReport/2000_005_001_13706.pdf> ;
+.
+
+:TradeoffPoint
+    a               owl:Class ;
+    rdfs:subClassOf :SensitivityPoint ;
+    skos:prefLabel  "Tradeoff Point"@en ;
+    skos:definition '''An architectural element that is a sensitivity point for multiple
+quality attributes — improving one quality attribute at this point
+degrades another. Tradeoff points are the most architecturally
+significant findings in an ATAM evaluation because they reveal
+where quality attributes compete.'''@en ;
+    skos:example    '''ex:TP-01 a atam:TradeoffPoint ;
+    skos:prefLabel "Encryption at rest for order data"@en ;
+    atam:sensitiveToQA iso25010:Confidentiality, iso25010:TimeBehaviour ;
+    skos:scopeNote "Enabling encryption improves security but degrades query performance by ~15%."@en .'''@en ;
+    rdfs:seeAlso    <https://resources.sei.cmu.edu/asset_files/TechnicalReport/2000_005_001_13706.pdf> ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Risks and Risk Themes
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ArchitecturalRisk
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Architectural Risk"@en ;
+    skos:definition '''An architectural decision or property that is potentially problematic.
+A risk is identified when analysis of a scenario against an architectural
+approach reveals that the quality attribute response may not be achieved.'''@en ;
+    skos:example    '''ex:Risk-01 a atam:ArchitecturalRisk ;
+    skos:prefLabel "Single database instance has no failover"@en ;
+    atam:riskForQA iso25010:Availability ;
+    atam:riskInDecision ex:ADR-042 ;
+    atam:identifiedInScenario ex:FailoverScenario .'''@en ;
+.
+
+:NonRisk
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Non-Risk"@en ;
+    skos:definition '''An architectural decision or property that is deemed safe upon analysis.
+A non-risk is identified when analysis confirms that the quality attribute
+response will be achieved. Documenting non-risks is important because it
+records what was analyzed and found acceptable.'''@en ;
+.
+
+:RiskTheme
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Risk Theme"@en ;
+    skos:definition '''A systemic pattern of risks identified across multiple scenarios or
+architectural approaches. Risk themes represent cross-cutting concerns
+that affect the architecture broadly rather than in isolated spots.'''@en ;
+    skos:example    '''ex:RT-01 a atam:RiskTheme ;
+    skos:prefLabel "Insufficient redundancy across data tier"@en ;
+    atam:themeIncludesRisk ex:Risk-01, ex:Risk-03, ex:Risk-07 ;
+    skos:definition "Multiple scenarios reveal single points of failure in the data layer."@en .'''@en ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## ATAM Evaluation
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ATAMEvaluation
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "ATAM Evaluation"@en ;
+    skos:definition '''A complete ATAM evaluation session, linking the utility tree,
+identified risks, non-risks, sensitivity points, tradeoff points,
+and risk themes. An evaluation targets a specific architecture
+(arch:Model) and involves specific stakeholders.'''@en ;
+    skos:example    '''ex:ATAM-2026-Q1 a atam:ATAMEvaluation ;
+    skos:prefLabel "Payment Platform ATAM Evaluation Q1 2026"@en ;
+    atam:evaluatesArchitecture ex:PaymentPlatformModel ;
+    atam:hasUtilityTree ex:PaymentUtilityTree ;
+    atam:identifiedRisk ex:Risk-01, ex:Risk-02 ;
+    atam:identifiedNonRisk ex:NR-01 ;
+    atam:identifiedSensitivityPoint ex:SP-01 ;
+    atam:identifiedTradeoffPoint ex:TP-01 ;
+    atam:identifiedRiskTheme ex:RT-01 .'''@en ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Properties
+## ═══════════════════════════════════════════════════════════════════════════════
+
+## Utility Tree structure
+:hasQABranch
+    a owl:ObjectProperty ;
+    skos:prefLabel "has QA branch"@en ;
+    skos:definition "Links a UtilityTree to its quality attribute branches."@en ;
+    rdfs:domain :UtilityTree ;
+    rdfs:range :QualityAttributeBranch .
+
+:branchQualityAttribute
+    a owl:ObjectProperty ;
+    skos:prefLabel "branch quality attribute"@en ;
+    skos:definition "Links a QualityAttributeBranch to the quality attribute it represents."@en ;
+    rdfs:domain :QualityAttributeBranch ;
+    rdfs:range arch:QualityAttribute .
+
+:hasScenario
+    a owl:ObjectProperty ;
+    skos:prefLabel "has scenario"@en ;
+    skos:definition "Links a QualityAttributeBranch to its leaf QA scenarios."@en ;
+    rdfs:domain :QualityAttributeBranch ;
+    rdfs:range ad:QualityAttributeRequirement .
+
+:scenarioPriority
+    a owl:DatatypeProperty ;
+    skos:prefLabel "scenario priority"@en ;
+    skos:definition '''Priority of a scenario in the utility tree, typically expressed as
+(importance, difficulty) pairs like (H,M) meaning high importance,
+medium difficulty to achieve.'''@en ;
+    rdfs:domain ad:QualityAttributeRequirement ;
+    rdfs:range xsd:string .
+
+## Sensitivity and Tradeoff
+:sensitiveToQA
+    a owl:ObjectProperty ;
+    skos:prefLabel "sensitive to quality attribute"@en ;
+    skos:definition "Links a SensitivityPoint to the quality attribute(s) it affects."@en ;
+    rdfs:domain :SensitivityPoint ;
+    rdfs:range arch:QualityAttribute .
+
+:affectsElement
+    a owl:ObjectProperty ;
+    skos:prefLabel "affects element"@en ;
+    skos:definition "Links a SensitivityPoint to the architectural element it concerns."@en ;
+    rdfs:domain :SensitivityPoint ;
+    rdfs:range arch:Element .
+
+:identifiedInScenario
+    a owl:ObjectProperty ;
+    skos:prefLabel "identified in scenario"@en ;
+    skos:definition "Links a finding (risk, sensitivity point, etc.) to the scenario that revealed it."@en ;
+    rdfs:range ad:QualityAttributeRequirement .
+
+## Risks
+:riskForQA
+    a owl:ObjectProperty ;
+    skos:prefLabel "risk for quality attribute"@en ;
+    skos:definition "Links an ArchitecturalRisk to the quality attribute it threatens."@en ;
+    rdfs:domain :ArchitecturalRisk ;
+    rdfs:range arch:QualityAttribute .
+
+:riskInDecision
+    a owl:ObjectProperty ;
+    skos:prefLabel "risk in decision"@en ;
+    skos:definition "Links an ArchitecturalRisk to the architecture decision that introduced it."@en ;
+    rdfs:domain :ArchitecturalRisk ;
+    rdfs:range ad:Decision .
+
+:riskInApproach
+    a owl:ObjectProperty ;
+    skos:prefLabel "risk in approach"@en ;
+    skos:definition "Links an ArchitecturalRisk to the pattern or tactic that introduces it."@en ;
+    rdfs:domain :ArchitecturalRisk ;
+    schema:rangeIncludes refa:Pattern, refa:Tactic .
+
+:themeIncludesRisk
+    a owl:ObjectProperty ;
+    skos:prefLabel "theme includes risk"@en ;
+    skos:definition "Links a RiskTheme to the individual risks that form the pattern."@en ;
+    rdfs:domain :RiskTheme ;
+    rdfs:range :ArchitecturalRisk .
+
+## Evaluation
+:evaluatesArchitecture
+    a owl:ObjectProperty ;
+    skos:prefLabel "evaluates architecture"@en ;
+    skos:definition "Links an ATAMEvaluation to the architecture model being evaluated."@en ;
+    rdfs:domain :ATAMEvaluation ;
+    rdfs:range arch:Model .
+
+:hasUtilityTree
+    a owl:ObjectProperty ;
+    skos:prefLabel "has utility tree"@en ;
+    skos:definition "Links an ATAMEvaluation to its utility tree."@en ;
+    rdfs:domain :ATAMEvaluation ;
+    rdfs:range :UtilityTree .
+
+:identifiedRisk
+    a owl:ObjectProperty ;
+    skos:prefLabel "identified risk"@en ;
+    skos:definition "Links an ATAMEvaluation to a risk identified during the evaluation."@en ;
+    rdfs:domain :ATAMEvaluation ;
+    rdfs:range :ArchitecturalRisk .
+
+:identifiedNonRisk
+    a owl:ObjectProperty ;
+    skos:prefLabel "identified non-risk"@en ;
+    skos:definition "Links an ATAMEvaluation to a non-risk confirmed during the evaluation."@en ;
+    rdfs:domain :ATAMEvaluation ;
+    rdfs:range :NonRisk .
+
+:identifiedSensitivityPoint
+    a owl:ObjectProperty ;
+    skos:prefLabel "identified sensitivity point"@en ;
+    skos:definition "Links an ATAMEvaluation to a sensitivity point discovered during the evaluation."@en ;
+    rdfs:domain :ATAMEvaluation ;
+    rdfs:range :SensitivityPoint .
+
+:identifiedTradeoffPoint
+    a owl:ObjectProperty ;
+    skos:prefLabel "identified tradeoff point"@en ;
+    skos:definition "Links an ATAMEvaluation to a tradeoff point discovered during the evaluation."@en ;
+    rdfs:domain :ATAMEvaluation ;
+    rdfs:range :TradeoffPoint .
+
+:identifiedRiskTheme
+    a owl:ObjectProperty ;
+    skos:prefLabel "identified risk theme"@en ;
+    skos:definition "Links an ATAMEvaluation to a risk theme identified during the evaluation."@en ;
+    rdfs:domain :ATAMEvaluation ;
+    rdfs:range :RiskTheme .
+
+#################################################################
+# Relationship types — the links that are drawn
+#
+# For each link whose two ends can be placed on a view, a qualified
+# relationship class whose unqualified form is the predicate above, with
+# its qualified property: a tool that draws one writes the same triple a
+# tool that sets the property writes, with a relationship resource beside
+# it. The class is named after its predicate.
+#################################################################
+
+:HasUtilityTree
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasUtilityTree ;
+    skos:prefLabel       "Has Utility Tree"@en ;
+    skos:definition      "A drawn link from an ATAM Evaluation to its utility tree."@en ;
+.
+
+:qualifiedHasUtilityTree
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified has Utility Tree"@en ;
+    skos:definition      "Links the source of a drawn Has Utility Tree link to its relationship resource."@en ;
+    rdfs:range           :HasUtilityTree ;
+    arch:unqualifiedForm :hasUtilityTree ;
+.
+
+:HasQABranch
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasQABranch ;
+    skos:prefLabel       "Has Branch"@en ;
+    skos:definition      "A drawn link from a Utility Tree to one of its quality attribute branches."@en ;
+.
+
+:qualifiedHasQABranch
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified has Branch"@en ;
+    skos:definition      "Links the source of a drawn Has Branch link to its relationship resource."@en ;
+    rdfs:range           :HasQABranch ;
+    arch:unqualifiedForm :hasQABranch ;
+.
+
+:HasScenario
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasScenario ;
+    skos:prefLabel       "Has Scenario"@en ;
+    skos:definition      "A drawn link from a Quality Attribute Branch to one of its leaf quality attribute scenarios."@en ;
+.
+
+:qualifiedHasScenario
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified has Scenario"@en ;
+    skos:definition      "Links the source of a drawn Has Scenario link to its relationship resource."@en ;
+    rdfs:range           :HasScenario ;
+    arch:unqualifiedForm :hasScenario ;
+.
+
+:IdentifiedRisk
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :identifiedRisk ;
+    skos:prefLabel       "Identified Risk"@en ;
+    skos:definition      "A drawn link from an ATAM Evaluation to a risk identified during the evaluation."@en ;
+.
+
+:qualifiedIdentifiedRisk
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified identified Risk"@en ;
+    skos:definition      "Links the source of a drawn Identified Risk link to its relationship resource."@en ;
+    rdfs:range           :IdentifiedRisk ;
+    arch:unqualifiedForm :identifiedRisk ;
+.
+
+:IdentifiedNonRisk
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :identifiedNonRisk ;
+    skos:prefLabel       "Identified Non-Risk"@en ;
+    skos:definition      "A drawn link from an ATAM Evaluation to a non-risk confirmed during the evaluation."@en ;
+.
+
+:qualifiedIdentifiedNonRisk
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified identified Non-Risk"@en ;
+    skos:definition      "Links the source of a drawn Identified Non-Risk link to its relationship resource."@en ;
+    rdfs:range           :IdentifiedNonRisk ;
+    arch:unqualifiedForm :identifiedNonRisk ;
+.
+
+:IdentifiedSensitivityPoint
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :identifiedSensitivityPoint ;
+    skos:prefLabel       "Identified Sensitivity Point"@en ;
+    skos:definition      "A drawn link from an ATAM Evaluation to a sensitivity point discovered during the evaluation."@en ;
+.
+
+:qualifiedIdentifiedSensitivityPoint
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified identified Sensitivity Point"@en ;
+    skos:definition      "Links the source of a drawn Identified Sensitivity Point link to its relationship resource."@en ;
+    rdfs:range           :IdentifiedSensitivityPoint ;
+    arch:unqualifiedForm :identifiedSensitivityPoint ;
+.
+
+:IdentifiedTradeoffPoint
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :identifiedTradeoffPoint ;
+    skos:prefLabel       "Identified Tradeoff Point"@en ;
+    skos:definition      "A drawn link from an ATAM Evaluation to a tradeoff point discovered during the evaluation."@en ;
+.
+
+:qualifiedIdentifiedTradeoffPoint
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified identified Tradeoff Point"@en ;
+    skos:definition      "Links the source of a drawn Identified Tradeoff Point link to its relationship resource."@en ;
+    rdfs:range           :IdentifiedTradeoffPoint ;
+    arch:unqualifiedForm :identifiedTradeoffPoint ;
+.
+
+:IdentifiedRiskTheme
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :identifiedRiskTheme ;
+    skos:prefLabel       "Identified Risk Theme"@en ;
+    skos:definition      "A drawn link from an ATAM Evaluation to a risk theme identified during the evaluation."@en ;
+.
+
+:qualifiedIdentifiedRiskTheme
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified identified Risk Theme"@en ;
+    skos:definition      "Links the source of a drawn Identified Risk Theme link to its relationship resource."@en ;
+    rdfs:range           :IdentifiedRiskTheme ;
+    arch:unqualifiedForm :identifiedRiskTheme ;
+.
+
+:IdentifiedInScenario
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :identifiedInScenario ;
+    skos:prefLabel       "Identified In"@en ;
+    skos:definition      "A drawn link from a finding — a risk, a non-risk, a sensitivity point — to the scenario that revealed it."@en ;
+.
+
+:qualifiedIdentifiedInScenario
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified identified In"@en ;
+    skos:definition      "Links the source of a drawn Identified In link to its relationship resource."@en ;
+    rdfs:range           :IdentifiedInScenario ;
+    arch:unqualifiedForm :identifiedInScenario ;
+.
+
+:ThemeIncludesRisk
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :themeIncludesRisk ;
+    skos:prefLabel       "Includes Risk"@en ;
+    skos:definition      "A drawn link from a Risk Theme to one of the risks that form it."@en ;
+.
+
+:qualifiedThemeIncludesRisk
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified includes Risk"@en ;
+    skos:definition      "Links the source of a drawn Includes Risk link to its relationship resource."@en ;
+    rdfs:range           :ThemeIncludesRisk ;
+    arch:unqualifiedForm :themeIncludesRisk ;
+.
+
+:AffectsElement
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :affectsElement ;
+    skos:prefLabel       "Affects"@en ;
+    skos:definition      "A drawn link from a Sensitivity Point to the architectural element it concerns."@en ;
+.
+
+:qualifiedAffectsElement
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified affects"@en ;
+    skos:definition      "Links the source of a drawn Affects link to its relationship resource."@en ;
+    rdfs:range           :AffectsElement ;
+    arch:unqualifiedForm :affectsElement ;
+.
+
+:RiskInDecision
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :riskInDecision ;
+    skos:prefLabel       "Risk In Decision"@en ;
+    skos:definition      "A drawn link from an Architectural Risk to the architecture decision that introduced it."@en ;
+.
+
+:qualifiedRiskInDecision
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified risk In Decision"@en ;
+    skos:definition      "Links the source of a drawn Risk In Decision link to its relationship resource."@en ;
+    rdfs:range           :RiskInDecision ;
+    arch:unqualifiedForm :riskInDecision ;
+.
+
+:RiskInApproach
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :riskInApproach ;
+    skos:prefLabel       "Risk In Approach"@en ;
+    skos:definition      "A drawn link from an Architectural Risk to the tactic that introduces it."@en ;
+.
+
+:qualifiedRiskInApproach
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified risk In Approach"@en ;
+    skos:definition      "Links the source of a drawn Risk In Approach link to its relationship resource."@en ;
+    rdfs:range           :RiskInApproach ;
+    arch:unqualifiedForm :riskInApproach ;
+.
+
+#################################################################
+# Typical ends of the predicates drawn
+#
+# Modelling-tool guidance (arch:domainIncludes, arch:rangeIncludes): where
+# a line of each kind usually starts and ends. An end that is no element —
+# a model, a metamodel, a quality attribute, a pattern — is not drawn, and
+# is not listed.
+#################################################################
+
+:hasUtilityTree
+    arch:domainIncludes  :ATAMEvaluation ;
+    arch:rangeIncludes   :UtilityTree ;
+.
+
+:hasQABranch
+    arch:domainIncludes  :UtilityTree ;
+    arch:rangeIncludes   :QualityAttributeBranch ;
+.
+
+:hasScenario
+    arch:domainIncludes  :QualityAttributeBranch ;
+    arch:rangeIncludes   ad:QualityAttributeRequirement ;
+.
+
+:identifiedRisk
+    arch:domainIncludes  :ATAMEvaluation ;
+    arch:rangeIncludes   :ArchitecturalRisk ;
+.
+
+:identifiedNonRisk
+    arch:domainIncludes  :ATAMEvaluation ;
+    arch:rangeIncludes   :NonRisk ;
+.
+
+:identifiedSensitivityPoint
+    arch:domainIncludes  :ATAMEvaluation ;
+    arch:rangeIncludes   :SensitivityPoint ;
+.
+
+:identifiedTradeoffPoint
+    arch:domainIncludes  :ATAMEvaluation ;
+    arch:rangeIncludes   :TradeoffPoint ;
+.
+
+:identifiedRiskTheme
+    arch:domainIncludes  :ATAMEvaluation ;
+    arch:rangeIncludes   :RiskTheme ;
+.
+
+:identifiedInScenario
+    arch:domainIncludes  :ArchitecturalRisk, :NonRisk, :SensitivityPoint ;
+    arch:rangeIncludes   ad:QualityAttributeRequirement ;
+.
+
+:themeIncludesRisk
+    arch:domainIncludes  :RiskTheme ;
+    arch:rangeIncludes   :ArchitecturalRisk ;
+.
+
+:affectsElement
+    arch:domainIncludes  :SensitivityPoint ;
+    arch:rangeIncludes   arch:Element ;
+.
+
+:riskInDecision
+    arch:domainIncludes  :ArchitecturalRisk ;
+    arch:rangeIncludes   ad:Decision ;
+.
+
+:riskInApproach
+    arch:domainIncludes  :ArchitecturalRisk ;
+    arch:rangeIncludes   refa:Tactic ;
+.

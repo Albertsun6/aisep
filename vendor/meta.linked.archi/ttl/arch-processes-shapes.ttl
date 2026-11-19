@@ -1,0 +1,189 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ap:      <https://meta.linked.archi/arch-processes#> .
+@prefix :        <https://meta.linked.archi/arch-processes-shapes#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/arch-processes-shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/arch-processes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/arch-processes-shapes#" ;
+    vann:preferredNamespacePrefix "apsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Architecture Processes SHACL Shapes"@en ;
+    dcterms:description           '''SHACL shapes for the lifecycle concepts in the Architecture Processes
+extension. Supplies the constraint DD-23 requires but which the ontology
+deliberately does not assert: at most one lifecycle stage per subject, drawn
+from a stage vocabulary.
+
+The universally-applicable rules are auto-targeting. The rule that closes the
+value set to the canonical five stages is NOT auto-targeting, because several
+asset sets legitimately define their own stages — the ISO 12207 stage model, the
+TIME framework lifecycle states, and any organisation with its own progression.
+Closing the vocabulary globally would report all of those as violations. Opt in
+where you want it, per DD-23: the value set is a governance constraint on your
+data, not a logical truth.'''@en ;
+    dcterms:created               "2026-08-10"^^xsd:date ;
+    dcterms:modified              "2026-08-10"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    rdfs:seeAlso                  <https://meta.linked.archi/arch-processes#> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/arch-processes-shapes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    skos:editorialNote            '''Severity conventions follow arch-decision-shapes: sh:Violation marks a
+structural error that will make queries produce wrong answers; sh:Warning marks
+a modelling smell that is still queryable.'''@en ;
+.
+
+
+#################################################################
+# Stage assignment — the DD-23 constraint
+#
+# Targets any subject that uses ap:atLifecycleStage, rather than a
+# class, because the property applies to architecture elements and to
+# architecture models alike. Cardinality and range are safe to assert
+# universally; the value set is not.
+#################################################################
+
+:LifecycleStageAssignmentShape
+    a                    sh:NodeShape ;
+    sh:targetSubjectsOf  ap:atLifecycleStage ;
+    skos:prefLabel       "Lifecycle Stage Assignment Shape"@en ;
+    skos:definition      "Validates how a subject is assigned to a lifecycle stage."@en ;
+
+    sh:property [
+        sh:path     ap:atLifecycleStage ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:class    ap:LifecycleStage ;
+        sh:message  '''A subject occupies at most one lifecycle stage at a time, and the value must
+be an IRI typed ap:LifecycleStage. Record stage history with prov:wasRevisionOf or
+dcterms:modified — ap:atLifecycleStage holds only the current stage.'''@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+
+#################################################################
+# Stage and model structure
+#################################################################
+
+:LifecycleStageShape
+    a               sh:NodeShape ;
+    sh:targetClass  ap:LifecycleStage ;
+    skos:prefLabel  "Lifecycle Stage Shape"@en ;
+    skos:definition "Validates a lifecycle stage individual."@en ;
+
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "Every lifecycle stage must have a language-tagged skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path         ap:stageOrder ;
+        sh:maxCount     1 ;
+        sh:datatype     xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:message      "ap:stageOrder must be a single integer, 1-based."@en ;
+        sh:severity     sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ap:nextStage ;
+        sh:maxCount 1 ;
+        sh:class    ap:LifecycleStage ;
+        sh:message  "ap:nextStage must point to at most one other ap:LifecycleStage."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ap:partOfLifecycle ;
+        sh:class    ap:LifecycleModel ;
+        sh:message  "Every value of ap:partOfLifecycle must be an ap:LifecycleModel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ap:partOfLifecycle ;
+        sh:minCount 1 ;
+        sh:message  '''A lifecycle stage should belong to a lifecycle model, otherwise its ordering
+and progression cannot be interpreted.'''@en ;
+        sh:severity sh:Warning ;
+    ] ;
+.
+
+:LifecycleModelShape
+    a               sh:NodeShape ;
+    sh:targetClass  ap:LifecycleModel ;
+    skos:prefLabel  "Lifecycle Model Shape"@en ;
+    skos:definition "Validates a lifecycle model and its stage set."@en ;
+
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "Every lifecycle model must have a language-tagged skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ap:hasStage ;
+        sh:minCount 1 ;
+        sh:class    ap:LifecycleStage ;
+        sh:message  "A lifecycle model must declare at least one ap:hasStage, and every value must be an ap:LifecycleStage."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+
+#################################################################
+# Opt-in — close the value set to the canonical stages
+#
+# Deliberately has no sh:target*, so it never fires on its own.
+# Reference it from your own shape when your governance process
+# requires the canonical progression:
+#
+#   ex:ApplicationShape
+#       a sh:NodeShape ;
+#       sh:targetClass am4:ApplicationComponent ;
+#       sh:property [
+#           sh:path ap:atLifecycleStage ;
+#           sh:node apsh:CanonicalLifecycleStageShape ;
+#       ] .
+#
+# Replace it with your own sh:in list to use a different stage set —
+# for example acmetax: stages, iso12207: stages, or timefw: states.
+#################################################################
+
+:CanonicalLifecycleStageShape
+    a               sh:NodeShape ;
+    skos:prefLabel  "Canonical Lifecycle Stage Shape"@en ;
+    skos:definition '''Restricts a lifecycle stage value to the canonical five-stage set defined
+in the Architecture Processes extension.'''@en ;
+    skos:scopeNote  '''Not auto-targeting by design — see the ontology description. Applies to the
+value node of ap:atLifecycleStage, referenced via sh:node.'''@en ;
+    sh:in           ( ap:Plan ap:PhaseIn ap:Active ap:PhaseOut ap:Retired ) ;
+    sh:message      '''Lifecycle stage must be one of ap:Plan, ap:PhaseIn, ap:Active, ap:PhaseOut
+or ap:Retired.'''@en ;
+    sh:severity     sh:Violation ;
+.

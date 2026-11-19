@@ -1,0 +1,338 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+@prefix :        <https://meta.linked.archi/archimate4/element-shapes#> .
+
+<https://meta.linked.archi/archimate4/element-shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/core-shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate4/element-shapes#" ;
+    vann:preferredNamespacePrefix "am4elsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ArchiMate 4.0 Element & Metamodel Shapes"@en ;
+    dcterms:description                '''SHACL shapes for validating ArchiMate 4.0 element instances and
+the metamodel patterns the relationship tables cannot express: element names, self-loops
+and cycles of composition and aggregation, a part in one whole only, attribute values,
+junctions joining relationships of one type, and deep specialization chains. Which element
+types a relationship may connect is checked by archimate4-relationship-shapes.ttl, generated
+from the specification's relationship tables (Appendix B), and is not repeated here.'''@en ;
+    skos:historyNote              '''2026-11-06: removed the shapes that restated which element types a
+relationship may connect — assignment, access, triggering and flow source and target,
+same-type specialization, motivation elements in triggering and flow. They rejected
+relationships the specification's tables permit — flow and triggering between active
+structure elements, which derivation rules DR 6 and DR 7 give; plateau triggering plateau;
+a component assigned to a data object or a role — and the relationship shapes check those
+types already.'''@en ;
+    dcterms:source  <https://pubs.opengroup.org/architecture/archimate4-doc/>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap04.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap05.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap06.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap07.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap08.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap09.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap10.html> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/architecture/archimate4-doc/>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap04.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap05.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap06.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap07.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap08.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap09.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate4-doc/chap10.html> ;
+    dcterms:created               "2026-04-19"^^xsd:date ;
+    dcterms:modified              "2026-11-06"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/archimate4/element-shapes/4.0#> ;
+    owl:versionInfo               "4.0"@en ;
+    sh:declare [
+        sh:prefix "am4" ;
+        sh:namespace "https://meta.linked.archi/archimate4/onto#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "arch" ;
+        sh:namespace "https://meta.linked.archi/core#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdf" ;
+        sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdfs" ;
+        sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ;
+    ] ;
+.
+
+#################################################################
+# Element instance requirements — the authoritative ArchiMate 4.0 naming rule
+#
+# core-shapes carries no label shape. arch:Element means "a node in a model", and
+# some notations have nodes that are legitimately unnamed, so naming policy is
+# owned by each metamodel. See DD-24 in doc/guide/design-decisions.md.
+#
+# Targets the 10 abstract domain and aspect roots rather than arch:Element. Two
+# reasons:
+#
+#  1. Junctions are excluded. am4:AndJunction and am4:OrJunction are declared
+#     rdfs:subClassOf arch:Element directly, outside these 10 roots, so they are
+#     not reached. Junctions are genuine elements — they have identity and render
+#     as dots or bars on a view — but ArchiMate uses them as relationship
+#     connectors and they are conventionally unnamed. Requiring a label on them
+#     would be wrong.
+#
+#  2. Targeting arch:Element would leak. In a merged multi-notation graph it would
+#     impose ArchiMate's naming policy on BPMN, C4 and every other notation's
+#     elements. A metamodel constrains only its own classes.
+#
+# Coverage: these roots reach 59 of the 61 am4 arch:Element classes, the 2
+# remaining being the junctions. Verify with the archimate-viewpoints or
+# archimate profile after editing the ontology's class hierarchy.
+#################################################################
+
+:ArchiMateElementShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''Requires a language-tagged skos:prefLabel on every ArchiMate 4.0 element
+except junctions. Targets the abstract domain and aspect roots, not arch:Element, so that
+am4:AndJunction and am4:OrJunction stay exempt and the rule cannot leak onto other
+notations in a merged graph.'''@en ;
+    sh:targetClass am4:BusinessDomainElement ,
+                   am4:ApplicationDomainElement ,
+                   am4:TechnologyDomainElement ,
+                   am4:ImplementationAndMigrationDomainElement ,
+                   am4:CommonDomainElement ,
+                   am4:StrategyElement ,
+                   am4:MotivationElement ,
+                   am4:BehaviorElement ,
+                   am4:StructureElement ,
+                   am4:CompositeElement ;
+    sh:property [
+        sh:path        skos:prefLabel ;
+        sh:minCount    1 ;
+        sh:datatype    rdf:langString ;
+        sh:message     '''Every ArchiMate element instance must have at least one
+skos:prefLabel, and it must be language-tagged (rdf:langString), e.g. "Billing"@en. Junctions
+are exempt — they are connectors and are conventionally unnamed.'''@en ;
+    ] ;
+.
+
+## Self-loop prevention
+:NoSelfCompositionShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf am4:composedOf ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/element-shapes#> ;
+        sh:message "An element cannot compose itself."@en ;
+        sh:select "SELECT $this WHERE { $this am4:composedOf $this . }" ;
+    ] ;
+.
+
+:NoSelfAggregationShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf am4:aggregates ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/element-shapes#> ;
+        sh:message "An element cannot aggregate itself."@en ;
+        sh:select "SELECT $this WHERE { $this am4:aggregates $this . }" ;
+    ] ;
+.
+
+:NoSelfSpecializationShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf am4:specializes ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/element-shapes#> ;
+        sh:message "An element cannot specialize itself."@en ;
+        sh:select "SELECT $this WHERE { $this am4:specializes $this . }" ;
+    ] ;
+.
+
+
+## Access type — deprecated: the kind of access is the class (am4:ReadAccess, …)
+:AccessTypeShape
+    a sh:NodeShape ;
+    sh:targetClass am4:Access ;
+    sh:property [
+        sh:path        am4:accessType ;
+        sh:maxCount    0 ;
+        sh:severity    sh:Warning ;
+        sh:message     "am4:accessType is deprecated: type the access am4:ReadAccess, am4:WriteAccess or am4:ReadWriteAccess, or leave it am4:Access when the kind is unspecified."@en ;
+    ] ;
+.
+
+## Influence strength validation
+:InfluenceStrengthShape
+    a sh:NodeShape ;
+    sh:targetClass am4:Influence ;
+    sh:property [
+        sh:path        am4:influenceStrength ;
+        sh:maxCount    1 ;
+        sh:datatype    xsd:string ;
+        sh:in          ( "+" "++" "-" "--" ) ;
+        sh:message     "influenceStrength must be one of: +, ++, -, --."@en ;
+    ] ;
+.
+
+
+#################################################################
+# Structural integrity — cycle detection
+# Source: https://pubs.opengroup.org/architecture/archimate4-doc/chap05.html
+#################################################################
+
+## Detect 2-step (or longer) composition cycles: A composedOf B composedOf A
+:NoCircularCompositionShape
+    a              sh:NodeShape ;
+    sh:targetSubjectsOf am4:composedOf ;
+    skos:prefLabel "No Circular Composition"@en ;
+    skos:definition "Detects circular composition chains where an element is transitively composed of itself."@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/element-shapes#> ;
+        sh:message "Circular composition is not allowed."@en ;
+        sh:select """
+            SELECT $this WHERE { $this am4:composedOf+ $this . }
+        """ ;
+    ] ;
+.
+
+## Detect 2-step (or longer) aggregation cycles: A aggregates B aggregates A
+:NoCircularAggregationShape
+    a              sh:NodeShape ;
+    sh:targetSubjectsOf am4:aggregates ;
+    skos:prefLabel "No Circular Aggregation"@en ;
+    skos:definition "Detects circular aggregation chains where an element is transitively aggregated by itself."@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/element-shapes#> ;
+        sh:message "Circular aggregation is not allowed."@en ;
+        sh:select """
+            SELECT $this WHERE { $this am4:aggregates+ $this . }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+# Composition part uniqueness
+# Source: https://pubs.opengroup.org/architecture/archimate4-doc/chap05.html
+#################################################################
+
+## Warn if an element is composed into multiple parents
+:CompositionPartUniquenessShape
+    a              sh:NodeShape ;
+    sh:targetObjectsOf am4:composedOf ;
+    skos:prefLabel "Composition Part Uniqueness"@en ;
+    skos:definition "A composed part can only belong to one whole — composition implies exclusive ownership."@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/element-shapes#> ;
+        sh:message "A composed part can only belong to one whole (composition implies exclusive ownership)."@en ;
+        sh:select """
+            SELECT $this WHERE {
+                ?whole1 am4:composedOf $this .
+                ?whole2 am4:composedOf $this .
+                FILTER(?whole1 != ?whole2)
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+# Junction validation
+# Source: https://pubs.opengroup.org/architecture/archimate4-doc/chap05.html
+#################################################################
+
+## All relationships connected to an AndJunction must be of the same type
+:JunctionTypeShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:AndJunction ;
+    skos:prefLabel "AndJunction Type Homogeneity"@en ;
+    skos:definition "All relationships connected to an AndJunction must be of the same type."@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/element-shapes#> ;
+        sh:message "All relationships connected to an AndJunction must be of the same type."@en ;
+        sh:select """
+            SELECT $this WHERE {
+                {
+                    ?a ?rel1 $this .
+                    ?b ?rel2 $this .
+                } UNION {
+                    $this ?rel1 ?a .
+                    $this ?rel2 ?b .
+                } UNION {
+                    ?a ?rel1 $this .
+                    $this ?rel2 ?b .
+                }
+                ?rel1 rdfs:subPropertyOf* am4:composedOf .
+                FILTER NOT EXISTS {
+                    ?rel2 rdfs:subPropertyOf* am4:composedOf .
+                }
+                FILTER(?rel1 != ?rel2)
+            }
+        """ ;
+    ] ;
+.
+
+## All relationships connected to an OrJunction must be of the same type
+:OrJunctionTypeShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:OrJunction ;
+    skos:prefLabel "OrJunction Type Homogeneity"@en ;
+    skos:definition "All relationships connected to an OrJunction must be of the same type."@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/element-shapes#> ;
+        sh:message "All relationships connected to an OrJunction must be of the same type."@en ;
+        sh:select """
+            SELECT $this WHERE {
+                {
+                    ?a ?rel1 $this .
+                    ?b ?rel2 $this .
+                } UNION {
+                    $this ?rel1 ?a .
+                    $this ?rel2 ?b .
+                } UNION {
+                    ?a ?rel1 $this .
+                    $this ?rel2 ?b .
+                }
+                ?rel1 rdfs:subPropertyOf* am4:composedOf .
+                FILTER NOT EXISTS {
+                    ?rel2 rdfs:subPropertyOf* am4:composedOf .
+                }
+                FILTER(?rel1 != ?rel2)
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+# Deep specialization chain — informational
+#################################################################
+
+## Warn on deep specialization chains (5+ levels)
+:DeepSpecializationChainShape
+    a              sh:NodeShape ;
+    sh:targetSubjectsOf am4:specializes ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Deep Specialization Chain Warning"@en ;
+    skos:definition "Warns when an element has a specialization chain of 5 or more levels."@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/element-shapes#> ;
+        sh:message "Element has a deep specialization chain (5+ levels) — consider if this complexity is necessary."@en ;
+        sh:select """
+            SELECT $this WHERE {
+                $this am4:specializes+ ?t1 .
+                ?t1 am4:specializes+ ?t2 .
+                ?t2 am4:specializes+ ?t3 .
+                ?t3 am4:specializes+ ?t4 .
+            }
+        """ ;
+    ] ;
+.

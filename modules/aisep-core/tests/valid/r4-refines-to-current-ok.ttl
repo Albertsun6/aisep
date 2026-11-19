@@ -1,0 +1,24 @@
+# expect-no-warning: migrate the trace link to the replacing node
+# modules: bpmn
+# R4 counterpart: after migrating, the refines targets the replacing node and L4 is silent.
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix ddd:  <https://aisep.example/ont/ddd#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:old a am4:Process ; arch:inModel :t ; skos:prefLabel "旧过程"@zh ; owl:deprecated true ; dcterms:isReplacedBy :new .
+:new a am4:Process ; arch:inModel :t ; skos:prefLabel "新过程"@zh .
+:bp a bpmn:Process ; arch:inModel :t ; skos:prefLabel "流程"@zh ; bpmn:processType "Private" ; bpmn:isExecutable false .
+:r1 a arch:Refines ; arch:inModel :t ; arch:source :bp ; arch:target :new .

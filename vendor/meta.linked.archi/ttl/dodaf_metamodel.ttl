@@ -1,0 +1,109 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix archvp:   <https://meta.linked.archi/core-viewpoints#> .
+@prefix dodaftax: <https://meta.linked.archi/dodaf/tax#> .
+@prefix dodafvp:  <https://meta.linked.archi/dodaf/viewpoints#> .
+@prefix :         <https://meta.linked.archi/dodaf/metamodel#> .
+
+<https://meta.linked.archi/dodaf/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/dodaf/metamodel#" ;
+    vann:preferredNamespacePrefix "dodafmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi DoDAF Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for DoDAF 2.02. Ties together the DoDAF entity
+ontology, viewpoint taxonomy, and viewpoint definitions into a single
+discoverable resource.
+
+DoDAF 2.0 shifted from rigid "products" to a data-centric approach with
+"Fit-for-Purpose" presentation. This metamodel captures the underlying
+data model that the 8 viewpoints and 52 DoDAF-described Models present.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/dodaf/metamodel/2.02#> ;
+    owl:versionInfo               "2.02"@en ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/> ;
+    prov:wasDerivedFrom <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/> ;
+    prov:wasDerivedFrom           "DoDAF V2.02 (U.S. Department of Defense, 2010)" ;
+.
+
+
+#################################################################
+# Framework Individual
+#################################################################
+
+:DoDAFFramework
+    a               arch:Framework ;
+    skos:prefLabel  "DoDAF"@en ;
+    skos:definition '''The U.S. Department of Defense Architecture Framework (DoDAF),
+version 2.02. A comprehensive framework for developing architecture
+descriptions that support decision-making across the DoD. DoDAF 2.0
+organizes architectural data into 8 viewpoints (All, Capability, Data
+and Information, Operational, Project, Services, Standards, Systems)
+containing 52 DoDAF-described Models.
+
+DoDAF is prescribed for use in the U.S. Department of Defense and has
+influenced NATO Architecture Framework (NAF) and other defense
+architecture frameworks.'''@en ;
+    dcterms:publisher    "U.S. Department of Defense"@en ;
+    rdfs:seeAlso    <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/>,
+                    <https://www.dau.edu/acquipedia-article/dod-architecture-framework-dodaf> ;
+.
+
+
+#################################################################
+# Metamodel Instance
+#################################################################
+
+:DoDAF2
+    a                             arch:Metamodel ;
+    skos:prefLabel                "DoDAF 2.02 Metamodel"@en ;
+    dcterms:description               '''The complete DoDAF 2.02 metamodel definition, aggregating the
+entity ontology, viewpoint taxonomy, and viewpoint definitions.'''@en ;
+
+    ## Foundation
+    arch:basedOnFramework         :DoDAFFramework ;
+
+    ## Model concepts — entity types and relationships
+    arch:modelConcepts            <https://meta.linked.archi/dodaf/onto#> ;
+
+    ## SHACL shapes — element naming
+    ## File: dodaf-shapes.ttl
+    arch:formalRules              <https://meta.linked.archi/dodaf/shapes#> ;
+
+    ## Viewpoints — DoDAF-described Models
+    arch:architectureViewpoints   <https://meta.linked.archi/dodaf/viewpoints#> ;
+
+    ## Concept classification — SKOS taxonomy by viewpoint
+    arch:conceptClassification    <https://meta.linked.archi/dodaf/tax#> ;
+
+    ## Viewpoint library
+    arch:viewpointLibrary         dodafvp:ViewpointCatalog ;
+
+    ## Stakeholders
+    arch:metamodelIdentifiesStakeholder
+        dodafvp:MissionCommander, dodafvp:SystemEngineer,
+        dodafvp:SystemIntegrator, dodafvp:SoftwareDeveloper,
+        dodafvp:DatabaseEngineer, dodafvp:NetworkEngineer,
+        dodafvp:ProgramManager, dodafvp:Analyst, dodafvp:Acquirer ;
+
+    ## Concerns
+    arch:metamodelIdentifiesConsideration
+        archvp:StructureConcern, archvp:BehaviorConcern,
+        archvp:DeploymentConcern, archvp:DependencyConcern,
+        archvp:GovernanceConcern, archvp:EvolutionConcern,
+        archvp:IntegrationConcern ;
+.

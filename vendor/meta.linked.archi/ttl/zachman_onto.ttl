@@ -1,0 +1,154 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix schema:  <http://schema.org/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix :        <https://meta.linked.archi/zachman/onto#> .
+
+<https://meta.linked.archi/zachman/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/zachman/onto#" ;
+    vann:preferredNamespacePrefix "zach" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Zachman Framework Ontology"@en ;
+    dcterms:description           '''OWL ontology for the Zachman Framework for Enterprise Architecture.
+Defines the Framework individual and the properties used to link Zachman Cells
+to their Aspect (column) and Perspective (row). The SKOS taxonomy of concepts
+is in the companion file zachman-tax.ttl.
+
+The Zachman Framework is not a methodology — it is a classification schema for
+organizing descriptive representations of an enterprise.
+
+This is not an official Zachman International product. "Zachman Framework" is a
+registered trademark of Zachman International, Inc.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:issued                "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-02-17"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    dcterms:source                <https://zachman-feac.com/zachman/about-the-zachman-framework/>,
+                                  :Zachman1987, :Zachman2008 ;
+    prov:wasDerivedFrom           <https://zachman-feac.com/zachman/about-the-zachman-framework/>,
+                                  :Zachman1987, :Zachman2008 ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/zachman/onto/0.3.0#> ;
+    owl:versionInfo               "0.3.0"@en ;
+    schema:citation               "Zachman, J.A. (1987). A Framework for Information Systems Architecture. IBM Systems Journal, 26(3)." ;
+    rdfs:seeAlso                  <https://www.zachman.com/about-the-zachman-framework>,
+                                  <https://en.wikipedia.org/wiki/Zachman_Framework>,
+                                  <https://www.brcommunity.com/articles.php?id=b696> ;
+    skos:editorialNote            '''Disclaimer: This is a community semantic representation of the Zachman
+Framework for interoperability purposes. It is not produced by, endorsed by, or
+affiliated with Zachman International, Inc.'''@en ;
+.
+
+
+## =============================================================================
+## Source References
+## =============================================================================
+
+:Zachman1987
+    a               bibo:Article, prov:Entity ;
+    dcterms:title   "A Framework for Information Systems Architecture"@en ;
+    dcterms:creator "John A. Zachman" ;
+    dcterms:date    "1987" ;
+    dcterms:publisher "IBM Systems Journal" ;
+    bibo:volume     "26" ;
+    bibo:issue      "3" ;
+.
+
+:Zachman2008
+    a               bibo:Article, prov:Entity ;
+    dcterms:title   "The Concise Definition of The Zachman Framework"@en ;
+    dcterms:creator "John A. Zachman" ;
+    dcterms:date    "2008" ;
+    dcterms:publisher "Zachman International" ;
+    rdfs:seeAlso    <https://www.brcommunity.com/articles.php?id=b696> ;
+.
+
+
+## =============================================================================
+## Properties
+## =============================================================================
+
+:hasAspect
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "has aspect"@en ;
+    skos:definition "Links a Zachman Cell to its column Aspect."@en ;
+.
+
+:hasPerspective
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "has perspective"@en ;
+    skos:definition "Links a Zachman Cell to its row Perspective."@en ;
+.
+
+:rowOrder
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "row order"@en ;
+    skos:definition "Display order of a row (1-6, top to bottom)."@en ;
+    rdfs:range      xsd:integer ;
+.
+
+:columnOrder
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "column order"@en ;
+    skos:definition "Display order of a column (1-6, left to right)."@en ;
+    rdfs:range      xsd:integer ;
+.
+
+
+## =============================================================================
+## Classes
+## =============================================================================
+
+:ZachmanCell
+    a               owl:Class ;
+    skos:prefLabel  "Zachman Cell"@en ;
+    skos:definition "A cell in the Zachman 6x6 matrix — the intersection of one Aspect and one Perspective. Instances are the 36 named individuals in the taxonomy."@en ;
+.
+
+
+## =============================================================================
+## Classification Property
+## =============================================================================
+
+:classifiedByCell
+    a               owl:ObjectProperty ;
+    rdfs:range      :ZachmanCell ;
+    skos:prefLabel  "classified by cell"@en ;
+    skos:definition '''Links an architecture work product to the Zachman Cell it is classified
+by. The Cell is the coordinate (Aspect x Perspective) that the work product
+addresses. A work product may be classified by more than one cell if it is
+composite.'''@en ;
+    skos:scopeNote  '''Usage pattern:
+  ex:TechRefModel a arch:Model ;
+      skos:prefLabel "Enterprise Technology Reference Model"@en ;
+      zach:classifiedByCell zachtax:R3C1_InventoryRepresentation .
+
+  ex:OrderProcessFlow a arch:View ;
+      skos:prefLabel "Order Processing Flow"@en ;
+      zach:classifiedByCell zachtax:R2C2_ProcessDefinition .'''@en ;
+.
+
+:relatedEnterpriseType
+    a               owl:ObjectProperty ;
+    rdfs:subPropertyOf skos:related ;
+    skos:prefLabel  "related enterprise type"@en ;
+    skos:definition "Links a Zachman Aspect (column) to the enterprise type that names the category of descriptions it contains."@en ;
+.
+
+:relatedModelType
+    a               owl:ObjectProperty ;
+    rdfs:subPropertyOf skos:related ;
+    skos:prefLabel  "related model type"@en ;
+    skos:definition "Links a Zachman Perspective (row) to the model type that names the category of models it contains."@en ;
+.

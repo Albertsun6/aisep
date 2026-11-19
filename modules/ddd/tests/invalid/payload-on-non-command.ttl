@@ -1,0 +1,11 @@
+# expect: ddd:payload may only be stated on a ddd:Command
+# payload stated on a domain event (spec v0.2 §6.4: payload is a Command attribute)
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix ddd:   <https://aisep.example/ont/ddd#> .
+@prefix :      <https://aisep.example/model/ddd-payload-bad2/> .
+
+:model a arch:Model ; skos:prefLabel "载荷挂错类型样例"@zh .
+:stockReserved a ddd:DomainEvent ; arch:inModel :model ; skos:prefLabel "库存已预留"@zh ;
+    ddd:payload :reservation .
+:reservation a ddd:ValueObject ; arch:inModel :model ; skos:prefLabel "预留记录"@zh .

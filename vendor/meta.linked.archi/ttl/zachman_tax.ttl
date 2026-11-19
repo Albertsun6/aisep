@@ -1,0 +1,576 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix zach:    <https://meta.linked.archi/zachman/onto#> .
+@prefix :        <https://meta.linked.archi/zachman/tax#> .
+
+
+## =============================================================================
+## SKOS Concept Scheme
+## =============================================================================
+
+<https://meta.linked.archi/zachman/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "Zachman Framework Classification"@en ;
+    dcterms:description  '''Classification of enterprise architecture descriptions using the Zachman
+Framework 6x6 matrix. Organizes concepts into five families: Aspect (the six
+columns representing what question is being answered), Perspective (the six rows
+representing at what level of reification and for which audience), Cell (the
+36 intersections, each classifying a primitive descriptive representation),
+Enterprise Type (the category of enterprise description produced by each column),
+and Model Type (the category of model produced by each row).'''@en ;
+    skos:hasTopConcept :Aspect, :Perspective, :Cell, :EnterpriseType, :ModelType ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/zachman/tax#" ;
+    vann:preferredNamespacePrefix "zachtax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Zachman Framework Taxonomy"@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-02-17"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    dcterms:source                <https://zachman-feac.com/zachman/about-the-zachman-framework/> ;
+    prov:wasDerivedFrom           <https://zachman-feac.com/zachman/about-the-zachman-framework/> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.3.0"@en .
+
+
+
+## =============================================================================
+## Aspects (Columns)
+## =============================================================================
+
+:Aspect
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/zachman/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel    "Zachman Aspect"@en ;
+    skos:altLabel     "Column"@en, "Classification Name"@en, "Interrogative"@en, "Communication Interrogative"@en ;
+    skos:definition   '''The six columns of the Zachman Framework matrix. Each aspect represents
+a fundamental communication interrogative — a primitive question that can be
+asked about any complex thing. The columns are also known as classification
+names because they name the type of descriptive representation produced.'''@en ;
+.
+
+:Inventory
+    a               skos:Concept ;
+    skos:broader    :Aspect ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Inventory / What"@en ;
+    skos:altLabel   "What"@en, "Data"@en ;
+    zach:relatedEnterpriseType :InventorySets ;
+    skos:definition "The things of the enterprise — material compositions, inventory sets."@en ;
+    skos:scopeNote  "Communication interrogative: What. Artifacts: data models, entity-relationship diagrams, class diagrams, inventories."@en ;
+    zach:columnOrder    1 ;
+.
+
+:Process
+    a               skos:Concept ;
+    skos:broader    :Aspect ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Process / How"@en ;
+    skos:altLabel   "How"@en, "Function"@en ;
+    zach:relatedEnterpriseType :ProcessFlows ;
+    skos:definition "The functioning of the enterprise — process transformations, process flows."@en ;
+    skos:scopeNote  "Communication interrogative: How. Artifacts: process models, use cases, service definitions, workflow diagrams."@en ;
+    zach:columnOrder    2 ;
+.
+
+:Distribution
+    a               skos:Concept ;
+    skos:broader    :Aspect ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Distribution / Where"@en ;
+    skos:altLabel   "Where"@en, "Network"@en ;
+    zach:relatedEnterpriseType :DistributionNetworks ;
+    skos:definition "The locations and connectivity of the enterprise — distribution networks, geographic topology."@en ;
+    skos:scopeNote  "Communication interrogative: Where. Artifacts: network diagrams, deployment models, distribution maps."@en ;
+    zach:columnOrder    3 ;
+.
+
+:Responsibility
+    a               skos:Concept ;
+    skos:broader    :Aspect ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Responsibility / Who"@en ;
+    skos:altLabel   "Who"@en, "People"@en ;
+    zach:relatedEnterpriseType :ResponsibilityAssignments ;
+    skos:definition "The people and organizations of the enterprise — responsibility assignments, authority structures."@en ;
+    skos:scopeNote  "Communication interrogative: Who. Artifacts: organization charts, role definitions, RACI matrices, security models."@en ;
+    zach:columnOrder    4 ;
+.
+
+:Timing
+    a               skos:Concept ;
+    skos:broader    :Aspect ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Timing / When"@en ;
+    skos:altLabel   "When"@en, "Time"@en ;
+    zach:relatedEnterpriseType :TimingCycles ;
+    skos:definition "The events, cycles, and schedules of the enterprise — timing cycles, temporal ordering."@en ;
+    skos:scopeNote  "Communication interrogative: When. Artifacts: event models, state diagrams, schedules, master plans."@en ;
+    zach:columnOrder    5 ;
+.
+
+:Motivation
+    a               skos:Concept ;
+    skos:broader    :Aspect ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Motivation / Why"@en ;
+    skos:altLabel   "Why"@en ;
+    zach:relatedEnterpriseType :MotivationIntentions ;
+    skos:definition "The goals, strategies, and rules of the enterprise — motivation intentions, ends and means."@en ;
+    skos:scopeNote  "Communication interrogative: Why. Artifacts: goal models, business rules, strategy maps, motivation models."@en ;
+    zach:columnOrder    6 ;
+.
+
+
+## =============================================================================
+## Perspectives (Rows)
+## =============================================================================
+
+:Perspective
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/zachman/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel    "Zachman Perspective"@en ;
+    skos:altLabel     "Row"@en, "Audience Perspective"@en, "Reification Transformation"@en ;
+    skos:definition   '''The six rows of the Zachman Framework matrix. Each perspective represents
+a reification transformation — a progressive level of concretization from
+abstract identification to physical instantiation. The rows are also known as
+audience perspectives because each level is associated with a stakeholder
+whose viewpoint defines that degree of abstraction.'''@en ;
+.
+
+:Executive
+    a               skos:Concept ;
+    skos:broader    :Perspective ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Executive / Identification"@en ;
+    skos:altLabel   "Planner"@en ;
+    zach:relatedModelType :ScopeContexts ;
+    skos:definition "Identifies and names the things of the enterprise at the highest level of abstraction — scope and context."@en ;
+    skos:scopeNote  "Reification transformation: Identification. Audience: Executive, Strategist, Planner."@en ;
+    zach:rowOrder       1 ;
+.
+
+:BusinessManagement
+    a               skos:Concept ;
+    skos:broader    :Perspective ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Business Management / Definition"@en ;
+    skos:altLabel   "Owner"@en ;
+    zach:relatedModelType :BusinessConcepts ;
+    skos:definition "Defines the business model in terms the business understands — business concepts."@en ;
+    skos:scopeNote  "Reification transformation: Definition. Audience: Business Owner, Domain Expert."@en ;
+    zach:rowOrder       2 ;
+.
+
+:Architect
+    a               skos:Concept ;
+    skos:broader    :Perspective ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Architect / Representation"@en ;
+    skos:altLabel   "Designer"@en ;
+    zach:relatedModelType :SystemLogic ;
+    skos:definition "Represents the logical model independent of implementation technology — system logic."@en ;
+    skos:scopeNote  "Reification transformation: Representation. Audience: Architect, Systems Analyst."@en ;
+    zach:rowOrder       3 ;
+.
+
+:Engineer
+    a               skos:Concept ;
+    skos:broader    :Perspective ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Engineer / Specification"@en ;
+    skos:altLabel   "Builder"@en ;
+    zach:relatedModelType :TechnologyPhysics ;
+    skos:definition "Specifies the technology-constrained physical model — technology physics."@en ;
+    skos:scopeNote  "Reification transformation: Specification. Audience: Engineer, Developer, Technology Specialist."@en ;
+    zach:rowOrder       4 ;
+.
+
+:Technician
+    a               skos:Concept ;
+    skos:broader    :Perspective ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Technician / Configuration"@en ;
+    skos:altLabel   "Implementer"@en ;
+    zach:relatedModelType :ToolComponents ;
+    skos:definition "Configures the tool-specific implementation details — tool components."@en ;
+    skos:scopeNote  "Reification transformation: Configuration. Audience: Implementer, Programmer, DBA."@en ;
+    zach:rowOrder       5 ;
+.
+
+:Enterprise
+    a               skos:Concept ;
+    skos:broader    :Perspective ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Enterprise / Instantiation"@en ;
+    skos:altLabel   "Worker"@en, "Functioning Enterprise"@en ;
+    zach:relatedModelType :OperationsInstances ;
+    skos:definition "The functioning enterprise as instantiated in operation — operations instances."@en ;
+    skos:scopeNote  "Reification transformation: Instantiation. Audience: End User, Operator, Worker."@en ;
+    zach:rowOrder       6 ;
+.
+
+
+## =============================================================================
+## Enterprise Types (bottom of columns) — the category of enterprise description
+## produced by each Aspect across all rows
+## =============================================================================
+
+:EnterpriseType
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/zachman/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel    "Enterprise Type"@en ;
+    skos:altLabel     "Enterprise Name"@en ;
+    skos:definition   '''The category of enterprise description produced by each Aspect (column)
+across all Perspectives (rows). In the official Zachman matrix these appear at
+the bottom of each column. They name the type of enterprise thing that the
+column describes — the output category of that interrogative.'''@en ;
+.
+
+:InventorySets
+    a               skos:Concept ;
+    skos:broader    :EnterpriseType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Inventory Sets"@en ;
+    skos:definition "The complete set of enterprise descriptions answering What — the material compositions and things of the enterprise across all levels of reification."@en ;
+    zach:columnOrder    1 ;
+.
+
+:ProcessFlows
+    a               skos:Concept ;
+    skos:broader    :EnterpriseType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Process Flows"@en ;
+    skos:definition "The complete set of enterprise descriptions answering How — the process transformations and functions of the enterprise across all levels of reification."@en ;
+    zach:columnOrder    2 ;
+.
+
+:DistributionNetworks
+    a               skos:Concept ;
+    skos:broader    :EnterpriseType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Distribution Networks"@en ;
+    skos:definition "The complete set of enterprise descriptions answering Where — the locations and connectivity of the enterprise across all levels of reification."@en ;
+    zach:columnOrder    3 ;
+.
+
+:ResponsibilityAssignments
+    a               skos:Concept ;
+    skos:broader    :EnterpriseType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Responsibility Assignments"@en ;
+    skos:definition "The complete set of enterprise descriptions answering Who — the people, roles, and authority structures of the enterprise across all levels of reification."@en ;
+    zach:columnOrder    4 ;
+.
+
+:TimingCycles
+    a               skos:Concept ;
+    skos:broader    :EnterpriseType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Timing Cycles"@en ;
+    skos:definition "The complete set of enterprise descriptions answering When — the events, cycles, and schedules of the enterprise across all levels of reification."@en ;
+    zach:columnOrder    5 ;
+.
+
+:MotivationIntentions
+    a               skos:Concept ;
+    skos:broader    :EnterpriseType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Motivation Intentions"@en ;
+    skos:definition "The complete set of enterprise descriptions answering Why — the goals, strategies, and rules of the enterprise across all levels of reification."@en ;
+    zach:columnOrder    6 ;
+.
+
+
+## =============================================================================
+## Model Types (right of rows) — the category of model produced by each
+## Perspective across all columns
+## =============================================================================
+
+:ModelType
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/zachman/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel    "Model Type"@en ;
+    skos:altLabel     "Model Name"@en ;
+    skos:definition   '''The category of model produced by each Perspective (row) across all
+Aspects (columns). In the official Zachman matrix these appear to the right of
+each row. They name the type of model that the row produces — the output
+category of that reification transformation.'''@en ;
+.
+
+:ScopeContexts
+    a               skos:Concept ;
+    skos:broader    :ModelType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Scope Contexts"@en ;
+    skos:definition "The type of model produced at the Identification level — scope and context descriptions that identify and bound the enterprise at the highest abstraction."@en ;
+    zach:rowOrder       1 ;
+.
+
+:BusinessConcepts
+    a               skos:Concept ;
+    skos:broader    :ModelType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Business Concepts"@en ;
+    skos:definition "The type of model produced at the Definition level — business concept descriptions that define the enterprise in terms the business understands."@en ;
+    zach:rowOrder       2 ;
+.
+
+:SystemLogic
+    a               skos:Concept ;
+    skos:broader    :ModelType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "System Logic"@en ;
+    skos:definition "The type of model produced at the Representation level — logical models that represent the enterprise independent of implementation technology."@en ;
+    zach:rowOrder       3 ;
+.
+
+:TechnologyPhysics
+    a               skos:Concept ;
+    skos:broader    :ModelType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Technology Physics"@en ;
+    skos:definition "The type of model produced at the Specification level — physical models that specify the enterprise constrained by specific technology."@en ;
+    zach:rowOrder       4 ;
+.
+
+:ToolComponents
+    a               skos:Concept ;
+    skos:broader    :ModelType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Tool Components"@en ;
+    skos:definition "The type of model produced at the Configuration level — tool-specific configurations that implement the enterprise in specific products and platforms."@en ;
+    zach:rowOrder       5 ;
+.
+
+:OperationsInstances
+    a               skos:Concept ;
+    skos:broader    :ModelType ;
+    skos:inScheme   <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel  "Operations Instances"@en ;
+    skos:definition "The type of model produced at the Instantiation level — the actual functioning enterprise as instantiated in operation."@en ;
+    zach:rowOrder       6 ;
+.
+
+
+## =============================================================================
+## Cells — the 36 intersections
+## =============================================================================
+
+:Cell
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/zachman/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel    "Zachman Cell"@en ;
+    skos:definition   '''A cell in the 6x6 matrix — the intersection of one Aspect (column) and one
+Perspective (row). Each cell classifies a primitive descriptive representation.'''@en ;
+    skos:scopeNote    '''Cells are classification slots for artifacts, views, or view components —
+not deliverables and not ISO 42010 viewpoints. Deliverables aggregate multiple
+artifacts and therefore cover many cells.'''@en ;
+.
+
+
+## --- Row 1: Executive / Identification ---
+
+:R1C1_InventoryIdentification    a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Inventory Identification"@en ; skos:altLabel "List of Things Important to the Business"@en ;
+    skos:definition "Identifies the things (entities) of the enterprise at the scope/contextual level — what things are important to the business."@en ;
+    zach:hasAspect :Inventory ; zach:hasPerspective :Executive ; zach:rowOrder 1 ; zach:columnOrder 1 .
+
+:R1C2_ProcessIdentification      a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Process Identification"@en ; skos:altLabel "List of Processes the Business Performs"@en ;
+    skos:definition "Identifies the processes of the enterprise at the scope/contextual level — what processes the business performs."@en ;
+    zach:hasAspect :Process ; zach:hasPerspective :Executive ; zach:rowOrder 1 ; zach:columnOrder 2 .
+
+:R1C3_DistributionIdentification a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Distribution Identification"@en ; skos:altLabel "List of Locations Where the Business Operates"@en ;
+    skos:definition "Identifies the locations of the enterprise at the scope/contextual level — where the business operates."@en ;
+    zach:hasAspect :Distribution ; zach:hasPerspective :Executive ; zach:rowOrder 1 ; zach:columnOrder 3 .
+
+:R1C4_ResponsibilityIdentification a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Responsibility Identification"@en ; skos:altLabel "List of Organizations Important to the Business"@en ;
+    skos:definition "Identifies the people and organizations of the enterprise at the scope/contextual level — who is important to the business."@en ;
+    zach:hasAspect :Responsibility ; zach:hasPerspective :Executive ; zach:rowOrder 1 ; zach:columnOrder 4 .
+
+:R1C5_TimingIdentification       a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Timing Identification"@en ; skos:altLabel "List of Events Significant to the Business"@en ;
+    skos:definition "Identifies the events and cycles of the enterprise at the scope/contextual level — when things happen that matter to the business."@en ;
+    zach:hasAspect :Timing ; zach:hasPerspective :Executive ; zach:rowOrder 1 ; zach:columnOrder 5 .
+
+:R1C6_MotivationIdentification   a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Motivation Identification"@en ; skos:altLabel "List of Business Goals and Strategies"@en ;
+    skos:definition "Identifies the goals and strategies of the enterprise at the scope/contextual level — why the business exists and what it intends."@en ;
+    zach:hasAspect :Motivation ; zach:hasPerspective :Executive ; zach:rowOrder 1 ; zach:columnOrder 6 .
+
+## --- Row 2: Business Management / Definition ---
+
+:R2C1_InventoryDefinition        a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Inventory Definition"@en ; skos:altLabel "Semantic Model"@en ;
+    skos:definition "Defines the things of the enterprise in business terms — the semantic model of business entities and their relationships."@en ;
+    zach:hasAspect :Inventory ; zach:hasPerspective :BusinessManagement ; zach:rowOrder 2 ; zach:columnOrder 1 .
+
+:R2C2_ProcessDefinition          a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Process Definition"@en ; skos:altLabel "Business Process Model"@en ;
+    skos:definition "Defines the processes of the enterprise in business terms — the business process model showing inputs, outputs, and transformations."@en ;
+    zach:hasAspect :Process ; zach:hasPerspective :BusinessManagement ; zach:rowOrder 2 ; zach:columnOrder 2 .
+
+:R2C3_DistributionDefinition     a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Distribution Definition"@en ; skos:altLabel "Business Logistics System"@en ;
+    skos:definition "Defines the locations and connectivity of the enterprise in business terms — the logistics and distribution model."@en ;
+    zach:hasAspect :Distribution ; zach:hasPerspective :BusinessManagement ; zach:rowOrder 2 ; zach:columnOrder 3 .
+
+:R2C4_ResponsibilityDefinition   a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Responsibility Definition"@en ; skos:altLabel "Work Flow Model"@en ;
+    skos:definition "Defines the people and responsibilities of the enterprise in business terms — the organizational workflow and responsibility model."@en ;
+    zach:hasAspect :Responsibility ; zach:hasPerspective :BusinessManagement ; zach:rowOrder 2 ; zach:columnOrder 4 .
+
+:R2C5_TimingDefinition           a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Timing Definition"@en ; skos:altLabel "Master Schedule"@en ;
+    skos:definition "Defines the events and cycles of the enterprise in business terms — the master schedule and business cycle model."@en ;
+    zach:hasAspect :Timing ; zach:hasPerspective :BusinessManagement ; zach:rowOrder 2 ; zach:columnOrder 5 .
+
+:R2C6_MotivationDefinition       a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Motivation Definition"@en ; skos:altLabel "Business Plan"@en ;
+    skos:definition "Defines the goals and strategies of the enterprise in business terms — the business plan expressing ends, means, and constraints."@en ;
+    zach:hasAspect :Motivation ; zach:hasPerspective :BusinessManagement ; zach:rowOrder 2 ; zach:columnOrder 6 .
+
+## --- Row 3: Architect / Representation ---
+
+:R3C1_InventoryRepresentation    a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Inventory Representation"@en ; skos:altLabel "Logical Data Model"@en ;
+    skos:definition "Represents the things of the enterprise as a logical model — the normalized data model independent of technology."@en ;
+    zach:hasAspect :Inventory ; zach:hasPerspective :Architect ; zach:rowOrder 3 ; zach:columnOrder 1 .
+
+:R3C2_ProcessRepresentation      a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Process Representation"@en ; skos:altLabel "Application Architecture"@en ;
+    skos:definition "Represents the processes of the enterprise as a logical model — the system architecture showing application functions and interfaces."@en ;
+    zach:hasAspect :Process ; zach:hasPerspective :Architect ; zach:rowOrder 3 ; zach:columnOrder 2 .
+
+:R3C3_DistributionRepresentation a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Distribution Representation"@en ; skos:altLabel "Distributed System Architecture"@en ;
+    skos:definition "Represents the locations and connectivity as a logical model — the distributed systems architecture showing nodes and connections."@en ;
+    zach:hasAspect :Distribution ; zach:hasPerspective :Architect ; zach:rowOrder 3 ; zach:columnOrder 3 .
+
+:R3C4_ResponsibilityRepresentation a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Responsibility Representation"@en ; skos:altLabel "Human Interface Architecture"@en ;
+    skos:definition "Represents the people and responsibilities as a logical model — the human interface architecture showing roles, access, and security."@en ;
+    zach:hasAspect :Responsibility ; zach:hasPerspective :Architect ; zach:rowOrder 3 ; zach:columnOrder 4 .
+
+:R3C5_TimingRepresentation       a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Timing Representation"@en ; skos:altLabel "Processing Structure"@en ;
+    skos:definition "Represents the events and cycles as a logical model — the processing structure showing event triggers, states, and transitions."@en ;
+    zach:hasAspect :Timing ; zach:hasPerspective :Architect ; zach:rowOrder 3 ; zach:columnOrder 5 .
+
+:R3C6_MotivationRepresentation   a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Motivation Representation"@en ; skos:altLabel "Business Rule Model"@en ;
+    skos:definition "Represents the goals and strategies as a logical model — the business rule model expressing constraints and derivations."@en ;
+    zach:hasAspect :Motivation ; zach:hasPerspective :Architect ; zach:rowOrder 3 ; zach:columnOrder 6 .
+
+## --- Row 4: Engineer / Specification ---
+
+:R4C1_InventorySpecification     a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Inventory Specification"@en ; skos:altLabel "Physical Data Model"@en ;
+    skos:definition "Specifies the things of the enterprise in technology terms — the physical data model adapted to specific database technology."@en ;
+    zach:hasAspect :Inventory ; zach:hasPerspective :Engineer ; zach:rowOrder 4 ; zach:columnOrder 1 .
+
+:R4C2_ProcessSpecification       a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Process Specification"@en ; skos:altLabel "Technology Design"@en ;
+    skos:definition "Specifies the processes of the enterprise in technology terms — the technology design showing system components and their interactions."@en ;
+    zach:hasAspect :Process ; zach:hasPerspective :Engineer ; zach:rowOrder 4 ; zach:columnOrder 2 .
+
+:R4C3_DistributionSpecification  a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Distribution Specification"@en ; skos:altLabel "Technology Architecture"@en ;
+    skos:definition "Specifies the locations and connectivity in technology terms — the network architecture showing protocols, hardware, and topology."@en ;
+    zach:hasAspect :Distribution ; zach:hasPerspective :Engineer ; zach:rowOrder 4 ; zach:columnOrder 3 .
+
+:R4C4_ResponsibilitySpecification a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Responsibility Specification"@en ; skos:altLabel "Presentation Architecture"@en ;
+    skos:definition "Specifies the people and responsibilities in technology terms — the presentation architecture showing user interfaces and access control."@en ;
+    zach:hasAspect :Responsibility ; zach:hasPerspective :Engineer ; zach:rowOrder 4 ; zach:columnOrder 4 .
+
+:R4C5_TimingSpecification        a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Timing Specification"@en ; skos:altLabel "Control Structure"@en ;
+    skos:definition "Specifies the events and cycles in technology terms — the control structure showing triggers, schedulers, and execution sequences."@en ;
+    zach:hasAspect :Timing ; zach:hasPerspective :Engineer ; zach:rowOrder 4 ; zach:columnOrder 5 .
+
+:R4C6_MotivationSpecification    a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Motivation Specification"@en ; skos:altLabel "Rule Design"@en ;
+    skos:definition "Specifies the goals and strategies in technology terms — the rule design showing implementable constraints and decision logic."@en ;
+    zach:hasAspect :Motivation ; zach:hasPerspective :Engineer ; zach:rowOrder 4 ; zach:columnOrder 6 .
+
+## --- Row 5: Technician / Configuration ---
+
+:R5C1_InventoryConfiguration     a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Inventory Configuration"@en ; skos:altLabel "Data Definition"@en ;
+    skos:definition "Configures the things of the enterprise in tool-specific terms — the data definitions, DDL, schemas as implemented in specific products."@en ;
+    zach:hasAspect :Inventory ; zach:hasPerspective :Technician ; zach:rowOrder 5 ; zach:columnOrder 1 .
+
+:R5C2_ProcessConfiguration       a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Process Configuration"@en ; skos:altLabel "Program"@en ;
+    skos:definition "Configures the processes of the enterprise in tool-specific terms — the programs, scripts, and executable code."@en ;
+    zach:hasAspect :Process ; zach:hasPerspective :Technician ; zach:rowOrder 5 ; zach:columnOrder 2 .
+
+:R5C3_DistributionConfiguration  a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Distribution Configuration"@en ; skos:altLabel "Network Configuration"@en ;
+    skos:definition "Configures the locations and connectivity in tool-specific terms — the network addresses, routing tables, and deployment configurations."@en ;
+    zach:hasAspect :Distribution ; zach:hasPerspective :Technician ; zach:rowOrder 5 ; zach:columnOrder 3 .
+
+:R5C4_ResponsibilityConfiguration a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Responsibility Configuration"@en ; skos:altLabel "Security Configuration"@en ;
+    skos:definition "Configures the people and responsibilities in tool-specific terms — the security configurations, access control lists, and identity management."@en ;
+    zach:hasAspect :Responsibility ; zach:hasPerspective :Technician ; zach:rowOrder 5 ; zach:columnOrder 4 .
+
+:R5C5_TimingConfiguration        a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Timing Configuration"@en ; skos:altLabel "Timing Definition"@en ;
+    skos:definition "Configures the events and cycles in tool-specific terms — the cron jobs, event handlers, and scheduler configurations."@en ;
+    zach:hasAspect :Timing ; zach:hasPerspective :Technician ; zach:rowOrder 5 ; zach:columnOrder 5 .
+
+:R5C6_MotivationConfiguration    a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Motivation Configuration"@en ; skos:altLabel "Rule Specification"@en ;
+    skos:definition "Configures the goals and strategies in tool-specific terms — the business rules engine configurations, validation rules, and policy implementations."@en ;
+    zach:hasAspect :Motivation ; zach:hasPerspective :Technician ; zach:rowOrder 5 ; zach:columnOrder 6 .
+
+## --- Row 6: Enterprise / Instantiation ---
+
+:R6C1_InventoryInstantiation     a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Inventory Instantiation"@en ; skos:altLabel "Data"@en ;
+    skos:definition "The actual data instances of the functioning enterprise — the live data in databases, files, and stores."@en ;
+    zach:hasAspect :Inventory ; zach:hasPerspective :Enterprise ; zach:rowOrder 6 ; zach:columnOrder 1 .
+
+:R6C2_ProcessInstantiation       a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Process Instantiation"@en ; skos:altLabel "Function"@en ;
+    skos:definition "The actual process instances of the functioning enterprise — the running applications, services, and workflows."@en ;
+    zach:hasAspect :Process ; zach:hasPerspective :Enterprise ; zach:rowOrder 6 ; zach:columnOrder 2 .
+
+:R6C3_DistributionInstantiation  a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Distribution Instantiation"@en ; skos:altLabel "Network"@en ;
+    skos:definition "The actual network instances of the functioning enterprise — the live network connections, deployed infrastructure, and operational locations."@en ;
+    zach:hasAspect :Distribution ; zach:hasPerspective :Enterprise ; zach:rowOrder 6 ; zach:columnOrder 3 .
+
+:R6C4_ResponsibilityInstantiation a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Responsibility Instantiation"@en ; skos:altLabel "Organization"@en ;
+    skos:definition "The actual people instances of the functioning enterprise — the real people in real roles performing real work."@en ;
+    zach:hasAspect :Responsibility ; zach:hasPerspective :Enterprise ; zach:rowOrder 6 ; zach:columnOrder 4 .
+
+:R6C5_TimingInstantiation        a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Timing Instantiation"@en ; skos:altLabel "Schedule"@en ;
+    skos:definition "The actual timing instances of the functioning enterprise — the real events occurring, schedules being executed, and cycles completing."@en ;
+    zach:hasAspect :Timing ; zach:hasPerspective :Enterprise ; zach:rowOrder 6 ; zach:columnOrder 5 .
+
+:R6C6_MotivationInstantiation    a skos:Concept ; skos:broader :Cell ; skos:inScheme <https://meta.linked.archi/zachman/tax#> ;
+    skos:prefLabel "Motivation Instantiation"@en ; skos:altLabel "Strategy"@en ;
+    skos:definition "The actual motivation instances of the functioning enterprise — the real goals being pursued, strategies being executed, and rules being enforced."@en ;
+    zach:hasAspect :Motivation ; zach:hasPerspective :Enterprise ; zach:rowOrder 6 ; zach:columnOrder 6 .

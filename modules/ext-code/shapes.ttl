@@ -1,0 +1,68 @@
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix schema: <https://schema.org/> .
+@prefix arch:   <https://meta.linked.archi/core#> .
+@prefix aisep:  <https://aisep.example/ont/aisep#> .
+@prefix :       <https://aisep.example/shapes/ext-code#> .
+
+# L3 shapes for the code & delivery extension (spec §6.7). SHACL Core only.
+# Each message starts with a rule id (EC1..EC7); every rule has a valid and an invalid fixture in tests/.
+
+:CodeLocationShape a sh:NodeShape ;
+    sh:targetClass aisep:CodeLocation ;
+    sh:property [
+        sh:path schema:codeRepository ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "EC1: a CodeLocation must have exactly one schema:codeRepository, given as an IRI (the repository URL)." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:path ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "EC2: a CodeLocation must have exactly one aisep:path (xsd:string)." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:symbol ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "EC3: aisep:symbol is optional, at most one, xsd:string." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:swhid ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^swh:1:(cnt|dir|rev|rel|snp):[0-9a-f]{40}(;.+)?$" ;
+        sh:message "EC4: aisep:swhid is optional, at most one, and must be a SWHID (swh:1:<cnt|dir|rev|rel|snp>:<40 hex>[;qualifiers])." ;
+        sh:severity sh:Violation ;
+    ] .
+
+:ImplementationShape a sh:NodeShape ;
+    sh:targetClass aisep:Implementation ;
+    sh:property [
+        sh:path arch:source ;
+        sh:class aisep:CodeLocation ;
+        sh:message "EC5: the source of an aisep:Implementation must be an aisep:CodeLocation." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path arch:target ;
+        sh:class arch:Element ;
+        sh:message "EC6: the target of an aisep:Implementation must be a model element (typed by a class under arch:Element)." ;
+        sh:severity sh:Violation ;
+    ] .
+
+:DeployableShape a sh:NodeShape ;
+    sh:targetClass aisep:Deployable ;
+    sh:property [
+        sh:path aisep:packageUrl ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^pkg:[a-zA-Z][a-zA-Z0-9.+-]*/.+" ;
+        sh:message "EC7: a Deployable must have exactly one aisep:packageUrl, a purl string (pkg:<type>/<name>...)." ;
+        sh:severity sh:Violation ;
+    ] .

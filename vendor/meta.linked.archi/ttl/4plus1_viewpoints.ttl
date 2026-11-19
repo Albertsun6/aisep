@@ -1,0 +1,212 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix fourplus1: <https://meta.linked.archi/4plus1#> .
+@prefix :        <https://meta.linked.archi/4plus1/viewpoints#> .
+
+<https://meta.linked.archi/4plus1/viewpoints#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/4plus1/viewpoints#" ;
+    vann:preferredNamespacePrefix "fourplus1vp" ;
+    dcterms:title                      "4+1 View Model Viewpoints"@en ;
+    dcterms:description                """Viewpoint definitions for the 4+1 Architectural View Model.
+These are language-agnostic viewpoints — they specify concerns and stakeholders
+but do not prescribe which modeling language to use. A custom metamodel attaches
+concrete element types via arch:includesConcept."""@en ;
+    dcterms:created               "2026-05-06"^^xsd:date ;
+    dcterms:modified              "2026-05-06"^^xsd:date ;
+    dcterms:creator                    "Kalin Maldzhanski" ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/4plus1/viewpoints/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://www.researchgate.net/publication/220018231_The_41_View_Model_of_Architecture> ;
+    prov:wasDerivedFrom <https://www.researchgate.net/publication/220018231_The_41_View_Model_of_Architecture> ;
+.
+
+#################################################################
+# Viewpoint Catalog
+#################################################################
+
+:ViewpointCatalog
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "4+1 Viewpoint Catalog"@en ;
+    dcterms:description  """The five viewpoints from Kruchten's 4+1 model, defined as
+arch:Viewpoint individuals. Language-agnostic — attach concrete element types
+from your chosen modeling language via arch:includesConcept."""@en ;
+    skos:hasTopConcept :LogicalViewpoint, :ProcessViewpoint,
+                       :DevelopmentViewpoint, :PhysicalViewpoint,
+                       :ScenariosViewpoint ;
+.
+
+#################################################################
+# Stakeholders
+#################################################################
+
+:EndUser
+    a              arch:Stakeholder ;
+    skos:prefLabel "End User"@en ;
+    skos:definition "Users of the system whose functional needs drive the Logical View."@en ;
+.
+
+:SoftwareArchitect
+    a              arch:Stakeholder ;
+    skos:prefLabel "Software Architect"@en ;
+    skos:definition "Responsible for overall system structure and quality attribute trade-offs."@en ;
+.
+
+:Developer
+    a              arch:Stakeholder ;
+    skos:prefLabel "Developer"@en ;
+    skos:definition "Builds and maintains the software modules."@en ;
+.
+
+:SystemEngineer
+    a              arch:Stakeholder ;
+    skos:prefLabel "System Engineer"@en ;
+    skos:definition "Responsible for deployment topology, infrastructure, and operations."@en ;
+.
+
+:ProjectManager
+    a              arch:Stakeholder ;
+    skos:prefLabel "Project Manager"@en ;
+    skos:definition "Manages scope, schedule, and team allocation."@en ;
+.
+
+#################################################################
+# Concerns
+#################################################################
+
+:FunctionalityConcern
+    a              arch:Concern ;
+    skos:prefLabel "Functionality"@en ;
+    skos:definition "What services the system provides to its users."@en ;
+.
+
+:PerformanceConcern
+    a              arch:Concern ;
+    skos:prefLabel "Performance & Concurrency"@en ;
+    skos:definition "Runtime behavior, throughput, latency, scalability, and fault tolerance."@en ;
+.
+
+:SoftwareManagementConcern
+    a              arch:Concern ;
+    skos:prefLabel "Software Management"@en ;
+    skos:definition "Module organization, build structure, reuse, team allocation, and development tooling."@en ;
+.
+
+:DeploymentConcern
+    a              arch:Concern ;
+    skos:prefLabel "Deployment & Operations"@en ;
+    skos:definition "Mapping software to hardware, topology, availability, and installation."@en ;
+.
+
+:ValidationConcern
+    a              arch:Concern ;
+    skos:prefLabel "Validation & Consistency"@en ;
+    skos:definition "Ensuring the four views are consistent and the architecture satisfies key scenarios."@en ;
+.
+
+#################################################################
+# Viewpoints
+#################################################################
+
+:LogicalViewpoint
+    a                            arch:Viewpoint ;
+    skos:prefLabel               "Logical Viewpoint"@en ;
+    skos:definition              """Specifies the functional decomposition of the system — key
+abstractions, their responsibilities, and relationships. Answers: what does
+the system do and how is it structured logically?"""@en ;
+    arch:viewpointFramesConcern fourplus1:LogicalView ;
+    arch:targetsStakeholder      :EndUser, :SoftwareArchitect ;
+    arch:viewpointFramesConcern  :FunctionalityConcern ;
+    arch:viewpointHasPurpose     archvp:Designing ;
+    arch:viewType                arch:Diagram ;
+    skos:inScheme                :ViewpointCatalog ;
+    skos:topConceptOf            :ViewpointCatalog ;
+    skos:scopeNote               """Populate arch:includesConcept with your metamodel's structural
+elements — e.g., UML Class/Interface/Package, ArchiMate ApplicationComponent/
+ApplicationService/DataObject, or custom domain classes."""@en ;
+.
+
+:ProcessViewpoint
+    a                            arch:Viewpoint ;
+    skos:prefLabel               "Process Viewpoint"@en ;
+    skos:definition              """Specifies the runtime behavior — processes, threads, communication,
+synchronization, and how the system handles concurrency and distribution.
+Answers: how does the system behave at runtime?"""@en ;
+    arch:viewpointFramesConcern fourplus1:ProcessView ;
+    arch:targetsStakeholder      :SoftwareArchitect, :SystemEngineer ;
+    arch:viewpointFramesConcern  :PerformanceConcern ;
+    arch:viewpointHasPurpose     archvp:Designing ;
+    arch:viewType                arch:Diagram ;
+    skos:inScheme                :ViewpointCatalog ;
+    skos:topConceptOf            :ViewpointCatalog ;
+    skos:scopeNote               """Populate arch:includesConcept with behavioral elements —
+e.g., UML Activity/StateMachine/Interaction, BPMN Process/Gateway/Event,
+ArchiMate ApplicationProcess/ApplicationEvent, or custom flow elements."""@en ;
+.
+
+:DevelopmentViewpoint
+    a                            arch:Viewpoint ;
+    skos:prefLabel               "Development Viewpoint"@en ;
+    skos:definition              """Specifies the organization of the software in its development
+environment — modules, packages, layers, subsystems, build structure, and
+team ownership. Answers: how is the codebase organized?"""@en ;
+    arch:viewpointFramesConcern fourplus1:DevelopmentView ;
+    arch:targetsStakeholder      :Developer, :ProjectManager ;
+    arch:viewpointFramesConcern  :SoftwareManagementConcern ;
+    arch:viewpointHasPurpose     archvp:Designing ;
+    arch:viewType                arch:Diagram ;
+    skos:inScheme                :ViewpointCatalog ;
+    skos:topConceptOf            :ViewpointCatalog ;
+    skos:scopeNote               """Populate arch:includesConcept with packaging/module elements —
+e.g., UML Component/Package, C4 Container/Component, Backstage Component/System,
+or custom module types."""@en ;
+.
+
+:PhysicalViewpoint
+    a                            arch:Viewpoint ;
+    skos:prefLabel               "Physical Viewpoint"@en ;
+    skos:definition              """Specifies the mapping of software to hardware — nodes, networks,
+deployment topology, and resource allocation. Answers: where does the
+software run?"""@en ;
+    arch:viewpointFramesConcern fourplus1:PhysicalView ;
+    arch:targetsStakeholder      :SystemEngineer ;
+    arch:viewpointFramesConcern  :DeploymentConcern ;
+    arch:viewpointHasPurpose     archvp:Designing ;
+    arch:viewType                arch:Diagram ;
+    skos:inScheme                :ViewpointCatalog ;
+    skos:topConceptOf            :ViewpointCatalog ;
+    skos:scopeNote               """Populate arch:includesConcept with infrastructure elements —
+e.g., UML Node/Artifact, ArchiMate Node/Device/SystemSoftware/CommunicationNetwork,
+C4 DeploymentNode/InfrastructureNode, or custom infra types."""@en ;
+.
+
+:ScenariosViewpoint
+    a                            arch:Viewpoint ;
+    skos:prefLabel               "Scenarios Viewpoint (+1)"@en ;
+    skos:definition              """The unifying viewpoint — key use cases or scenarios that trace
+through all four views, validating that the architecture supports the most
+important user goals. Answers: does the architecture work end-to-end?"""@en ;
+    arch:viewpointFramesConcern fourplus1:ScenariosView ;
+    arch:targetsStakeholder      :EndUser, :SoftwareArchitect, :Developer ;
+    arch:viewpointFramesConcern  :ValidationConcern, :FunctionalityConcern ;
+    arch:viewpointHasPurpose     archvp:Deciding ;
+    arch:viewType                arch:Diagram ;
+    skos:inScheme                :ViewpointCatalog ;
+    skos:topConceptOf            :ViewpointCatalog ;
+    skos:scopeNote               """Populate arch:includesConcept with scenario/use-case elements —
+e.g., UML UseCase/Actor, ArchiMate Stakeholder/Goal/Requirement, or custom
+scenario types. Scenarios should reference elements from all other four viewpoints."""@en ;
+.

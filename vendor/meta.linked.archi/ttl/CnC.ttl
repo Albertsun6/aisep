@@ -1,0 +1,453 @@
+@prefix owl:                   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:                   <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:                  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:                   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix adms:                  <http://www.w3.org/ns/adms#> .
+@prefix dcterms:               <http://purl.org/dc/terms/> .
+@prefix bibo:                  <http://purl.org/ontology/bibo/> .
+@prefix vaem:                  <http://www.linkedmodel.org/schema/vaem> .
+@prefix vann:                  <http://purl.org/vocab/vann/> .
+@prefix pav:                   <http://purl.org/pav/> .
+@prefix prov:                  <http://www.w3.org/ns/prov#> .
+@prefix cc:                    <http://creativecommons.org/ns#> .
+
+@prefix skos:                  <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:                <http://schema.org/> .
+@prefix arch:                  <https://meta.linked.archi/core#> .
+@prefix ad:                    <https://meta.linked.archi/arch-decision#> .
+@prefix refa:                  <https://meta.linked.archi/ref-arch#> .
+@prefix :                      <https://meta.linked.archi/CnC#> .
+
+
+
+<https://meta.linked.archi/CnC#>
+    rdf:type                      owl:Ontology ;
+#    owl:imports                   arch: ;
+    cc:license                    <http://creativecommons.org/licenses/by/4.0/> ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/CnC#" ;
+    vann:preferredNamespacePrefix "cnc" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Component and Connector Example Ontology"@en ;
+    dcterms:description                '''
+                                    Component and Connector Example Ontology based on Linked.Archi Core Ontology.
+                                   '''@en ;
+    dcterms:abstract              '''
+      '''@en ;
+    dcterms:created               "2021-05-05"^^xsd:date ;
+    dcterms:issued                "2021-05-18"^^xsd:date ;
+    dcterms:modified              "2021-05-18"^^xsd:date ;
+    dcterms:publisher                  "https://linked.archi",
+                                  "Linked.Archi"@en ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/CnC/0.0.1#> ;
+    owl:versionInfo               "0.0.1"@en ;
+#    owl:priorVersion              <https://meta.linked.archi/CnC/0.0.1#> ;
+    schema:citation               "Component and Connector Example Ontology based on Linked.Archi Core" ;
+    rdfs:seeAlso                  arch: ;
+.
+
+
+:Component
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    skos:prefLabel   "Component"@en ;
+    skos:definition
+                     '''A computational or data-storage unit that provides services through well-defined interfaces (ports).'''@en ;
+    schema:subjectOf '''
+Component-and-Connector Views
+        Clements, Paul; Bachmann, Felix; Bass, Len; Garlan, David; Ivers, James; Little, Reed; Merson, Paulo; Nord,
+        Robert; Stafford, Judith. Documenting Software Architectures .
+        ''' ;
+    schema:subjectOf '''
+Clements, P., F. Bachmann, L. Bass, D. Garlan, J. Ivers, R. Little, R. Nord, J. Stafford. Documenting Software
+Architectures: Views and Beyond. Addison- Wesley, Boston, 2002.
+''' ;
+.
+
+
+:Connector
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Connector"@en ;
+    skos:definition
+                    '''
+                    A connector is a runtime pathway of interaction between two or more components.
+                    '''@en ;
+.
+
+
+
+:MessagingConnector
+    a               owl:Class ;
+    rdfs:subClassOf :Connector ;
+    skos:prefLabel  "MessagingConnector"@en ;
+    skos:definition
+                    '''A connector that enables asynchronous message-based communication between components.'''@en ;
+.
+
+
+
+:PubSub
+    a               owl:Class ;
+    rdfs:subClassOf :MessagingConnector ;
+    skos:prefLabel  "PubSub"@en ;
+    skos:definition
+                    '''A publish-subscribe messaging connector where publishers broadcast messages to multiple subscribers via topics.'''@en ;
+.
+
+:MessageQueue
+    a               owl:Class ;
+    rdfs:subClassOf :MessagingConnector ;
+    skos:prefLabel  "MessageQueue"@en ;
+    skos:definition
+                    '''
+                    MessageQueue is a Point to Point async message communication.
+                    '''@en ;
+.
+
+
+
+:RequestResponse
+    a               owl:Class ;
+    rdfs:subClassOf :Connector ;
+    skos:prefLabel  "RequestResponse"@en ;
+    skos:definition
+                    '''A synchronous connector where a client sends a request and waits for a response from the server. Includes ServiceInvocation concept.'''@en ;
+.
+
+:HTTPAPI
+    a               owl:Class ;
+    rdfs:subClassOf :RequestResponse ;
+    skos:prefLabel  "HTTPAPI"@en ;
+    skos:definition
+                    '''An HTTP-based request-response connector including REST APIs and other HTTP-based service interfaces.'''@en ;
+.
+
+:RPC
+    a               owl:Class ;
+    rdfs:subClassOf :RequestResponse ;
+    skos:prefLabel  "RPC"@en ;
+    skos:definition
+                    '''A remote procedure call connector enabling synchronous invocation of procedures on remote components.'''@en ;
+.
+
+:gRPC
+    a               owl:Class ;
+    rdfs:subClassOf :RPC ;
+    skos:prefLabel  "gRPC"@en ;
+    skos:definition
+                    '''A high-performance RPC framework using Protocol Buffers for serialization and HTTP/2 for transport.'''@en ;
+.
+
+:SOAP
+    a               owl:Class ;
+    rdfs:subClassOf :RequestResponse ;
+    skos:prefLabel  "SOAP"@en ;
+    skos:definition
+                    '''A protocol-based request-response connector using XML messaging with WSDL-defined service contracts.'''@en ;
+.
+
+
+:DataFlowConnector
+    a               owl:Class ;
+    rdfs:subClassOf :Connector ;
+    skos:prefLabel  "DataFlowConnector"@en ;
+    skos:definition
+                    '''A connector that transfers data between components in a unidirectional stream from source to sink.'''@en ;
+.
+
+:Pipe
+    a                    owl:Class ;
+    rdfs:subClassOf      :DataFlowConnector ;
+    skos:prefLabel       "Pipe"@en ;
+    skos:definition
+                         '''
+                         represent asynchronous, order-preserving data streams.
+                         '''@en ;
+    arch:prefVisNotation "http://ex.com/pipe.svg" ;
+.
+
+:BatchConnector
+    a               owl:Class ;
+    rdfs:subClassOf :DataFlowConnector ;
+    skos:prefLabel  "BatchConnector"@en ;
+    skos:definition
+                    '''A data flow connector that transfers data in scheduled batches rather than continuous streams.'''@en ;
+.
+
+:SharedDataConnector
+    a               owl:Class ;
+    rdfs:subClassOf :DataFlowConnector ;
+    skos:prefLabel  "SharedDataConnector"@en ;
+    skos:definition
+                    '''A data flow connector where multiple components access a shared data store for reading and writing.'''@en ;
+.
+
+:DBConnector
+    a               owl:Class ;
+    rdfs:subClassOf :SharedDataConnector ;
+    skos:prefLabel  "DBConnector"@en ;
+    skos:definition
+                    '''A shared data connector providing access to a relational or NoSQL database management system.'''@en ;
+.
+
+:FileShareConnector
+    a               owl:Class ;
+    rdfs:subClassOf :SharedDataConnector ;
+    skos:prefLabel  "FileShareConnector"@en ;
+    skos:definition
+                    '''A shared data connector providing access to a network file share or distributed file system.'''@en ;
+.
+
+:FTPConnector
+    a               owl:Class ;
+    rdfs:subClassOf :SharedDataConnector ;
+    skos:prefLabel  "FTPConnector"@en ;
+    skos:definition
+                    '''A shared data connector providing file transfer via FTP or SFTP protocol between components.'''@en ;
+.
+
+:GITConnector
+    a               owl:Class ;
+    rdfs:subClassOf :SharedDataConnector ;
+    skos:prefLabel  "GITConnector"@en ;
+    skos:definition
+                    '''A shared data connector providing version-controlled data exchange via a Git repository.'''@en ;
+.
+
+:Filter
+    a               owl:Class ;
+    rdfs:subClassOf :Component ;
+    skos:prefLabel  "Filter"@en ;
+    skos:definition
+                    '''A component that transforms, enriches, or filters data as it passes through a data flow pipeline.'''@en ;
+.
+
+## ─── Relationship Types ──────────────────────────────────────
+
+## Port / Role ─────────────────────────────────────────────────
+
+:port
+    a               owl:ObjectProperty ;
+    owl:inverseOf   :role ;
+    skos:prefLabel  "port"@en ;
+    skos:definition "Connects a component to a connector via a port attachment."@en ;
+    arch:domainIncludes :Component ;
+    arch:rangeIncludes  :Connector ;
+.
+
+:Port
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :port ;
+    skos:prefLabel       "Port"@en ;
+    skos:definition      "Qualified form of port. A first-class resource representing a port attachment occurrence."@en ;
+.
+
+:qualifiedPort
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Port ;
+    arch:unqualifiedForm :port ;
+    arch:domainIncludes  :Component ;
+    skos:prefLabel       "qualified Port"@en ;
+    skos:definition      "Navigates from a component to a Port qualified relationship resource."@en ;
+.
+
+:role
+    a               owl:ObjectProperty ;
+    owl:inverseOf   :port ;
+    skos:prefLabel  "role"@en ;
+    skos:definition "Connects a connector to a component via a role attachment."@en ;
+    arch:domainIncludes :Connector ;
+    arch:rangeIncludes  :Component ;
+.
+
+:Role
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :role ;
+    skos:prefLabel       "Role"@en ;
+    skos:definition      "Qualified form of role. A first-class resource representing a role attachment occurrence."@en ;
+.
+
+:qualifiedRole
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Role ;
+    arch:unqualifiedForm :role ;
+    arch:domainIncludes  :Connector ;
+    skos:prefLabel       "qualified Role"@en ;
+    skos:definition      "Navigates from a connector to a Role qualified relationship resource."@en ;
+.
+
+## InPort / OutPort ────────────────────────────────────────────
+
+:inPort
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :port ;
+    skos:prefLabel     "inPort"@en ;
+    skos:definition    "An incoming port attachment from a connector to a component."@en ;
+    arch:domainIncludes :Component ;
+    arch:rangeIncludes  :Connector ;
+.
+
+:InPort
+    a                    owl:Class ;
+    rdfs:subClassOf      :Port ;
+    arch:unqualifiedForm :inPort ;
+    skos:prefLabel       "InPort"@en ;
+    skos:definition      "Qualified form of inPort representing an incoming data or control flow attachment point."@en ;
+.
+
+:outPort
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :port ;
+    skos:prefLabel     "outPort"@en ;
+    skos:definition    "An outgoing port attachment from a component to a connector."@en ;
+    arch:domainIncludes :Component ;
+    arch:rangeIncludes  :Connector ;
+.
+
+:OutPort
+    a                    owl:Class ;
+    rdfs:subClassOf      :Port ;
+    arch:unqualifiedForm :outPort ;
+    skos:prefLabel       "OutPort"@en ;
+    skos:definition      "Qualified form of outPort representing an outgoing data or control flow attachment point."@en ;
+.
+
+## Proxy ───────────────────────────────────────────────────────
+
+:proxyOf
+    a               owl:ObjectProperty ;
+    owl:inverseOf   :hasProxy ;
+    skos:prefLabel  "proxyOf"@en ;
+    skos:definition "Specific relationship between connector proxies and connectors."@en ;
+    arch:domainIncludes :Connector ;
+    arch:rangeIncludes  :Connector ;
+.
+
+:ProxyOf
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :proxyOf ;
+    skos:prefLabel       "ProxyOf"@en ;
+    skos:definition      "Qualified form of proxyOf representing a proxy delegation between connectors."@en ;
+.
+
+:hasProxy
+    a               owl:ObjectProperty ;
+    owl:inverseOf   :proxyOf ;
+    skos:prefLabel  "hasProxy"@en ;
+    skos:definition "Specific relationship between connectors and their proxies."@en ;
+    arch:domainIncludes :Connector ;
+    arch:rangeIncludes  :Connector ;
+.
+
+:HasProxy
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasProxy ;
+    skos:prefLabel       "HasProxy"@en ;
+    skos:definition      "Qualified form of hasProxy representing a connector's delegation to a proxy."@en ;
+.
+
+## Messaging ───────────────────────────────────────────────────
+
+:subscribedTo
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :inPort ;
+    skos:prefLabel     "subscribedTo"@en ;
+    skos:definition    "A component subscribes to a pub/sub connector to receive broadcast messages."@en ;
+    arch:domainIncludes :Component ;
+    arch:rangeIncludes  :PubSub ;
+.
+
+:publishTo
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :outPort ;
+    skos:prefLabel     "publishTo"@en ;
+    skos:definition    "A component publishes messages to a pub/sub connector for broadcast delivery."@en ;
+    arch:domainIncludes :Component ;
+    arch:rangeIncludes  :PubSub ;
+.
+
+:enqueue
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :outPort ;
+    skos:prefLabel     "enqueue"@en ;
+    skos:definition    "A component enqueues messages to a message queue for asynchronous processing."@en ;
+    arch:domainIncludes :Component ;
+    arch:rangeIncludes  :MessageQueue ;
+.
+
+:dequeue
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :inPort ;
+    skos:prefLabel     "dequeue"@en ;
+    skos:definition    "A component dequeues messages from a message queue."@en ;
+    arch:domainIncludes :Component ;
+    arch:rangeIncludes  :MessageQueue ;
+.
+
+## Request-Response ────────────────────────────────────────────
+
+:providesService
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :inPort ;
+    skos:prefLabel     "providesService"@en ;
+    skos:definition    "A component provides a service via a request-response connector."@en ;
+    arch:domainIncludes :Component ;
+    arch:rangeIncludes  :RequestResponse ;
+.
+
+:invokesService
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :outPort ;
+    skos:prefLabel     "invokesService"@en ;
+    skos:definition    "A component invokes a service via a request-response connector."@en ;
+    arch:domainIncludes :Component ;
+    arch:rangeIncludes  :RequestResponse ;
+.
+
+## Data Flow ──────────────────────────────────────────────────
+
+:source
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :outPort ;
+    skos:prefLabel     "source"@en ;
+    skos:definition    "A component is the data source for a data flow connector."@en ;
+    arch:domainIncludes :Component ;
+    arch:rangeIncludes  :DataFlowConnector ;
+.
+
+:sink
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :inPort ;
+    skos:prefLabel     "sink"@en ;
+    skos:definition    "A component is the data sink for a data flow connector."@en ;
+    arch:domainIncludes :Component ;
+    arch:rangeIncludes  :DataFlowConnector ;
+.
+
+
+
+:realizedByConnector
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "realizedByConnector"@en ;
+    skos:definition "Links a qualified relationship resource to the connector that realizes it."@en ;
+    rdfs:domain     arch:QualifiedRelationship ;
+    rdfs:range      :Connector ;
+.
+
+
+## actual model example
+
+
+:comp1
+    :invokesService :apiconn .
+
+:comp2
+    :invokesService :apiconnProxy .
+
+:apiconnProxy
+    :proxyOf :apiconn .

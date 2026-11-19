@@ -1,0 +1,27 @@
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# AISEP module manifest — UML 2.5.1 subset (spec §6.3).
+# First-batch subset: Class, Property, Operation, Association, Generalization, Interface, Component,
+# Package, Activity, Action, StateMachine/State (all exist in uml_onto.ttl). The whole vendored
+# vocabulary is loaded; the subset is an authoring convention, not enforced here.
+# Relationship classes (uml:Association, uml:Generalization, ...) are arch:QualifiedRelationship upstream
+# with arch:unqualifiedForm (uml:associatedWith, uml:generalizes, ...); authors write arch:source/arch:target.
+# Shapes: uml_shapes.ttl only (SHACL Core, accepted by pyshacl). uml_publication-shapes.ttl is the
+# opt-in naming gate; AISEP L1 already requires a @zh label, so it is not loaded.
+
+<https://aisep.example/module/uml>
+    a                      arch:Metamodel ;
+    skos:prefLabel         "UML 2.5.1（子集）"@zh ;
+    aisep:moduleKind       aisep:Language ;
+    owl:versionInfo        "0.2.0" ;
+    aisep:loads            "vendor/meta.linked.archi/ttl/core.ttl" ,
+                           "vendor/meta.linked.archi/ttl/uml_onto.ttl" ;
+    aisep:shapesFile       "vendor/meta.linked.archi/ttl/uml_shapes.ttl" ;
+    aisep:alignmentFile    "modules/uml/align.ttl" ;
+    aisep:inheritsHubRules false ;
+    aisep:notationLevel    aisep:LevelCode ;   # spec v0.2 §5/§7.2
+    aisep:ownsNamespace    "https://meta.linked.archi/uml/onto#" .

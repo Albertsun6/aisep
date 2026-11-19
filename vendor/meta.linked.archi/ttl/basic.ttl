@@ -1,0 +1,164 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix :        <https://meta.linked.archi/basic#> .
+
+<https://meta.linked.archi/basic>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/basic#" ;
+    vann:preferredNamespacePrefix "basic" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Basic Ontology"@en ;
+    dcterms:description           '''Concept ontology of the Linked.Archi Basic asset set: three element
+types (Node, SpecialNode, GroupNode) and three qualified relationship types (Association,
+Aggregation, Connection), built directly on the core ontology. It is deliberately small, yet
+enough for examples of meaningful restrictions and inference rules. Connection is the generic
+relationship: it relates any two elements, of any language, so Basic added beside another
+language lets a modeller relate what that language has no relationship for. The manifest
+https://meta.linked.archi/basic/metamodel#Basic ties it to its taxonomy, its presentation
+contexts and its two notation sets. Version 0.1.0 is the initial release of these element and
+relationship patterns.'''@en ;
+    dcterms:issued                "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-10-05"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/basic/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source                <https://meta.linked.archi/core#> ;
+    prov:wasDerivedFrom           <https://meta.linked.archi/core#> ;
+.
+
+# well this is not the most minimal metamodel, as the most minimal is already defined in the core ontology, however,
+# it is as simple as possible and at the same time enough to enable examples of appling meaningful simple
+# restrictions and inference rules
+
+:Node
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Node"@en ;
+    skos:definition "A simple node element that cannot contain, own, or aggregate other nodes in the architecture model."@en ;
+.
+
+:SpecialNode
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "SpecialNode"@en ;
+    skos:definition "A special node element that participates in specific typed relationships not available to regular nodes."@en ;
+.
+
+:GroupNode
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "GroupNode"@en ;
+    skos:definition "A group node element that can aggregate other Nodes and SpecialNodes into a composite structure."@en ;
+.
+
+## Relationship Types ──────────────────────────────────────────
+
+## Association ─────────────────────────────────────────────────
+
+:association
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "Association"@en ;
+    skos:definition     '''Relates an element to another element with which there is an
+        associative semantic relationship.'''@en ;
+    arch:domainIncludes :Node ;
+    arch:rangeIncludes  :SpecialNode,
+                        :Node ;
+    skos:scopeNote      '''This property is used for general association. More specific relationships should be used
+    where explicit meaning is required.'''@en ;
+.
+
+:Association
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :association ;
+    skos:prefLabel       "Association"@en ;
+    skos:definition      '''Qualified form of association. A first-class resource representing an
+    association occurrence with metadata, provenance, and lifecycle.'''@en ;
+.
+
+:qualifiedAssociation
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Association ;
+    arch:unqualifiedForm :association ;
+    arch:domainIncludes  :Node ;
+    skos:prefLabel       "qualified Association"@en ;
+    skos:definition      '''Navigates from a source element to an Association qualified relationship
+    resource.'''@en ;
+.
+
+## Aggregation ─────────────────────────────────────────────────
+
+:aggregation
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Aggregation"@en ;
+    skos:definition      '''Relationship between a Node and a composite Node representing that an element combines one
+                         or more other elements.'''@en ;
+    arch:domainIncludes  :GroupNode ;
+    arch:rangeIncludes   :Node,
+                         :SpecialNode ;
+.
+
+:Aggregation
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :aggregation ;
+    skos:prefLabel       "Aggregation"@en ;
+    skos:definition      '''Qualified form of aggregation. A first-class resource representing an
+    aggregation occurrence with metadata, provenance, and lifecycle.'''@en ;
+.
+
+:qualifiedAggregation
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Aggregation ;
+    arch:unqualifiedForm :aggregation ;
+    arch:domainIncludes  :GroupNode ;
+    skos:prefLabel       "qualified Aggregation"@en ;
+    skos:definition      '''Navigates from a source element to an Aggregation qualified relationship
+    resource.'''@en ;
+.
+
+## Connection ──────────────────────────────────────────────────
+
+:connection
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "Connection"@en ;
+    skos:definition     '''Relates an element to another element, saying no more than that the two are
+        related.'''@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  arch:Element ;
+    skos:scopeNote      '''The generic relationship: between elements of any type and any language, where
+    no more specific relationship says what the relation is. Unlike Association, it is not limited
+    to Basic's element types.'''@en ;
+.
+
+:Connection
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :connection ;
+    skos:prefLabel       "Connection"@en ;
+    skos:definition      '''Qualified form of connection. A first-class resource representing a
+    connection occurrence with metadata, provenance, and lifecycle.'''@en ;
+.
+
+:qualifiedConnection
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Connection ;
+    arch:unqualifiedForm :connection ;
+    arch:domainIncludes  arch:Element ;
+    skos:prefLabel       "qualified Connection"@en ;
+    skos:definition      '''Navigates from a source element to a Connection qualified relationship
+    resource.'''@en ;
+.
+

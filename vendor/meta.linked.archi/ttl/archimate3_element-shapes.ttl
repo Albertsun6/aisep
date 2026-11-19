@@ -1,0 +1,379 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix am:      <https://meta.linked.archi/archimate3/onto#> .
+@prefix :        <https://meta.linked.archi/archimate3/element-shapes#> .
+
+<https://meta.linked.archi/archimate3/element-shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/core-shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate3/element-shapes#" ;
+    vann:preferredNamespacePrefix "amelsh" ;
+    dcterms:title                      "Linked.Archi ArchiMate 3.2 Element & Metamodel Shapes"@en ;
+    dcterms:description                '''SHACL shapes for validating ArchiMate 3.2 element instances and
+the metamodel patterns the relationship tables cannot express: element names, self-loops
+and cycles of composition and aggregation, a part in one whole only, the direction of
+serving between layers (a warning), a gap associated with plateaus, attribute values,
+junctions joining relationships of one type, and deep specialization chains. Which
+element types a relationship may connect is checked by archimate3.2-relationship-shapes.ttl,
+generated from the specification's relationship tables (Appendix B), and is not repeated
+here.'''@en ;
+    skos:historyNote              '''2026-11-06: removed the shapes that restated which element types a
+relationship may connect — assignment, access, triggering and flow source and target in the
+core layers, same-type specialization, realization across layers, the strategy, core,
+physical, implementation and motivation layer pairs. They rejected relationships the
+specification's tables permit — flow and triggering between active structure elements,
+which its derivation rules give; a device assigned to an artifact; an application interface
+realizing a business interface; a contract specializing a business object; a work package
+realizing a deliverable, which the specification draws — and the relationship shapes check
+those types already.'''@en ;
+    dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Generic-Metamodel.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Motivation-Elements.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Strategy-Layer.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Business-Layer.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Application-Layer.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Technology-Layer.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Cross-Layer-Dependencies.html> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Generic-Metamodel.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Motivation-Elements.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Strategy-Layer.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Business-Layer.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Application-Layer.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Technology-Layer.html>,
+                                  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Cross-Layer-Dependencies.html> ;
+    dcterms:created               "2022-11-14"^^xsd:date ;
+    dcterms:modified              "2026-11-06"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/archimate3/element-shapes/3.2#> ;
+    owl:versionInfo               "3.2"@en ;
+    sh:declare [
+        sh:prefix "am" ;
+        sh:namespace "https://meta.linked.archi/archimate3/onto#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "arch" ;
+        sh:namespace "https://meta.linked.archi/core#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdf" ;
+        sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdfs" ;
+        sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ;
+    ] ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+
+#################################################################
+# 1. Element instance requirements — the authoritative ArchiMate 3.2 naming rule
+#
+# core-shapes carries no label shape. arch:Element means "a node in a model", and
+# some notations have nodes that are legitimately unnamed, so naming policy is
+# owned by each metamodel. See DD-24 in doc/guide/design-decisions.md.
+#
+# Targets the 7 abstract layer and aspect roots rather than arch:Element. Two
+# reasons:
+#
+#  1. Junctions are excluded. am:Junction_And and am:Junction_Or are declared
+#     rdfs:subClassOf arch:Element directly, outside these 7 roots, so they are not
+#     reached. Junctions are genuine elements — they have identity and render as
+#     dots or bars on a view — but ArchiMate uses them as relationship connectors
+#     and they are conventionally unnamed. Requiring a label on them would be
+#     wrong.
+#
+#  2. Targeting arch:Element would leak. In a merged multi-notation graph it would
+#     impose ArchiMate's naming policy on BPMN, C4 and every other notation's
+#     elements. A metamodel constrains only its own classes.
+#
+# Coverage: these roots reach 80 of the 82 am arch:Element classes, the 2
+# remaining being the junctions.
+#################################################################
+
+:ArchiMateElementShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''Requires a language-tagged skos:prefLabel on every ArchiMate 3.2 element
+except junctions. Targets the abstract layer and aspect roots, not arch:Element, so that
+am:Junction_And and am:Junction_Or stay exempt and the rule cannot leak onto other notations
+in a merged graph.'''@en ;
+    sh:targetClass am:CoreLayerElement ,
+                   am:StrategyLayerElement ,
+                   am:ImplementationAndMigrationLayerElement ,
+                   am:MotivationElement ,
+                   am:BehaviorElement ,
+                   am:StructureElement ,
+                   am:CompositeElement ;
+    sh:property [
+        sh:path        skos:prefLabel ;
+        sh:minCount    1 ;
+        sh:datatype    rdf:langString ;
+        sh:message     '''Every ArchiMate element instance must have at least one
+skos:prefLabel, and it must be language-tagged (rdf:langString), e.g. "Billing"@en. Junctions
+are exempt — they are connectors and are conventionally unnamed.'''@en ;
+    ] ;
+.
+
+#################################################################
+# 2. Structural integrity — self-loops and cycles
+#################################################################
+
+:NoSelfCompositionShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf am:composedOf ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/element-shapes#> ;
+        sh:message "An element cannot compose itself."@en ;
+        sh:select """
+            SELECT $this WHERE { $this am:composedOf $this . }
+        """ ;
+    ] ;
+.
+
+:NoSelfAggregationShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf am:aggregates ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/element-shapes#> ;
+        sh:message "An element cannot aggregate itself."@en ;
+        sh:select """
+            SELECT $this WHERE { $this am:aggregates $this . }
+        """ ;
+    ] ;
+.
+
+:NoSelfSpecializationShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf am:specializes ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/element-shapes#> ;
+        sh:message "An element cannot specialize itself."@en ;
+        sh:select """
+            SELECT $this WHERE { $this am:specializes $this . }
+        """ ;
+    ] ;
+.
+
+:NoCircularCompositionShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf am:composedOf ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/element-shapes#> ;
+        sh:message "Circular composition is not allowed."@en ;
+        sh:select """
+            SELECT $this WHERE { $this am:composedOf+ $this . }
+        """ ;
+    ] ;
+.
+
+:NoCircularAggregationShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf am:aggregates ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/element-shapes#> ;
+        sh:message "Circular aggregation is not allowed."@en ;
+        sh:select """
+            SELECT $this WHERE { $this am:aggregates+ $this . }
+        """ ;
+    ] ;
+.
+
+:CompositionPartUniquenessShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf am:composedOf ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/element-shapes#> ;
+        sh:message "A composed part can only belong to one whole (composition implies exclusive ownership)."@en ;
+        sh:select """
+            SELECT $this WHERE {
+                ?whole1 am:composedOf $this .
+                ?whole2 am:composedOf $this .
+                FILTER(?whole1 != ?whole2)
+            }
+        """ ;
+    ] ;
+.
+
+#################################################################
+# 3. Serving layer direction — Figures 104/105
+# Source: https://pubs.opengroup.org/architecture/archimate3-doc/ch-Cross-Layer-Dependencies.html
+#################################################################
+
+## A3: Serving should flow upward (lower → higher layer)
+:ServingLayerDirectionShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf am:serves ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/element-shapes#> ;
+        sh:message "Serving relationships should flow upward from lower to higher layers (Technology, its physical elements included → Application → Business)."@en ;
+        sh:select """
+            SELECT $this ?target WHERE {
+                $this am:serves ?target .
+                {
+                    $this rdf:type/rdfs:subClassOf* am:BusinessLayerElement .
+                    ?target rdf:type/rdfs:subClassOf* am:ApplicationLayerElement .
+                } UNION {
+                    $this rdf:type/rdfs:subClassOf* am:BusinessLayerElement .
+                    ?target rdf:type/rdfs:subClassOf* am:TechnologyLayerElement .
+                } UNION {
+                    $this rdf:type/rdfs:subClassOf* am:ApplicationLayerElement .
+                    ?target rdf:type/rdfs:subClassOf* am:TechnologyLayerElement .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+#################################################################
+# 4. Implementation & Migration — Figure 106
+# Source: https://pubs.opengroup.org/architecture/archimate3-doc/ch-Implementation-and-Migration-Layer.html
+#################################################################
+
+## A15: Gap should associate with Plateaus
+:GapPlateauAssociationShape
+    a sh:NodeShape ;
+    sh:targetClass am:Gap ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/element-shapes#> ;
+        sh:message "Gap should be associated with at least one Plateau — a gap represents a difference between two plateaus."@en ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    {
+                        $this am:associatedWith ?plateau .
+                        ?plateau a am:Plateau .
+                    } UNION {
+                        ?plateau am:associatedWith $this .
+                        ?plateau a am:Plateau .
+                    }
+                }
+            }
+        """ ;
+    ] ;
+.
+
+#################################################################
+# 5. Attribute constraints
+#################################################################
+
+## A18: Access type — deprecated: the kind of access is the class (am:ReadAccess, …)
+:AccessTypeShape
+    a sh:NodeShape ;
+    sh:targetClass am:Access ;
+    sh:property [
+        sh:path        am:accessType ;
+        sh:maxCount    0 ;
+        sh:severity    sh:Warning ;
+        sh:message     "am:accessType is deprecated: type the access am:ReadAccess, am:WriteAccess or am:ReadWriteAccess, or leave it am:Access when the kind is unspecified."@en ;
+    ] ;
+.
+
+## A19: Influence strength validation
+:InfluenceStrengthShape
+    a sh:NodeShape ;
+    sh:targetClass am:Influence ;
+    sh:property [
+        sh:path        am:influenceStrength ;
+        sh:maxCount    1 ;
+        sh:datatype    xsd:string ;
+        sh:in          ( "+" "++" "-" "--" ) ;
+        sh:message     "influenceStrength must be one of: +, ++, -, --."@en ;
+    ] ;
+.
+
+
+#################################################################
+# 6. Junction validation — Section 5.5
+#################################################################
+
+## A20: Junction type must be and/or
+:JunctionTypeShape
+    a sh:NodeShape ;
+    sh:targetClass am:Junction_And ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/element-shapes#> ;
+        sh:message "All relationships connected to an AndJunction must be of the same type."@en ;
+        sh:select """
+            SELECT $this WHERE {
+                {
+                    ?a ?rel1 $this .
+                    ?b ?rel2 $this .
+                } UNION {
+                    $this ?rel1 ?a .
+                    $this ?rel2 ?b .
+                } UNION {
+                    ?a ?rel1 $this .
+                    $this ?rel2 ?b .
+                }
+                ?rel1 rdfs:subPropertyOf* am:composedOf .
+                FILTER NOT EXISTS {
+                    ?rel2 rdfs:subPropertyOf* am:composedOf .
+                }
+                FILTER(?rel1 != ?rel2)
+            }
+        """ ;
+    ] ;
+.
+
+:OrJunctionTypeShape
+    a sh:NodeShape ;
+    sh:targetClass am:Junction_Or ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/element-shapes#> ;
+        sh:message "All relationships connected to an OrJunction must be of the same type."@en ;
+        sh:select """
+            SELECT $this WHERE {
+                {
+                    ?a ?rel1 $this .
+                    ?b ?rel2 $this .
+                } UNION {
+                    $this ?rel1 ?a .
+                    $this ?rel2 ?b .
+                } UNION {
+                    ?a ?rel1 $this .
+                    $this ?rel2 ?b .
+                }
+                ?rel1 rdfs:subPropertyOf* am:composedOf .
+                FILTER NOT EXISTS {
+                    ?rel2 rdfs:subPropertyOf* am:composedOf .
+                }
+                FILTER(?rel1 != ?rel2)
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+# 7. Deep specialization chain — informational
+#################################################################
+
+## A24: Warn on deep specialization chains (5+ levels)
+:DeepSpecializationChainShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf am:specializes ;
+    sh:severity sh:Info ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate3/element-shapes#> ;
+        sh:message "Element has a deep specialization chain (5+ levels) — consider if this complexity is necessary."@en ;
+        sh:select """
+            SELECT $this WHERE {
+                $this am:specializes+ ?t1 .
+                ?t1 am:specializes+ ?t2 .
+                ?t2 am:specializes+ ?t3 .
+                ?t3 am:specializes+ ?t4 .
+            }
+        """ ;
+    ] ;
+.

@@ -1,0 +1,798 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix schema:  <http://schema.org/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ap:      <https://meta.linked.archi/arch-processes#> .
+@prefix :        <https://meta.linked.archi/eaonapage/onto#> .
+
+<https://meta.linked.archi/eaonapage/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/arch-processes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/eaonapage/onto#" ;
+    vann:preferredNamespacePrefix "eaop" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi EA on a Page Ontology"@en ;
+    dcterms:description           '''Ontology for the Enterprise Architecture on a Page framework
+by Svyatoslav Kotusev. Defines the six CSVLOD artifact types as OWL classes
+(Consideration, Standard, Vision, Landscape, Outline, Design) with inter-type
+relationship properties describing how artifact types influence each other within
+an EA practice. Also defines EA processes (Strategic Planning, Initiative Delivery,
+Technology Optimization), process phases, governance activities, participants,
+governance bodies and tiers, and maturity stages.
+
+Finer-grained classification of the 24 specific artifact types is handled via
+eaop:classifiedByType pointing to SKOS concepts in the companion taxonomy
+(eaonapage-tax.ttl).
+
+Based on peer-reviewed research across 27+ organizations, this framework describes
+how EA practices actually work rather than prescribing how they should work.
+This is not an official IASA document.'''@en ;
+    dcterms:abstract              '''OWL ontology for the EA on a Page framework — six CSVLOD artifact
+type classes with inter-type relationships, classification properties, processes,
+process phases, governance model, participants, and maturity stages.'''@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/eaonapage/onto/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    prov:wasDerivedFrom           :Kotusev2021, :Kotusev2024,
+                                  <https://eaonapage.com/>,
+                                  <https://www.bcs.org/media/3787/csvlod.pdf>,
+                                  <https://www.kotusev.com/Yet%20Another%20Taxonomy%20for%20Enterprise%20Architecture%20Artifacts.pdf> ;
+    dcterms:source                :Kotusev2021, :Kotusev2024,
+                                  <https://eaonapage.com/>,
+                                  <https://www.bcs.org/media/3787/csvlod.pdf>,
+                                  <https://www.kotusev.com/Yet%20Another%20Taxonomy%20for%20Enterprise%20Architecture%20Artifacts.pdf>,
+                                  <https://kotusev.com/Enterprise%20Architecture%20-%20Forget%20Systems%20Thinking,%20Improve%20Communication.pdf>,
+                                  <https://kotusev.com/The%20Process%20View%20of%20Enterprise%20Architecture%20Practice.pdf>,
+                                  <https://kotusev.com/Enterprise%20Architecture%20Artifacts%20-%20Facts%20and%20Decisions.pdf> ;
+    rdfs:seeAlso                  <https://eaonapage.com/>,
+                                  <http://kotusev.com/>,
+                                  <https://www.bcs.org/articles-opinion-and-research/enterprise-architecture-on-a-single-page>,
+                                  <https://www.bcs.org/articles-opinion-and-research/enterprise-architecture-practice-on-a-single-page> ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## CSVLOD Artifact Types — the six general types of EA artifacts
+##
+## These OWL classes type individual architecture work products. They enable
+## domain/range constraints on the inter-type relationship properties below.
+## Finer-grained classification (the 24 specific artifacts) is handled via
+## eaop:classifiedByType pointing to SKOS concepts in eaonapage-tax.ttl.
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:Consideration
+    a               owl:Class ;
+    skos:prefLabel  "Consideration"@en ;
+    skos:definition '''Abstract high-level guidelines or imperatives defining an entire
+organization. Considerations are overarching conceptual rules important for
+business executives while also having significant technology-related
+ramifications. They represent planning decisions established collaboratively
+by business executives and architects. Due to their implicit duality,
+Considerations convey one value-related meaning to business executives but
+another infrastructure-related meaning to architects. Considerations are
+permanent, very long-lived, established once and then periodically updated.
+After being agreed upon, they provide a common basis for all further discussions
+and influence all other artifact types.'''@en ;
+    skos:example    "Architecture principles defining process standardization and data centralization policies, business continuity requirements."@en ;
+    rdfs:seeAlso    <https://eaonapage.com/> ;
+.
+
+:Standard
+    a               owl:Class ;
+    skos:prefLabel  "Standard"@en ;
+    skos:definition '''Highly specialized low-level technical guidelines prescribing how the
+IT landscape should be organized and built. Standards are critically important
+for architects but largely irrelevant to business executives. They represent
+technical planning decisions established collectively by architects based on
+their understanding of the best interests of business executives. Unlike dual
+Considerations, Standards are virtually invisible to business executives since
+they reflect technology-specific rules. Standards are permanent and relatively
+stable, updated periodically with new technologies or better approaches.
+After being established, Standards influence the designs of all individual IT
+systems and the overall structure of the IT landscape.'''@en ;
+    skos:example    "Technology standards prescribing application platforms, database management systems, proven integration patterns."@en ;
+    rdfs:seeAlso    <https://eaonapage.com/> ;
+.
+
+:Vision
+    a               owl:Class ;
+    skos:prefLabel  "Vision"@en ;
+    skos:definition '''Abstract, often one-page diagrams providing high-level views of an
+entire organization, typically describing the strategic development plan 3-5
+years ahead. The long-term strategy reflected in Visions is critical for
+business executives while also having direct implications for the IT landscape.
+Visions represent planning decisions developed collaboratively by business
+executives and architects. Due to their implicit duality, Visions convey one
+meaning to business executives (strategic priorities) and another to architects
+(IT investment direction). Visions are permanent but evolving, continuously
+updated according to the latest strategic changes. After being developed, they
+provide a basis for directing future investments and prioritizing proposed
+projects.'''@en ;
+    skos:example    "Business capability maps showing which capabilities should be uplifted, target state architectures, strategic roadmaps."@en ;
+    rdfs:seeAlso    <https://eaonapage.com/> ;
+.
+
+:Landscape
+    a               owl:Class ;
+    skos:prefLabel  "Landscape"@en ;
+    skos:definition '''Formal models or diagrams describing the IT landscape from the
+technology perspective at various scopes and levels of granularity. Landscapes
+are important for architects but virtually useless to business executives.
+They represent documented facts and may be developed and maintained by
+individual architects alone. Unlike Visions which focus on the future,
+Landscapes aim to capture the current as-is state. They provide a baseline or
+inventory of the existing IT infrastructure. Landscapes are permanent, long-lived,
+and evolve reactively together with the organization — updated after changes
+in the landscape occur.'''@en ;
+    skos:example    "Landscape diagrams depicting main applications, systems, databases and connections between them."@en ;
+    rdfs:seeAlso    <https://eaonapage.com/> ;
+.
+
+:Outline
+    a               owl:Class ;
+    skos:prefLabel  "Outline"@en ;
+    skos:definition '''High-level descriptions of separate IT projects understandable to
+business executives. Outlines provide decision-makers with relevant summary
+information about a proposed new IT system but do not contain sufficient
+technical details to actually implement it. They represent planning decisions
+created collaboratively by architects and business executives based on basic
+requirements. Outlines are often initiated from Visions and are consistent
+with Considerations. Due to their explicit duality, Outlines convey one
+meaning to business executives (value, timelines, costs) and another to
+architects (what needs to be delivered). Outlines are temporary and short-lived
+— created at early stages of projects to support decision-making, then
+discarded after projects are initiated or rejected.'''@en ;
+    skos:example    "Solution overviews describing the essence of the proposed IT solution, its overall impact, estimated cost, time and risks."@en ;
+    rdfs:seeAlso    <https://eaonapage.com/> ;
+.
+
+:Design
+    a               owl:Class ;
+    skos:prefLabel  "Design"@en ;
+    skos:definition '''Detailed technical descriptions of separate IT systems actionable for
+their implementers. Designs provide IT specialists with precise technology-
+specific information required to deliver the project but are largely irrelevant
+to business executives. They represent technical planning decisions developed
+collectively by architects and IT project teams based on corresponding Outlines.
+Due to their duality, Designs convey one meaning to architects (standards
+compliance, strategic alignment) and another to project teams (implementation
+plan). Designs are temporary and limited in their active lifespan to the
+duration of respective projects.'''@en ;
+    skos:example    "Solution designs describing in detail application, data, technology and security layers of the IT system."@en ;
+    rdfs:seeAlso    <https://eaonapage.com/> ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Inter-Type Relationships
+##
+## Kotusev identifies directional influence relationships between the six CSVLOD
+## types. These describe how different artifact types relate to and influence
+## each other within an EA practice. They can be used on individual artifacts.
+## ═══════════════════════════════════════════════════════════════════════════════
+
+## --- Considerations influence everything ---
+
+:influenceCreation
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "influence creation"@en ;
+    skos:definition "Considerations influence the creation of Visions."@en ;
+    rdfs:domain     :Consideration ;
+    rdfs:range      :Vision ;
+.
+
+:influenceStructure
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "influence structure"@en ;
+    skos:definition "Considerations influence the structure of Outlines and Designs."@en ;
+    rdfs:domain     :Consideration ;
+.
+
+:influenceOutlineStructure
+    a               owl:ObjectProperty ;
+    rdfs:subPropertyOf :influenceStructure ;
+    skos:prefLabel  "influence outline structure"@en ;
+    skos:definition "Considerations influence the structure of Outlines."@en ;
+    rdfs:domain     :Consideration ;
+    rdfs:range      :Outline ;
+.
+
+:influenceDesignStructure
+    a               owl:ObjectProperty ;
+    rdfs:subPropertyOf :influenceStructure ;
+    skos:prefLabel  "influence design structure"@en ;
+    skos:definition "Considerations influence the structure of Designs."@en ;
+    rdfs:domain     :Consideration ;
+    rdfs:range      :Design ;
+.
+
+:influenceEvolution
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "influence evolution"@en ;
+    skos:definition "Considerations influence the evolution of Landscapes."@en ;
+    rdfs:domain     :Consideration ;
+    rdfs:range      :Landscape ;
+.
+
+:influenceSelection
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "influence selection"@en ;
+    skos:definition "Considerations influence the selection of Standards."@en ;
+    rdfs:domain     :Consideration ;
+    rdfs:range      :Standard ;
+.
+
+## --- Visions initiate and guide ---
+
+:initiateNew
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "initiate new"@en ;
+    skos:definition "Visions initiate the creation of new Outlines for specific IT projects required to achieve the desired future."@en ;
+    rdfs:domain     :Vision ;
+    rdfs:range      :Outline ;
+.
+
+:guideStructure
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "guide structure"@en ;
+    skos:definition "Visions guide the structure of Designs."@en ;
+    rdfs:domain     :Vision ;
+    rdfs:range      :Design ;
+.
+
+:guideEvolution
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "guide evolution"@en ;
+    skos:definition "Visions guide the evolution of Landscapes."@en ;
+    rdfs:domain     :Vision ;
+    rdfs:range      :Landscape ;
+.
+
+:guideSelection
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "guide selection"@en ;
+    skos:definition "Visions guide the selection of Standards."@en ;
+    rdfs:domain     :Vision ;
+    rdfs:range      :Standard ;
+.
+
+## --- Outlines provide basis ---
+
+:provideBasis
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "provide basis"@en ;
+    skos:definition "Outlines provide the initial basis for developing more detailed Designs."@en ;
+    rdfs:domain     :Outline ;
+    rdfs:range      :Design ;
+.
+
+## --- Landscapes provide environment ---
+
+:provideEnvironment
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "provide environment"@en ;
+    skos:definition "Landscapes provide the environment for all new IT systems described in Outlines and Designs."@en ;
+    rdfs:domain     :Landscape ;
+.
+
+:provideEnvironmentForOutline
+    a               owl:ObjectProperty ;
+    rdfs:subPropertyOf :provideEnvironment ;
+    skos:prefLabel  "provide environment for outline"@en ;
+    skos:definition "Landscapes provide the environment for Outlines."@en ;
+    rdfs:domain     :Landscape ;
+    rdfs:range      :Outline ;
+.
+
+:provideEnvironmentForDesign
+    a               owl:ObjectProperty ;
+    rdfs:subPropertyOf :provideEnvironment ;
+    skos:prefLabel  "provide environment for design"@en ;
+    skos:definition "Landscapes provide the environment for Designs."@en ;
+    rdfs:domain     :Landscape ;
+    rdfs:range      :Design ;
+.
+
+## --- Standards provide guidelines and shape ---
+
+:provideGuidelines
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "provide guidelines"@en ;
+    skos:definition "Standards provide implementation-specific guidelines for developing Outlines and Designs."@en ;
+    rdfs:domain     :Standard ;
+.
+
+:provideGuidelinesForOutline
+    a               owl:ObjectProperty ;
+    rdfs:subPropertyOf :provideGuidelines ;
+    skos:prefLabel  "provide guidelines for outline"@en ;
+    skos:definition "Standards provide guidelines for developing Outlines."@en ;
+    rdfs:domain     :Standard ;
+    rdfs:range      :Outline ;
+.
+
+:provideGuidelinesForDesign
+    a               owl:ObjectProperty ;
+    rdfs:subPropertyOf :provideGuidelines ;
+    skos:prefLabel  "provide guidelines for design"@en ;
+    skos:definition "Standards provide guidelines for developing Designs."@en ;
+    rdfs:domain     :Standard ;
+    rdfs:range      :Design ;
+.
+
+:eventuallyShape
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "eventually shape"@en ;
+    skos:definition "Standards eventually shape Landscapes — by guiding individual project decisions, Standards determine the structure of the IT landscape that results from those projects."@en ;
+    rdfs:domain     :Standard ;
+    rdfs:range      :Landscape ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Classification Property
+##
+## Same design pattern as zach:classifiedByCell. Links work products to the
+## finer-grained 24 artifact types in the SKOS taxonomy.
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ArtifactType
+    a               owl:Class ;
+    skos:prefLabel  "Artifact Type"@en ;
+    skos:definition '''A specific artifact type from the CSVLOD taxonomy — classification
+slot for architecture work products within an EA practice. Instances are the
+24 specific artifact types defined in the taxonomy (e.g., Principles, Technology
+Reference Models, Business Capability Models, Landscape Diagrams, Solution
+Overviews, Solution Designs). Same role as zach:ZachmanCell.'''@en ;
+    rdfs:seeAlso    <https://eaonapage.com/> ;
+.
+
+:classifiedByType
+    a               owl:ObjectProperty ;
+    rdfs:range      :ArtifactType ;
+    skos:prefLabel  "classified by type"@en ;
+    skos:definition '''Links an architecture work product to its specific artifact type in
+the CSVLOD taxonomy. The target is a skos:Concept from the EA on a Page
+taxonomy (eaonapage-tax.ttl) — one of the 24 specific artifact types. Same
+design pattern as zach:classifiedByCell.'''@en ;
+    skos:scopeNote  '''Usage pattern:
+  ex:TechRefModel a eaop:Standard ;
+      skos:prefLabel "Enterprise Technology Reference Model"@en ;
+      eaop:classifiedByType eaoptax:Technology_Reference_Models .
+
+  ex:ITRoadmap a eaop:Vision ;
+      skos:prefLabel "IT Roadmap 2026–2028"@en ;
+      eaop:classifiedByType eaoptax:Roadmaps .'''@en ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## EA Processes — the three core processes of an EA practice
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:EAProcess
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf ap:ArchitectureProcess ;
+    skos:prefLabel  "EA Process"@en ;
+    skos:definition '''A core process in an EA practice as defined by the EA on a Page framework.
+EA practices consist of three distinct but interrelated processes that revolve
+around the six types of EA artifacts.'''@en ;
+    rdfs:seeAlso    <https://www.bcs.org/articles-opinion-and-research/enterprise-architecture-practice-on-a-single-page> ;
+.
+
+:StrategicPlanning
+    a               owl:Class ;
+    rdfs:subClassOf :EAProcess ;
+    skos:prefLabel  "Strategic Planning"@en ;
+    skos:definition '''The process of converting business strategy into a desired IT investment
+portfolio. Uses Considerations (governance rules) and Visions (future-state
+descriptions) to align IT investments with business direction. Involves
+senior business and IT leaders.'''@en ;
+    skos:scopeNote  '''Key questions: What are our strategic priorities? Where should we invest?
+What does the target state look like? What principles guide our decisions?'''@en ;
+    :processParticipant :EnterpriseArchitect, :BusinessLeader, :ITLeader ;
+    :hasPhase       :StrategicPlanningCycle ;
+    rdfs:seeAlso    <https://www.bcs.org/articles-opinion-and-research/enterprise-architecture-practice-on-a-single-page> ;
+.
+
+:InitiativeDelivery
+    a               owl:Class ;
+    rdfs:subClassOf :EAProcess ;
+    skos:prefLabel  "Initiative Delivery"@en ;
+    skos:definition '''The process of turning each IT investment into a working solution. Uses
+Outlines (initiative-level architecture) and Designs (detailed specifications)
+to guide project delivery. Involves solution architects and delivery teams.'''@en ;
+    skos:scopeNote  '''Key questions: What is the best approach for this initiative? What are
+the options and trade-offs? How should the solution be designed?'''@en ;
+    :processParticipant :SolutionArchitect, :EnterpriseArchitect ;
+    :hasPhase       :Initiation, :Realization ;
+    rdfs:seeAlso    <https://www.bcs.org/articles-opinion-and-research/enterprise-architecture-practice-on-a-single-page> ;
+.
+
+:TechnologyOptimization
+    a               owl:Class ;
+    rdfs:subClassOf :EAProcess ;
+    skos:prefLabel  "Technology Optimization"@en ;
+    skos:definition '''The process of rationalizing the existing IT landscape. Uses Standards
+(approved technologies and patterns) and Landscapes (current-state descriptions)
+to identify optimization opportunities. Involves enterprise architects and
+technology specialists.'''@en ;
+    skos:scopeNote  '''Key questions: What technologies do we have? Which are redundant or
+end-of-life? What should be our standard technology stack?'''@en ;
+    :processParticipant :EnterpriseArchitect, :ITLeader ;
+    rdfs:seeAlso    <https://www.bcs.org/articles-opinion-and-research/enterprise-architecture-practice-on-a-single-page> ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## EA Practice Participants
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:EAParticipant
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf arch:Stakeholder ;
+    skos:prefLabel  "EA Practice Participant"@en ;
+    skos:definition '''A stakeholder who participates in EA practice processes.'''@en ;
+.
+
+:EnterpriseArchitect
+    a               owl:Class ;
+    rdfs:subClassOf :EAParticipant ;
+    skos:prefLabel  "Enterprise Architect"@en ;
+    skos:definition '''Participates in all three EA processes. Develops and maintains
+Considerations, Visions, Standards, and Landscapes. Reviews Outlines and Designs.'''@en ;
+.
+
+:SolutionArchitect
+    a               owl:Class ;
+    rdfs:subClassOf :EAParticipant ;
+    skos:prefLabel  "Solution Architect"@en ;
+    skos:definition '''Primarily participates in Initiative Delivery. Develops Outlines and
+Designs for specific initiatives, guided by Considerations and Standards.'''@en ;
+.
+
+:BusinessLeader
+    a               owl:Class ;
+    rdfs:subClassOf :EAParticipant ;
+    skos:prefLabel  "Business Leader"@en ;
+    skos:definition '''Participates in Strategic Planning. Provides business strategy input,
+approves Visions and investment priorities.'''@en ;
+.
+
+:ITLeader
+    a               owl:Class ;
+    rdfs:subClassOf :EAParticipant ;
+    skos:prefLabel  "IT Leader"@en ;
+    skos:definition '''Participates in Strategic Planning and Technology Optimization. Approves
+Standards, prioritizes technology investments, and governs the IT landscape.'''@en ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## EA Maturity Stages
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:MaturityStage
+    a               owl:Class ;
+    skos:prefLabel  "EA Maturity Stage"@en ;
+    skos:definition '''A stage in the maturity of an EA practice, characterized by the
+processes established, artifacts mastered, governance arrangements in place,
+and benefits realized. EA on a Page defines four stages from Stage Zero
+(no architecture) to Stage Three (true enterprise architecture).'''@en ;
+    skos:scopeNote  '''The maturity model is descriptive, not prescriptive or predictive.
+It describes what is typically observed at each stage, not what should be
+achieved in a linear progression.'''@en ;
+    rdfs:seeAlso    <https://eaonapage.com/> ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## EA Governance / Function Model
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:GovernanceBody
+    a               owl:Class ;
+    rdfs:subClassOf arch:Stakeholder ;
+    skos:prefLabel  "Governance Body"@en ;
+    skos:definition '''An organizational body that governs architecture decisions and artifacts.
+Governance bodies review, approve, or reject architecture artifacts and decisions
+at various levels of the organization. Examples include architecture review boards,
+steering committees, and technology councils.'''@en ;
+    skos:scopeNote  '''EA Function on a Page describes governance bodies at different tiers,
+each responsible for different artifact types and decision scopes.'''@en ;
+    rdfs:seeAlso    <https://eaonapage.com/> ;
+.
+
+:ArchitectureTier
+    a               owl:Class ;
+    skos:prefLabel  "Architecture Tier"@en ;
+    skos:definition '''A level in the architecture governance hierarchy. EA on a Page describes
+one-tier, two-tier, and three-tier governance models depending on organizational
+size and complexity. Each tier has its own governance bodies, governed artifact
+types, and decision authority.'''@en ;
+    skos:scopeNote  '''One-tier: single EA team handles all artifacts. Two-tier: enterprise
+architects handle strategic artifacts, solution architects handle project artifacts.
+Three-tier: adds a domain/segment architecture layer between enterprise and solution.'''@en ;
+    rdfs:seeAlso    <https://eaonapage.com/> ;
+.
+
+:GovernanceArrangement
+    a               owl:Class ;
+    skos:prefLabel  "Governance Arrangement"@en ;
+    skos:definition '''A configuration of governance bodies, tiers, decision rights, escalation
+paths, and governed artifact categories that defines how architecture governance
+operates in an organization. Different maturity stages and organizational sizes
+lead to different governance arrangements.'''@en ;
+    rdfs:seeAlso    <https://eaonapage.com/> ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## EA Process Phases and Activities
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:EAProcessPhase
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf ap:ArchitectureProcess ;
+    skos:prefLabel  "EA Process Phase"@en ;
+    skos:definition '''A phase or sub-activity within one of the three core EA processes.
+Phases represent the lifecycle stages that initiatives pass through within
+each process.'''@en ;
+.
+
+:StrategicPlanningCycle
+    a               owl:Class ;
+    rdfs:subClassOf :EAProcessPhase ;
+    skos:prefLabel  "Strategic Planning Cycle"@en ;
+    skos:definition '''The ongoing cycle of strategic planning where business strategy is
+translated into IT investment direction. Produces and maintains Considerations
+and Visions.'''@en ;
+.
+
+:Initiation
+    a               owl:Class ;
+    rdfs:subClassOf :EAProcessPhase ;
+    skos:prefLabel  "Initiation"@en ;
+    skos:definition '''The phase of Initiative Delivery where a new initiative is assessed,
+an Outline is developed, options are evaluated, and an architectural approach
+is selected. Produces Solution Overviews and Options Assessments.'''@en ;
+    skos:scopeNote  '''Involves solution architects working with business stakeholders to
+understand requirements and propose architectural approaches.'''@en ;
+.
+
+:Realization
+    a               owl:Class ;
+    rdfs:subClassOf :EAProcessPhase ;
+    skos:prefLabel  "Realization"@en ;
+    skos:definition '''The phase of Initiative Delivery where the selected approach is
+elaborated into detailed Designs and handed over to delivery teams for
+implementation. Produces Solution Designs and Detailed Specifications.'''@en ;
+    skos:scopeNote  '''Involves solution architects working with delivery teams to translate
+outlines into implementable specifications.'''@en ;
+.
+
+:GovernanceActivity
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf :EAProcessPhase ;
+    skos:prefLabel  "Governance Activity"@en ;
+    skos:definition '''An activity within EA governance processes, including architecture
+reviews, approvals, amendments, exemptions, and escalations.'''@en ;
+.
+
+:ArchitectureReview
+    a               owl:Class ;
+    rdfs:subClassOf :GovernanceActivity ;
+    skos:prefLabel  "Architecture Review"@en ;
+    skos:definition '''A governance activity where architecture artifacts are reviewed
+against standards, principles, and strategic direction.'''@en ;
+.
+
+:Approval
+    a               owl:Class ;
+    rdfs:subClassOf :GovernanceActivity ;
+    skos:prefLabel  "Approval"@en ;
+    skos:definition '''A governance decision to approve an architecture artifact or
+initiative to proceed.'''@en ;
+.
+
+:Amendment
+    a               owl:Class ;
+    rdfs:subClassOf :GovernanceActivity ;
+    skos:prefLabel  "Amendment"@en ;
+    skos:definition '''A governance activity where an approved architecture artifact is
+modified to reflect changed requirements or new constraints.'''@en ;
+.
+
+:Exemption
+    a               owl:Class ;
+    rdfs:subClassOf :GovernanceActivity ;
+    skos:prefLabel  "Exemption"@en ;
+    skos:definition '''A governance decision to grant a temporary deviation from established
+standards or principles for a specific initiative.'''@en ;
+.
+
+:Escalation
+    a               owl:Class ;
+    rdfs:subClassOf :GovernanceActivity ;
+    skos:prefLabel  "Escalation"@en ;
+    skos:definition '''A governance activity where a decision or conflict is escalated to a
+higher-tier governance body for resolution.'''@en ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Properties
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:usedInProcess
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "used in process"@en ;
+    skos:definition '''Links an architecture work product to the EA process it is used in.'''@en ;
+    rdfs:range      :EAProcess ;
+.
+
+:artifactScope
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "artifact scope"@en ;
+    skos:definition '''The organizational scope of an artifact: organization-wide, initiative-scoped,
+or project-scoped. Values are SKOS concepts from the EA on a Page taxonomy.'''@en ;
+    skos:example    "ex:MyArtifact eaop:artifactScope eaoptax:OrganizationWide ."@en ;
+.
+
+:artifactLifecycle
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "artifact lifecycle"@en ;
+    skos:definition '''The temporal lifecycle of an artifact: permanent, long-lived, or short-lived.
+Values are SKOS concepts from the EA on a Page taxonomy.'''@en ;
+    skos:example    "ex:MyArtifact eaop:artifactLifecycle eaoptax:Permanent ."@en ;
+.
+
+:artifactNature
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "artifact nature"@en ;
+    skos:definition '''The nature of what an artifact describes: rules, structures, or changes.
+Based on Kotusev's three-way classification. Values are SKOS concepts from the
+EA on a Page taxonomy.'''@en ;
+    skos:example    "ex:MyArtifact eaop:artifactNature eaoptax:Rules ."@en ;
+.
+
+:artifactFocus
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "artifact focus"@en ;
+    skos:definition '''Whether an artifact is primarily business-focused or IT-focused.
+Values are SKOS concepts from the EA on a Page taxonomy.'''@en ;
+    skos:example    "ex:MyArtifact eaop:artifactFocus eaoptax:ITFocused ."@en ;
+.
+
+:usageFrequency
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "usage frequency"@en ;
+    skos:definition '''How commonly the artifact type is used across organizations: essential,
+common, or uncommon. A type-level classification property. Values are SKOS concepts
+from the EA on a Page taxonomy.'''@en ;
+    skos:example    "eaoptax:Principles eaop:usageFrequency eaoptax:Essential ."@en ;
+.
+
+:processParticipant
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "process participant"@en ;
+    skos:definition "Links an EA process to a participant role."@en ;
+    rdfs:domain     :EAProcess ;
+    rdfs:range      :EAParticipant ;
+.
+
+:governedBy
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "governed by"@en ;
+    skos:definition "Links an architecture work product to the governance body responsible for its review and approval."@en ;
+    rdfs:range      :GovernanceBody ;
+.
+
+:governsTier
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "governs tier"@en ;
+    skos:definition "Links a governance body to the architecture tier it operates at."@en ;
+    rdfs:domain     :GovernanceBody ;
+    rdfs:range      :ArchitectureTier ;
+.
+
+:escalatesTo
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "escalates to"@en ;
+    skos:definition "Links a governance body to the higher-tier body it escalates decisions to."@en ;
+    rdfs:domain     :GovernanceBody ;
+    rdfs:range      :GovernanceBody ;
+.
+
+:tierLevel
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "tier level"@en ;
+    skos:definition '''The numeric level of an architecture tier in the governance hierarchy:
+1 (enterprise), 2 (domain/segment), 3 (solution/project).'''@en ;
+    rdfs:domain     :ArchitectureTier ;
+    rdfs:range      xsd:integer ;
+.
+
+:hasGovernanceArrangement
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "has governance arrangement"@en ;
+    skos:definition "Links a maturity stage to the governance arrangement typically observed at that stage."@en ;
+    rdfs:domain     :MaturityStage ;
+    rdfs:range      :GovernanceArrangement ;
+.
+
+:hasPhase
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "has phase"@en ;
+    skos:definition "Links an EA process to one of its constituent phases or sub-activities."@en ;
+    rdfs:domain     :EAProcess ;
+    rdfs:range      :EAProcessPhase ;
+.
+
+:maturityStageProcess
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "maturity stage process"@en ;
+    skos:definition "Links a maturity stage to the EA processes typically established at that stage."@en ;
+    rdfs:domain     :MaturityStage ;
+    rdfs:range      :EAProcess ;
+.
+
+:maturityBenefit
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "maturity benefit"@en ;
+    skos:definition '''A benefit typically realized at a given maturity stage, based on
+empirical observation across organizations.'''@en ;
+    rdfs:domain     :MaturityStage ;
+    rdfs:range      xsd:string ;
+.
+
+:maturityChallenge
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "maturity challenge"@en ;
+    skos:definition '''A challenge typically faced at a given maturity stage, based on
+empirical observation across organizations.'''@en ;
+    rdfs:domain     :MaturityStage ;
+    rdfs:range      xsd:string ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Source Entities (prov:Entity + bibo:Book)
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:Kotusev2021
+    a               bibo:Book, prov:Entity ;
+    dcterms:title   "The Practice of Enterprise Architecture: A Modern Approach to Business and IT Alignment"@en ;
+    dcterms:creator "Svyatoslav Kotusev" ;
+    bibo:isbn13     "9780645082524" ;
+    bibo:edition    "2nd" ;
+    dcterms:date    "2021" ;
+    dcterms:publisher "SK Publishing" ;
+.
+
+:Kotusev2024
+    a               bibo:Book, prov:Entity ;
+    dcterms:title   "Enterprise Architects: The Agents of Digital Transformation"@en ;
+    dcterms:creator "Svyatoslav Kotusev" ;
+    bibo:isbn13     "9781763648637" ;
+    dcterms:date    "2024" ;
+    dcterms:publisher "SK Publishing" ;
+.

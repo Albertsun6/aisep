@@ -1,0 +1,16 @@
+# Procurement example — UML part: the design class refining the DDD aggregate (spec §7.2).
+# One @zh label only (upstream uml_shapes NamedElementShape: at most one skos:prefLabel).
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix uml:   <https://meta.linked.archi/uml/onto#> .
+@prefix :      <https://aisep.example/model/procurement/> .
+
+:QuotationEntity a uml:Class ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "报价单实体类"@zh ;
+    uml:visibility uml:Public ;
+    uml:isAbstract false .
+
+:rel-QuotationEntity-refines-quotationAggregate a arch:Refines ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :QuotationEntity ; arch:target :quotationAggregate .

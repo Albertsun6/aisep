@@ -1,0 +1,94 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix timefw:  <https://meta.linked.archi/time-framework/onto#> .
+@prefix am:      <https://meta.linked.archi/archimate3/onto#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+@prefix bs:      <https://meta.linked.archi/backstage/onto#> .
+@prefix togaf:   <https://meta.linked.archi/togaf/onto#> .
+
+<https://meta.linked.archi/time-framework/crossmappings#>
+    a                owl:Ontology ;
+    owl:imports      <https://meta.linked.archi/time-framework/onto#> ;
+    cc:license       "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/time-framework/crossmappings#" ;
+    vann:preferredNamespacePrefix "timexm" ;
+    dcterms:creator  "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title    "Linked.Archi TIME Framework Cross-Language Mappings"@en ;
+    dcterms:description '''Cross-language SKOS mappings between TIME framework concepts
+and other Linked.Archi modeling languages.
+
+These are editorial correspondences — no official mapping exists between
+the Gartner TIME model and ArchiMate, Backstage, or TOGAF. Mappings express
+semantic proximity based on concept definitions across frameworks.
+
+Usage: a single application IRI can be multi-typed as both a timefw:Application
+and an am:ApplicationComponent (or bs:Component). These mappings document
+which concepts are interchangeable for querying purposes.'''@en ;
+    dcterms:issued   "2026-05-05"^^xsd:date ;
+    dcterms:modified "2026-10-11"^^xsd:date ;
+    owl:versionInfo  "0.1.0"@en ;
+    rdfs:seeAlso     <https://www.leanix.net/en/wiki/apm/gartner-time-model> ;
+.
+
+
+#################################################################
+# TIME ↔ ArchiMate 3.2
+#################################################################
+#
+# Editorial mappings. ArchiMate does not define a "fit assessment"
+# concept — TIME extends the architecture graph with portfolio
+# rationalization semantics that ArchiMate's metamodel lacks.
+
+## Core entity
+timefw:Application           skos:closeMatch    am:ApplicationComponent .
+
+## Supporting concepts
+timefw:BusinessCapability    skos:closeMatch    am:Capability .
+timefw:TechnologyComponent   skos:relatedMatch  am:SystemSoftware .
+timefw:Person                skos:relatedMatch  am:BusinessActor .
+
+
+#################################################################
+# TIME ↔ ArchiMate 4.0
+#################################################################
+
+timefw:Application           skos:closeMatch    am4:ApplicationComponent .
+timefw:BusinessCapability    skos:closeMatch    am4:Capability .
+timefw:TechnologyComponent   skos:relatedMatch  am4:SystemSoftware .
+timefw:Person                skos:relatedMatch  am4:BusinessActor .
+
+
+#################################################################
+# TIME ↔ Backstage
+#################################################################
+#
+# Backstage models runtime service catalog entries. A TIME Application
+# assessed for portfolio rationalization typically corresponds to a
+# Backstage Component (the deployable unit) or System (the higher-
+# level grouping). closeMatch to Component is the default; System
+# is relatedMatch (coarser granularity).
+
+timefw:Application           skos:closeMatch    bs:Component .
+timefw:Application           skos:relatedMatch  bs:System .
+
+
+#################################################################
+# TIME ↔ TOGAF Content Metamodel
+#################################################################
+#
+# TOGAF's Content Metamodel distinguishes Logical and Physical
+# Application Components. A TIME Application maps to either
+# (depending on modelling level).
+
+timefw:Application           skos:closeMatch    togaf:LogicalApplicationComponent .
+timefw:Application           skos:closeMatch    togaf:PhysicalApplicationComponent .
+timefw:BusinessCapability    skos:closeMatch    togaf:Capability .

@@ -1,0 +1,304 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix fina:    <https://meta.linked.archi/financial-architecture/onto#> .
+@prefix :        <https://meta.linked.archi/financial-architecture/shapes#> .
+
+<https://meta.linked.archi/financial-architecture/shapes#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/financial-architecture/shapes#" ;
+    vann:preferredNamespacePrefix "finash" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Financial Architecture SHACL Shapes"@en ;
+    dcterms:description                '''SHACL shapes for validating financial architecture models.
+Enforces governance rules: every cost model must have a currency and at least
+one cost item, every investment case must have a type and projected ROI,
+and every cost-benefit analysis must have cost, benefit, and NPV.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/financial-architecture/shapes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+#################################################################
+# Cost Model Shape
+#################################################################
+
+:CostModelShape
+    a               sh:NodeShape ;
+    sh:targetClass  fina:CostModel ;
+    skos:prefLabel  "Cost Model Shape"@en ;
+    skos:definition "Validates that cost models have required metadata."@en ;
+
+    sh:property [
+        sh:path        fina:currency ;
+        sh:minCount    1 ;
+        sh:maxCount    1 ;
+        sh:datatype    xsd:string ;
+        sh:message     "Every cost model must declare its currency (ISO 4217 code)." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:hasCostItem ;
+        sh:minCount    1 ;
+        sh:message     "Every cost model must have at least one cost item." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:tcoHorizonYears ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:integer ;
+        sh:message     "Every cost model should declare its TCO horizon (years)." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:costModelDate ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:date ;
+        sh:message     "Every cost model should have a date indicating when it was last updated." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Cost Item Shape
+#################################################################
+
+:CostItemShape
+    a               sh:NodeShape ;
+    sh:targetClass  fina:CostItem ;
+    skos:prefLabel  "Cost Item Shape"@en ;
+    skos:definition "Validates that cost items have required metadata."@en ;
+
+    sh:property [
+        sh:path        fina:costCategory ;
+        sh:minCount    1 ;
+        sh:class       fina:CostCategory ;
+        sh:message     "Every cost item must have a cost category." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:or (
+        [
+            sh:property [
+                sh:path        fina:annualAmount ;
+                sh:minCount    1 ;
+                sh:datatype    xsd:decimal ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path        fina:oneTimeAmount ;
+                sh:minCount    1 ;
+                sh:datatype    xsd:decimal ;
+            ] ;
+        ]
+    ) ;
+.
+
+
+#################################################################
+# Investment Case Shape
+#################################################################
+
+:InvestmentCaseShape
+    a               sh:NodeShape ;
+    sh:targetClass  fina:InvestmentCase ;
+    skos:prefLabel  "Investment Case Shape"@en ;
+    skos:definition "Validates that investment cases have required metadata."@en ;
+
+    sh:property [
+        sh:path        skos:prefLabel ;
+        sh:minCount    1 ;
+        sh:message     "Every investment case must have a human-readable label." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:investmentType ;
+        sh:minCount    1 ;
+        sh:maxCount    1 ;
+        sh:class       fina:InvestmentType ;
+        sh:message     "Every investment case must declare its type (Run/Grow/Transform)." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:investmentAmount ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:decimal ;
+        sh:message     "Every investment case must have an investment amount." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:projectedROI ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:decimal ;
+        sh:message     "Every investment case should have a projected ROI." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:investmentSponsor ;
+        sh:minCount    1 ;
+        sh:message     "Every investment case should have a sponsor." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Cost-Benefit Analysis Shape
+#################################################################
+
+:CostBenefitAnalysisShape
+    a               sh:NodeShape ;
+    sh:targetClass  fina:CostBenefitAnalysis ;
+    skos:prefLabel  "Cost-Benefit Analysis Shape"@en ;
+    skos:definition "Validates that cost-benefit analyses have required metrics."@en ;
+
+    sh:property [
+        sh:path        fina:estimatedCost ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:decimal ;
+        sh:message     "Every CBA must have an estimated cost." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:estimatedBenefit ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:decimal ;
+        sh:message     "Every CBA must have an estimated benefit." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:netPresentValue ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:decimal ;
+        sh:message     "Every CBA should have a net present value." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:cbaCurrency ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:string ;
+        sh:message     "Every CBA must declare its currency." ;
+        sh:severity    sh:Violation ;
+    ] ;
+.
+
+
+#################################################################
+# Budget Shape
+#################################################################
+
+:BudgetShape
+    a               sh:NodeShape ;
+    sh:targetClass  fina:Budget ;
+    skos:prefLabel  "Budget Shape"@en ;
+    skos:definition "Validates that budgets have required metadata."@en ;
+
+    sh:property [
+        sh:path        skos:prefLabel ;
+        sh:minCount    1 ;
+        sh:message     "Every budget must have a human-readable label." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:budgetAmount ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:decimal ;
+        sh:message     "Every budget must have an amount." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:budgetCurrency ;
+        sh:minCount    1 ;
+        sh:datatype    xsd:string ;
+        sh:message     "Every budget must declare its currency." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:budgetOwner ;
+        sh:minCount    1 ;
+        sh:message     "Every budget should have an owner." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Technical Debt Cost Shape
+#################################################################
+
+:TechnicalDebtCostShape
+    a               sh:NodeShape ;
+    sh:targetClass  fina:TechnicalDebtCost ;
+    skos:prefLabel  "Technical Debt Cost Shape"@en ;
+    skos:definition "Validates that technical debt costs have required metadata."@en ;
+
+    sh:property [
+        sh:path        fina:debtType ;
+        sh:minCount    1 ;
+        sh:message     "Technical debt costs must specify the debt type (interest or principal)." ;
+        sh:severity    sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:debtDescription ;
+        sh:minCount    1 ;
+        sh:message     "Technical debt costs should describe the debt and its impact." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.
+
+
+#################################################################
+# Cloud Cost Allocation Shape
+#################################################################
+
+:CloudCostAllocationShape
+    a               sh:NodeShape ;
+    sh:targetClass  fina:CloudCostAllocation ;
+    skos:prefLabel  "Cloud Cost Allocation Shape"@en ;
+    skos:definition "Validates that cloud cost allocations have FinOps metadata."@en ;
+
+    sh:property [
+        sh:path        fina:cloudProvider ;
+        sh:minCount    1 ;
+        sh:message     "Cloud cost allocations must specify the cloud provider." ;
+        sh:severity    sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path        fina:cloudServiceType ;
+        sh:minCount    1 ;
+        sh:message     "Cloud cost allocations must specify the service type." ;
+        sh:severity    sh:Warning ;
+    ] ;
+.

@@ -1,0 +1,87 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix arch:        <https://meta.linked.archi/core#> .
+@prefix c4:          <https://meta.linked.archi/c4/onto#> .
+@prefix structurizr: <https://meta.linked.archi/c4/structurizr#> .
+@prefix :            <https://meta.linked.archi/c4/structurizr-shapes#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/c4/structurizr-shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/c4/structurizr#>,
+                                  <https://meta.linked.archi/c4/shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/c4/structurizr-shapes#" ;
+    vann:preferredNamespacePrefix "structsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Structurizr SHACL Shapes"@en ;
+    dcterms:description                '''SHACL shapes for validating Structurizr deployment model data.
+Imports c4-shapes for base C4 model validation.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-10-10"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/c4/structurizr-shapes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+#################################################################
+# Structurizr Deployment Shapes
+#################################################################
+
+:DeploymentShape
+    a              sh:NodeShape ;
+    sh:targetClass structurizr:Deployment ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    c4:Container ;
+        sh:message  "Deployment source must be a C4 Container."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    structurizr:DeploymentNode ;
+        sh:message  "Deployment target must be a Structurizr DeploymentNode."@en ;
+    ] ;
+.
+
+#################################################################
+# Element instance requirements — the authoritative Structurizr naming rule
+#
+# core-shapes carries no label shape; naming policy is owned by each metamodel.
+# See DD-24 in doc/guide/design-decisions.md.
+#
+# structurizr:DeploymentNode and structurizr:InfrastructureNode are the
+# Structurizr classes aligned to arch:Element. They name the infrastructure
+# they stand for, so a label is required.
+#
+# Targets Structurizr classes, never arch:Element, so the rule cannot leak onto
+# other notations in a merged graph.
+#################################################################
+
+:StructurizrElementLabelShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''Requires a language-tagged skos:prefLabel on every Structurizr deployment
+element: deployment nodes and infrastructure nodes.'''@en ;
+    sh:targetClass structurizr:DeploymentNode ,
+                   structurizr:InfrastructureNode ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  '''Every Structurizr deployment element must have at least one
+skos:prefLabel, and it must be language-tagged (rdf:langString), e.g. "eu-west-1"@en.'''@en ;
+    ] ;
+.

@@ -1,0 +1,67 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix bmc:     <https://meta.linked.archi/bmc/onto#> .
+@prefix :        <https://meta.linked.archi/bmc/metamodel#> .
+
+<https://meta.linked.archi/bmc/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bmc/metamodel#" ;
+    vann:preferredNamespacePrefix "bmcmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Business Model Canvas Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for the Business Model Canvas. The BMC is a
+pure SKOS vocabulary (no OWL elements or relationships) representing the nine
+building blocks defined by Alexander Osterwalder.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-04-16"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/bmc/metamodel/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://www.strategyzer.com/business-model-canvas> ;
+    prov:wasDerivedFrom <https://www.strategyzer.com/business-model-canvas> ;
+    rdfs:seeAlso                  <https://www.strategyzer.com/business-model-canvas>,
+                                  <https://en.wikipedia.org/wiki/Business_Model_Canvas> ;
+.
+
+:BMCFramework
+    a               arch:Framework ;
+    skos:prefLabel  "Business Model Canvas"@en ;
+    skos:definition '''The Business Model Canvas by Alexander Osterwalder and Yves Pigneur.
+A strategic management template for developing new or documenting existing
+business models. Consists of nine building blocks covering customers, value
+proposition, infrastructure, and finances.'''@en ;
+    dcterms:creator      "Alexander Osterwalder, Yves Pigneur" ;
+    rdfs:seeAlso    <https://www.strategyzer.com/business-model-canvas>,
+                    <https://en.wikipedia.org/wiki/Business_Model_Canvas> ;
+.
+
+:BusinessModelCanvas
+    a                             arch:Metamodel ;
+    skos:prefLabel                "Business Model Canvas Metamodel"@en ;
+    dcterms:description               '''The BMC metamodel — a pure SKOS vocabulary of the nine building
+blocks. No OWL elements or relationships; the BMC is used as a classification
+and navigation aid alongside other metamodels.'''@en ;
+
+    arch:basedOnFramework         :BMCFramework ;
+    arch:conceptClassification    bmc:BMCScheme ;
+
+    arch:metamodelIdentifiesStakeholder
+        archvp:EnterpriseArchitect,
+        archvp:BusinessArchitect,
+        archvp:ProductManager ;
+
+    arch:metamodelIdentifiesConsideration
+        archvp:StructureConcern,
+        archvp:StakeholderConcern ;
+.

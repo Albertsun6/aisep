@@ -1,0 +1,436 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix uml:     <https://meta.linked.archi/uml/onto#> .
+@prefix :        <https://meta.linked.archi/uml/tax#> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/uml/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "UML 2.5.1 Concept Scheme"@en ;
+    dcterms:description  '''Classification of UML metaclasses by diagram type and by
+metaclass category, plus the enumeration value sets, aligned to the UML 2.5.1
+specification structure.'''@en ;
+    skos:hasTopConcept :ByDiagramType, :ByMetaclassCategory, :ByEnumerationValue ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uml/tax#" ;
+    vann:preferredNamespacePrefix "umltax" ;
+    dcterms:title                      "Linked.Archi UML 2.5.1 Taxonomy"@en ;
+    dcterms:created               "2025-12-01"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en ;
+    dcterms:source  <https://www.omg.org/spec/UML/2.5.1/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UML/2.5.1/> ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+
+
+#################################################################
+# Dimension 1: By Diagram Type (UML 2.5.1 Annex A)
+#################################################################
+
+:ByDiagramType
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/uml/tax#> ;
+    skos:prefLabel "By Diagram Type"@en ;
+    skos:definition "Classification of UML elements by the diagram types they appear in."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+## ── Structural Diagrams ──
+
+:StructuralDiagrams
+    a skos:Concept ; skos:broader :ByDiagramType ;
+    skos:prefLabel "Structural Diagrams"@en ;
+    skos:definition "UML diagrams that show the static structure of the system."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+:ClassDiagramConcept
+    a skos:Concept ; skos:broader :StructuralDiagrams ;
+    skos:prefLabel "Class Diagram"@en ;
+    skos:definition "Shows classes, interfaces, attributes, operations, and relationships."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Class, uml:Interface, uml:DataType, uml:Enumeration, uml:PrimitiveType,
+                  uml:EnumerationLiteral, uml:Signal, uml:InformationItem, uml:Property,
+                  uml:Operation, uml:Parameter, uml:Constraint, uml:Comment ;
+.
+:ClassConcept            a skos:Concept ; skos:prefLabel "Class"@en ;
+    skos:broader :ClassDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Class .
+:InterfaceConcept        a skos:Concept ; skos:prefLabel "Interface"@en ;
+    skos:broader :ClassDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Interface .
+:DataTypeConcept         a skos:Concept ; skos:prefLabel "Data Type"@en ;
+    skos:broader :ClassDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:DataType .
+:EnumerationConcept      a skos:Concept ; skos:prefLabel "Enumeration"@en ;
+    skos:broader :ClassDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Enumeration .
+
+:ComponentDiagramConcept
+    a skos:Concept ; skos:broader :StructuralDiagrams ;
+    skos:prefLabel "Component Diagram"@en ;
+    skos:definition "Shows components, their interfaces, ports, and dependencies."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Component, uml:Port, uml:Connector ;
+.
+:ComponentConcept        a skos:Concept ; skos:prefLabel "Component"@en ;
+    skos:broader :ComponentDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Component .
+:PortConcept             a skos:Concept ; skos:prefLabel "Port"@en ;
+    skos:broader :ComponentDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Port .
+:ConnectorConcept        a skos:Concept ; skos:prefLabel "Connector"@en ;
+    skos:broader :ComponentDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Connector .
+
+:PackageDiagramConcept
+    a skos:Concept ; skos:broader :StructuralDiagrams ;
+    skos:prefLabel "Package Diagram"@en ;
+    skos:definition "Shows packages and their dependencies."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Package, uml:Model ;
+.
+:PackageConcept          a skos:Concept ; skos:prefLabel "Package"@en ;
+    skos:broader :PackageDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Package .
+
+:DeploymentDiagramConcept
+    a skos:Concept ; skos:broader :StructuralDiagrams ;
+    skos:prefLabel "Deployment Diagram"@en ;
+    skos:definition "Shows nodes, artifacts, and their deployment relationships."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Node, uml:Device, uml:ExecutionEnvironment, uml:Artifact,
+                  uml:DeploymentSpecification, uml:CommunicationPath, uml:Manifestation ;
+.
+:NodeConcept             a skos:Concept ; skos:prefLabel "Node"@en ;
+    skos:broader :DeploymentDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Node .
+:DeviceConcept           a skos:Concept ; skos:prefLabel "Device"@en ;
+    skos:broader :DeploymentDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Device .
+:ExecutionEnvironmentConcept a skos:Concept ; skos:prefLabel "Execution Environment"@en ;
+    skos:broader :DeploymentDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:ExecutionEnvironment .
+:ArtifactConcept         a skos:Concept ; skos:prefLabel "Artifact"@en ;
+    skos:broader :DeploymentDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Artifact .
+
+:CompositeStructureDiagramConcept
+    a skos:Concept ; skos:broader :StructuralDiagrams ;
+    skos:prefLabel "Composite Structure Diagram"@en ;
+    skos:definition "Shows the internal structure of a classifier with ports and connectors."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Collaboration, uml:CollaborationUse, uml:ConnectorEnd ;
+.
+:CollaborationConcept    a skos:Concept ; skos:prefLabel "Collaboration"@en ;
+    skos:broader :CompositeStructureDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Collaboration .
+
+:ObjectDiagramConcept
+    a skos:Concept ; skos:broader :StructuralDiagrams ;
+    skos:prefLabel "Object Diagram"@en ;
+    skos:definition "Shows instances of classes at a specific point in time."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+:ProfileDiagramConcept
+    a skos:Concept ; skos:broader :StructuralDiagrams ;
+    skos:prefLabel "Profile Diagram"@en ;
+    skos:definition "Shows stereotypes and profile applications."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Profile, uml:Stereotype, uml:ProfileApplication ;
+.
+:ProfileConcept          a skos:Concept ; skos:prefLabel "Profile"@en ;
+    skos:broader :ProfileDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Profile .
+:StereotypeConcept       a skos:Concept ; skos:prefLabel "Stereotype"@en ;
+    skos:broader :ProfileDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Stereotype .
+
+
+## ── Behavioral Diagrams ──
+
+:BehavioralDiagrams
+    a skos:Concept ; skos:broader :ByDiagramType ;
+    skos:prefLabel "Behavioral Diagrams"@en ;
+    skos:definition "UML diagrams that show the dynamic behavior of the system."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+:UseCaseDiagramConcept
+    a skos:Concept ; skos:broader :BehavioralDiagrams ;
+    skos:prefLabel "Use Case Diagram"@en ;
+    skos:definition "Shows actors, use cases, and their relationships."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Actor, uml:UseCase, uml:ExtensionPoint ;
+.
+:ActorConcept            a skos:Concept ; skos:prefLabel "Actor"@en ;
+    skos:broader :UseCaseDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Actor .
+:UseCaseConcept          a skos:Concept ; skos:prefLabel "Use Case"@en ;
+    skos:broader :UseCaseDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:UseCase .
+
+:ActivityDiagramConcept
+    a skos:Concept ; skos:broader :BehavioralDiagrams ;
+    skos:prefLabel "Activity Diagram"@en ;
+    skos:definition "Shows workflows with actions, control flows, and object flows."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Activity, uml:Action, uml:DecisionNode, uml:ForkNode, uml:JoinNode,
+                  uml:MergeNode, uml:InitialNode, uml:ActivityFinalNode, uml:FlowFinalNode,
+                  uml:AcceptEventAction, uml:SendSignalAction, uml:ActivityPartition,
+                  uml:OpaqueBehavior, uml:FunctionBehavior ;
+.
+:ActivityConcept         a skos:Concept ; skos:prefLabel "Activity"@en ;
+    skos:broader :ActivityDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Activity .
+:ActionConcept           a skos:Concept ; skos:prefLabel "Action"@en ;
+    skos:broader :ActivityDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Action .
+:DecisionNodeConcept     a skos:Concept ; skos:prefLabel "Decision Node"@en ;
+    skos:broader :ActivityDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:DecisionNode .
+:ForkNodeConcept         a skos:Concept ; skos:prefLabel "Fork Node"@en ;
+    skos:broader :ActivityDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:ForkNode .
+:JoinNodeConcept         a skos:Concept ; skos:prefLabel "Join Node"@en ;
+    skos:broader :ActivityDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:JoinNode .
+
+:StateMachineDiagramConcept
+    a skos:Concept ; skos:broader :BehavioralDiagrams ;
+    skos:prefLabel "State Machine Diagram"@en ;
+    skos:definition "Shows states, transitions, and events for object lifecycles."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:StateMachine, uml:State, uml:Transition, uml:Pseudostate, uml:FinalState,
+                  uml:Region, uml:Trigger ;
+.
+:StateMachineConcept     a skos:Concept ; skos:prefLabel "State Machine"@en ;
+    skos:broader :StateMachineDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:StateMachine .
+:StateConcept            a skos:Concept ; skos:prefLabel "State"@en ;
+    skos:broader :StateMachineDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:State .
+:TransitionConcept       a skos:Concept ; skos:prefLabel "Transition"@en ;
+    skos:broader :StateMachineDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Transition .
+
+:SequenceDiagramConcept
+    a skos:Concept ; skos:broader :BehavioralDiagrams ;
+    skos:prefLabel "Sequence Diagram"@en ;
+    skos:definition "Shows time-ordered message exchanges between lifelines."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Interaction, uml:Lifeline, uml:Message, uml:CombinedFragment,
+                  uml:InteractionUse, uml:InteractionOperand, uml:InteractionConstraint,
+                  uml:Continuation, uml:StateInvariant, uml:Gate, uml:GeneralOrdering,
+                  uml:OccurrenceSpecification, uml:MessageOccurrenceSpecification,
+                  uml:ExecutionOccurrenceSpecification, uml:DestructionOccurrenceSpecification,
+                  uml:BehaviorExecutionSpecification ;
+.
+:InteractionConcept      a skos:Concept ; skos:prefLabel "Interaction"@en ;
+    skos:broader :SequenceDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Interaction .
+:LifelineConcept         a skos:Concept ; skos:prefLabel "Lifeline"@en ;
+    skos:broader :SequenceDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Lifeline .
+:MessageConcept          a skos:Concept ; skos:prefLabel "Message"@en ;
+    skos:broader :SequenceDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:Message .
+:CombinedFragmentConcept a skos:Concept ; skos:prefLabel "Combined Fragment"@en ;
+    skos:broader :SequenceDiagramConcept ; skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    rdfs:seeAlso uml:CombinedFragment .
+
+:CommunicationDiagramConcept
+    a skos:Concept ; skos:broader :BehavioralDiagrams ;
+    skos:prefLabel "Communication Diagram"@en ;
+    skos:definition "Shows message exchanges organized by object relationships."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+:TimingDiagramConcept
+    a skos:Concept ; skos:broader :BehavioralDiagrams ;
+    skos:prefLabel "Timing Diagram"@en ;
+    skos:definition "Shows state changes over time with timing constraints."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+:InteractionOverviewDiagramConcept
+    a skos:Concept ; skos:broader :BehavioralDiagrams ;
+    skos:prefLabel "Interaction Overview Diagram"@en ;
+    skos:definition "Shows high-level flow of control between interaction fragments."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+
+#################################################################
+# Dimension 2: By Metaclass Category
+#################################################################
+
+:ByMetaclassCategory
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/uml/tax#> ;
+    skos:prefLabel "By Metaclass Category"@en ;
+    skos:definition "Classification of UML metaclasses by their role in the metamodel."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+:ClassifierCategory
+    a skos:Concept ; skos:broader :ByMetaclassCategory ;
+    skos:prefLabel "Classifiers"@en ;
+    skos:definition "Metaclasses that classify instances (Class, Interface, DataType, etc.)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+:RelationshipCategory
+    a skos:Concept ; skos:broader :ByMetaclassCategory ;
+    skos:prefLabel "Relationships"@en ;
+    skos:definition "Metaclasses that represent connections between elements."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Association, uml:Aggregation, uml:Composition, uml:Generalization,
+                  uml:Dependency, uml:Abstraction, uml:Realization, uml:InterfaceRealization,
+                  uml:Usage, uml:Deployment, uml:Include, uml:Extend, uml:PackageImport,
+                  uml:PackageMerge, uml:InformationFlow, uml:ControlFlow, uml:ObjectFlow,
+                  uml:Transition ;
+.
+
+:BehaviorCategory
+    a skos:Concept ; skos:broader :ByMetaclassCategory ;
+    skos:prefLabel "Behaviors"@en ;
+    skos:definition "Metaclasses that specify dynamic behavior (Activity, StateMachine, Interaction)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+:PackagingCategory
+    a skos:Concept ; skos:broader :ByMetaclassCategory ;
+    skos:prefLabel "Packaging"@en ;
+    skos:definition "Metaclasses for organizing model elements (Package, Model, Profile)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+:DeploymentCategory
+    a skos:Concept ; skos:broader :ByMetaclassCategory ;
+    skos:prefLabel "Deployment"@en ;
+    skos:definition "Metaclasses for deployment modeling (Node, Artifact, Device)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+#################################################################
+# Dimension 3: By Enumeration Value (UML 2.5.1 Enumerations)
+#################################################################
+##
+## Navigation over the UML Enumeration value sets. The values themselves are
+## named individuals declared in uml-onto.ttl (uml:SynchCall, uml:Public, …),
+## each typed by its enumeration class and closed with owl:oneOf there. Here
+## they are grouped for browsing, palettes and value pickers, referenced with
+## skos:narrower exactly as the diagram-type dimension references metaclasses.
+## Each individual carries the reciprocal skos:broader and skos:inScheme.
+
+:ByEnumerationValue
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/uml/tax#> ;
+    skos:prefLabel "By Enumeration Value"@en ;
+    skos:definition '''Classification of the values of UML Enumerations — visibility,
+aggregation, parameter direction, message sort and kind, pseudostate kind, transition
+kind, interaction operator and connector kind.'''@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+.
+
+:VisibilityKinds
+    a skos:Concept ; skos:broader :ByEnumerationValue ;
+    skos:prefLabel "Visibility Kinds"@en ;
+    skos:definition "The visibility options for a NamedElement (UML 2.5.1 §7.4)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Public, uml:Private, uml:Protected, uml:PackageVisibility ;
+.
+
+:AggregationKinds
+    a skos:Concept ; skos:broader :ByEnumerationValue ;
+    skos:prefLabel "Aggregation Kinds"@en ;
+    skos:definition "The aggregation options for an association end (UML 2.5.1 §9.5)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:None, uml:Shared, uml:Composite ;
+.
+
+:ParameterDirectionKinds
+    a skos:Concept ; skos:broader :ByEnumerationValue ;
+    skos:prefLabel "Parameter Direction Kinds"@en ;
+    skos:definition "The direction options for a Parameter (UML 2.5.1 §9.4)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:In, uml:Out, uml:InOut, uml:Return ;
+.
+
+:MessageSorts
+    a skos:Concept ; skos:broader :ByEnumerationValue ;
+    skos:prefLabel "Message Sorts"@en ;
+    skos:definition "The communication sorts a Message can reflect (UML 2.5.1 §17.4)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:SynchCall, uml:AsynchCall, uml:AsynchSignal,
+                  uml:CreateMessage, uml:DeleteMessage, uml:Reply ;
+.
+
+:MessageKinds
+    a skos:Concept ; skos:broader :ByEnumerationValue ;
+    skos:prefLabel "Message Kinds"@en ;
+    skos:definition '''The derived kinds of a Message, from the presence or absence of its
+send and receive events (UML 2.5.1 §17.4).'''@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Complete, uml:Lost, uml:Found, uml:Unknown ;
+.
+
+:PseudostateKinds
+    a skos:Concept ; skos:broader :ByEnumerationValue ;
+    skos:prefLabel "Pseudostate Kinds"@en ;
+    skos:definition "The kinds of Pseudostate vertex (UML 2.5.1 §14.3)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:InitialPseudostate, uml:DeepHistory, uml:ShallowHistory,
+                  uml:JoinPseudostate, uml:ForkPseudostate, uml:JunctionPseudostate,
+                  uml:ChoicePseudostate, uml:EntryPoint, uml:ExitPoint, uml:Terminate ;
+.
+
+:TransitionKinds
+    a skos:Concept ; skos:broader :ByEnumerationValue ;
+    skos:prefLabel "Transition Kinds"@en ;
+    skos:definition "The kinds of Transition (UML 2.5.1 §14.2)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:ExternalTransition, uml:InternalTransition, uml:LocalTransition ;
+.
+
+:InteractionOperatorKinds
+    a skos:Concept ; skos:broader :ByEnumerationValue ;
+    skos:prefLabel "Interaction Operator Kinds"@en ;
+    skos:definition "The interaction operators of a CombinedFragment (UML 2.5.1 §17.6)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:Alt, uml:Opt, uml:Loop, uml:Break, uml:Par, uml:Seq,
+                  uml:Strict, uml:Critical, uml:Neg, uml:Assert, uml:Ignore, uml:Consider ;
+.
+
+:ConnectorKinds
+    a skos:Concept ; skos:broader :ByEnumerationValue ;
+    skos:prefLabel "Connector Kinds"@en ;
+    skos:definition "The kinds of Connector, assembly or delegation (UML 2.5.1 §11.2)."@en ;
+    skos:inScheme <https://meta.linked.archi/uml/tax#> ;
+    skos:narrower uml:AssemblyConnector, uml:DelegationConnector ;
+.
+
+#################################################################
+# Palette grouping
+#
+# Linked.Archi modelling guidance, not the specification: the
+# classification dimensions a palette groups element types by. The
+# metamodel manifest points to it (arch:paletteGrouping).
+#################################################################
+
+:PaletteGrouping
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Palette Grouping"@en ;
+    skos:definition "The classification dimensions a palette groups element types by: a section for each structural diagram, then for each behavioural diagram."@en ;
+    skos:memberList ( :StructuralDiagrams :BehavioralDiagrams ) ;
+.

@@ -1,0 +1,76 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix fourplus1:   <https://meta.linked.archi/4plus1#> .
+@prefix fourplus1vp: <https://meta.linked.archi/4plus1/viewpoints#> .
+@prefix fourplus1dt: <https://meta.linked.archi/4plus1/deliverable-templates#> .
+@prefix :        <https://meta.linked.archi/4plus1/metamodel#> .
+
+<https://meta.linked.archi/4plus1/metamodel#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/4plus1/metamodel#" ;
+    vann:preferredNamespacePrefix "fourplus1mm" ;
+    dcterms:title                      "4+1 View Model Metamodel Manifest"@en ;
+    dcterms:description                """Metamodel manifest for the 4+1 Architectural View Model.
+Aggregates the taxonomy, viewpoints, and deliverable templates into a single
+entry point. The 4+1 model is a viewpoint framework — it does not define its
+own element types. Custom metamodels reference it for viewpoint structure and
+document templates."""@en ;
+    dcterms:created               "2026-05-06"^^xsd:date ;
+    dcterms:modified              "2026-05-06"^^xsd:date ;
+    dcterms:creator                    "Kalin Maldzhanski" ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/4plus1/metamodel/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+#################################################################
+# Framework
+#################################################################
+
+:FourPlusOneFramework
+    a              arch:Framework ;
+    skos:prefLabel "4+1 Architectural View Model"@en ;
+    skos:definition """Philippe Kruchten's (1995) architectural view model. Defines five
+concurrent viewpoints for organizing software architecture descriptions.
+Language-agnostic — prescribes what concerns to address, not which notation
+to use."""@en ;
+    dcterms:creator     "Philippe Kruchten" ;
+    dcterms:date        "1995" ;
+    dcterms:source  <https://www.researchgate.net/publication/220018231_The_41_View_Model_of_Architecture> ;
+    prov:wasDerivedFrom <https://www.researchgate.net/publication/220018231_The_41_View_Model_of_Architecture> ;
+.
+
+#################################################################
+# Metamodel
+#################################################################
+
+:FourPlusOneMetamodel
+    a                             arch:Metamodel ;
+    skos:prefLabel                "4+1 View Model Metamodel"@en ;
+    arch:basedOnFramework         :FourPlusOneFramework ;
+    arch:conceptClassification    <https://meta.linked.archi/4plus1#> ;
+    arch:architectureViewpoints   fourplus1vp:ViewpointCatalog ;
+    arch:viewpointLibrary         fourplus1vp:ViewpointCatalog ;
+    arch:hasDeliverableTemplate   fourplus1dt:SoftwareArchitectureDocument ;
+    skos:scopeNote                """The 4+1 model is a viewpoint framework, not a modeling language.
+It does not define element types (arch:modelConcepts is absent). Instead, it
+provides viewpoint structure and document templates that any modeling language
+can adopt. A custom metamodel references 4+1 viewpoints and templates alongside
+its own element ontology:
+
+    ex:MyMetamodel a arch:Metamodel ;
+        arch:modelConcepts          <https://meta.linked.archi/mymodel#> ;
+        arch:architectureViewpoints fourplus1vp:ViewpointCatalog ;
+        arch:hasDeliverableTemplate fourplus1dt:SoftwareArchitectureDocument .
+"""@en ;
+.

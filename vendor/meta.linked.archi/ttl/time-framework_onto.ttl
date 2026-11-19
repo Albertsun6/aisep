@@ -1,0 +1,704 @@
+@prefix :        <https://meta.linked.archi/time-framework/onto#> .
+@prefix timefw:  <https://meta.linked.archi/time-framework/onto#> .
+@prefix timetax: <https://meta.linked.archi/time-framework/tax#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ap:      <https://meta.linked.archi/arch-processes#> .
+@prefix iso12207: <https://meta.linked.archi/iso12207#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <https://schema.org/> .
+@prefix foaf:    <http://xmlns.com/foaf/0.1/> .
+
+#################################################################
+# Ontology
+#################################################################
+
+<https://meta.linked.archi/time-framework/onto#>
+    a owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespacePrefix "timefw" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/time-framework/onto#" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi TIME Framework Ontology"@en ;
+    dcterms:title                      "Linked.Archi TIME Framework Ontology"@en ;
+    dcterms:description                '''Ontology for representing application portfolio fit assessments and
+Gartner TIME dispositions (Tolerate, Invest, Migrate, Eliminate), including
+functional fit, technical fit, and cost fitness dimensions. Provides classes
+for applications, fit assessments, criteria scoring, evidence tracking, and
+OWL enumeration types with automatic quadrant classification.
+
+This is the OWL layer of the TIME framework. Use together with:
+* time-shapes.ttl (SHACL) — validates completeness and value constraints
+* time-tax.ttl (SKOS) — organizes controlled vocabularies for navigation
+This is not an official Gartner document.'''@en ;
+    dcterms:abstract              "Application portfolio assessment ontology based on the Gartner TIME model."@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2026-01-12"^^xsd:date ;
+    dcterms:modified              "2026-05-02"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/time-framework/onto/0.2.0#> ;
+    owl:versionInfo               "0.2.0" ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    prov:wasDerivedFrom           "Gartner TIME Model (Duggan et al., ~2009)" ;
+    dcterms:references
+        <https://www.gartner.com/en/articles/government-modernization> ,
+        <https://www.gartner.com/en/information-technology/topics/enterprise-apps> ,
+        <https://www.leanix.net/en/wiki/apm/gartner-time-model> ,
+        <https://help.sap.com/docs/leanix/ea/time> ,
+        <https://enterprise-architecture.org/about/thought-leadership/bridging-application-disposition-frameworks/> ,
+        <https://help.ardoq.com/en/articles/43925-application-rationalization-metamodel> ,
+        <https://xebia.com/articles/how-to-assess-and-improve-the-quality-of-your-application-portfolio/> ;
+    rdfs:seeAlso                  <https://www.leanix.net/en/wiki/apm/gartner-time-model> ;
+    skos:historyNote """Provenance: The TIME (Tolerate, Invest, Migrate, Eliminate) framework
+originates from Gartner (Duggan et al., circa 2009) for application portfolio
+management. Gartner's original axes are Business Value x IT Quality (also
+referred to as Business Fitness x Technical Fitness in later publications).
+
+This ontology implements the Functional Fit x Technical Fit axis vocabulary
+as operationalised by SAP LeanIX — a licensed vendor implementation of the
+Gartner TIME model. The quadrant mapping is identical in both framings; only
+the axis labels differ. Cite Gartner as the origin of the framework and
+SAP LeanIX as the source of the functional/technical-fit operationalisation."""@en ;
+    skos:definition               "This ontology is designed to align with the Linked.Archi meta repository style and can be published with versioned IRIs and documentation."@en .
+
+#################################################################
+# Core classes
+#################################################################
+
+timefw:Application
+    a owl:Class ;
+    skos:prefLabel "Application"@en ;
+    skos:definition "An application in the application portfolio being assessed with the TIME framework."@en ;
+    rdfs:subClassOf schema:SoftwareApplication .
+
+timefw:BusinessCapability
+    a owl:Class ;
+    skos:prefLabel "Business capability"@en ;
+    skos:definition "A business capability supported by one or more applications. Modeled as a SKOS concept for flexible capability taxonomies."@en ;
+    rdfs:subClassOf skos:Concept .
+
+timefw:TechnologyComponent
+    a owl:Class ;
+    skos:prefLabel "Technology component"@en ;
+    skos:definition "A technology component (platform, runtime, database, service, infrastructure, etc.) used by an application."@en .
+
+timefw:Person
+    a owl:Class ;
+    skos:prefLabel "Person"@en ;
+    skos:definition "A person (assessor, business owner, IT owner, etc.)."@en ;
+    rdfs:subClassOf foaf:Person .
+
+timefw:FitAssessment
+    a owl:Class ;
+    skos:prefLabel "Fit assessment"@en ;
+    skos:definition "A point-in-time assessment of an application\'s functional fit and technical fit resulting in a TIME disposition. Some organizations also capture cost fitness as a third supporting dimension."@en ;
+    rdfs:subClassOf prov:Entity .
+
+timefw:TimeAssessmentModel
+    a owl:Class ;
+    skos:prefLabel "TIME assessment model"@en ;
+    skos:definition "A scoring model describing scale and threshold used to derive HIGH/LOW fit ratings from numeric scores (e.g., 1..5 and HIGH if >=4)."@en .
+
+timefw:FitCriterion
+    a owl:Class ;
+    skos:prefLabel "Fit criterion"@en ;
+    skos:definition "A criterion used to evaluate functional or technical fit (e.g., capability coverage, maintainability, security posture)."@en .
+
+timefw:FitCriterionScore
+    a owl:Class ;
+    skos:prefLabel "Fit criterion score"@en ;
+    skos:definition "A scored evaluation of one FitCriterion within a FitAssessment."@en .
+
+timefw:Evidence
+    a owl:Class ;
+    skos:prefLabel "Evidence"@en ;
+    skos:definition "Evidence supporting a fit assessment decision (e.g., security assessment report, vendor roadmap notice, operations metrics dashboard)."@en ;
+    rdfs:subClassOf prov:Entity .
+
+#################################################################
+# Object properties
+#################################################################
+
+timefw:supportsCapability
+    a owl:ObjectProperty ;
+    skos:prefLabel "supports capability"@en ;
+    skos:definition "Relates an application to a business capability that it supports."@en ;
+    rdfs:domain timefw:Application ;
+    rdfs:range timefw:BusinessCapability .
+
+timefw:usesTechnologyComponent
+    a owl:ObjectProperty ;
+    skos:prefLabel "uses technology component"@en ;
+    skos:definition "Relates an application to a technology component it depends on or uses."@en ;
+    rdfs:domain timefw:Application ;
+    rdfs:range timefw:TechnologyComponent .
+
+timefw:hasFitAssessment
+    a owl:ObjectProperty ;
+    skos:prefLabel "has fit assessment"@en ;
+    skos:definition "Relates an application to one or more fit assessments over time."@en ;
+    rdfs:domain timefw:Application ;
+    rdfs:range timefw:FitAssessment ;
+    owl:inverseOf timefw:assessedApplication .
+
+timefw:assessedApplication
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "assessed application"@en ;
+    skos:definition "Relates a fit assessment to the (single) application it assesses."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:Application .
+
+timefw:assessor
+    a owl:ObjectProperty ;
+    skos:prefLabel "assessor"@en ;
+    skos:definition "Person who performed or recorded the assessment."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:Person .
+
+timefw:businessOwner
+    a owl:ObjectProperty ;
+    skos:prefLabel "business owner"@en ;
+    skos:definition "Relates an application to its accountable business owner."@en ;
+    rdfs:domain timefw:Application ;
+    rdfs:range timefw:Person .
+
+timefw:itOwner
+    a owl:ObjectProperty ;
+    skos:prefLabel "IT owner"@en ;
+    skos:definition "Relates an application to its accountable IT owner."@en ;
+    rdfs:domain timefw:Application ;
+    rdfs:range timefw:Person .
+
+timefw:usesAssessmentModel
+    a owl:ObjectProperty ;
+    skos:prefLabel "uses assessment model"@en ;
+    skos:definition "Relates a fit assessment to the scoring model used to interpret its scores."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:TimeAssessmentModel .
+
+timefw:hasCriterionScore
+    a owl:ObjectProperty ;
+    skos:prefLabel "has criterion score"@en ;
+    skos:definition "Relates a fit assessment to one or more criterion-level scores."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:FitCriterionScore .
+
+timefw:criterion
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "criterion"@en ;
+    skos:definition "Relates a criterion score to the criterion being scored."@en ;
+    rdfs:domain timefw:FitCriterionScore ;
+    rdfs:range timefw:FitCriterion .
+
+timefw:hasEvidence
+    a owl:ObjectProperty ;
+    skos:prefLabel "has evidence"@en ;
+    skos:definition "Relates a fit assessment to supporting evidence items."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:Evidence .
+
+timefw:evidenceType
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "evidence type"@en ;
+    skos:definition "Classifies a piece of evidence by type."@en ;
+    rdfs:domain timefw:Evidence ;
+    rdfs:range timefw:EvidenceType .
+
+timefw:dimension
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "dimension"@en ;
+    skos:definition "Associates a fit criterion with the fit dimension it contributes to (FUNCTIONAL or TECHNICAL)."@en ;
+    rdfs:domain timefw:FitCriterion ;
+    rdfs:range timefw:FitDimension .
+
+timefw:assessmentStatus
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "assessment status"@en ;
+    skos:definition "Governance status of the fit assessment."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:AssessmentStatus .
+
+timefw:lifecycleState
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "lifecycle state"@en ;
+    skos:definition "Lifecycle state of the application (optional)."@en ;
+    rdfs:domain timefw:Application ;
+    rdfs:range timefw:LifecycleState .
+
+timefw:dispositionMovement
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "disposition movement"@en ;
+    skos:definition "Direction of disposition change relative to the previous assessment for the same application. May be manually asserted by the assessor or derived by a derivation rule from the assessment history."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:DispositionMovement .
+
+timefw:previousDisposition
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "previous disposition"@en ;
+    skos:definition "The TIME disposition from the immediately preceding assessment of the same application. May be manually asserted or derived from the assessment history ordered by assessmentDate."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:TimeDisposition .
+
+timefw:functionalFitRating
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "functional fit rating"@en ;
+    skos:definition "HIGH/LOW abstraction of functional fit (often derived from the functionalFitScore and assessment model threshold)."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:FitRating .
+
+timefw:technicalFitRating
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "technical fit rating"@en ;
+    skos:definition "HIGH/LOW abstraction of technical fit (often derived from the technicalFitScore and assessment model threshold)."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:FitRating .
+
+timefw:costFitRating
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "cost fit rating"@en ;
+    skos:definition "HIGH/LOW abstraction of cost fitness (often derived from the costFitScore and assessment model threshold)."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:FitRating .
+
+timefw:timeDisposition
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    skos:prefLabel "TIME disposition"@en ;
+    skos:definition "TIME classification outcome for the fit assessment."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range timefw:TimeDisposition .
+
+#################################################################
+# Datatype properties
+#################################################################
+
+timefw:assessmentDate
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "assessment date"@en ;
+    skos:definition "Date when the assessment was performed."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range xsd:date .
+
+timefw:validUntil
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "valid until"@en ;
+    skos:definition "Optional review-by or expiry date for the assessment."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range xsd:date .
+
+timefw:functionalFitScore
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "functional fit score"@en ;
+    skos:definition "Numeric functional fit score (typically 1..5). Interpretation depends on the assessment model."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range xsd:integer .
+
+timefw:technicalFitScore
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "technical fit score"@en ;
+    skos:definition "Numeric technical fit score (typically 1..5). Interpretation depends on the assessment model."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range xsd:integer .
+
+timefw:costFitScore
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "cost fit score"@en ;
+    skos:definition "Numeric cost fitness score (typically 1..5). Some Gartner guidance describes cost fitness as a dimension alongside business and technical fitness when determining a TIME disposition; interpretation depends on the assessment model."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range xsd:integer .
+
+timefw:rationale
+    a owl:DatatypeProperty ;
+    skos:prefLabel "rationale"@en ;
+    skos:definition "Narrative justification for fit scores and TIME disposition."@en ;
+    rdfs:domain timefw:FitAssessment ;
+    rdfs:range xsd:string .
+
+timefw:referenceURI
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "reference URI"@en ;
+    skos:definition "A link to an evidence source (document, ticket, dashboard, repository, etc.)."@en ;
+    rdfs:domain timefw:Evidence ;
+    rdfs:range xsd:anyURI .
+
+timefw:sourceSystem
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "source system"@en ;
+    skos:definition "System of record for the evidence (e.g., LeanIX, Jira, ServiceNow)."@en ;
+    rdfs:domain timefw:Evidence ;
+    rdfs:range xsd:string .
+
+timefw:email
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "email"@en ;
+    skos:definition "Email address for a person."@en ;
+    rdfs:domain timefw:Person ;
+    rdfs:range xsd:string .
+
+timefw:criterionScoreValue
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "criterion score"@en ;
+    skos:definition "Numeric score assigned to a criterion (typically 1..5)."@en ;
+    rdfs:domain timefw:FitCriterionScore ;
+    rdfs:range xsd:integer .
+
+timefw:criterionJustification
+    a owl:DatatypeProperty ;
+    skos:prefLabel "criterion justification"@en ;
+    skos:definition "Justification for the criterion-level score."@en ;
+    rdfs:domain timefw:FitCriterionScore ;
+    rdfs:range xsd:string .
+
+timefw:criterionWeight
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "criterion weight"@en ;
+    skos:definition "Optional weighting factor used in aggregating criterion scores."@en ;
+    rdfs:domain timefw:FitCriterion ;
+    rdfs:range xsd:decimal .
+
+timefw:scaleMin
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "scale minimum"@en ;
+    skos:definition "Minimum score on the assessment model scale (e.g., 1)."@en ;
+    rdfs:domain timefw:TimeAssessmentModel ;
+    rdfs:range xsd:integer .
+
+timefw:scaleMax
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "scale maximum"@en ;
+    skos:definition "Maximum score on the assessment model scale (e.g., 5)."@en ;
+    rdfs:domain timefw:TimeAssessmentModel ;
+    rdfs:range xsd:integer .
+
+timefw:highThreshold
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    skos:prefLabel "high threshold"@en ;
+    skos:definition "Threshold at or above which a score is considered HIGH (e.g., 4)."@en ;
+    rdfs:domain timefw:TimeAssessmentModel ;
+    rdfs:range xsd:integer .
+
+#################################################################
+# Controlled vocabularies (OWL enumerations + SKOS individuals)
+#################################################################
+
+# --- TIME Disposition ---
+
+timefw:TimeDisposition
+    a owl:Class ;
+    skos:prefLabel "TIME disposition"@en ;
+    skos:definition "Disposition in the Gartner TIME framework: Tolerate, Invest, Migrate, Eliminate."@en ;
+    owl:oneOf ( timefw:Tolerate timefw:Invest timefw:Migrate timefw:Eliminate ) .
+
+timefw:Tolerate a owl:NamedIndividual, timefw:TimeDisposition, skos:Concept ;
+    skos:prefLabel "Tolerate"@en ;
+    skos:definition "Keep as-is; technically acceptable but low functional fit / limited strategic value."@en ;
+    skos:broader  timetax:TimeDispositions ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Invest a owl:NamedIndividual, timefw:TimeDisposition, skos:Concept ;
+    skos:prefLabel "Invest"@en ;
+    skos:definition "Strategic and healthy; continue investing and enhancing."@en ;
+    skos:broader  timetax:TimeDispositions ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Migrate a owl:NamedIndividual, timefw:TimeDisposition, skos:Concept ;
+    skos:prefLabel "Migrate"@en ;
+    skos:definition "Important to business but technically weak; modernize, replace, or replatform."@en ;
+    skos:broader  timetax:TimeDispositions ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Eliminate a owl:NamedIndividual, timefw:TimeDisposition, skos:Concept ;
+    skos:prefLabel "Eliminate"@en ;
+    skos:definition "Low functional fit and low technical fit; retire/decommission."@en ;
+    skos:broader  timetax:TimeDispositions ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+# --- Fit rating (HIGH/LOW) ---
+
+timefw:FitRating
+    a owl:Class ;
+    skos:prefLabel "Fit rating"@en ;
+    skos:definition "Abstract rating for functional/technical fit (HIGH or LOW), typically derived from a scoring model threshold."@en ;
+    owl:oneOf ( timefw:High timefw:Low ) .
+
+timefw:High a owl:NamedIndividual, timefw:FitRating, skos:Concept ;
+    skos:prefLabel "High"@en ;
+    skos:broader  timetax:FitRatings ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Low a owl:NamedIndividual, timefw:FitRating, skos:Concept ;
+    skos:prefLabel "Low"@en ;
+    skos:broader  timetax:FitRatings ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+# --- Fit dimension (FUNCTIONAL/TECHNICAL/COST) ---
+
+timefw:FitDimension
+    a owl:Class ;
+    skos:prefLabel "Fit dimension"@en ;
+    owl:oneOf ( timefw:Functional timefw:Technical timefw:Cost ) .
+
+timefw:Functional a owl:NamedIndividual, timefw:FitDimension, skos:Concept ;
+    skos:prefLabel "Functional"@en ;
+    skos:altLabel "Business value"@en ;
+    skos:altLabel "Business fitness"@en ;
+    skos:definition "How well the application supports business needs/capabilities."@en ;
+    skos:scopeNote """Operationalises Gartner's 'business fitness' axis per the SAP LeanIX convention.
+Functional fit measures how well the application supports current business needs and capabilities.
+Broader business value considerations (strategic importance, revenue contribution, competitive
+differentiation) may extend beyond functional completeness — organisations should document
+their interpretation in the assessment model."""@en ;
+    skos:broader  timetax:FitDimensions ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Technical a owl:NamedIndividual, timefw:FitDimension, skos:Concept ;
+    skos:prefLabel "Technical"@en ;
+    skos:altLabel "IT quality"@en ;
+    skos:altLabel "Technical fitness"@en ;
+    skos:definition "Technical quality/maintainability/compatibility/operability posture."@en ;
+    skos:broader  timetax:FitDimensions ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Cost a owl:NamedIndividual, timefw:FitDimension, skos:Concept ;
+    skos:prefLabel "Cost"@en ;
+    skos:definition "Relative cost of maintaining the application (cost fitness), often considered alongside business and technical fitness when segmenting enterprise applications."@en ;
+    skos:broader  timetax:FitDimensions ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+# --- Assessment status ---
+
+timefw:AssessmentStatus
+    a owl:Class ;
+    skos:prefLabel "Assessment status"@en ;
+    owl:oneOf ( timefw:Draft timefw:Approved timefw:Superseded timefw:Rejected ) .
+
+timefw:Draft a owl:NamedIndividual, timefw:AssessmentStatus, skos:Concept ;
+    skos:prefLabel "Draft"@en ;
+    skos:broader  timetax:AssessmentStatuses ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Approved a owl:NamedIndividual, timefw:AssessmentStatus, skos:Concept ;
+    skos:prefLabel "Approved"@en ;
+    skos:broader  timetax:AssessmentStatuses ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Superseded a owl:NamedIndividual, timefw:AssessmentStatus, skos:Concept ;
+    skos:prefLabel "Superseded"@en ;
+    skos:broader  timetax:AssessmentStatuses ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Rejected a owl:NamedIndividual, timefw:AssessmentStatus, skos:Concept ;
+    skos:prefLabel "Rejected"@en ;
+    skos:broader  timetax:AssessmentStatuses ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+# --- Evidence types ---
+
+timefw:EvidenceType
+    a owl:Class ;
+    skos:prefLabel "Evidence type"@en ;
+    owl:oneOf (
+        timefw:ArchitectureReview
+        timefw:SecurityAssessment
+        timefw:OperationsMetrics
+        timefw:CostAnalysis
+        timefw:BusinessStakeholderInput
+        timefw:VendorRoadmap
+        timefw:TechnicalDebtRegister
+        timefw:OtherEvidence
+    ) .
+
+timefw:ArchitectureReview a owl:NamedIndividual, timefw:EvidenceType, skos:Concept ;
+    skos:prefLabel "Architecture review"@en ;
+    skos:broader  timetax:EvidenceTypes ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:SecurityAssessment a owl:NamedIndividual, timefw:EvidenceType, skos:Concept ;
+    skos:prefLabel "Security assessment"@en ;
+    skos:broader  timetax:EvidenceTypes ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:OperationsMetrics a owl:NamedIndividual, timefw:EvidenceType, skos:Concept ;
+    skos:prefLabel "Operations metrics"@en ;
+    skos:broader  timetax:EvidenceTypes ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:CostAnalysis a owl:NamedIndividual, timefw:EvidenceType, skos:Concept ;
+    skos:prefLabel "Cost analysis"@en ;
+    skos:broader  timetax:EvidenceTypes ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:BusinessStakeholderInput a owl:NamedIndividual, timefw:EvidenceType, skos:Concept ;
+    skos:prefLabel "Business stakeholder input"@en ;
+    skos:broader  timetax:EvidenceTypes ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:VendorRoadmap a owl:NamedIndividual, timefw:EvidenceType, skos:Concept ;
+    skos:prefLabel "Vendor roadmap"@en ;
+    skos:broader  timetax:EvidenceTypes ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:TechnicalDebtRegister a owl:NamedIndividual, timefw:EvidenceType, skos:Concept ;
+    skos:prefLabel "Technical debt register"@en ;
+    skos:broader  timetax:EvidenceTypes ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:OtherEvidence a owl:NamedIndividual, timefw:EvidenceType, skos:Concept ;
+    skos:prefLabel "Other"@en ;
+    skos:broader  timetax:EvidenceTypes ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+# --- Lifecycle state (optional) ---
+
+timefw:LifecycleState
+    a owl:Class ;
+    rdfs:subClassOf ap:LifecycleStage ;
+    skos:prefLabel "Lifecycle state"@en ;
+    skos:definition "Application portfolio lifecycle states for the TIME framework context."@en ;
+    owl:oneOf ( timefw:Plan timefw:Build timefw:Run timefw:Retire ) .
+
+# --- Disposition movement ---
+
+timefw:DispositionMovement
+    a owl:Class ;
+    skos:prefLabel "Disposition movement"@en ;
+    skos:definition "Direction of disposition change relative to the previous assessment for the same application."@en ;
+    owl:oneOf ( timefw:Improved timefw:Degraded timefw:Unchanged timefw:NewAssessment ) .
+
+timefw:Improved a owl:NamedIndividual, timefw:DispositionMovement, skos:Concept ;
+    skos:prefLabel "Improved"@en ;
+    skos:definition "Disposition moved toward a more favourable quadrant (e.g., Eliminate to Tolerate, Migrate to Invest)."@en ;
+    skos:broader  timetax:DispositionMovements ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Degraded a owl:NamedIndividual, timefw:DispositionMovement, skos:Concept ;
+    skos:prefLabel "Degraded"@en ;
+    skos:definition "Disposition moved toward a less favourable quadrant (e.g., Invest to Migrate, Tolerate to Eliminate)."@en ;
+    skos:broader  timetax:DispositionMovements ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Unchanged a owl:NamedIndividual, timefw:DispositionMovement, skos:Concept ;
+    skos:prefLabel "Unchanged"@en ;
+    skos:definition "Disposition remains the same as the previous assessment."@en ;
+    skos:broader  timetax:DispositionMovements ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:NewAssessment a owl:NamedIndividual, timefw:DispositionMovement, skos:Concept ;
+    skos:prefLabel "New"@en ;
+    skos:definition "First assessment for this application — no prior disposition to compare against."@en ;
+    skos:broader  timetax:DispositionMovements ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Plan a owl:NamedIndividual, timefw:LifecycleState, skos:Concept ;
+    skos:prefLabel "Plan"@en ;
+    skos:definition "Application is in planning phase — not yet being built."@en ;
+    skos:closeMatch iso12207:ConceptStage ;
+    skos:closeMatch <https://docs-eam.leanix.net/docs/lifecycle#plan> ;
+    skos:closeMatch ap:Plan ;
+    skos:broader  timetax:LifecycleStates ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Build a owl:NamedIndividual, timefw:LifecycleState, skos:Concept ;
+    skos:prefLabel "Build"@en ;
+    skos:definition "Application is being developed or phased in — not yet in production."@en ;
+    skos:closeMatch iso12207:DevelopmentStage ;
+    skos:closeMatch <https://docs-eam.leanix.net/docs/lifecycle#phase-in> ;
+    skos:closeMatch ap:PhaseIn ;
+    skos:broader  timetax:LifecycleStates ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Run a owl:NamedIndividual, timefw:LifecycleState, skos:Concept ;
+    skos:prefLabel "Run"@en ;
+    skos:definition "Application is in active production use."@en ;
+    skos:closeMatch iso12207:UtilizationStage ;
+    skos:closeMatch <https://docs-eam.leanix.net/docs/lifecycle#active> ;
+    skos:closeMatch ap:Active ;
+    skos:broader  timetax:LifecycleStates ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+timefw:Retire a owl:NamedIndividual, timefw:LifecycleState, skos:Concept ;
+    skos:prefLabel "Retire"@en ;
+    skos:definition "Application is being phased out or has reached end of life."@en ;
+    skos:closeMatch iso12207:RetirementStage ;
+    skos:closeMatch <https://docs-eam.leanix.net/docs/lifecycle#phase-out> ;
+    skos:closeMatch <https://docs-eam.leanix.net/docs/lifecycle#end-of-life> ;
+    skos:narrowMatch ap:PhaseOut, ap:Retired ;
+    skos:scopeNote "Maps to ISO 12207 Retirement stage and both LeanIX 'Phase Out' and 'End of Life' states (the TIME framework collapses these into one). The Architecture Processes extension keeps them separate as ap:PhaseOut and ap:Retired, both narrower than this state."@en ;
+    skos:broader  timetax:LifecycleStates ;
+    skos:inScheme <https://meta.linked.archi/time-framework/tax#> .
+
+#################################################################
+# OWL classification of TIME quadrants from ratings
+#################################################################
+
+timefw:InvestAssessment
+    a owl:Class ;
+    skos:prefLabel "Invest assessment"@en ;
+    skos:definition "A fit assessment where both functional and technical fit are HIGH."@en ;
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            timefw:FitAssessment
+            [ a owl:Restriction ; owl:onProperty timefw:functionalFitRating ; owl:hasValue timefw:High ]
+            [ a owl:Restriction ; owl:onProperty timefw:technicalFitRating ; owl:hasValue timefw:High ]
+        )
+    ] ;
+    rdfs:subClassOf
+        timefw:FitAssessment ,
+        [ a owl:Restriction ; owl:onProperty timefw:timeDisposition ; owl:hasValue timefw:Invest ] .
+
+timefw:MigrateAssessment
+    a owl:Class ;
+    skos:prefLabel "Migrate assessment"@en ;
+    skos:definition "A fit assessment where functional fit is HIGH and technical fit is LOW."@en ;
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            timefw:FitAssessment
+            [ a owl:Restriction ; owl:onProperty timefw:functionalFitRating ; owl:hasValue timefw:High ]
+            [ a owl:Restriction ; owl:onProperty timefw:technicalFitRating ; owl:hasValue timefw:Low ]
+        )
+    ] ;
+    rdfs:subClassOf
+        timefw:FitAssessment ,
+        [ a owl:Restriction ; owl:onProperty timefw:timeDisposition ; owl:hasValue timefw:Migrate ] .
+
+timefw:TolerateAssessment
+    a owl:Class ;
+    skos:prefLabel "Tolerate assessment"@en ;
+    skos:definition "A fit assessment where functional fit is LOW and technical fit is HIGH."@en ;
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            timefw:FitAssessment
+            [ a owl:Restriction ; owl:onProperty timefw:functionalFitRating ; owl:hasValue timefw:Low ]
+            [ a owl:Restriction ; owl:onProperty timefw:technicalFitRating ; owl:hasValue timefw:High ]
+        )
+    ] ;
+    rdfs:subClassOf
+        timefw:FitAssessment ,
+        [ a owl:Restriction ; owl:onProperty timefw:timeDisposition ; owl:hasValue timefw:Tolerate ] .
+
+timefw:EliminateAssessment
+    a owl:Class ;
+    skos:prefLabel "Eliminate assessment"@en ;
+    skos:definition "A fit assessment where both functional and technical fit are LOW."@en ;
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            timefw:FitAssessment
+            [ a owl:Restriction ; owl:onProperty timefw:functionalFitRating ; owl:hasValue timefw:Low ]
+            [ a owl:Restriction ; owl:onProperty timefw:technicalFitRating ; owl:hasValue timefw:Low ]
+        )
+    ] ;
+    rdfs:subClassOf
+        timefw:FitAssessment ,
+        [ a owl:Restriction ; owl:onProperty timefw:timeDisposition ; owl:hasValue timefw:Eliminate ] .

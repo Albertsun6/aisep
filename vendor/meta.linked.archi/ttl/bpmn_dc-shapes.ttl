@@ -1,0 +1,118 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix archvis: <https://meta.linked.archi/core-vis#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix bpmndi: <https://meta.linked.archi/bpmn/di#> .
+@prefix dc: <https://meta.linked.archi/bpmn/dc#> .
+@prefix di: <https://meta.linked.archi/bpmn/di-core#> .
+@prefix : <https://meta.linked.archi/bpmn/dc-shapes#> .
+
+#################################################################
+# Shapes Graph Declaration
+#
+# These shapes constrain the *raw* DI geometry structures that
+# bpmn2linkedarchi emits under --emit-raw-di-geometry. Coordinates are
+# literals (xsd:double), not IRIs. By default the converter flattens geometry
+# into archvis:bounds-* and these shapes have no targets.
+#################################################################
+
+<https://meta.linked.archi/bpmn/dc-shapes#>
+    a owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/dc-shapes#" ;
+    vann:preferredNamespacePrefix "dcsh" ;
+    dcterms:title "Linked.Archi DC SHACL Shapes (OMG DD/DC)"@en ;
+    dcterms:description '''SHACL shapes validating OMG Diagram Common (DC) value types —
+Bounds, Point, and Font.'''@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    dcterms:modified "2026-07-25"^^xsd:date ;
+    dcterms:publisher "Linked.Archi"@en, <https://linked.archi> ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    owl:imports <https://meta.linked.archi/bpmn/dc#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+:BoundsShape a sh:NodeShape ;
+    sh:targetClass dc:Bounds ;
+    sh:property [
+        sh:path dc:x ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+    ] ;
+    sh:property [
+        sh:path dc:y ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+    ] ;
+    sh:property [
+        sh:path dc:width ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+    ] ;
+    sh:property [
+        sh:path dc:height ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+    ] ;
+.
+
+:PointShape a sh:NodeShape ;
+    sh:targetClass dc:Point ;
+    sh:property [
+        sh:path dc:x ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+    ] ;
+    sh:property [
+        sh:path dc:y ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+    ] ;
+.
+
+:FontShape a sh:NodeShape ;
+    sh:targetClass dc:Font ;
+    sh:property [
+        sh:path dc:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path dc:size ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+    ] ;
+    sh:property [
+        sh:path dc:isBold ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path dc:isItalic ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path dc:isUnderline ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path dc:isStrikeThrough ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+.

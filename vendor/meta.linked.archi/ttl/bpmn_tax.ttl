@@ -1,0 +1,260 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix bpmn:    <https://meta.linked.archi/bpmn/onto#> .
+@prefix :        <https://meta.linked.archi/bpmn/tax#> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/bpmn/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "BPMN 2.0.2 Concept Scheme"@en ;
+    dcterms:description  "Classification of BPMN 2.0.2 metaclasses by BPMN category — flow objects, connecting objects, swim lanes, artifacts, and collaborations."@en ;
+    skos:hasTopConcept :FlowObjects, :ConnectingObjects, :SwimLanes, :Artifacts, :Collaborations ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/tax#" ;
+    vann:preferredNamespacePrefix "bpmntax" ;
+    dcterms:title                 "Linked.Archi BPMN 2.0.2 Taxonomy"@en ;
+    dcterms:created               "2026-06-05"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:source  <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/BPMN/2.0.2/> .
+
+
+#################################################################
+# Top-Level Concepts
+#################################################################
+
+:FlowObjects
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/bpmn/tax#> ;
+    skos:prefLabel "Flow Objects"@en ;
+    skos:definition "The main graphical elements within a process flow: activities, events, and gateways."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> .
+
+:ConnectingObjects
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/bpmn/tax#> ;
+    skos:prefLabel "Connecting Objects"@en ;
+    skos:definition "Elements connecting flow objects: sequence flows, message flows, associations."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> .
+
+:SwimLanes
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/bpmn/tax#> ;
+    skos:prefLabel "Swim Lanes"@en ;
+    skos:definition "Organizational groupings: pools and lanes."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> .
+
+:Artifacts
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/bpmn/tax#> ;
+    skos:prefLabel "Artifacts"@en ;
+    skos:definition "Data-related and annotation elements: data objects, data stores, groups, text annotations."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> .
+
+:Collaborations
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/bpmn/tax#> ;
+    skos:prefLabel "Collaborations"@en ;
+    skos:definition "Collaboration, choreography, and conversation elements."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> .
+
+
+#################################################################
+# Flow Objects — Activities
+#################################################################
+
+:Activities
+    a skos:Concept ; skos:broader :FlowObjects ;
+    skos:prefLabel "Activities"@en ;
+    skos:definition "Work performed within a business process — tasks and sub-processes."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:Process, bpmn:SubProcess, bpmn:Task, bpmn:UserTask,
+                  bpmn:ServiceTask, bpmn:SendTask, bpmn:ReceiveTask,
+                  bpmn:ScriptTask, bpmn:BusinessRuleTask, bpmn:ManualTask,
+                  bpmn:CallActivity, bpmn:AdHocSubProcess, bpmn:Transaction .
+
+#################################################################
+# Flow Objects — Events
+#################################################################
+
+:Events
+    a skos:Concept ; skos:broader :FlowObjects ;
+    skos:prefLabel "Events"@en ;
+    skos:definition "Things that happen during a process: start, intermediate, and end events."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:StartEvent, bpmn:EndEvent,
+                  bpmn:IntermediateCatchEvent, bpmn:IntermediateThrowEvent,
+                  bpmn:BoundaryEvent, bpmn:ImplicitThrowEvent .
+
+#################################################################
+# Flow Objects — Gateways
+#################################################################
+
+:Gateways
+    a skos:Concept ; skos:broader :FlowObjects ;
+    skos:prefLabel "Gateways"@en ;
+    skos:definition "Control flow divergence and convergence."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:ExclusiveGateway, bpmn:ParallelGateway,
+                  bpmn:InclusiveGateway, bpmn:EventBasedGateway,
+                  bpmn:ComplexGateway .
+
+#################################################################
+# Connecting Objects
+#################################################################
+
+:SequenceFlowConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Sequence Flow"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    rdfs:seeAlso bpmn:SequenceFlow .
+
+:MessageFlowConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Message Flow"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    rdfs:seeAlso bpmn:MessageFlow .
+
+:AssociationConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Association"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    rdfs:seeAlso bpmn:Association .
+
+:DataAssociationConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Data Association"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    rdfs:seeAlso bpmn:DataAssociation .
+
+:ConversationLinkConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Conversation Link"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    rdfs:seeAlso bpmn:ConversationLink .
+
+:ConversationAssociationConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Conversation Association"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    rdfs:seeAlso bpmn:ConversationAssociation .
+
+:MessageFlowAssociationConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Message Flow Association"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    rdfs:seeAlso bpmn:MessageFlowAssociation .
+
+:ParticipantAssociationConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Participant Association"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    rdfs:seeAlso bpmn:ParticipantAssociation .
+
+:RelationshipConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Relationship"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    rdfs:seeAlso bpmn:Relationship .
+
+:LinkEventDefinitionConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Link"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    rdfs:seeAlso bpmn:LinkEventDefinition .
+
+#################################################################
+# Swim Lanes
+#################################################################
+
+:PoolConcept
+    a skos:Concept ; skos:broader :SwimLanes ;
+    skos:prefLabel "Pool (Participant)"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:Participant .
+
+:LaneConcept
+    a skos:Concept ; skos:broader :SwimLanes ;
+    skos:prefLabel "Lane"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:Lane .
+
+#################################################################
+# Artifacts / Data
+#################################################################
+
+:DataObjectConcept
+    a skos:Concept ; skos:broader :Artifacts ;
+    skos:prefLabel "Data Object"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:DataObject, bpmn:DataObjectReference .
+
+:DataStoreConcept
+    a skos:Concept ; skos:broader :Artifacts ;
+    skos:prefLabel "Data Store"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:DataStore, bpmn:DataStoreReference .
+
+:MessageConcept
+    a skos:Concept ; skos:broader :Artifacts ;
+    skos:prefLabel "Message"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:Message .
+
+:GroupConcept
+    a skos:Concept ; skos:broader :Artifacts ;
+    skos:prefLabel "Group"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:Group .
+
+:TextAnnotationConcept
+    a skos:Concept ; skos:broader :Artifacts ;
+    skos:prefLabel "Text Annotation"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:TextAnnotation .
+
+#################################################################
+# Collaborations
+#################################################################
+
+:CollaborationConcept
+    a skos:Concept ; skos:broader :Collaborations ;
+    skos:prefLabel "Collaboration"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:Collaboration .
+
+:ChoreographyConcept
+    a skos:Concept ; skos:broader :Collaborations ;
+    skos:prefLabel "Choreography"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:Choreography, bpmn:ChoreographyTask, bpmn:SubChoreography,
+                  bpmn:CallChoreography, bpmn:GlobalChoreographyTask .
+
+:ConversationConcept
+    a skos:Concept ; skos:broader :Collaborations ;
+    skos:prefLabel "Conversation"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn/tax#> ;
+    skos:narrower bpmn:Conversation, bpmn:ConversationNode, bpmn:SubConversation,
+                  bpmn:CallConversation, bpmn:GlobalConversation .
+
+#################################################################
+# Palette grouping
+#
+# Linked.Archi modelling guidance, not the specification: the
+# classification dimensions a palette groups element types by. The
+# metamodel manifest points to it (arch:paletteGrouping).
+#################################################################
+
+:PaletteGrouping
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Palette Grouping"@en ;
+    skos:definition "The classification dimensions a palette groups element types by: a section for each group of flow objects — activities, events, gateways — then the swim lanes, the artifacts and the collaborations."@en ;
+    skos:memberList ( :FlowObjects :SwimLanes :Artifacts :Collaborations ) ;
+.

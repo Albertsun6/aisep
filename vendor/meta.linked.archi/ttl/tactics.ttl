@@ -1,0 +1,273 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix bibo:     <http://purl.org/ontology/bibo/> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:   <http://schema.org/> .
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix ad:       <https://meta.linked.archi/arch-decision#> .
+@prefix refa:     <https://meta.linked.archi/ref-arch#> .
+@prefix iso25010: <https://meta.linked.archi/iso25010#> .
+@prefix :         <https://meta.linked.archi/tactics#> .
+
+<https://meta.linked.archi/tactics#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   ad: ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/tactics#" ;
+    vann:preferredNamespacePrefix "tac" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Tactics Extension Ontology"@en ;
+    dcterms:description                '''Extension ontology providing a taxonomy of architectural
+tactics organized by quality attribute (availability,
+interoperability, modifiability, performance, security).
+Use this extension to classify concrete design techniques
+that architects employ to achieve specific quality-attribute
+responses, and to relate them to patterns and decisions.'''@en ;
+    dcterms:abstract              "Architectural tactics organized by quality attribute."@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-04-16"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/tactics/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    schema:citation               "Linked.Archi Tactics Extension Ontology" ;
+    dcterms:source  "Bass L., Clements P., Kazman R. Software Architecture in Practice, 3rd ed. Addison-Wesley, 2012." ;
+    prov:wasDerivedFrom "Bass L., Clements P., Kazman R. Software Architecture in Practice, 3rd ed. Addison-Wesley, 2012." ;
+    rdfs:seeAlso                  <http://dx.doi.org/10.1016/j.jss.2010.04.067> ;
+.
+
+:AvailabilityTactic
+    a                        owl:Class ;
+    rdfs:subClassOf          refa:Tactic ;
+    skos:prefLabel           "Availability Tactic"@en ;
+    skos:definition          '''A tactic designed to enable a system to endure faults so
+that the service being delivered remains compliant with its
+specification. The goal is to keep faults from becoming
+failures or to bound the effects of faults and make repair
+possible.'''@en ;
+    ad:qualityAttributeMatch iso25010:Availability ;
+.
+
+:DetectFaults
+    a                owl:Class ;
+    rdfs:subClassOf  :AvailabilityTactic ;
+    skos:prefLabel   "Detect Faults"@en ;
+    skos:definition  '''A category of availability tactics focused on detecting faults
+before they cause failures, using techniques such as ping/echo,
+heartbeat, and exception monitoring.'''@en ;
+    skos:example     "Techniques: Ping/Echo, Heartbeat, Timestamp, Sanity Checking, Condition Monitoring, Voting, Exception Detection, Self-Test."@en ;
+.
+
+:RecoverFromFaults
+    a                owl:Class ;
+    rdfs:subClassOf  :AvailabilityTactic ;
+    skos:prefLabel   "Recover from Faults"@en ;
+    skos:definition  '''A category of availability tactics focused on recovering the
+system to a correct state after a fault has been detected.'''@en ;
+.
+
+:PreventFaults
+    a                owl:Class ;
+    rdfs:subClassOf  :AvailabilityTactic ;
+    skos:prefLabel   "Prevent Faults"@en ;
+    skos:definition  '''A category of availability tactics focused on preventing
+faults from occurring in the first place, using techniques
+such as removal from service, transactions, and process
+monitors.'''@en ;
+    skos:example     "Techniques: Removal from Service, Transactions, Predictive Model, Exception Prevention, Increase Competence Set."@en ;
+.
+
+:PreparationAndRepair
+    a                owl:Class ;
+    rdfs:subClassOf  :RecoverFromFaults ;
+    skos:prefLabel   "Preparation and Repair"@en ;
+    skos:definition  '''Recovery tactics based on combinations of retrying a
+computation or introducing redundancy to prepare for and
+repair faults.'''@en ;
+    skos:example     "Techniques: Active Redundancy (Hot Spare), Passive Redundancy (Warm Spare), Spare, Exception Handling, Rollback, Software Upgrade, Retry, Ignore Faulty Behavior, Degradation, Reconfiguration."@en ;
+.
+
+:Reintroduction
+    a                owl:Class ;
+    rdfs:subClassOf  :RecoverFromFaults ;
+    skos:prefLabel   "Reintroduction"@en ;
+    skos:definition  '''A recovery tactic where a failed component is reintroduced
+into service after it has been corrected.'''@en ;
+    skos:example     "Techniques: Shadow, State Resynchronization, Escalating Restart, Non-Stop Forwarding."@en ;
+.
+
+:InteroperabilityTactic
+    a                        owl:Class ;
+    rdfs:subClassOf          refa:Tactic ;
+    skos:prefLabel           "Interoperability Tactic"@en ;
+    skos:definition          '''A tactic designed to enable meaningful exchange of information
+and services between systems that were not necessarily designed
+to work together.'''@en ;
+    ad:qualityAttributeMatch iso25010:Interoperability ;
+.
+
+:Locate
+    a                owl:Class ;
+    rdfs:subClassOf  :InteroperabilityTactic ;
+    skos:prefLabel   "Locate"@en ;
+    skos:definition  '''An interoperability tactic focused on discovering the location
+and identity of services or systems to communicate with,
+using techniques such as service discovery and directory
+lookup.'''@en ;
+    skos:example     "Techniques: Discover Service, Use Known Interface."@en ;
+.
+
+:ManageInterfaces
+    a                owl:Class ;
+    rdfs:subClassOf  :InteroperabilityTactic ;
+    skos:prefLabel   "Manage Interfaces"@en ;
+    skos:definition  '''An interoperability tactic focused on managing the interfaces
+between systems, using techniques such as orchestration,
+adapters, and interface standardization.'''@en ;
+    skos:example     "Techniques: Orchestrate, Tailor Interface."@en ;
+.
+
+:ModifiabilityTactic
+    a                        owl:Class ;
+    rdfs:subClassOf          refa:Tactic ;
+    skos:prefLabel           "Modifiability Tactic"@en ;
+    skos:definition          '''A tactic designed to reduce the cost and risk of making
+changes to a system by controlling the complexity of
+modifications.'''@en ;
+    ad:qualityAttributeMatch iso25010:Modifiability ;
+.
+
+:ReduceSizeOfAModule
+    a                owl:Class ;
+    rdfs:subClassOf  :ModifiabilityTactic ;
+    skos:prefLabel   "Reduce Size of a Module"@en ;
+    skos:definition  '''A modifiability tactic that splits large modules into smaller,
+more manageable units to reduce the scope of changes.'''@en ;
+    skos:example     "Techniques: Split Module, Increase Semantic Coherence."@en ;
+.
+
+:IncreaseCohesion
+    a                owl:Class ;
+    rdfs:subClassOf  :ModifiabilityTactic ;
+    skos:prefLabel   "Increase Cohesion"@en ;
+    skos:definition  '''A modifiability tactic that increases the semantic coherence
+within a module so that changes are localized to fewer
+modules.'''@en ;
+.
+
+:ReduceCoupling
+    a                owl:Class ;
+    rdfs:subClassOf  :ModifiabilityTactic ;
+    skos:prefLabel   "Reduce Coupling"@en ;
+    skos:definition  '''A modifiability tactic that reduces dependencies between
+modules so that a change in one module has less impact on
+others.'''@en ;
+    skos:example     "Techniques: Encapsulate, Use an Intermediary, Restrict Dependencies, Refactor, Abstract Common Services."@en ;
+.
+
+:DeferBinding
+    a                owl:Class ;
+    rdfs:subClassOf  :ModifiabilityTactic ;
+    skos:prefLabel   "Defer Binding"@en ;
+    skos:definition  '''A modifiability tactic that defers binding decisions to later
+in the lifecycle (compile time, deployment time, or runtime)
+to reduce the cost of making changes. Techniques include
+component replacement, compile-time parameterization,
+configuration-time binding, runtime registration, dynamic
+lookup, plug-ins, publish-subscribe, shared repositories,
+and polymorphism.'''@en ;
+    skos:example     "Techniques: Component Replacement, Compile-Time Parameterization, Configuration-Time Binding, Runtime Registration, Dynamic Lookup, Interpret Parameters, Startup-Time Binding, Name Servers, Plug-ins, Publish-Subscribe, Shared Repositories, Polymorphism."@en ;
+.
+
+:PerformanceTactic
+    a                        owl:Class ;
+    rdfs:subClassOf          refa:Tactic ;
+    skos:prefLabel           "Performance Tactic"@en ;
+    skos:definition          '''A tactic designed to generate a response to an event within
+a specified time constraint by controlling resource demand
+or managing resources.'''@en ;
+    ad:qualityAttributeMatch iso25010:PerformanceEfficiency ;
+.
+
+:ControlResourceDemand
+    a                owl:Class ;
+    rdfs:subClassOf  :PerformanceTactic ;
+    skos:prefLabel   "Control Resource Demand"@en ;
+    skos:definition  '''A performance tactic that operates on the demand side to
+produce smaller demand on the resources that will have to
+service the events.'''@en ;
+    skos:example     "Techniques: Manage Sampling Rate, Limit Event Response, Prioritize Events, Reduce Overhead, Bound Execution Times, Increase Resource Efficiency."@en ;
+.
+
+:ManageResources
+    a                owl:Class ;
+    rdfs:subClassOf  :PerformanceTactic ;
+    skos:prefLabel   "Manage Resources"@en ;
+    skos:definition  '''A performance tactic that operates on the response side to
+make the resources at hand work more effectively in handling
+the demands put to them.'''@en ;
+    skos:example     "Techniques: Increase Resources, Introduce Concurrency, Maintain Multiple Copies of Computations, Maintain Multiple Copies of Data, Bound Queue Sizes, Schedule Resources."@en ;
+.
+
+:SecurityTactic
+    a                        owl:Class ;
+    rdfs:subClassOf          refa:Tactic ;
+    skos:prefLabel           "Security Tactic"@en ;
+    skos:definition          '''A tactic designed to protect data and information from
+unauthorized access while still providing access to authorized
+people and systems. Security tactics address attacks —
+unauthorized attempts to access data or services, modify data,
+or deny services to legitimate users.'''@en ;
+    ad:qualityAttributeMatch iso25010:Security ;
+.
+
+:DetectAttacks
+    a                owl:Class ;
+    rdfs:subClassOf  :SecurityTactic ;
+    skos:prefLabel   "Detect Attacks"@en ;
+    skos:definition  '''A category of security tactics focused on detecting attacks,
+using techniques such as intrusion detection systems,
+monitoring, and audit trails.'''@en ;
+    skos:example     "Techniques: Detect Intrusion, Detect Service Denial, Verify Message Integrity, Detect Message Delay."@en ;
+.
+
+:ResistAttacks
+    a                owl:Class ;
+    rdfs:subClassOf  :SecurityTactic ;
+    skos:prefLabel   "Resist Attacks"@en ;
+    skos:definition  '''A category of security tactics focused on resisting and
+preventing attacks from succeeding, using techniques such as
+authentication, authorization, encryption, and input
+validation.'''@en ;
+    skos:example     "Techniques: Identify Actors, Authenticate Actors, Authorize Actors, Limit Access, Limit Exposure, Encrypt Data, Separate Entities, Change Default Settings."@en ;
+.
+
+:ReactToAttacks
+    a                owl:Class ;
+    rdfs:subClassOf  :SecurityTactic ;
+    skos:prefLabel   "React to Attacks"@en ;
+    skos:definition  '''A category of security tactics focused on reacting to detected
+attacks, using techniques such as revoking access, locking
+accounts, and alerting administrators.'''@en ;
+    skos:example     "Techniques: Revoke Access, Lock Computer, Inform Actors."@en ;
+.
+
+:RecoverFromAttacks
+    a                owl:Class ;
+    rdfs:subClassOf  :SecurityTactic ;
+    skos:prefLabel   "Recover from Attacks"@en ;
+    skos:definition  '''A category of security tactics focused on recovering from
+successful attacks, using techniques such as restoring state,
+maintaining audit trails, and applying availability
+tactics.'''@en ;
+    skos:example     "Techniques: Maintain Audit Trail, Restore (using availability tactics)."@en ;
+.

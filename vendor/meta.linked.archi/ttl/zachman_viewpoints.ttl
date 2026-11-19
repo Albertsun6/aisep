@@ -1,0 +1,371 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix zachtax:    <https://meta.linked.archi/zachman/tax#> .
+@prefix zach:    <https://meta.linked.archi/zachman/onto#> .
+@prefix :        <https://meta.linked.archi/zachman/viewpoints#> .
+
+<https://meta.linked.archi/zachman/viewpoints#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/zachman/onto#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/zachman/viewpoints#" ;
+    vann:preferredNamespacePrefix "zachvp" ;
+    dcterms:title                 "Zachman Framework Viewpoints"@en ;
+    dcterms:description           '''Viewpoint definitions for the Zachman Framework. Declares the six
+Aspects as arch:Aspect individuals, the six Perspectives as arch:Perspective
+individuals, and 36 viewpoints — one per Zachman Cell — each classified by
+its cell coordinate.'''@en ;
+    dcterms:created               "2026-02-17"^^xsd:date ;
+    dcterms:modified              "2026-02-17"^^xsd:date ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/zachman/viewpoints/0.3.0#> ;
+    owl:versionInfo               "0.3.0"@en ;
+.
+
+
+## =============================================================================
+## Aspect Individuals (columns)
+## =============================================================================
+
+zachtax:Inventory      a arch:Aspect ;      skos:prefLabel "Inventory / What"@en .
+zachtax:Process        a arch:Aspect ;      skos:prefLabel "Process / How"@en .
+zachtax:Distribution   a arch:Aspect ;      skos:prefLabel "Distribution / Where"@en .
+zachtax:Responsibility a arch:Aspect ;      skos:prefLabel "Responsibility / Who"@en .
+zachtax:Timing         a arch:Aspect ;      skos:prefLabel "Timing / When"@en .
+zachtax:Motivation     a arch:Aspect ;      skos:prefLabel "Motivation / Why"@en .
+
+
+## =============================================================================
+## Perspective Individuals (rows)
+## =============================================================================
+
+zachtax:Executive          a arch:Perspective ; skos:prefLabel "Executive / Identification"@en .
+zachtax:BusinessManagement a arch:Perspective ; skos:prefLabel "Business Management / Definition"@en .
+zachtax:Architect          a arch:Perspective ; skos:prefLabel "Architect / Representation"@en .
+zachtax:Engineer           a arch:Perspective ; skos:prefLabel "Engineer / Specification"@en .
+zachtax:Technician         a arch:Perspective ; skos:prefLabel "Technician / Configuration"@en .
+zachtax:Enterprise         a arch:Perspective ; skos:prefLabel "Enterprise / Instantiation"@en .
+
+
+## =============================================================================
+## Cell Individuals (typed for use as range of zach:classifiedByCell)
+## =============================================================================
+
+zachtax:R1C1_InventoryIdentification    a zach:ZachmanCell .
+zachtax:R1C2_ProcessIdentification      a zach:ZachmanCell .
+zachtax:R1C3_DistributionIdentification a zach:ZachmanCell .
+zachtax:R1C4_ResponsibilityIdentification a zach:ZachmanCell .
+zachtax:R1C5_TimingIdentification       a zach:ZachmanCell .
+zachtax:R1C6_MotivationIdentification   a zach:ZachmanCell .
+
+zachtax:R2C1_InventoryDefinition        a zach:ZachmanCell .
+zachtax:R2C2_ProcessDefinition          a zach:ZachmanCell .
+zachtax:R2C3_DistributionDefinition     a zach:ZachmanCell .
+zachtax:R2C4_ResponsibilityDefinition   a zach:ZachmanCell .
+zachtax:R2C5_TimingDefinition           a zach:ZachmanCell .
+zachtax:R2C6_MotivationDefinition       a zach:ZachmanCell .
+
+zachtax:R3C1_InventoryRepresentation    a zach:ZachmanCell .
+zachtax:R3C2_ProcessRepresentation      a zach:ZachmanCell .
+zachtax:R3C3_DistributionRepresentation a zach:ZachmanCell .
+zachtax:R3C4_ResponsibilityRepresentation a zach:ZachmanCell .
+zachtax:R3C5_TimingRepresentation       a zach:ZachmanCell .
+zachtax:R3C6_MotivationRepresentation   a zach:ZachmanCell .
+
+zachtax:R4C1_InventorySpecification     a zach:ZachmanCell .
+zachtax:R4C2_ProcessSpecification       a zach:ZachmanCell .
+zachtax:R4C3_DistributionSpecification  a zach:ZachmanCell .
+zachtax:R4C4_ResponsibilitySpecification a zach:ZachmanCell .
+zachtax:R4C5_TimingSpecification        a zach:ZachmanCell .
+zachtax:R4C6_MotivationSpecification    a zach:ZachmanCell .
+
+zachtax:R5C1_InventoryConfiguration     a zach:ZachmanCell .
+zachtax:R5C2_ProcessConfiguration       a zach:ZachmanCell .
+zachtax:R5C3_DistributionConfiguration  a zach:ZachmanCell .
+zachtax:R5C4_ResponsibilityConfiguration a zach:ZachmanCell .
+zachtax:R5C5_TimingConfiguration        a zach:ZachmanCell .
+zachtax:R5C6_MotivationConfiguration    a zach:ZachmanCell .
+
+zachtax:R6C1_InventoryInstantiation     a zach:ZachmanCell .
+zachtax:R6C2_ProcessInstantiation       a zach:ZachmanCell .
+zachtax:R6C3_DistributionInstantiation  a zach:ZachmanCell .
+zachtax:R6C4_ResponsibilityInstantiation a zach:ZachmanCell .
+zachtax:R6C5_TimingInstantiation        a zach:ZachmanCell .
+zachtax:R6C6_MotivationInstantiation    a zach:ZachmanCell .
+
+
+## =============================================================================
+## 36 Viewpoints — one per cell
+## =============================================================================
+
+## --- Row 1: Executive / Identification ---
+
+:InventoryIdentificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Inventory Identification Viewpoint"@en ;
+    skos:definition "Viewpoint for identifying the things of the enterprise at scope level."@en ;
+    arch:viewpointCoversAspect zachtax:Inventory ;
+    arch:viewpointAddressesPerspective zachtax:Executive ;
+    zach:classifiedByCell zachtax:R1C1_InventoryIdentification .
+
+:ProcessIdentificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Process Identification Viewpoint"@en ;
+    skos:definition "Viewpoint for identifying the processes of the enterprise at scope level."@en ;
+    arch:viewpointCoversAspect zachtax:Process ;
+    arch:viewpointAddressesPerspective zachtax:Executive ;
+    zach:classifiedByCell zachtax:R1C2_ProcessIdentification .
+
+:DistributionIdentificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Distribution Identification Viewpoint"@en ;
+    skos:definition "Viewpoint for identifying the locations of the enterprise at scope level."@en ;
+    arch:viewpointCoversAspect zachtax:Distribution ;
+    arch:viewpointAddressesPerspective zachtax:Executive ;
+    zach:classifiedByCell zachtax:R1C3_DistributionIdentification .
+
+:ResponsibilityIdentificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Responsibility Identification Viewpoint"@en ;
+    skos:definition "Viewpoint for identifying the people and organizations at scope level."@en ;
+    arch:viewpointCoversAspect zachtax:Responsibility ;
+    arch:viewpointAddressesPerspective zachtax:Executive ;
+    zach:classifiedByCell zachtax:R1C4_ResponsibilityIdentification .
+
+:TimingIdentificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Timing Identification Viewpoint"@en ;
+    skos:definition "Viewpoint for identifying the events and cycles at scope level."@en ;
+    arch:viewpointCoversAspect zachtax:Timing ;
+    arch:viewpointAddressesPerspective zachtax:Executive ;
+    zach:classifiedByCell zachtax:R1C5_TimingIdentification .
+
+:MotivationIdentificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Motivation Identification Viewpoint"@en ;
+    skos:definition "Viewpoint for identifying the goals and strategies at scope level."@en ;
+    arch:viewpointCoversAspect zachtax:Motivation ;
+    arch:viewpointAddressesPerspective zachtax:Executive ;
+    zach:classifiedByCell zachtax:R1C6_MotivationIdentification .
+
+## --- Row 2: Business Management / Definition ---
+
+:InventoryDefinitionViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Inventory Definition Viewpoint"@en ;
+    skos:definition "Viewpoint for defining the things of the enterprise in business terms."@en ;
+    arch:viewpointCoversAspect zachtax:Inventory ;
+    arch:viewpointAddressesPerspective zachtax:BusinessManagement ;
+    zach:classifiedByCell zachtax:R2C1_InventoryDefinition .
+
+:ProcessDefinitionViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Process Definition Viewpoint"@en ;
+    skos:definition "Viewpoint for defining the processes of the enterprise in business terms."@en ;
+    arch:viewpointCoversAspect zachtax:Process ;
+    arch:viewpointAddressesPerspective zachtax:BusinessManagement ;
+    zach:classifiedByCell zachtax:R2C2_ProcessDefinition .
+
+:DistributionDefinitionViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Distribution Definition Viewpoint"@en ;
+    skos:definition "Viewpoint for defining the locations and connectivity in business terms."@en ;
+    arch:viewpointCoversAspect zachtax:Distribution ;
+    arch:viewpointAddressesPerspective zachtax:BusinessManagement ;
+    zach:classifiedByCell zachtax:R2C3_DistributionDefinition .
+
+:ResponsibilityDefinitionViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Responsibility Definition Viewpoint"@en ;
+    skos:definition "Viewpoint for defining the people and responsibilities in business terms."@en ;
+    arch:viewpointCoversAspect zachtax:Responsibility ;
+    arch:viewpointAddressesPerspective zachtax:BusinessManagement ;
+    zach:classifiedByCell zachtax:R2C4_ResponsibilityDefinition .
+
+:TimingDefinitionViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Timing Definition Viewpoint"@en ;
+    skos:definition "Viewpoint for defining the events and cycles in business terms."@en ;
+    arch:viewpointCoversAspect zachtax:Timing ;
+    arch:viewpointAddressesPerspective zachtax:BusinessManagement ;
+    zach:classifiedByCell zachtax:R2C5_TimingDefinition .
+
+:MotivationDefinitionViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Motivation Definition Viewpoint"@en ;
+    skos:definition "Viewpoint for defining the goals and strategies in business terms."@en ;
+    arch:viewpointCoversAspect zachtax:Motivation ;
+    arch:viewpointAddressesPerspective zachtax:BusinessManagement ;
+    zach:classifiedByCell zachtax:R2C6_MotivationDefinition .
+
+## --- Row 3: Architect / Representation ---
+
+:InventoryRepresentationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Inventory Representation Viewpoint"@en ;
+    skos:definition "Viewpoint for representing the things as a logical model."@en ;
+    arch:viewpointCoversAspect zachtax:Inventory ;
+    arch:viewpointAddressesPerspective zachtax:Architect ;
+    zach:classifiedByCell zachtax:R3C1_InventoryRepresentation .
+
+:ProcessRepresentationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Process Representation Viewpoint"@en ;
+    skos:definition "Viewpoint for representing the processes as a logical model."@en ;
+    arch:viewpointCoversAspect zachtax:Process ;
+    arch:viewpointAddressesPerspective zachtax:Architect ;
+    zach:classifiedByCell zachtax:R3C2_ProcessRepresentation .
+
+:DistributionRepresentationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Distribution Representation Viewpoint"@en ;
+    skos:definition "Viewpoint for representing the locations and connectivity as a logical model."@en ;
+    arch:viewpointCoversAspect zachtax:Distribution ;
+    arch:viewpointAddressesPerspective zachtax:Architect ;
+    zach:classifiedByCell zachtax:R3C3_DistributionRepresentation .
+
+:ResponsibilityRepresentationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Responsibility Representation Viewpoint"@en ;
+    skos:definition "Viewpoint for representing the people and responsibilities as a logical model."@en ;
+    arch:viewpointCoversAspect zachtax:Responsibility ;
+    arch:viewpointAddressesPerspective zachtax:Architect ;
+    zach:classifiedByCell zachtax:R3C4_ResponsibilityRepresentation .
+
+:TimingRepresentationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Timing Representation Viewpoint"@en ;
+    skos:definition "Viewpoint for representing the events and cycles as a logical model."@en ;
+    arch:viewpointCoversAspect zachtax:Timing ;
+    arch:viewpointAddressesPerspective zachtax:Architect ;
+    zach:classifiedByCell zachtax:R3C5_TimingRepresentation .
+
+:MotivationRepresentationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Motivation Representation Viewpoint"@en ;
+    skos:definition "Viewpoint for representing the goals and strategies as a logical model."@en ;
+    arch:viewpointCoversAspect zachtax:Motivation ;
+    arch:viewpointAddressesPerspective zachtax:Architect ;
+    zach:classifiedByCell zachtax:R3C6_MotivationRepresentation .
+
+## --- Row 4: Engineer / Specification ---
+
+:InventorySpecificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Inventory Specification Viewpoint"@en ;
+    skos:definition "Viewpoint for specifying the things in technology terms."@en ;
+    arch:viewpointCoversAspect zachtax:Inventory ;
+    arch:viewpointAddressesPerspective zachtax:Engineer ;
+    zach:classifiedByCell zachtax:R4C1_InventorySpecification .
+
+:ProcessSpecificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Process Specification Viewpoint"@en ;
+    skos:definition "Viewpoint for specifying the processes in technology terms."@en ;
+    arch:viewpointCoversAspect zachtax:Process ;
+    arch:viewpointAddressesPerspective zachtax:Engineer ;
+    zach:classifiedByCell zachtax:R4C2_ProcessSpecification .
+
+:DistributionSpecificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Distribution Specification Viewpoint"@en ;
+    skos:definition "Viewpoint for specifying the locations and connectivity in technology terms."@en ;
+    arch:viewpointCoversAspect zachtax:Distribution ;
+    arch:viewpointAddressesPerspective zachtax:Engineer ;
+    zach:classifiedByCell zachtax:R4C3_DistributionSpecification .
+
+:ResponsibilitySpecificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Responsibility Specification Viewpoint"@en ;
+    skos:definition "Viewpoint for specifying the people and responsibilities in technology terms."@en ;
+    arch:viewpointCoversAspect zachtax:Responsibility ;
+    arch:viewpointAddressesPerspective zachtax:Engineer ;
+    zach:classifiedByCell zachtax:R4C4_ResponsibilitySpecification .
+
+:TimingSpecificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Timing Specification Viewpoint"@en ;
+    skos:definition "Viewpoint for specifying the events and cycles in technology terms."@en ;
+    arch:viewpointCoversAspect zachtax:Timing ;
+    arch:viewpointAddressesPerspective zachtax:Engineer ;
+    zach:classifiedByCell zachtax:R4C5_TimingSpecification .
+
+:MotivationSpecificationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Motivation Specification Viewpoint"@en ;
+    skos:definition "Viewpoint for specifying the goals and strategies in technology terms."@en ;
+    arch:viewpointCoversAspect zachtax:Motivation ;
+    arch:viewpointAddressesPerspective zachtax:Engineer ;
+    zach:classifiedByCell zachtax:R4C6_MotivationSpecification .
+
+## --- Row 5: Technician / Configuration ---
+
+:InventoryConfigurationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Inventory Configuration Viewpoint"@en ;
+    skos:definition "Viewpoint for configuring the things in tool-specific terms."@en ;
+    arch:viewpointCoversAspect zachtax:Inventory ;
+    arch:viewpointAddressesPerspective zachtax:Technician ;
+    zach:classifiedByCell zachtax:R5C1_InventoryConfiguration .
+
+:ProcessConfigurationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Process Configuration Viewpoint"@en ;
+    skos:definition "Viewpoint for configuring the processes in tool-specific terms."@en ;
+    arch:viewpointCoversAspect zachtax:Process ;
+    arch:viewpointAddressesPerspective zachtax:Technician ;
+    zach:classifiedByCell zachtax:R5C2_ProcessConfiguration .
+
+:DistributionConfigurationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Distribution Configuration Viewpoint"@en ;
+    skos:definition "Viewpoint for configuring the locations and connectivity in tool-specific terms."@en ;
+    arch:viewpointCoversAspect zachtax:Distribution ;
+    arch:viewpointAddressesPerspective zachtax:Technician ;
+    zach:classifiedByCell zachtax:R5C3_DistributionConfiguration .
+
+:ResponsibilityConfigurationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Responsibility Configuration Viewpoint"@en ;
+    skos:definition "Viewpoint for configuring the people and responsibilities in tool-specific terms."@en ;
+    arch:viewpointCoversAspect zachtax:Responsibility ;
+    arch:viewpointAddressesPerspective zachtax:Technician ;
+    zach:classifiedByCell zachtax:R5C4_ResponsibilityConfiguration .
+
+:TimingConfigurationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Timing Configuration Viewpoint"@en ;
+    skos:definition "Viewpoint for configuring the events and cycles in tool-specific terms."@en ;
+    arch:viewpointCoversAspect zachtax:Timing ;
+    arch:viewpointAddressesPerspective zachtax:Technician ;
+    zach:classifiedByCell zachtax:R5C5_TimingConfiguration .
+
+:MotivationConfigurationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Motivation Configuration Viewpoint"@en ;
+    skos:definition "Viewpoint for configuring the goals and strategies in tool-specific terms."@en ;
+    arch:viewpointCoversAspect zachtax:Motivation ;
+    arch:viewpointAddressesPerspective zachtax:Technician ;
+    zach:classifiedByCell zachtax:R5C6_MotivationConfiguration .
+
+## --- Row 6: Enterprise / Instantiation ---
+
+:InventoryInstantiationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Inventory Instantiation Viewpoint"@en ;
+    skos:definition "Viewpoint for the actual data instances of the functioning enterprise."@en ;
+    arch:viewpointCoversAspect zachtax:Inventory ;
+    arch:viewpointAddressesPerspective zachtax:Enterprise ;
+    zach:classifiedByCell zachtax:R6C1_InventoryInstantiation .
+
+:ProcessInstantiationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Process Instantiation Viewpoint"@en ;
+    skos:definition "Viewpoint for the actual running processes of the functioning enterprise."@en ;
+    arch:viewpointCoversAspect zachtax:Process ;
+    arch:viewpointAddressesPerspective zachtax:Enterprise ;
+    zach:classifiedByCell zachtax:R6C2_ProcessInstantiation .
+
+:DistributionInstantiationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Distribution Instantiation Viewpoint"@en ;
+    skos:definition "Viewpoint for the actual network instances of the functioning enterprise."@en ;
+    arch:viewpointCoversAspect zachtax:Distribution ;
+    arch:viewpointAddressesPerspective zachtax:Enterprise ;
+    zach:classifiedByCell zachtax:R6C3_DistributionInstantiation .
+
+:ResponsibilityInstantiationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Responsibility Instantiation Viewpoint"@en ;
+    skos:definition "Viewpoint for the actual people in real roles in the functioning enterprise."@en ;
+    arch:viewpointCoversAspect zachtax:Responsibility ;
+    arch:viewpointAddressesPerspective zachtax:Enterprise ;
+    zach:classifiedByCell zachtax:R6C4_ResponsibilityInstantiation .
+
+:TimingInstantiationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Timing Instantiation Viewpoint"@en ;
+    skos:definition "Viewpoint for the actual events and schedules of the functioning enterprise."@en ;
+    arch:viewpointCoversAspect zachtax:Timing ;
+    arch:viewpointAddressesPerspective zachtax:Enterprise ;
+    zach:classifiedByCell zachtax:R6C5_TimingInstantiation .
+
+:MotivationInstantiationViewpoint a arch:Viewpoint ;
+    skos:prefLabel "Motivation Instantiation Viewpoint"@en ;
+    skos:definition "Viewpoint for the actual goals being pursued and rules being enforced."@en ;
+    arch:viewpointCoversAspect zachtax:Motivation ;
+    arch:viewpointAddressesPerspective zachtax:Enterprise ;
+    zach:classifiedByCell zachtax:R6C6_MotivationInstantiation .

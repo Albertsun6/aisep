@@ -1,0 +1,312 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix aisepsh: <https://aisep.example/ont/aisep-shapes#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+
+# AISEP closed-world rules (spec §4, §6.6). Upstream core is open-world; these close it.
+# Every constraint is SHACL-SPARQL and SELF-TARGETING (its WHERE clause re-states the target pattern), so that
+# `aisep.py check` (L1) can run the same queries in pyoxigraph with $this unbound, and pyshacl (L3) can run them
+# with $this pre-bound. Keep queries free of MINUS and of the word "SERVICE" (pyshacl rejects both).
+
+aisepsh:prefixes a owl:Ontology ;
+    sh:declare
+        [ sh:prefix "rdf"   ; sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ] ,
+        [ sh:prefix "rdfs"  ; sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ] ,
+        [ sh:prefix "owl"   ; sh:namespace "http://www.w3.org/2002/07/owl#"^^xsd:anyURI ] ,
+        [ sh:prefix "skos"  ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] ,
+        [ sh:prefix "arch"  ; sh:namespace "https://meta.linked.archi/core#"^^xsd:anyURI ] ,
+        [ sh:prefix "aisep" ; sh:namespace "https://aisep.example/ont/aisep#"^^xsd:anyURI ] ,
+        [ sh:prefix "xsd"   ; sh:namespace "http://www.w3.org/2001/XMLSchema#"^^xsd:anyURI ] ,
+        [ sh:prefix "prov"  ; sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ] .
+
+# ---- Every model member: exactly one most-specific rdf:type (redundant asserted superclasses of it are allowed,
+#      spec §4 D6), and it must be a (subclass of a) declared model-concept class ----
+aisepsh:TypeShape a sh:NodeShape ;
+    sh:targetSubjectsOf arch:inModel ;
+    sh:sparql [
+        sh:message "AISEP: element has more than one most-specific rdf:type ({?t1}, {?t2}: neither is a subclass of the other); exactly one is allowed, optionally with its own superclasses (spec §4, D6)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this ?t1 ?t2 WHERE {
+            $this arch:inModel ?m ; rdf:type ?t1 , ?t2 . FILTER(STR(?t1) < STR(?t2))
+            FILTER NOT EXISTS { ?t1 rdfs:subClassOf* ?t2 }
+            FILTER NOT EXISTS { ?t2 rdfs:subClassOf* ?t1 } }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: model member has no rdf:type." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this WHERE {
+            $this arch:inModel ?m . FILTER NOT EXISTS { $this rdf:type ?t } }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: type {?t} is not a class declared by a loaded ontology nor a model-declared subclass of one (typo or wrong notation?)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this ?t WHERE {
+            $this arch:inModel ?m ; rdf:type ?t .
+            # declared = typed owl:Class/rdfs:Class outside the model namespace (models may only specialise, spec §4)
+            FILTER NOT EXISTS { ?t rdfs:subClassOf* ?d . ?d rdf:type ?k .
+                                FILTER(?k IN (owl:Class, rdfs:Class) && !STRSTARTS(STR(?d), "https://aisep.example/model/")) } }""" ] .
+
+# ---- arch:inModel exactly once ----
+aisepsh:InModelShape a sh:NodeShape ;
+    sh:targetSubjectsOf arch:inModel ;
+    sh:sparql [
+        sh:message "AISEP: arch:inModel must have exactly one value (found {?m1} and {?m2})." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this ?m1 ?m2 WHERE {
+            $this arch:inModel ?m1 , ?m2 . FILTER(STR(?m1) < STR(?m2)) }""" ] .
+
+aisepsh:MembershipShape a sh:NodeShape ;
+    sh:targetClass arch:ModelConcept ;
+    sh:sparql [
+        sh:message "AISEP: model concept of type {?t} has no arch:inModel (exactly one required)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this ?t WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* arch:ModelConcept .
+            FILTER(STRSTARTS(STR($this), "https://aisep.example/model/"))   # model instances (spec §3 IRI policy)
+            FILTER NOT EXISTS { $this arch:inModel ?m } }""" ] .
+
+# ---- Labels: exactly one skos:prefLabel, in Chinese (@zh); English goes to skos:altLabel (spec §4, v0.2: keeps the
+#      upstream BPMN/UML "at most one prefLabel" shapes satisfied); junction/gateway exempt from having one ----
+aisepsh:LabelShape a sh:NodeShape ;
+    sh:targetClass arch:Element ;
+    sh:sparql [
+        sh:message "AISEP: element needs a skos:prefLabel in Chinese (@zh)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this WHERE {
+            $this arch:inModel ?m ; rdf:type ?t . ?t rdfs:subClassOf* arch:Element .
+            FILTER NOT EXISTS { ?t rdfs:subClassOf* arch:QualifiedRelationship }   # relationships need no label
+            FILTER NOT EXISTS { $this skos:prefLabel ?l . FILTER(langMatches(lang(?l), "zh")) }
+            FILTER NOT EXISTS { ?t rdfs:subClassOf* ?x . ?x aisep:labelOptional true } }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: exactly one skos:prefLabel (the @zh name) is allowed, found {?a} / {?b}; put English and other names in skos:altLabel (spec §4)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this ?a ?b WHERE {
+            $this arch:inModel ?m ; rdf:type ?t . ?t rdfs:subClassOf* arch:Element .
+            $this skos:prefLabel ?a , ?b .
+            FILTER(STR(?a) < STR(?b) || (STR(?a) = STR(?b) && lang(?a) < lang(?b))) }""" ] .
+
+# ---- Forbidden (deprecated upstream / banned by the authoring profile) terms ----
+aisepsh:ForbiddenTermShape a sh:NodeShape ;
+    sh:targetSubjectsOf arch:partOfModel , arch:exposedInView , arch:contains , rdf:reifies ;
+    sh:sparql [
+        sh:message "AISEP: forbidden term {?p} (deprecated in Linked.Archi core or banned by AISEP); use arch:inModel / arch:inView and a qualified relationship instead." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this ?p WHERE {
+            VALUES ?p { arch:partOfModel arch:exposedInView arch:contains rdf:reifies }
+            $this ?p ?o . }""" ] .
+
+# ---- Qualified relationships ----
+aisepsh:RelationshipShape a sh:NodeShape ;
+    sh:targetSubjectsOf arch:source , arch:target ;
+    sh:sparql [
+        sh:message "AISEP: relationship must have exactly one arch:source and exactly one arch:target." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            { $this arch:target ?x . FILTER NOT EXISTS { $this arch:source ?s } }
+            UNION { $this arch:source ?x . FILTER NOT EXISTS { $this arch:target ?t } }
+            UNION { $this arch:source ?a , ?b . FILTER(STR(?a) < STR(?b)) }
+            UNION { $this arch:target ?a , ?b . FILTER(STR(?a) < STR(?b)) } }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: resource with arch:source/arch:target has type {?c}, which is not an arch:QualifiedRelationship class." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this ?c WHERE {
+            $this arch:source|arch:target ?any ; rdf:type ?c .
+            FILTER NOT EXISTS { ?c rdfs:subClassOf* arch:QualifiedRelationship } }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: relationship class {?c} (and its superclasses) declares no arch:unqualifiedForm, so no direct triple can be built." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this ?c WHERE {
+            $this arch:source|arch:target ?any ; rdf:type ?c .
+            ?c rdfs:subClassOf* arch:QualifiedRelationship .
+            FILTER NOT EXISTS { ?c rdfs:subClassOf* ?d . ?d arch:unqualifiedForm ?u } }""" ] .
+
+aisepsh:EndpointShape a sh:NodeShape ;
+    sh:targetObjectsOf arch:source , arch:target ;
+    sh:sparql [
+        sh:message "AISEP: relationship endpoint is not a member of any model (deleted or misspelled IRI?)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this WHERE {
+            ?r arch:source|arch:target $this .
+            FILTER NOT EXISTS { $this arch:inModel ?m } }""" ] .
+
+# ---- Views: exactly one viewpoint ----
+aisepsh:ViewShape a sh:NodeShape ;
+    sh:targetClass arch:View ;
+    sh:sparql [
+        sh:message "AISEP: view must declare exactly one arch:viewConformsToViewpoint (found {?n})." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this (COUNT(DISTINCT ?vp) AS ?n) WHERE {
+            $this arch:inModel ?m ; rdf:type ?t . ?t rdfs:subClassOf* arch:View .
+            OPTIONAL { $this arch:viewConformsToViewpoint ?vp } }
+            GROUP BY $this HAVING (COUNT(DISTINCT ?vp) != 1)""" ] .
+
+# ---- Governance (spec §6.6, D10): approval records. A hand-written arch:approvalState is reported by `aisep check`
+#      (L1, source files only), because the build adds the derived value to the graph that L3 validates. ----
+#      These constraints are also the validity test of the approval-state derivation: `aisep build` ignores (and
+#      warns about) every record that fails one of them (v0.2.1, R3a).
+aisepsh:ApprovalRecordShape a sh:NodeShape ;
+    sh:targetClass aisep:ApprovalRecord ;
+    sh:sparql [
+        sh:message "AISEP: approval record needs exactly one aisep:decision, aisep:DecisionApproved or aisep:DecisionRejected (spec §6.6)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:ApprovalRecord .
+            FILTER(NOT EXISTS { $this aisep:decision ?d0 }
+                || EXISTS { $this aisep:decision ?d1 . FILTER(?d1 NOT IN (aisep:DecisionApproved, aisep:DecisionRejected)) }
+                || EXISTS { $this aisep:decision ?d2 , ?d3 . FILTER(?d2 != ?d3) }) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: approval record needs exactly one prov:generatedAtTime typed xsd:dateTime (spec §6.6)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:ApprovalRecord .
+            FILTER(NOT EXISTS { $this prov:generatedAtTime ?v0 }
+                || EXISTS { $this prov:generatedAtTime ?v1 . FILTER(datatype(?v1) != xsd:dateTime) }
+                || EXISTS { $this prov:generatedAtTime ?v2 , ?v3 . FILTER(?v2 != ?v3) }) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: approval record needs exactly one aisep:gate from the aisep:Gates scheme (spec §6.6)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:ApprovalRecord .
+            FILTER(NOT EXISTS { $this aisep:gate ?g0 }
+                || EXISTS { $this aisep:gate ?g1 . FILTER NOT EXISTS { ?g1 skos:inScheme aisep:Gates } }
+                || EXISTS { $this aisep:gate ?g2 , ?g3 . FILTER(?g2 != ?g3) }) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: approval record needs exactly one aisep:evidence, a plain string: a 40-hex git commit id or sha256:<64 hex> validation-report hash of the approved version (spec §6.6, required since v0.2.1)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:ApprovalRecord .
+            FILTER(NOT EXISTS { $this aisep:evidence ?e0 }
+                || EXISTS { $this aisep:evidence ?e1 . FILTER(!isLiteral(?e1) || datatype(?e1) != xsd:string) }
+                || EXISTS { $this aisep:evidence ?e2 , ?e3 . FILTER(?e2 != ?e3) }
+                || EXISTS { $this aisep:evidence ?e4 . FILTER(!REGEX(STR(?e4), "^[0-9a-f]{40}$|^sha256:[0-9a-f]{64}$")) }) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: approval record needs at least one aisep:approves and at least one aisep:approvedBy (spec §6.6)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:ApprovalRecord .
+            FILTER(NOT EXISTS { $this aisep:approves ?x } || NOT EXISTS { $this aisep:approvedBy ?p }) }""" ] ;
+    # v0.4 (§6.6, ADR-013): optional link to the completed AI activity the decision is about
+    sh:sparql [
+        sh:message "AISEP: approval record has more than one aisep:activity; at most one is allowed (spec §6.6, v0.4)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:ApprovalRecord .
+            $this aisep:activity ?a0 , ?a1 . FILTER(?a0 != ?a1) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: approval record's aisep:activity is not an aisep:AgentActivity (spec §6.6, v0.4)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:ApprovalRecord .
+            $this aisep:activity ?a . FILTER NOT EXISTS { ?a rdf:type ?at . ?at rdfs:subClassOf* aisep:AgentActivity } }""" ] ;
+    # v0.4 review: a blank-node (or model-less) activity would bypass §4 membership (MembershipShape checks IRIs only)
+    sh:sparql [
+        sh:message "AISEP: approval record's aisep:activity is not a model element (an IRI with arch:inModel) (spec §4/§6.6, v0.4)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this ?a WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:ApprovalRecord .
+            $this aisep:activity ?a . FILTER(!isIRI(?a) || NOT EXISTS { ?a arch:inModel ?m }) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: approval record's aisep:evidence is a git commit but differs from the aisep:headCommit of its aisep:activity; the approved version must be the activity's head commit (spec §6.6, v0.4)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:ApprovalRecord .
+            $this aisep:evidence ?e ; aisep:activity ?a . ?a aisep:headCommit ?h .
+            FILTER(REGEX(STR(?e), "^[0-9a-f]{40}$") && STR(?e) != STR(?h)) }""" ] .
+
+# ---- Completed AI activity (spec v0.4 §6.7, ADR-013). Cardinality / datatype / format here; tools/aisep.py
+#      (Ctx.activity_problems) adds the agent type of prov:wasAssociatedWith, the xsd:dateTime lexical form (the same
+#      parser as approval records) and startedAtTime <= endedAtTime. ext-governance L3 states the same as EG17..EG26. ----
+# v0.4 review: the two element-link predicates are globally allowed (tools/aisep.py PREDICATE_ALLOW / ELEMENT_LINK_OK),
+# so their subject is checked here (rdfs:domain is not enforced): otherwise any element could link anything with them.
+aisepsh:ActivityLinkSubjectShape a sh:NodeShape ;
+    sh:targetSubjectsOf prov:wasAssociatedWith , aisep:activity ;
+    sh:sparql [
+        sh:message "AISEP: prov:wasAssociatedWith may only be used on an aisep:AgentActivity (spec §6.7, v0.4)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this prov:wasAssociatedWith ?o . FILTER NOT EXISTS { $this rdf:type ?t . ?t rdfs:subClassOf* aisep:AgentActivity } }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: aisep:activity may only be used on an aisep:ApprovalRecord (spec §6.6, v0.4)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this aisep:activity ?o . FILTER NOT EXISTS { $this rdf:type ?t . ?t rdfs:subClassOf* aisep:ApprovalRecord } }""" ] .
+
+aisepsh:AgentActivityShape a sh:NodeShape ;
+    sh:targetClass aisep:AgentActivity ;
+    sh:sparql [
+        sh:message "AISEP: agent activity needs exactly one prov:wasAssociatedWith, the agent that performed it (spec §6.7)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:AgentActivity .
+            FILTER(NOT EXISTS { $this prov:wasAssociatedWith ?w0 }
+                || EXISTS { $this prov:wasAssociatedWith ?w1 , ?w2 . FILTER(?w1 != ?w2) }) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: agent activity needs exactly one prov:startedAtTime typed xsd:dateTime (spec §6.7)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:AgentActivity .
+            FILTER(NOT EXISTS { $this prov:startedAtTime ?v0 }
+                || EXISTS { $this prov:startedAtTime ?v1 . FILTER(!isLiteral(?v1) || datatype(?v1) != xsd:dateTime) }
+                || EXISTS { $this prov:startedAtTime ?v2 , ?v3 . FILTER(?v2 != ?v3) }) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: agent activity needs exactly one prov:endedAtTime typed xsd:dateTime (spec §6.7)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:AgentActivity .
+            FILTER(NOT EXISTS { $this prov:endedAtTime ?v0 }
+                || EXISTS { $this prov:endedAtTime ?v1 . FILTER(!isLiteral(?v1) || datatype(?v1) != xsd:dateTime) }
+                || EXISTS { $this prov:endedAtTime ?v2 , ?v3 . FILTER(?v2 != ?v3) }) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: agent activity needs exactly one aisep:sessionRef, a non-empty plain string (the orchestrator session id, spec §6.7)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:AgentActivity .
+            FILTER(NOT EXISTS { $this aisep:sessionRef ?s0 }
+                || EXISTS { $this aisep:sessionRef ?s1 . FILTER(!isLiteral(?s1) || datatype(?s1) != xsd:string || !REGEX(STR(?s1), "[^ \\t\\n\\r]")) }
+                || EXISTS { $this aisep:sessionRef ?s2 , ?s3 . FILTER(?s2 != ?s3) }) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: agent activity needs exactly one aisep:branch, a non-empty plain string (the git branch name, spec §6.7)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:AgentActivity .
+            FILTER(NOT EXISTS { $this aisep:branch ?b0 }
+                || EXISTS { $this aisep:branch ?b1 . FILTER(!isLiteral(?b1) || datatype(?b1) != xsd:string || !REGEX(STR(?b1), "[^ \\t\\n\\r]")) }
+                || EXISTS { $this aisep:branch ?b2 , ?b3 . FILTER(?b2 != ?b3) }) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: agent activity needs exactly one aisep:baseCommit, a plain string 40-hex git commit id (the merge-base, spec §6.7)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:AgentActivity .
+            FILTER(NOT EXISTS { $this aisep:baseCommit ?c0 }
+                || EXISTS { $this aisep:baseCommit ?c1 . FILTER(!isLiteral(?c1) || datatype(?c1) != xsd:string || !REGEX(STR(?c1), "^[0-9a-f]{40}$")) }
+                || EXISTS { $this aisep:baseCommit ?c2 , ?c3 . FILTER(?c2 != ?c3) }) }""" ] ;
+    sh:sparql [
+        sh:message "AISEP: agent activity needs exactly one aisep:headCommit, a plain string 40-hex git commit id (spec §6.7)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:AgentActivity .
+            FILTER(NOT EXISTS { $this aisep:headCommit ?c0 }
+                || EXISTS { $this aisep:headCommit ?c1 . FILTER(!isLiteral(?c1) || datatype(?c1) != xsd:string || !REGEX(STR(?c1), "^[0-9a-f]{40}$")) }
+                || EXISTS { $this aisep:headCommit ?c2 , ?c3 . FILTER(?c2 != ?c3) }) }""" ] .
+
+# ---- Governance (spec §6.6): closed value sets (approvalState: applies to the derived value) ----
+aisepsh:ApprovalStateShape a sh:NodeShape ;
+    sh:targetSubjectsOf arch:approvalState ;
+    sh:sparql [
+        sh:message "AISEP: arch:approvalState {?v} is not one of arch:Proposed, arch:Approved, aisep:Rejected, aisep:Superseded." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this ?v WHERE {
+            $this arch:approvalState ?v .
+            FILTER(?v NOT IN (arch:Proposed, arch:Approved, aisep:Rejected, aisep:Superseded)) }""" ] .
+
+aisepsh:ArchitectureStateShape a sh:NodeShape ;
+    sh:targetSubjectsOf arch:architectureState ;
+    sh:sparql [
+        sh:message "AISEP: arch:architectureState {?v} is not one of arch:Baseline, arch:Target, arch:Transitional." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT $this ?v WHERE {
+            $this arch:architectureState ?v .
+            FILTER(?v NOT IN (arch:Baseline, arch:Target, arch:Transitional)) }""" ] .

@@ -1,0 +1,175 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix di: <https://meta.linked.archi/bpmn/di-core#> .
+@prefix archvis: <https://meta.linked.archi/core-vis#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix bpmndi: <https://meta.linked.archi/bpmn/di#> .
+@prefix dc: <https://meta.linked.archi/bpmn/dc#> .
+@prefix infra: <https://meta.linked.archi/bpmn/infra#> .
+@prefix : <https://meta.linked.archi/bpmn/di-core-shapes#> .
+
+#################################################################
+# Shapes Graph Declaration
+#
+# These shapes constrain the *raw* DI structures that bpmn2linkedarchi emits
+# under --emit-raw-di-geometry (di:bounds pointing at a dc:Bounds node,
+# di:waypoint at dc:Point, di:rootElement). By default the converter flattens
+# geometry into archvis:bounds-* and these shapes have no targets.
+#
+# The shapes target the abstract DI classes, so via rdfs:subClassOf* they also
+# apply to the BPMNDI subclasses (BPMNShape, BPMNEdge, BPMNLabel, BPMNPlane).
+# The BPMNDI shape document therefore does not repeat them.
+#################################################################
+
+<https://meta.linked.archi/bpmn/di-core-shapes#>
+    a owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/di-core-shapes#" ;
+    vann:preferredNamespacePrefix "dish" ;
+    dcterms:title "Linked.Archi DI SHACL Shapes (OMG DD/DI)"@en ;
+    dcterms:description '''SHACL shapes validating OMG Diagram Interchange (DI) abstract classes —
+Diagram, DiagramElement, Shape, Edge, Label, and Style.'''@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    dcterms:modified "2026-07-25"^^xsd:date ;
+    dcterms:publisher "Linked.Archi"@en, <https://linked.archi> ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    owl:imports <https://meta.linked.archi/bpmn/dc#> ;
+    owl:imports <https://meta.linked.archi/bpmn/di-core#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+:DiagramShape a sh:NodeShape ;
+    sh:targetClass di:Diagram ;
+    sh:property [
+        sh:path di:rootElement ;
+        sh:maxCount 1 ;
+        sh:class di:DiagramElement ;
+        rdfs:comment '''No sh:minCount: subclasses may redefine this property. BPMNDiagram
+redefines Diagram.rootElement as bpmndi:plane, and di-shapes:BPMNDiagramShape requires that
+instead, so a conforming BPMNDiagram carries no di:rootElement of its own.'''@en ;
+    ] ;
+    sh:property [
+        sh:path di:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path di:documentation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path di:resolution ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+    ] ;
+    sh:property [
+        sh:path di:ownedStyle ;
+        sh:class di:Style ;
+    ] ;
+.
+
+:DiagramElementShape a sh:NodeShape ;
+    sh:targetClass di:DiagramElement ;
+    sh:property [
+        sh:path di:owningDiagram ;
+        sh:maxCount 1 ;
+        sh:class di:Diagram ;
+    ] ;
+    sh:property [
+        sh:path di:owningElement ;
+        sh:maxCount 1 ;
+        sh:class di:DiagramElement ;
+    ] ;
+    sh:property [
+        sh:path di:modelElement ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRIOrLiteral ;
+    ] ;
+    sh:property [
+        sh:path di:style ;
+        sh:maxCount 1 ;
+        sh:class di:Style ;
+    ] ;
+    sh:property [
+        sh:path di:ownedElement ;
+        sh:class di:DiagramElement ;
+    ] ;
+.
+
+:EdgeShape a sh:NodeShape ;
+    sh:targetClass di:Edge ;
+    sh:property [
+        sh:path di:source ;
+        sh:maxCount 1 ;
+        sh:class di:DiagramElement ;
+    ] ;
+    sh:property [
+        sh:path di:target ;
+        sh:maxCount 1 ;
+        sh:class di:DiagramElement ;
+    ] ;
+    sh:property [
+        sh:path di:waypoint ;
+        sh:minCount 2 ;
+        sh:class dc:Point ;
+    ] ;
+.
+
+:LabelShape a sh:NodeShape ;
+    sh:targetClass di:Label ;
+    sh:property [
+        sh:path di:bounds ;
+        sh:maxCount 1 ;
+        sh:class dc:Bounds ;
+    ] ;
+.
+
+:LabeledEdgeShape a sh:NodeShape ;
+    sh:targetClass di:LabeledEdge ;
+    sh:property [
+        sh:path di:ownedLabel ;
+        sh:class di:Label ;
+    ] ;
+.
+
+:LabeledShapeShape a sh:NodeShape ;
+    sh:targetClass di:LabeledShape ;
+    sh:property [
+        sh:path di:ownedLabel ;
+        sh:class di:Label ;
+    ] ;
+.
+
+:NodeShape a sh:NodeShape ;
+    sh:targetClass di:Node ;
+.
+
+:PlaneShape a sh:NodeShape ;
+    sh:targetClass di:Plane ;
+    sh:property [
+        sh:path di:planeElement ;
+        sh:class di:DiagramElement ;
+    ] ;
+.
+
+:ShapeShape a sh:NodeShape ;
+    sh:targetClass di:Shape ;
+    sh:property [
+        sh:path di:bounds ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class dc:Bounds ;
+    ] ;
+.
+
+:StyleShape a sh:NodeShape ;
+    sh:targetClass di:Style ;
+.

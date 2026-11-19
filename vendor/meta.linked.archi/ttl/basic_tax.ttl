@@ -1,0 +1,113 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix bibo:     <http://purl.org/ontology/bibo/> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+
+@prefix basic:    <https://meta.linked.archi/basic#> .
+@prefix :         <https://meta.linked.archi/basic/tax#> .
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/basic/tax#>
+    a                             skos:ConceptScheme ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/basic/tax#" ;
+    vann:preferredNamespacePrefix "basictax" ;
+    skos:prefLabel                "Basic Concept Scheme"@en ;
+    dcterms:title                 "Linked.Archi Basic Taxonomy"@en ;
+    dcterms:description           '''Classification of the Basic language's concepts. One axis, Basic
+Concepts, groups them into element types (Node, SpecialNode, GroupNode) and relationship types
+(Association, Aggregation, Connection). It names every class in https://meta.linked.archi/basic and nothing
+else, so palette generators can list Basic's types next to another language's.'''@en ;
+    dcterms:created               "2026-10-05"^^xsd:date ;
+    dcterms:modified              "2026-10-05"^^xsd:date ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source                <https://meta.linked.archi/basic> ;
+    prov:wasDerivedFrom           <https://meta.linked.archi/basic> ;
+    skos:hasTopConcept            :BasicConcepts ;
+.
+
+
+#################################################################
+# Top Concept (axis): Basic Concepts
+#################################################################
+
+:BasicConcepts
+    a                 skos:Concept ;
+    skos:prefLabel    "Basic Concepts"@en ;
+    skos:definition   "Classification of the Basic language's concepts by kind: element types and relationship types."@en ;
+    skos:editorialNote "Each group's skos:narrower list must match the concrete OWL classes in basic-onto.ttl: every class is classified exactly once."@en ;
+    skos:topConceptOf <https://meta.linked.archi/basic/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/basic/tax#> ;
+    skos:narrower     :Elements, :Relationships ;
+.
+
+## Elements
+
+:Elements
+    a              skos:Concept ;
+    skos:prefLabel "Elements"@en ;
+    skos:definition "The three element types of the Basic language: Node, SpecialNode and GroupNode."@en ;
+    skos:broader   :BasicConcepts ;
+    skos:inScheme  <https://meta.linked.archi/basic/tax#> ;
+    skos:narrower  basic:Node, basic:SpecialNode, basic:GroupNode ;
+.
+
+## Relationships
+
+:Relationships
+    a              skos:Concept ;
+    skos:prefLabel "Relationships"@en ;
+    skos:definition "The three qualified relationship types of the Basic language: Association, Aggregation and Connection."@en ;
+    skos:broader   :BasicConcepts ;
+    skos:inScheme  <https://meta.linked.archi/basic/tax#> ;
+    skos:narrower  basic:Association, basic:Aggregation, basic:Connection ;
+.
+
+
+#################################################################
+# Individual Concepts (for navigation/palette generation)
+#################################################################
+
+## Elements
+
+basic:Node
+    skos:inScheme  <https://meta.linked.archi/basic/tax#> ;
+    skos:broader   :Elements ;
+.
+
+basic:SpecialNode
+    skos:inScheme  <https://meta.linked.archi/basic/tax#> ;
+    skos:broader   :Elements ;
+.
+
+basic:GroupNode
+    skos:inScheme  <https://meta.linked.archi/basic/tax#> ;
+    skos:broader   :Elements ;
+.
+
+## Relationships
+
+basic:Association
+    skos:inScheme  <https://meta.linked.archi/basic/tax#> ;
+    skos:broader   :Relationships ;
+.
+
+basic:Aggregation
+    skos:inScheme  <https://meta.linked.archi/basic/tax#> ;
+    skos:broader   :Relationships ;
+.
+
+basic:Connection
+    skos:inScheme  <https://meta.linked.archi/basic/tax#> ;
+    skos:broader   :Relationships ;
+.

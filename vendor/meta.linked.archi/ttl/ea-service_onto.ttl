@@ -1,0 +1,580 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <http://schema.org/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ad:      <https://meta.linked.archi/arch-decision#> .
+@prefix :        <https://meta.linked.archi/ea-service/onto#> .
+
+<https://meta.linked.archi/ea-service/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ea-service/onto#" ;
+    vann:preferredNamespacePrefix "easvc" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EA-as-a-Service Extension"@en ;
+    dcterms:description                '''Extension ontology for modeling the EA function as an internal
+management consultancy. Provides vocabulary for EA service catalogs, service
+engagements, stakeholder satisfaction, EA capability portfolios, and maturity
+assessment.
+
+Addresses the Gartner 2025 prediction that by 2028, half of EA teams will
+rebrand themselves to emphasize their strategic role as business partners.
+Formalizes the shift from "architecture practice" to "architecture services"
+by making service offerings, engagements, outcomes, and satisfaction into
+queryable elements in the knowledge graph.
+
+Designed to be lightweight and adaptable — organizations customize the
+service catalog and maturity model to their operating model.
+Trademarked names referenced herein are property of their respective owners.'''@en ;
+    dcterms:abstract              "Ontology for EA-as-a-Service within the Linked.Archi ecosystem."@en ;
+    skos:editorialNote            '''To change: of the classes here only EAService is an element type
+(a subclass of arch:Element), so only it can be placed on a diagram and offered in a modelling tool's
+palette. ServiceEngagement, ServiceRequest, ServiceOutcome, SatisfactionAssessment, EACapability,
+EAMaturityAssessment and ServiceLevelExpectation are to become element types too, with the links
+between them as relationship types and their groups in the taxonomy (ea-service/tax#ElementKind).'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ea-service/onto/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    rdfs:seeAlso                  <https://www.gartner.com/en/webinar/719451> ;
+    schema:citation               "Linked.Archi EA-as-a-Service Extension" ;
+.
+
+
+#################################################################
+# Supporting Classes
+#################################################################
+
+:EAServiceType
+    a               owl:Class ;
+    skos:prefLabel  "EA Service Type"@en ;
+    skos:definition "Classification of EA services by type — advisory, assessment, design, or intelligence."@en ;
+.
+
+:EngagementStatus
+    a               owl:Class ;
+    skos:prefLabel  "Engagement Status"@en ;
+    skos:definition "Status of a service engagement in its lifecycle."@en ;
+.
+
+:MaturityLevel
+    a               owl:Class ;
+    skos:prefLabel  "EA Maturity Level"@en ;
+    skos:definition '''Maturity level of the EA function, aligned with Gartner EA
+Maturity Model. Ranges from Level 1 (ad-hoc) to Level 5 (optimizing).'''@en ;
+.
+
+
+#################################################################
+# Core Classes
+#################################################################
+
+:EAService
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "EA Service"@en ;
+    skos:definition '''A service offered by the EA function to business and IT stakeholders.
+Each service has a type, required capabilities, service-level expectations,
+and a history of engagements. Services are the building blocks of the EA
+service catalog.
+
+Examples: Architecture Review, Technology Radar, Portfolio Assessment,
+Target State Design, Impact Analysis.'''@en ;
+.
+
+:ServiceCatalog
+    a               owl:Class ;
+    rdfs:subClassOf arch:Catalog ;
+    skos:prefLabel  "EA Service Catalog"@en ;
+    skos:definition '''The complete catalog of EA services offered to the organization.
+Acts as the "menu" of what the EA function provides. Links to the
+services offered, the EA capabilities available, and the maturity
+assessment of the EA function.'''@en ;
+.
+
+:ServiceEngagement
+    a               owl:Class ;
+    skos:prefLabel  "Service Engagement"@en ;
+    skos:definition '''An instance of an EA service being delivered to a specific
+stakeholder or initiative. Tracks the engagement lifecycle from
+request through delivery to satisfaction assessment.
+
+Each engagement has an assigned architect, a status, the element
+being served (system, capability, initiative), and an outcome.'''@en ;
+.
+
+:ServiceRequest
+    a               owl:Class ;
+    skos:prefLabel  "Service Request"@en ;
+    skos:definition '''A request for an EA service from a business or IT stakeholder.
+Records who requested the service, when, and what they need.
+A request results in a service engagement (or a decline with rationale).'''@en ;
+.
+
+:ServiceOutcome
+    a               owl:Class ;
+    skos:prefLabel  "Service Outcome"@en ;
+    skos:definition '''The measured outcome of a service engagement — deliverables
+produced, decisions influenced, and value delivered. Links the
+engagement to its tangible results.'''@en ;
+.
+
+:SatisfactionAssessment
+    a               owl:Class ;
+    skos:prefLabel  "Satisfaction Assessment"@en ;
+    skos:definition '''Stakeholder satisfaction measurement for a service engagement.
+Records a numeric score (1-5) and free-text feedback. Used to
+track EA service quality over time.'''@en ;
+.
+
+:EACapability
+    a               owl:Class ;
+    skos:prefLabel  "EA Capability"@en ;
+    skos:definition '''A skill or capability within the EA function — not a business
+capability, but an EA team capability. Examples: ArchiMate modeling,
+SHACL validation, SPARQL querying, stakeholder facilitation,
+financial modeling, AI governance.
+
+EA capabilities are linked to services (which capabilities are
+required to deliver each service) and to the service catalog
+(which capabilities are available in the team).'''@en ;
+    skos:scopeNote  '''Distinct from am:Capability (business capability). EACapability
+describes what the EA team can do, not what the business can do.'''@en ;
+.
+
+:EAMaturityAssessment
+    a               owl:Class ;
+    skos:prefLabel  "EA Maturity Assessment"@en ;
+    skos:definition '''Assessment of EA function maturity against a maturity model.
+Records the assessed maturity level, the assessment date, the
+assessor, and findings/recommendations.'''@en ;
+.
+
+:ServiceLevelExpectation
+    a               owl:Class ;
+    skos:prefLabel  "Service Level Expectation"@en ;
+    skos:definition '''Expected turnaround time, quality, and scope for a service type.
+Not a binding SLA — an expectation that helps stakeholders understand
+what to expect when they request an EA service.'''@en ;
+.
+
+
+#################################################################
+# Concerns
+#################################################################
+
+:EAValueDeliveryConcern
+    a               arch:Concern ;
+    skos:prefLabel  "EA Value Delivery"@en ;
+    skos:definition '''Whether the EA function delivers tangible value to the organization —
+measured through service outcomes, stakeholder satisfaction, and
+decisions influenced.'''@en ;
+.
+
+:EACapacityManagementConcern
+    a               arch:Concern ;
+    skos:prefLabel  "EA Capacity Management"@en ;
+    skos:definition '''Whether the EA function has sufficient capacity and skills to
+meet demand for its services.'''@en ;
+.
+
+:EAMaturityConcern
+    a               arch:Concern ;
+    skos:prefLabel  "EA Maturity"@en ;
+    skos:definition '''The maturity of the EA function — from ad-hoc and reactive to
+optimizing and strategically integrated.'''@en ;
+.
+
+:StakeholderSatisfactionConcern
+    a               arch:Concern ;
+    skos:prefLabel  "Stakeholder Satisfaction"@en ;
+    skos:definition '''Whether stakeholders are satisfied with the EA services they
+receive — quality, timeliness, relevance, and impact.'''@en ;
+.
+
+
+#################################################################
+# Viewpoints
+#################################################################
+
+:ServiceCatalogViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "EA Service Catalog"@en ;
+    skos:definition             '''Overview of all EA services offered — service types, required
+capabilities, service-level expectations, and engagement history.
+The entry point for stakeholders seeking EA services.'''@en ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern :EAValueDeliveryConcern ;
+    arch:includesConcept        :EAService, :ServiceCatalog, :ServiceLevelExpectation ;
+    arch:viewType               arch:Catalog ;
+.
+
+:EngagementTrackingViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "Engagement Tracking"@en ;
+    skos:definition             '''View of active and completed service engagements — status,
+assigned architects, stakeholders served, and outcomes. Used for
+EA workload management and reporting.'''@en ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:viewpointFramesConcern :EAValueDeliveryConcern, :EACapacityManagementConcern ;
+    arch:includesConcept        :ServiceEngagement, :ServiceOutcome ;
+    arch:viewType               arch:Catalog, arch:Matrix ;
+.
+
+:EACapabilityPortfolioViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "EA Capability Portfolio"@en ;
+    skos:definition             '''View of EA team capabilities — which skills are available,
+which are in demand, and where gaps exist. Used for EA team
+development and hiring decisions.'''@en ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:viewpointFramesConcern :EACapacityManagementConcern ;
+    arch:includesConcept        :EACapability, :EAService ;
+    arch:viewType               arch:Matrix ;
+.
+
+:EAMaturityViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "EA Maturity Assessment"@en ;
+    skos:definition             '''View of EA function maturity — current level, assessment
+history, and improvement roadmap.'''@en ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Governing>,
+                                <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:viewpointFramesConcern :EAMaturityConcern ;
+    arch:includesConcept        :EAMaturityAssessment, :ServiceCatalog ;
+    arch:viewType               arch:Catalog ;
+.
+
+:StakeholderSatisfactionViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "Stakeholder Satisfaction"@en ;
+    skos:definition             '''View of stakeholder satisfaction across EA services —
+scores, feedback, and trends. Used for continuous improvement
+of EA service delivery.'''@en ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:viewpointFramesConcern :StakeholderSatisfactionConcern ;
+    arch:includesConcept        :SatisfactionAssessment, :ServiceEngagement ;
+    arch:viewType               arch:Matrix, arch:Catalog ;
+.
+
+
+#################################################################
+# Properties — Service Catalog
+#################################################################
+
+:offersService
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "offers service"@en ;
+    skos:definition      "Links a service catalog to the services it offers."@en ;
+    arch:domainIncludes  :ServiceCatalog ;
+    arch:rangeIncludes   :EAService ;
+.
+
+:serviceType
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "service type"@en ;
+    skos:definition      "Classifies an EA service by type."@en ;
+    arch:domainIncludes  :EAService ;
+    arch:rangeIncludes   :EAServiceType ;
+.
+
+:hasServiceLevelExpectation
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has service level expectation"@en ;
+    skos:definition      "Links an EA service to its expected turnaround and quality."@en ;
+    arch:domainIncludes  :EAService ;
+    arch:rangeIncludes   :ServiceLevelExpectation ;
+.
+
+:requiredCapability
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "required capability"@en ;
+    skos:definition      "Links an EA service to the capabilities required to deliver it."@en ;
+    arch:domainIncludes  :EAService ;
+    arch:rangeIncludes   :EACapability ;
+.
+
+:hasEACapability
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has EA capability"@en ;
+    skos:definition      "Links a service catalog to the capabilities available in the EA function."@en ;
+    arch:domainIncludes  :ServiceCatalog ;
+    arch:rangeIncludes   :EACapability ;
+.
+
+
+#################################################################
+# Properties — Service Engagement
+#################################################################
+
+:hasEngagement
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has engagement"@en ;
+    skos:definition      "Links an EA service to its engagements."@en ;
+    arch:domainIncludes  :EAService ;
+    arch:rangeIncludes   :ServiceEngagement ;
+.
+
+:engagementStatus
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "engagement status"@en ;
+    skos:definition      "The current status of a service engagement."@en ;
+    arch:domainIncludes  :ServiceEngagement ;
+    arch:rangeIncludes   :EngagementStatus ;
+.
+
+:assignedArchitect
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "assigned architect"@en ;
+    skos:definition      "The EA team member assigned to deliver this engagement."@en ;
+    arch:domainIncludes  :ServiceEngagement ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.
+
+:engagementFor
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "engagement for"@en ;
+    skos:definition      "The system, capability, or initiative being served by this engagement."@en ;
+    arch:domainIncludes  :ServiceEngagement ;
+    arch:rangeIncludes   arch:Element ;
+.
+
+:engagementStartDate
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "engagement start date"@en ;
+    skos:definition  "The date the engagement started."@en ;
+    rdfs:domain      :ServiceEngagement ;
+    rdfs:range       xsd:date ;
+.
+
+:engagementEndDate
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "engagement end date"@en ;
+    skos:definition  "The date the engagement was completed or closed."@en ;
+    rdfs:domain      :ServiceEngagement ;
+    rdfs:range       xsd:date ;
+.
+
+
+#################################################################
+# Properties — Service Request
+#################################################################
+
+:resultsInEngagement
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "results in engagement"@en ;
+    skos:definition      "Links a service request to the engagement it created."@en ;
+    arch:domainIncludes  :ServiceRequest ;
+    arch:rangeIncludes   :ServiceEngagement ;
+.
+
+:requestedBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "requested by"@en ;
+    skos:definition      "The stakeholder who requested the EA service."@en ;
+    arch:domainIncludes  :ServiceRequest ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.
+
+:requestDate
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "request date"@en ;
+    skos:definition  "The date the service request was submitted."@en ;
+    rdfs:domain      :ServiceRequest ;
+    rdfs:range       xsd:date ;
+.
+
+:requestDescription
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "request description"@en ;
+    skos:definition  "Description of what the stakeholder needs from the EA service."@en ;
+    rdfs:domain      :ServiceRequest ;
+    rdfs:range       xsd:string ;
+.
+
+:requestForService
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "request for service"@en ;
+    skos:definition      "Links a request to the EA service being requested."@en ;
+    arch:domainIncludes  :ServiceRequest ;
+    arch:rangeIncludes   :EAService ;
+.
+
+:declineRationale
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "decline rationale"@en ;
+    skos:definition  "Rationale for declining a service request."@en ;
+    rdfs:domain      :ServiceRequest ;
+    rdfs:range       xsd:string ;
+.
+
+
+#################################################################
+# Properties — Service Outcome
+#################################################################
+
+:hasOutcome
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has outcome"@en ;
+    skos:definition      "Links a service engagement to its outcome."@en ;
+    arch:domainIncludes  :ServiceEngagement ;
+    arch:rangeIncludes   :ServiceOutcome ;
+.
+
+:producedDeliverable
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "produced deliverable"@en ;
+    skos:definition      "Links an outcome to the architecture deliverable produced."@en ;
+    arch:domainIncludes  :ServiceOutcome ;
+    arch:rangeIncludes   arch:Model ;
+.
+
+:influencedDecision
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "influenced decision"@en ;
+    skos:definition      "Links an outcome to the architecture decision it influenced."@en ;
+    arch:domainIncludes  :ServiceOutcome ;
+.
+
+:outcomeDescription
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "outcome description"@en ;
+    skos:definition  "Description of the value delivered by the engagement."@en ;
+    rdfs:domain      :ServiceOutcome ;
+    rdfs:range       xsd:string ;
+.
+
+
+#################################################################
+# Properties — Satisfaction
+#################################################################
+
+:hasSatisfactionAssessment
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has satisfaction assessment"@en ;
+    skos:definition      "Links an outcome to its stakeholder satisfaction assessment."@en ;
+    arch:domainIncludes  :ServiceOutcome ;
+    arch:rangeIncludes   :SatisfactionAssessment ;
+.
+
+:hasSatisfactionScore
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "satisfaction score"@en ;
+    skos:definition  "Stakeholder satisfaction score (1 = very dissatisfied, 5 = very satisfied)."@en ;
+    rdfs:domain      :SatisfactionAssessment ;
+    rdfs:range       xsd:integer ;
+.
+
+:satisfactionFeedback
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "satisfaction feedback"@en ;
+    skos:definition  "Free-text feedback from the stakeholder."@en ;
+    rdfs:domain      :SatisfactionAssessment ;
+    rdfs:range       xsd:string ;
+.
+
+:satisfactionDate
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "satisfaction date"@en ;
+    skos:definition  "The date the satisfaction assessment was recorded."@en ;
+    rdfs:domain      :SatisfactionAssessment ;
+    rdfs:range       xsd:date ;
+.
+
+
+#################################################################
+# Properties — SLE
+#################################################################
+
+:expectedTurnaroundDays
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "expected turnaround (days)"@en ;
+    skos:definition  "Expected number of business days to deliver the service."@en ;
+    rdfs:domain      :ServiceLevelExpectation ;
+    rdfs:range       xsd:integer ;
+.
+
+:expectedScope
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "expected scope"@en ;
+    skos:definition  "Description of what is included in the service delivery."@en ;
+    rdfs:domain      :ServiceLevelExpectation ;
+    rdfs:range       xsd:string ;
+.
+
+
+#################################################################
+# Properties — EA Capability
+#################################################################
+
+:capabilityDescription
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "capability description"@en ;
+    skos:definition  "Description of the EA capability."@en ;
+    rdfs:domain      :EACapability ;
+    rdfs:range       xsd:string ;
+.
+
+:capabilityLevel
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "capability level"@en ;
+    skos:definition  "Proficiency level of the EA capability (beginner, intermediate, advanced, expert)."@en ;
+    rdfs:domain      :EACapability ;
+    rdfs:range       xsd:string ;
+.
+
+
+#################################################################
+# Properties — Maturity Assessment
+#################################################################
+
+:hasMaturityAssessment
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has maturity assessment"@en ;
+    skos:definition      "Links a service catalog to its maturity assessment."@en ;
+    arch:domainIncludes  :ServiceCatalog ;
+    arch:rangeIncludes   :EAMaturityAssessment ;
+.
+
+:maturityLevel
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "maturity level"@en ;
+    skos:definition      "The assessed maturity level of the EA function."@en ;
+    arch:domainIncludes  :EAMaturityAssessment ;
+    arch:rangeIncludes   :MaturityLevel ;
+.
+
+:maturityAssessmentDate
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "maturity assessment date"@en ;
+    skos:definition  "The date the maturity assessment was performed."@en ;
+    rdfs:domain      :EAMaturityAssessment ;
+    rdfs:range       xsd:date ;
+.
+
+:maturityFindings
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "maturity findings"@en ;
+    skos:definition  "Findings and recommendations from the maturity assessment."@en ;
+    rdfs:domain      :EAMaturityAssessment ;
+    rdfs:range       xsd:string ;
+.
+
+:maturityAssessedBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "maturity assessed by"@en ;
+    skos:definition      "The stakeholder who performed the maturity assessment."@en ;
+    arch:domainIncludes  :EAMaturityAssessment ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.

@@ -1,0 +1,207 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix bs:      <https://meta.linked.archi/backstage/onto#> .
+@prefix :        <https://meta.linked.archi/backstage/viewpoints#> .
+
+<https://meta.linked.archi/backstage/viewpoints#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/backstage/viewpoints#" ;
+    vann:preferredNamespacePrefix "bsvp" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Backstage Viewpoints"@en ;
+    dcterms:description                '''Backstage Software Catalog viewpoints for visualizing service
+ownership, system dependencies, API landscapes, domain organization, organizational structure, and
+lifecycle portfolio. Each viewpoint maps to a common Backstage use case.'''@en ;
+    dcterms:created               "2026-04-16"^^xsd:date ;
+    dcterms:modified              "2026-04-16"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/backstage/viewpoints/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/> ;
+    prov:wasDerivedFrom <https://backstage.io/docs/features/software-catalog/> ;
+    rdfs:seeAlso                  <https://backstage.io/docs/features/software-catalog/> ,
+                                  <https://github.com/backstage/backstage> ,
+                                  <https://github.com/backstage/backstage/tree/master/docs/features/software-catalog> ;
+.
+
+
+#################################################################
+# Viewpoint Catalog
+#################################################################
+
+:ViewpointCatalog
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "Backstage Viewpoint Catalog"@en ;
+    dcterms:description  '''Viewpoints for the Backstage Software Catalog, covering service
+inventory, system dependencies, ownership governance, API landscapes,
+and domain organization.'''@en ;
+    skos:hasTopConcept :CatalogViewpoints, :GovernanceViewpoints ;
+.
+
+:CatalogViewpoints
+    a skos:Concept ; skos:prefLabel "Catalog Viewpoints"@en ;
+    skos:definition "Viewpoints focused on catalog inventory and technical structure."@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+
+:GovernanceViewpoints
+    a skos:Concept ; skos:prefLabel "Governance Viewpoints"@en ;
+    skos:definition "Viewpoints focused on ownership, domains, and organizational structure."@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+
+
+#################################################################
+# Catalog Viewpoints
+#################################################################
+
+:ServiceCatalog
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Service Catalog"@en ;
+    skos:definition         '''A catalog-style inventory of all registered components, systems,
+and APIs in the Backstage Software Catalog. Provides a searchable overview
+of the software landscape. Answers: "What services exist and what APIs
+do they expose?"'''@en ;
+    dcterms:source          <https://backstage.io/docs/features/software-catalog/system-model#core-entities> ;
+    arch:includesConcept    bs:Component, bs:System, bs:API, bs:Resource ;
+    arch:viewpointHasPurpose archvp:Informing ;
+    arch:viewpointFramesConcern archvp:StructureConcern, archvp:IntegrationConcern ;
+    arch:viewType           arch:Catalog ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :CatalogViewpoints ;
+.
+
+:SystemDependency
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "System Dependency Diagram"@en ;
+    skos:definition         '''Shows systems, their constituent components, consumed APIs, and the
+entities they depend on. Supports impact analysis and change planning.
+Answers: "What does this system depend on?"'''@en ;
+    skos:scopeNote          '''Covers the general spec.dependsOn relation, so component-to-component
+dependencies appear here alongside resource dependencies, and component nesting
+(spec.subcomponentOf) is in scope as the intra-system structure a dependency traverses.'''@en ;
+    dcterms:source          <https://backstage.io/docs/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
+    arch:includesConcept    bs:System, bs:Component, bs:API, bs:Resource ;
+    arch:viewpointHasPurpose archvp:Deciding ;
+    arch:viewpointFramesConcern archvp:DependencyConcern, archvp:StructureConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :CatalogViewpoints ;
+.
+
+:APIDependency
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "API Dependency Diagram"@en ;
+    skos:definition         '''Shows which components and systems provide and consume which APIs.
+Enables API lifecycle management and consumer impact analysis. Answers:
+"Who provides and who consumes this API?"'''@en ;
+    skos:historyNote        "bs:System added: spec.providesApis and spec.consumesApis are declared on System as well as Component."@en ;
+    dcterms:source          <https://backstage.io/docs/features/software-catalog/well-known-relations#providesapi-and-apiprovidedby> ;
+    arch:includesConcept    bs:Component, bs:System, bs:API ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:IntegrationConcern, archvp:DependencyConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :CatalogViewpoints ;
+.
+
+
+#################################################################
+# Governance Viewpoints
+#################################################################
+
+:OwnershipMatrix
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Ownership Matrix"@en ;
+    skos:definition         '''A matrix showing which groups or users own which catalog entities.
+Supports governance reviews and accountability tracking. Answers:
+"Who owns what?"'''@en ;
+    skos:historyNote        '''Widened to the full set of ownable kinds and to User owners. The
+well-known-relations spec says the owner is "usually" a User or Group and that the other end can be
+anything, so a matrix restricted to Components and Systems owned by Groups under-reports.'''@en ;
+    dcterms:source          <https://backstage.io/docs/features/software-catalog/well-known-relations#ownedby-and-ownerof> ;
+    arch:includesConcept    bs:Component, bs:System, bs:API, bs:Resource, bs:Domain,
+                            bs:Group, bs:User ;
+    arch:viewpointHasPurpose archvp:Governing ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern, archvp:StructureConcern ;
+    arch:viewType           arch:Matrix ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :GovernanceViewpoints ;
+.
+
+:DomainOverview
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Domain Overview Diagram"@en ;
+    skos:definition         '''Shows domains, any nesting between them, and their constituent
+systems and components. Provides a high-level view of how the software landscape is organized by
+business domain. Answers: "How is the catalog organized by domain?"'''@en ;
+    skos:scopeNote          '''Domain nesting (spec.subdomainOf) is in scope: the system model says a
+large organization may group domains in a hierarchy, so a flat rendering misrepresents such a
+catalogue. Note the reach is two hops — a Component belongs to a Domain through its System, never
+directly.'''@en ;
+    dcterms:source          <https://backstage.io/docs/features/software-catalog/system-model#domain> ;
+    arch:includesConcept    bs:Domain, bs:System, bs:Component ;
+    arch:viewpointHasPurpose archvp:Informing ;
+    arch:viewpointFramesConcern archvp:StructureConcern, archvp:GovernanceConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :GovernanceViewpoints ;
+.
+
+
+:OrganizationStructure
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Organization Structure Diagram"@en ;
+    skos:definition         '''Shows the group hierarchy and the users who belong to each group.
+Provides the organizational half of the catalog, which ownership views reference but do not
+themselves show. Answers: "How is the organization structured, and who is in which team?"'''@en ;
+    skos:scopeNote          '''Added because the catalog models an organization as well as a
+software landscape — Group parentage (spec.parent / spec.children) and User membership
+(spec.memberOf) had no viewpoint at all, so the only rendering of a team was as an owner in a matrix.
+The hierarchy is multi-root: the descriptor format permits several top-level groups, so a renderer
+must not assume a single tree.'''@en ;
+    dcterms:source          <https://backstage.io/docs/features/software-catalog/well-known-relations#parentof-and-childof> ;
+    rdfs:seeAlso            <https://backstage.io/docs/features/software-catalog/well-known-relations#memberof-and-hasmember> ;
+    arch:includesConcept    bs:Group, bs:User ;
+    arch:viewpointHasPurpose archvp:Informing ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern, archvp:StructureConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :GovernanceViewpoints ;
+.
+
+:LifecyclePortfolio
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Lifecycle Portfolio"@en ;
+    skos:definition         '''A catalog of components and APIs grouped by lifecycle state and type.
+Supports deprecation tracking and portfolio review. Answers: "What is still experimental, what is in
+production, and what is deprecated but still catalogued?"'''@en ;
+    skos:scopeNote          '''Components and APIs only — spec.lifecycle is defined on those two kinds
+and on no others, so a portfolio view that included Resources or Systems would render a column that
+is empty by definition.
+
+The value vocabulary is open: bs:Experimental, bs:Production and bs:DeprecatedState are the
+documented values, and an organization may add its own individuals of bs:LifecycleState. A renderer
+should group by whatever states it finds rather than by a hardcoded three.'''@en ;
+    dcterms:source          <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component> ;
+    rdfs:seeAlso            <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api> ;
+    arch:includesConcept    bs:Component, bs:API ;
+    arch:viewpointHasPurpose archvp:Governing ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern ;
+    arch:viewType           arch:Catalog ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :GovernanceViewpoints ;
+.

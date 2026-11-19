@@ -1,0 +1,24 @@
+# expect: undeclared predicate ex:linksTo in model file
+# modules: bpmn
+# G7 / C1: a predicate declared nowhere (no loaded module/ontology, not in the authoring-profile allowlist).
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix ddd:  <https://aisep.example/ont/ddd#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix aisepsh: <https://aisep.example/ont/aisep-shapes#> .
+@prefix ex:   <https://example.com/> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+:a a am4:Process ; arch:inModel :t ; skos:prefLabel "过程"@zh .
+:b a bpmn:UserTask ; arch:inModel :t ; skos:prefLabel "任务"@zh .
+:a ex:linksTo :b .

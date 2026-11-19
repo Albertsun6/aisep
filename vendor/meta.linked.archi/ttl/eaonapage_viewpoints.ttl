@@ -1,0 +1,255 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix eaop:    <https://meta.linked.archi/eaonapage/onto#> .
+@prefix :        <https://meta.linked.archi/eaonapage/viewpoints#> .
+
+<https://meta.linked.archi/eaonapage/viewpoints#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/eaonapage/viewpoints#" ;
+    vann:preferredNamespacePrefix "eaopvp" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EA on a Page Viewpoints"@en ;
+    dcterms:description                '''Viewpoints for the EA on a Page framework. Each viewpoint specifies
+the artifact types it includes, the stakeholders it targets, and the purpose it
+serves. Derived from the CSVLOD artifact taxonomy and the three core EA processes
+described by Kotusev.
+
+EA on a Page does not formally define viewpoints, but its artifact types and
+processes imply a natural set of viewpoints that practitioners use in practice.
+These viewpoints formalize those implicit conventions.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/eaonapage/viewpoints/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    prov:wasDerivedFrom           "EA on a Page (Svyatoslav Kotusev, 2017)" ;
+    rdfs:seeAlso                  <https://eaonapage.com/> ;
+.
+
+
+#################################################################
+# Viewpoint Catalog (SKOS Concept Scheme)
+#################################################################
+
+:ViewpointCatalog
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "EA on a Page Viewpoint Catalog"@en ;
+    dcterms:description  '''Classification of EA on a Page viewpoints by the EA process they
+primarily support: Strategic Planning, Technology Optimization, or Initiative
+Delivery.'''@en ;
+    skos:hasTopConcept :StrategicViewpoints, :OptimizationViewpoints,
+                       :DeliveryViewpoints, :GovernanceViewpoints ;
+.
+
+:StrategicViewpoints
+    a                 skos:Concept ;
+    skos:prefLabel    "Strategic Viewpoints"@en ;
+    skos:definition   "Viewpoints supporting the Strategic Planning process."@en ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme     :ViewpointCatalog ;
+    skos:narrower     :BusinessCapabilityVP, :RoadmapVP ;
+.
+
+:OptimizationViewpoints
+    a                 skos:Concept ;
+    skos:prefLabel    "Optimization Viewpoints"@en ;
+    skos:definition   "Viewpoints supporting the Technology Optimization process."@en ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme     :ViewpointCatalog ;
+    skos:narrower     :LandscapeVP, :StandardsComplianceVP ;
+.
+
+:DeliveryViewpoints
+    a                 skos:Concept ;
+    skos:prefLabel    "Delivery Viewpoints"@en ;
+    skos:definition   "Viewpoints supporting the Initiative Delivery process."@en ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme     :ViewpointCatalog ;
+    skos:narrower     :SolutionDesignVP, :OptionsAssessmentVP ;
+.
+
+:GovernanceViewpoints
+    a                 skos:Concept ;
+    skos:prefLabel    "Governance Viewpoints"@en ;
+    skos:definition   "Viewpoints supporting EA governance and function."@en ;
+    skos:topConceptOf :ViewpointCatalog ;
+    skos:inScheme     :ViewpointCatalog ;
+    skos:narrower     :GovernanceOverviewVP, :MaturityAssessmentVP ;
+.
+
+
+#################################################################
+# Purpose Individuals
+#################################################################
+
+:Deciding    a arch:Purpose ; skos:prefLabel "Deciding"@en ;
+    skos:definition "Evaluating options, prioritizing investments, selecting approaches."@en .
+:Designing   a arch:Purpose ; skos:prefLabel "Designing"@en ;
+    skos:definition "Creating or refining architecture artifacts — solutions, standards, landscapes."@en .
+:Informing   a arch:Purpose ; skos:prefLabel "Informing"@en ;
+    skos:definition "Communicating architecture to stakeholders — overviews, landscapes, roadmaps."@en .
+:Governing   a arch:Purpose ; skos:prefLabel "Governing"@en ;
+    skos:definition "Compliance checking, standards enforcement, maturity assessment, governance oversight."@en .
+
+
+#################################################################
+# Strategic Viewpoints
+#################################################################
+
+:BusinessCapabilityVP
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Business Capability Viewpoint"@en ;
+    skos:definition         '''Shows the organization's business capabilities and how they relate
+to IT investments, target state architectures, and strategic roadmaps. Used in
+Strategic Planning to translate business strategy into IT investment direction.
+Primary artifacts: Business Capability Models, Target State Architectures,
+Value Chains.'''@en ;
+    arch:includesConcept    eaop:Vision, eaop:Consideration ;
+    arch:targetsStakeholder eaop:EnterpriseArchitect, eaop:BusinessLeader, eaop:ITLeader ;
+    arch:viewpointHasPurpose :Deciding, :Informing ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :StrategicViewpoints ;
+    arch:viewType           arch:Diagram, arch:Catalog ;
+.
+
+:RoadmapVP
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Roadmap Viewpoint"@en ;
+    skos:definition         '''Shows the sequenced transition from current state to target state
+over time. Combines Visions (target state) with Landscapes (current state) to
+produce time-sequenced investment plans. Used in Strategic Planning to communicate
+the transformation journey to business and IT leaders.
+Primary artifacts: Roadmaps, Target State Architectures, Landscape Diagrams.'''@en ;
+    arch:includesConcept    eaop:Vision, eaop:Landscape ;
+    arch:targetsStakeholder eaop:EnterpriseArchitect, eaop:BusinessLeader, eaop:ITLeader ;
+    arch:viewpointHasPurpose :Deciding, :Informing ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :StrategicViewpoints ;
+    arch:viewType           arch:Diagram ;
+.
+
+
+#################################################################
+# Optimization Viewpoints
+#################################################################
+
+:LandscapeVP
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Landscape Viewpoint"@en ;
+    skos:definition         '''Shows the current state of the IT landscape — systems, integrations,
+portfolios, and inventories. Used in Technology Optimization to provide a shared
+factual baseline for rationalization decisions.
+Primary artifacts: Landscape Diagrams, Inventories, Enterprise System Portfolios,
+Integration Maps.'''@en ;
+    arch:includesConcept    eaop:Landscape ;
+    arch:targetsStakeholder eaop:EnterpriseArchitect, eaop:ITLeader ;
+    arch:viewpointHasPurpose :Informing, :Deciding ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :OptimizationViewpoints ;
+    arch:viewType           arch:Diagram, arch:Catalog ;
+.
+
+:StandardsComplianceVP
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Standards Compliance Viewpoint"@en ;
+    skos:definition         '''Shows approved technologies, patterns, and guidelines alongside
+the current landscape to identify compliance gaps and rationalization
+opportunities. Used in Technology Optimization to govern the technology stack.
+Primary artifacts: Technology Reference Models, Patterns, IT Principles,
+Technology Guidelines, Landscape Diagrams.'''@en ;
+    arch:includesConcept    eaop:Standard, eaop:Landscape ;
+    arch:targetsStakeholder eaop:EnterpriseArchitect, eaop:ITLeader ;
+    arch:viewpointHasPurpose :Governing, :Deciding ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :OptimizationViewpoints ;
+    arch:viewType           arch:Matrix, arch:Catalog ;
+.
+
+
+#################################################################
+# Delivery Viewpoints
+#################################################################
+
+:SolutionDesignVP
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Solution Design Viewpoint"@en ;
+    skos:definition         '''Shows the detailed architecture of a specific solution — components,
+interfaces, data models, deployment topology. Used in the Realization phase of
+Initiative Delivery to guide implementation teams.
+Primary artifacts: Solution Designs, Detailed Specifications, Interface Contracts,
+Deployment Architectures.'''@en ;
+    arch:includesConcept    eaop:Design ;
+    arch:targetsStakeholder eaop:SolutionArchitect ;
+    arch:viewpointHasPurpose :Designing ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :DeliveryViewpoints ;
+    arch:viewType           arch:Diagram ;
+.
+
+:OptionsAssessmentVP
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Options Assessment Viewpoint"@en ;
+    skos:definition         '''Shows alternative solution approaches with their trade-offs,
+costs, risks, and alignment to standards and principles. Used in the Initiation
+phase of Initiative Delivery to support investment decisions.
+Primary artifacts: Solution Overviews, Options Assessments, Initiative
+Architectures, Architecture Briefs.'''@en ;
+    arch:includesConcept    eaop:Outline, eaop:Consideration, eaop:Standard ;
+    arch:targetsStakeholder eaop:SolutionArchitect, eaop:EnterpriseArchitect,
+                            eaop:BusinessLeader ;
+    arch:viewpointHasPurpose :Deciding ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :DeliveryViewpoints ;
+    arch:viewType           arch:Matrix, arch:Diagram ;
+.
+
+
+#################################################################
+# Governance Viewpoints
+#################################################################
+
+:GovernanceOverviewVP
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Governance Overview Viewpoint"@en ;
+    skos:definition         '''Shows the EA governance arrangement — architecture tiers, governance
+bodies, their responsibilities, escalation paths, and the artifact types they
+govern. Used to communicate and assess the EA function structure.
+Primary concepts: Governance Bodies, Architecture Tiers, Governance Activities,
+EA Participants.'''@en ;
+    arch:includesConcept    eaop:GovernanceBody, eaop:ArchitectureTier,
+                            eaop:GovernanceArrangement, eaop:EAParticipant ;
+    arch:targetsStakeholder eaop:EnterpriseArchitect, eaop:ITLeader, eaop:BusinessLeader ;
+    arch:viewpointHasPurpose :Governing, :Informing ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :GovernanceViewpoints ;
+    arch:viewType           arch:Diagram, arch:Matrix ;
+.
+
+:MaturityAssessmentVP
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Maturity Assessment Viewpoint"@en ;
+    skos:definition         '''Shows the current maturity stage of the EA practice and what
+processes, artifacts, governance arrangements, and benefits characterize each
+stage. Used to assess current state and plan EA practice improvement.
+Primary concepts: Maturity Stages, EA Processes, EA Artifact types, Governance
+Arrangements.'''@en ;
+    arch:includesConcept    eaop:MaturityStage, eaop:EAProcess,
+                            eaop:GovernanceArrangement ;
+    arch:targetsStakeholder eaop:EnterpriseArchitect, eaop:ITLeader ;
+    arch:viewpointHasPurpose :Governing, :Deciding ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :GovernanceViewpoints ;
+    arch:viewType           arch:Matrix ;
+.

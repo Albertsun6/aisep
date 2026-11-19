@@ -1,0 +1,582 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ad:      <https://meta.linked.archi/arch-decision#> .
+@prefix :        <https://meta.linked.archi/arch-decision-shapes#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/arch-decision-shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/arch-decision#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/arch-decision-shapes#" ;
+    vann:preferredNamespacePrefix "adsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Architecture Decision SHACL Shapes"@en ;
+    dcterms:description           '''SHACL shapes for validating architecture decision records built with the
+Linked.Archi architecture decision extension. Closes the decision state vocabulary,
+enforces the structural contract between a Decision and its Issue, Options and Forces,
+and checks the Quality Attribute Scenario structure on quality attribute requirements.
+
+These shapes complement core-shapes: the core file already requires a label on every
+arch:Element and a source and target on every arch:QualifiedRelationship, so those
+constraints are not repeated here except where a tighter rule applies.'''@en ;
+    dcterms:created               "2026-08-03"^^xsd:date ;
+    dcterms:modified              "2026-08-20"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    dcterms:source                <https://adr.github.io/madr/>,
+                                  <https://resources.sei.cmu.edu/library/asset-view.cfm?assetID=8147> ;
+    prov:wasDerivedFrom           <https://adr.github.io/madr/>,
+                                  <https://resources.sei.cmu.edu/library/asset-view.cfm?assetID=8147> ;
+    rdfs:seeAlso                  <https://meta.linked.archi/arch-decision#> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/arch-decision-shapes/0.2.0#> ;
+    owl:versionInfo               "0.2.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/arch-decision-shapes/0.1.0#> ;
+    skos:editorialNote            '''Severity conventions. sh:Violation marks a structural error — the record
+is malformed and queries over it will produce wrong answers. sh:Warning marks an
+incomplete record that is still well-formed. Engines that ignore sh:severity treat both
+as failures, so keep this in mind when validating partially populated models.
+
+Constructs deliberately avoided: sh:disjoint (not implemented by the RDF4J ShaclSail used
+in this repository) and sh:sparql (requires advanced SHACL features that are not enabled).
+Conditional rules are therefore expressed in SHACL Core as sh:or ( [ sh:not A ] [ B ] ),
+which is the standard encoding of the implication A implies B.'''@en ,
+
+            '''2026-08-20 (0.2.0): AcceptedDecisionSelectionShape no longer fires on a decision
+that records no candidate options. Reported by a Structurizr converter lifting an !adrs block:
+a document-based ADR — MADR, Nygard, or Structurizr — is a title, a status, a date and a
+Markdown body, so its options are prose under a heading and there is nothing in the graph for
+ad:hasSelectedOption to point at. Every correctly converted accepted record reported one
+violation with no action available, which trains people to ignore the shape set.
+
+Two fixes were rejected. Lowering the severity to sh:Info drops the check for authored records
+too, and sh:Info is reserved here for divergence that is genuinely ambiguous in the data.
+Accepting ad:justificationDocument as an alternative to ad:hasSelectedOption under-fixes and
+over-exempts at once: a body lifted into ad:justification as a literal still fails, while a
+record that lists alternatives and names no outcome is silenced by attaching a design document.
+Rationale is evidence of why; a selected option is what was decided. AcceptedDecisionRationaleShape
+owns the first question and this shape owns the second.
+
+Provenance of the lift is deliberately not part of the condition. A lift marker belongs in the
+provenance graph (DD-15), where a validator run over the semantic graph cannot see it, so
+conformance would depend on how a consumer assembled the graph; and gating a check on
+"a converter produced this" lets any converter silence any check. A hand-authored record whose
+options live in a linked document is the same artifact and is judged the same way. See DD-26.'''@en ;
+.
+
+#################################################################
+# Decision — structural contract
+#
+# The state vocabulary is closed here rather than in OWL. See DD-23:
+# ad:decisionState is a plain owl:ObjectProperty, so neither the
+# cardinality nor the value set is asserted in the ontology. Under the
+# Open World Assumption an owl:FunctionalProperty would entail
+# owl:sameAs between two state individuals instead of reporting the
+# error, and owl:oneOf would close the vocabulary against downstream
+# extension. Both belong in a shape a consumer can replace.
+#################################################################
+
+:DecisionShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:Decision ;
+    skos:prefLabel  "Decision Shape"@en ;
+    skos:definition "Validates the structural contract of an architecture decision record."@en ;
+
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "Every Decision must have a language-tagged skos:prefLabel — conventionally the ADR title."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    ## DD-23 — at most one current state, drawn from the published vocabulary.
+    sh:property [
+        sh:path     ad:decisionState ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:in       ( ad:Proposed ad:Accepted ad:Rejected ad:Deprecated ad:Superseded ) ;
+        sh:message  '''A Decision must carry at most one ad:decisionState, and it must be one of
+ad:Proposed, ad:Accepted, ad:Rejected, ad:Deprecated or ad:Superseded. Record transition
+history with prov:wasRevisionOf or dcterms:modified — decisionState holds only the current value.'''@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    ## One option is selected; the rest stay attached as alternatives.
+    sh:property [
+        sh:path     ad:hasSelectedOption ;
+        sh:maxCount 1 ;
+        sh:class    ad:Option ;
+        sh:message  "A Decision selects at most one Option, and the value must be an ad:Option."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:hasAlternative ;
+        sh:class    ad:Option ;
+        sh:message  "Every value of ad:hasAlternative must be an ad:Option."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:hasIssue ;
+        sh:class    ad:Issue ;
+        sh:message  "Every value of ad:hasIssue must be an ad:Issue."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:replaces ;
+        sh:class    ad:Decision ;
+        sh:message  "ad:replaces must point to another Decision."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:supersededBy ;
+        sh:class    ad:Decision ;
+        sh:message  "ad:supersededBy must point to another Decision."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    ## Force and concept links are IRIs, not literals. sh:class is deliberately
+    ## not used: ad:Force and arch:ModelConcept are abstract parents whose
+    ## instances are typed with a subclass, and the concept side is typed by the
+    ## modelling language (am:ApplicationComponent, c4:Container, ...) rather
+    ## than by the core ontology.
+    sh:property [
+        sh:path     ad:influencedByForce ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "ad:influencedByForce must reference a Force by IRI, not a literal."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:relatedConcept ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "ad:relatedConcept must reference a ModelConcept by IRI, not a literal."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:pertainsTo ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "ad:pertainsTo must reference an arch:Consideration by IRI, not a literal."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    ## ad:justification is rationale prose. The ontology declares rdfs:range
+    ## xsd:string, but language-tagged rationale is both common and desirable,
+    ## so the shape checks only that the value is a literal.
+    sh:property [
+        sh:path     ad:justification ;
+        sh:nodeKind sh:Literal ;
+        sh:message  "ad:justification must be a literal — use ad:justificationDocument to point at an external document."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+#################################################################
+# Decision state implications
+#
+# State is what separates an open deliberation from a settled record,
+# so the obligations differ by state. A Proposed decision may have
+# several live options and no selection; an Accepted one may not.
+#################################################################
+
+:AcceptedDecisionSelectionShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:Decision ;
+    skos:prefLabel  "Accepted Decision Selection Shape"@en ;
+    skos:definition '''Requires that a Decision in state ad:Accepted which records candidate
+options names the one it selected. While a decision is Proposed the options are still
+candidates, so no selection is required; once accepted, a record that lists candidates and
+no outcome does not say what was decided.
+
+A record that lists no candidates at all is out of scope. That is what a document-based ADR
+lifted from MADR, Nygard or a Structurizr !adrs block looks like: the options are prose inside
+the body, and there is nothing in the graph to point ad:hasSelectedOption at. The absence is
+then silence about whether options were weighed, not a claim that none were, and a converter
+minting an ad:Option to satisfy this shape would be inventing model content. Rationale for such
+a record is still required, by AcceptedDecisionRationaleShape.'''@en ;
+    sh:or (
+        [ sh:not [ sh:property [ sh:path ad:decisionState ; sh:hasValue ad:Accepted ] ] ]
+        [ sh:property [ sh:path ad:hasSelectedOption ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path ad:hasAlternative    ; sh:maxCount 0 ] ]
+    ) ;
+    sh:message  '''A Decision in state ad:Accepted that records candidate options with
+ad:hasAlternative must name the chosen one with ad:hasSelectedOption.'''@en ;
+    sh:severity sh:Violation ;
+.
+
+:AcceptedDecisionRationaleShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:Decision ;
+    skos:prefLabel  "Accepted Decision Rationale Shape"@en ;
+    skos:definition '''Requires that a Decision in state ad:Accepted records why the choice was
+made, either as rationale prose (ad:justification) or as a reference to an external
+document (ad:justificationDocument). A binding decision without recorded rationale is the
+document-based ADR problem this extension exists to solve.'''@en ;
+    sh:or (
+        [ sh:not [ sh:property [ sh:path ad:decisionState ; sh:hasValue ad:Accepted ] ] ]
+        [ sh:property [ sh:path ad:justification ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path ad:justificationDocument ; sh:minCount 1 ] ]
+    ) ;
+    sh:message  "A Decision in state ad:Accepted must record its rationale with ad:justification or ad:justificationDocument."@en ;
+    sh:severity sh:Violation ;
+.
+
+:SupersededDecisionShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:Decision ;
+    skos:prefLabel  "Superseded Decision Shape"@en ;
+    skos:definition '''Requires that a Decision in state ad:Superseded names its replacement.
+Superseded means "replaced by a later decision" — without the link, the state asserts that
+a replacement exists but leaves it unfindable. Use ad:Deprecated for a decision that no
+longer applies and has no replacement.'''@en ;
+    sh:or (
+        [ sh:not [ sh:property [ sh:path ad:decisionState ; sh:hasValue ad:Superseded ] ] ]
+        [ sh:property [ sh:path ad:supersededBy ; sh:minCount 1 ] ]
+    ) ;
+    sh:message  "A Decision in state ad:Superseded must name its replacement with ad:supersededBy, or use ad:Deprecated instead."@en ;
+    sh:severity sh:Violation ;
+.
+
+#################################################################
+# Decision State — the published state individuals
+#################################################################
+
+:DecisionStateShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:DecisionState ;
+    skos:prefLabel  "Decision State Shape"@en ;
+    skos:definition '''Validates the state individuals themselves. A state is a dereferenceable
+IRI carrying its own labels and definition — that is the whole reason for preferring named
+individuals over string literals (DD-23), so an undocumented state individual defeats the
+pattern.'''@en ;
+
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "Every DecisionState individual must have a language-tagged skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     skos:definition ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "Every DecisionState individual must have a skos:definition explaining what the state means."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+#################################################################
+# Issue — the problem that triggers a decision
+#################################################################
+
+:IssueShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:Issue ;
+    skos:prefLabel  "Issue Shape"@en ;
+    skos:definition "Validates that an Issue states its problem and identifies who owns it."@en ;
+
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "Every Issue must have a language-tagged skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:problemStatement ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:Literal ;
+        sh:message  "An Issue should carry an ad:problemStatement describing the problem to be resolved."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:issueOwner ;
+        sh:maxCount 1 ;
+        sh:class    arch:Stakeholder ;
+        sh:message  "ad:issueOwner names at most one responsible Stakeholder."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:influencingForce ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "ad:influencingForce must reference a Force by IRI, not a literal."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:issueCausedBy ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "ad:issueCausedBy must reference an Element by IRI, not a literal."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:issueReportedBy ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "ad:issueReportedBy must reference an Element by IRI, not a literal."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+#################################################################
+# Option — a candidate solution
+#################################################################
+
+:OptionShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:Option ;
+    skos:prefLabel  "Option Shape"@en ;
+    skos:definition '''Validates that an Option is labelled and connected to the forces it is
+meant to satisfy. An option that addresses no force cannot be compared against its
+alternatives, which is the point of recording options at all.'''@en ;
+
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "Every Option must have a language-tagged skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:addressesForce ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "An Option should address at least one Force, otherwise it cannot be compared with the alternatives."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:includesConcept ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "ad:includesConcept must reference a ModelConcept by IRI, not a literal."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:affectsConcept ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "ad:affectsConcept and its sub-properties must reference a ModelConcept by IRI, not a literal."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:hasRisk ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "ad:hasRisk must reference the risk by IRI so it can carry its own description and measures."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+#################################################################
+# Force — anything that influences a decision
+#################################################################
+
+:ForceShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:Force ;
+    skos:prefLabel  "Force Shape"@en ;
+    skos:definition "Validates that a Force is labelled and that its relations point at IRIs."@en ;
+
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "Every Force must have a language-tagged skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:supportedByStakeholder ;
+        sh:class    arch:Stakeholder ;
+        sh:message  "ad:supportedByStakeholder must point to an arch:Stakeholder."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:opposingForce ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "ad:opposingForce must reference another Force by IRI."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:complementaryForce ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "ad:complementaryForce must reference another Force by IRI."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+:RequirementShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:Requirement ;
+    skos:prefLabel  "Requirement Shape"@en ;
+    skos:definition '''Validates the measures on a Requirement. Importance and difficulty are
+single-valued: a requirement carrying two importance measures cannot be ranked against
+the others when trading off options.'''@en ;
+
+    sh:property [
+        sh:path     ad:hasImportanceMeasure ;
+        sh:maxCount 1 ;
+        sh:message  "A Requirement carries at most one ad:hasImportanceMeasure."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:hasDifficultyMeasure ;
+        sh:maxCount 1 ;
+        sh:message  "A Requirement carries at most one ad:hasDifficultyMeasure."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:requestedByStakeholder ;
+        sh:class    arch:Stakeholder ;
+        sh:message  "ad:requestedByStakeholder must point to an arch:Stakeholder."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+#################################################################
+# Quality Attribute Requirement — the QAS six-tuple
+#
+# Source of Stimulus, Stimulus, Environment, Artifact, Response,
+# Response Measure (Bass, Clements, Kazman). A scenario missing a
+# response measure is not testable, which is the usual failure mode.
+#################################################################
+
+:QualityAttributeRequirementShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:QualityAttributeRequirement ;
+    skos:prefLabel  "Quality Attribute Requirement Shape"@en ;
+    skos:definition '''Validates that a quality attribute requirement names the quality attribute
+it constrains and expresses it as a complete Quality Attribute Scenario.'''@en ;
+
+    sh:property [
+        sh:path     ad:onQualityAttribute ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message  '''A QualityAttributeRequirement must name the quality attribute it constrains
+with ad:onQualityAttribute — for example an ISO 25010 or ML quality attribute individual.'''@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:qasSourceOfStimulus ;
+        sh:minCount 1 ;
+        sh:message  "A complete Quality Attribute Scenario names the source of the stimulus."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:qasStimulus ;
+        sh:minCount 1 ;
+        sh:message  "A complete Quality Attribute Scenario names the stimulus."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:qasEnvironment ;
+        sh:minCount 1 ;
+        sh:message  "A complete Quality Attribute Scenario names the environment the stimulus occurs in."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:qasArtifact ;
+        sh:minCount 1 ;
+        sh:message  "A complete Quality Attribute Scenario names the artifact that is stimulated."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:qasResponse ;
+        sh:minCount 1 ;
+        sh:message  "A complete Quality Attribute Scenario names the response."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:qasResponseMeasure ;
+        sh:minCount 1 ;
+        sh:message  "A Quality Attribute Scenario without a response measure is not testable — add ad:qasResponseMeasure."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+.
+
+#################################################################
+# Force Influence — qualified Force-to-Decision relationship
+#
+# core-shapes already requires exactly one arch:source and one
+# arch:target on every arch:QualifiedRelationship. Only the
+# influence-specific measure is added here.
+#################################################################
+
+:ForceInfluenceShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:ForceInfluence ;
+    skos:prefLabel  "Force Influence Shape"@en ;
+    skos:definition '''Validates the qualified relationship that records how strongly a Force
+influenced a Decision.'''@en ;
+
+    sh:property [
+        sh:path     ad:hasInfluenceMeasure ;
+        sh:maxCount 1 ;
+        sh:message  "A ForceInfluence carries at most one ad:hasInfluenceMeasure."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+#################################################################
+# Iteration — ADD-style grouping of decisions
+#################################################################
+
+:IterationShape
+    a               sh:NodeShape ;
+    sh:targetClass  ad:Iteration ;
+    skos:prefLabel  "Iteration Shape"@en ;
+    skos:definition "Validates that an ADD iteration is labelled and states its goal."@en ;
+
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "Every Iteration must have a language-tagged skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+
+    sh:property [
+        sh:path     ad:hasDecisionGoal ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message  "An Iteration should state its goal with ad:hasDecisionGoal."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+.

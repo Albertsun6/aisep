@@ -1,0 +1,394 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix dodaf:   <https://meta.linked.archi/dodaf/onto#> .
+@prefix :        <https://meta.linked.archi/dodaf/viewpoints#> .
+
+<https://meta.linked.archi/dodaf/viewpoints#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/dodaf/viewpoints#" ;
+    vann:preferredNamespacePrefix "dodafvp" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "DoDAF 2.02 Architecture Viewpoints (DoDAF-described Models)"@en ;
+    dcterms:description                '''DoDAF 2.02 viewpoints modeled as arch:Viewpoint individuals. Each
+viewpoint corresponds to a DoDAF-described Model (AV, CV, DIV, OV, PV, SvcV,
+StdV, SV). DoDAF 2.0 uses "Fit-for-Purpose" presentation — these viewpoints
+define the data content, not rigid visual templates.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/dodaf20_models/> ;
+    prov:wasDerivedFrom <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/dodaf20_models/> ;
+    owl:versionIRI                <https://meta.linked.archi/dodaf/viewpoints/2.02#> ;
+    owl:versionInfo               "2.02"@en ;
+.
+
+
+#################################################################
+# Viewpoint Catalog (SKOS)
+#################################################################
+
+:ViewpointCatalog
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "DoDAF Viewpoint Catalog"@en ;
+    dcterms:description  "Classification of DoDAF 2.02 viewpoints by viewpoint category."@en ;
+    skos:hasTopConcept :AllVPs, :CapabilityVPs, :DataInfoVPs, :OperationalVPs,
+                       :ProjectVPs, :ServicesVPs, :StandardsVPs, :SystemsVPs ;
+.
+
+:AllVPs          a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "All Viewpoint (AV)"@en .
+:CapabilityVPs   a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Capability Viewpoint (CV)"@en .
+:DataInfoVPs     a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Data and Information Viewpoint (DIV)"@en .
+:OperationalVPs  a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Operational Viewpoint (OV)"@en .
+:ProjectVPs      a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Project Viewpoint (PV)"@en .
+:ServicesVPs     a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Services Viewpoint (SvcV)"@en .
+:StandardsVPs    a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Standards Viewpoint (StdV)"@en .
+:SystemsVPs      a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Systems Viewpoint (SV)"@en .
+
+
+#################################################################
+# Stakeholder Individuals
+#################################################################
+
+:MissionCommander      a arch:Stakeholder ; skos:prefLabel "Mission Commander"@en .
+:SystemEngineer        a arch:Stakeholder ; skos:prefLabel "System Engineer"@en .
+:SystemIntegrator      a arch:Stakeholder ; skos:prefLabel "System Integrator"@en .
+:SoftwareDeveloper     a arch:Stakeholder ; skos:prefLabel "Software Developer"@en .
+:DatabaseEngineer      a arch:Stakeholder ; skos:prefLabel "Database Engineer"@en .
+:NetworkEngineer       a arch:Stakeholder ; skos:prefLabel "Network Engineer"@en .
+:ProgramManager        a arch:Stakeholder ; skos:prefLabel "Program Manager"@en .
+:Analyst               a arch:Stakeholder ; skos:prefLabel "Analyst"@en .
+:Acquirer              a arch:Stakeholder ; skos:prefLabel "Acquirer"@en .
+
+
+#################################################################
+# All Viewpoint (AV)
+#################################################################
+
+:AV-1
+    a arch:Viewpoint ;
+    skos:prefLabel  "AV-1: Overview and Summary Information"@en ;
+    skos:definition "Describes a project's visions, goals, objectives, plans, activities, events, conditions, measures, effects, and produced objects."@en ;
+    arch:viewType   arch:Diagram, arch:Catalog ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:targetsStakeholder :MissionCommander, :ProgramManager, :Acquirer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :AllVPs ;
+.
+
+:AV-2
+    a arch:Viewpoint ;
+    skos:prefLabel  "AV-2: Integrated Dictionary"@en ;
+    skos:definition "An architectural data repository with definitions of all terms used throughout the architectural data and presentations."@en ;
+    arch:viewType   arch:Catalog ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:targetsStakeholder :SystemEngineer, :Analyst ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :AllVPs ;
+.
+
+
+#################################################################
+# Capability Viewpoint (CV)
+#################################################################
+
+:CV-1
+    a arch:Viewpoint ;
+    skos:prefLabel  "CV-1: Vision"@en ;
+    skos:definition "The overall vision for transformational endeavors, providing a strategic context for the capabilities described and a high-level scope."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:includesConcept dodaf:Capability, dodaf:DesiredEffect ;
+    arch:targetsStakeholder :MissionCommander, :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :CapabilityVPs ;
+.
+
+:CV-2
+    a arch:Viewpoint ;
+    skos:prefLabel  "CV-2: Capability Taxonomy"@en ;
+    skos:definition "A hierarchy of capabilities specifying all capabilities referenced throughout one or more architectural descriptions."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:includesConcept dodaf:Capability ;
+    arch:targetsStakeholder :MissionCommander, :ProgramManager, :Analyst ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :CapabilityVPs ;
+.
+
+:CV-3
+    a arch:Viewpoint ;
+    skos:prefLabel  "CV-3: Capability Phasing"@en ;
+    skos:definition "The planned achievement of capability at different points in time or during specific periods of time."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:includesConcept dodaf:Capability, dodaf:CapabilityIncrement ;
+    arch:targetsStakeholder :ProgramManager, :Acquirer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :CapabilityVPs ;
+.
+
+:CV-4
+    a arch:Viewpoint ;
+    skos:prefLabel  "CV-4: Capability Dependencies"@en ;
+    skos:definition "The dependencies between planned capabilities and the definition of logical groupings of capabilities."@en ;
+    arch:viewType   arch:Diagram, arch:Matrix ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:includesConcept dodaf:Capability ;
+    arch:targetsStakeholder :ProgramManager, :Analyst ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :CapabilityVPs ;
+.
+
+:CV-5
+    a arch:Viewpoint ;
+    skos:prefLabel  "CV-5: Capability to Organizational Development Mapping"@en ;
+    skos:definition "The planned capability deployment and interconnection for a particular capability phase, showing the planned solution in terms of performers and locations."@en ;
+    arch:viewType   arch:Matrix ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:includesConcept dodaf:Capability, dodaf:Organization, dodaf:Location ;
+    arch:targetsStakeholder :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :CapabilityVPs ;
+.
+
+:CV-6
+    a arch:Viewpoint ;
+    skos:prefLabel  "CV-6: Capability to Operational Activities Mapping"@en ;
+    skos:definition "A mapping between the capabilities required and the operational activities that those capabilities support."@en ;
+    arch:viewType   arch:Matrix ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:includesConcept dodaf:Capability, dodaf:OperationalActivity ;
+    arch:targetsStakeholder :Analyst, :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :CapabilityVPs ;
+.
+
+:CV-7
+    a arch:Viewpoint ;
+    skos:prefLabel  "CV-7: Capability to Services Mapping"@en ;
+    skos:definition "A mapping between the capabilities and the services that these capabilities enable."@en ;
+    arch:viewType   arch:Matrix ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:includesConcept dodaf:Capability, dodaf:Service ;
+    arch:targetsStakeholder :SystemEngineer, :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :CapabilityVPs ;
+.
+
+
+#################################################################
+# Data and Information Viewpoint (DIV)
+#################################################################
+
+:DIV-1
+    a arch:Viewpoint ;
+    skos:prefLabel  "DIV-1: Conceptual Data Model"@en ;
+    skos:definition "The required high-level data concepts and their relationships. Intended for non-technical stakeholders."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:includesConcept dodaf:ConceptualDataEntity ;
+    arch:targetsStakeholder :MissionCommander, :Analyst ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :DataInfoVPs ;
+.
+
+:DIV-2
+    a arch:Viewpoint ;
+    skos:prefLabel  "DIV-2: Logical Data Model"@en ;
+    skos:definition "The documentation of the data requirements and structural business process rules. Bridges the conceptual and physical levels."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:includesConcept dodaf:LogicalDataEntity ;
+    arch:targetsStakeholder :SystemEngineer, :Analyst ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :DataInfoVPs ;
+.
+
+:DIV-3
+    a arch:Viewpoint ;
+    skos:prefLabel  "DIV-3: Physical Data Model"@en ;
+    skos:definition "The physical implementation format of the logical data model entities — message formats, file structures, physical schema."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:includesConcept dodaf:PhysicalDataEntity ;
+    arch:targetsStakeholder :DatabaseEngineer, :SoftwareDeveloper, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :DataInfoVPs ;
+.
+
+
+#################################################################
+# Operational Viewpoint (OV)
+#################################################################
+
+:OV-1
+    a arch:Viewpoint ;
+    skos:prefLabel  "OV-1: High-Level Operational Concept Graphic"@en ;
+    skos:definition "The high-level graphical/textual description of the operational concept."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:includesConcept dodaf:OperationalNode, dodaf:Performer, dodaf:Location ;
+    arch:targetsStakeholder :MissionCommander, :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:OV-2
+    a arch:Viewpoint ;
+    skos:prefLabel  "OV-2: Operational Resource Flow Description"@en ;
+    skos:definition "A description of the resource flows exchanged between operational activities."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:includesConcept dodaf:OperationalNode, dodaf:ResourceFlow ;
+    arch:targetsStakeholder :Analyst, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:OV-3
+    a arch:Viewpoint ;
+    skos:prefLabel  "OV-3: Operational Resource Flow Matrix"@en ;
+    skos:definition "A description of the resources exchanged and the relevant attributes of the exchanges."@en ;
+    arch:viewType   arch:Matrix ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:includesConcept dodaf:OperationalNode, dodaf:ResourceFlow ;
+    arch:targetsStakeholder :Analyst, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:OV-4
+    a arch:Viewpoint ;
+    skos:prefLabel  "OV-4: Organizational Relationships Chart"@en ;
+    skos:definition "The organizational context, role, or other relationships among organizations."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:includesConcept dodaf:Organization, dodaf:Performer ;
+    arch:targetsStakeholder :MissionCommander, :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:OV-5a
+    a arch:Viewpoint ;
+    skos:prefLabel  "OV-5a: Operational Activity Decomposition Tree"@en ;
+    skos:definition "The capabilities and activities organized in a hierarchical structure."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:includesConcept dodaf:OperationalActivity ;
+    arch:targetsStakeholder :Analyst ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:OV-5b
+    a arch:Viewpoint ;
+    skos:prefLabel  "OV-5b: Operational Activity Model"@en ;
+    skos:definition "The context of capabilities and activities and their relationships among activities, inputs, and outputs."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:includesConcept dodaf:OperationalActivity, dodaf:ResourceFlow, dodaf:Performer ;
+    arch:targetsStakeholder :Analyst, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:OV-6a
+    a arch:Viewpoint ;
+    skos:prefLabel  "OV-6a: Operational Rules Model"@en ;
+    skos:definition "Identifies business rules that constrain operations."@en ;
+    arch:viewType   arch:Catalog ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:includesConcept dodaf:OperationalRule, dodaf:OperationalActivity ;
+    arch:targetsStakeholder :Analyst ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:OV-6b
+    a arch:Viewpoint ;
+    skos:prefLabel  "OV-6b: State Transition Description"@en ;
+    skos:definition "Identifies business process responses to events."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:includesConcept dodaf:OperationalActivity, dodaf:Condition ;
+    arch:targetsStakeholder :Analyst, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:OV-6c
+    a arch:Viewpoint ;
+    skos:prefLabel  "OV-6c: Event-Trace Description"@en ;
+    skos:definition "Traces actions in a scenario or sequence of events."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:includesConcept dodaf:OperationalActivity, dodaf:OperationalNode ;
+    arch:targetsStakeholder :Analyst, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+
+#################################################################
+# Project Viewpoint (PV)
+#################################################################
+
+:PV-1
+    a arch:Viewpoint ;
+    skos:prefLabel  "PV-1: Project Portfolio Relationships"@en ;
+    skos:definition "Describes the dependency relationships between organizations and projects and the organizational structures needed to manage a portfolio of projects."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:includesConcept dodaf:Project, dodaf:Organization ;
+    arch:targetsStakeholder :ProgramManager, :Acquirer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ProjectVPs ;
+.
+
+:PV-2
+    a arch:Viewpoint ;
+    skos:prefLabel  "PV-2: Project Timelines"@en ;
+    skos:definition "A timeline perspective on programs or projects, with key milestones and interdependencies."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:includesConcept dodaf:Project, dodaf:Milestone ;
+    arch:targetsStakeholder :ProgramManager, :Acquirer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ProjectVPs ;
+.
+
+:PV-3
+    a arch:Viewpoint ;
+    skos:prefLabel  "PV-3: Project to Capability Mapping"@en ;
+    skos:definition "A mapping of programs and projects to capabilities to show how specific projects help achieve a capability."@en ;
+    arch:viewType   arch:Matrix ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:includesConcept dodaf:Project, dodaf:Capability ;
+    arch:targetsStakeholder :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ProjectVPs ;
+.
+
+
+#################################################################
+# Standards Viewpoint (StdV)
+#################################################################
+
+:StdV-1
+    a arch:Viewpoint ;
+    skos:prefLabel  "StdV-1: Standards Profile"@en ;
+    skos:definition "The listing of standards that apply to solution elements."@en ;
+    arch:viewType   arch:Catalog ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:includesConcept dodaf:Standard ;
+    arch:targetsStakeholder :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :StandardsVPs ;
+.
+
+:StdV-2
+    a arch:Viewpoint ;
+    skos:prefLabel  "StdV-2: Standards Forecast"@en ;
+    skos:definition "The description of emerging standards and potential impact on current solution elements, within a set of time frames."@en ;
+    arch:viewType   arch:Catalog ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:includesConcept dodaf:Standard, dodaf:StandardsForecast ;
+    arch:targetsStakeholder :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :StandardsVPs ;
+.

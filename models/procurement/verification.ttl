@@ -1,0 +1,33 @@
+# Procurement example — verification extension: one acceptance criterion of the two-level-approval requirement,
+# a test case verifying it and a passed test result (spec §6.5).
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/procurement/> .
+
+:acOver100kSecondLevel a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "金额 100001 元的报价单须经二级审批才能通过"@zh ;
+    aisep:gherkin "Given 一张金额为 100001 元的报价单\nWhen 一级审批通过\nThen 报价单进入二级审批而不是直接通过" .
+
+:rel-reqTwoLevelApproval-aggregates-acOver100kSecondLevel a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :reqTwoLevelApproval ; arch:target :acOver100kSecondLevel .
+
+:tcSecondLevelApproval a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "超10万报价二级审批测试"@zh .
+
+:rel-tcSecondLevelApproval-verifies-acOver100kSecondLevel a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :tcSecondLevelApproval ; arch:target :acOver100kSecondLevel .
+
+:trSecondLevelApprovalRun1 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "超10万报价二级审批测试 第1次运行"@zh ;
+    aisep:resultOf :tcSecondLevelApproval ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-19T10:00:00Z"^^xsd:dateTime .

@@ -1,0 +1,321 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix aigov:   <https://meta.linked.archi/ai-governance/onto#> .
+@prefix :        <https://meta.linked.archi/ai-governance/tax#> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/ai-governance/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "AI Governance Concept Scheme"@en ;
+    dcterms:description  "Classification of AI governance concepts by risk level, principle, lifecycle phase, and assessment type."@en ;
+    skos:hasTopConcept :ByRiskLevel, :ByPrinciple, :ByLifecyclePhase, :ByAssessmentType,
+                       :ElementKind ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ai-governance/tax#" ;
+    vann:preferredNamespacePrefix "aigovtax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi AI Governance Taxonomy"@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en .
+
+
+
+#################################################################
+# Element types
+#
+# The element types the assessment types below do not cover, for a
+# modelling tool's palette.
+#################################################################
+
+:ElementKind
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ai-governance/tax#> ;
+    skos:prefLabel       "Element Kind"@en ;
+    skos:definition      "The AI governance element types that are no assessment, by what they record."@en ;
+    skos:inScheme        <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:GovernedSystems
+    a skos:Concept ; skos:broader :ElementKind ;
+    skos:prefLabel   "Governed Systems"@en ;
+    skos:definition  "The AI systems that are subject to governance."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+    skos:narrower    aigov:AISystem ;
+.
+
+
+#################################################################
+# By Risk Level
+#################################################################
+
+:ByRiskLevel
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ai-governance/tax#> ;
+    skos:prefLabel       "By Risk Level"@en ;
+    skos:inScheme        <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:UnacceptableRiskConcept
+    a                skos:Concept ;
+    skos:broader     :ByRiskLevel ;
+    skos:prefLabel   "Unacceptable Risk"@en ;
+    skos:definition  "Prohibited AI practices under EU AI Act Article 5."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:HighRiskConcept
+    a                skos:Concept ;
+    skos:broader     :ByRiskLevel ;
+    skos:prefLabel   "High Risk"@en ;
+    skos:definition  "AI systems in Annex III domains requiring conformity assessment."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:HighRiskCriticalInfra
+    a                skos:Concept ;
+    skos:broader     :HighRiskConcept ;
+    skos:prefLabel   "Critical Infrastructure"@en ;
+    skos:definition  "AI in management and operation of critical infrastructure (energy, transport, water)."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:HighRiskEmployment
+    a                skos:Concept ;
+    skos:broader     :HighRiskConcept ;
+    skos:prefLabel   "Employment & Workers"@en ;
+    skos:definition  "AI in recruitment, selection, HR decisions, task allocation, and monitoring."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:HighRiskLawEnforcement
+    a                skos:Concept ;
+    skos:broader     :HighRiskConcept ;
+    skos:prefLabel   "Law Enforcement"@en ;
+    skos:definition  "AI in policing, criminal justice risk assessment, and evidence evaluation."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:HighRiskMigration
+    a                skos:Concept ;
+    skos:broader     :HighRiskConcept ;
+    skos:prefLabel   "Migration & Border Control"@en ;
+    skos:definition  "AI in asylum, visa, and border management decisions."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:HighRiskEducation
+    a                skos:Concept ;
+    skos:broader     :HighRiskConcept ;
+    skos:prefLabel   "Education & Training"@en ;
+    skos:definition  "AI in student assessment, admission, and learning path determination."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:HighRiskEssentialServices
+    a                skos:Concept ;
+    skos:broader     :HighRiskConcept ;
+    skos:prefLabel   "Essential Services"@en ;
+    skos:definition  "AI in credit scoring, insurance pricing, and access to essential services."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:LimitedRiskConcept
+    a                skos:Concept ;
+    skos:broader     :ByRiskLevel ;
+    skos:prefLabel   "Limited Risk"@en ;
+    skos:definition  "AI systems with transparency obligations (chatbots, deepfakes, emotion recognition)."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:MinimalRiskConcept
+    a                skos:Concept ;
+    skos:broader     :ByRiskLevel ;
+    skos:prefLabel   "Minimal Risk"@en ;
+    skos:definition  "AI systems with no specific obligations (voluntary codes of conduct)."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+
+#################################################################
+# By Principle
+#################################################################
+
+:ByPrinciple
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ai-governance/tax#> ;
+    skos:prefLabel       "By Principle"@en ;
+    skos:inScheme        <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:FairnessConcept
+    a                skos:Concept ;
+    skos:broader     :ByPrinciple ;
+    skos:prefLabel   "Fairness"@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:TransparencyConcept
+    a                skos:Concept ;
+    skos:broader     :ByPrinciple ;
+    skos:prefLabel   "Transparency"@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:AccountabilityConcept
+    a                skos:Concept ;
+    skos:broader     :ByPrinciple ;
+    skos:prefLabel   "Accountability"@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:SafetyConcept
+    a                skos:Concept ;
+    skos:broader     :ByPrinciple ;
+    skos:prefLabel   "Safety & Robustness"@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:PrivacyConcept
+    a                skos:Concept ;
+    skos:broader     :ByPrinciple ;
+    skos:prefLabel   "Privacy & Data Governance"@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:HumanAgencyConcept
+    a                skos:Concept ;
+    skos:broader     :ByPrinciple ;
+    skos:prefLabel   "Human Agency & Oversight"@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:SocialWellbeingConcept
+    a                skos:Concept ;
+    skos:broader     :ByPrinciple ;
+    skos:prefLabel   "Societal & Environmental Wellbeing"@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+
+#################################################################
+# By Lifecycle Phase
+#################################################################
+
+:ByLifecyclePhase
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ai-governance/tax#> ;
+    skos:prefLabel       "By Lifecycle Phase"@en ;
+    skos:inScheme        <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:DesignAndDevelopment
+    a                skos:Concept ;
+    skos:broader     :ByLifecyclePhase ;
+    skos:prefLabel   "Design & Development"@en ;
+    skos:definition  "Governance activities during AI system design and development — risk assessment, data governance, bias prevention."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:TestingAndValidation
+    a                skos:Concept ;
+    skos:broader     :ByLifecyclePhase ;
+    skos:prefLabel   "Testing & Validation"@en ;
+    skos:definition  "Governance activities during testing — conformity assessment, bias testing, explainability validation."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:Deployment
+    a                skos:Concept ;
+    skos:broader     :ByLifecyclePhase ;
+    skos:prefLabel   "Deployment"@en ;
+    skos:definition  "Governance activities at deployment — transparency disclosure, human oversight activation, registration."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:MonitoringAndMaintenance
+    a                skos:Concept ;
+    skos:broader     :ByLifecyclePhase ;
+    skos:prefLabel   "Monitoring & Maintenance"@en ;
+    skos:definition  "Ongoing governance — incident tracking, periodic reassessment, drift monitoring, compliance reporting."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:Decommissioning
+    a                skos:Concept ;
+    skos:broader     :ByLifecyclePhase ;
+    skos:prefLabel   "Decommissioning"@en ;
+    skos:definition  "Governance activities at end-of-life — data retention, model archival, notification of affected parties."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+
+#################################################################
+# By Assessment Type
+#################################################################
+
+:ByAssessmentType
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/ai-governance/tax#> ;
+    skos:prefLabel       "By Assessment Type"@en ;
+    skos:inScheme        <https://meta.linked.archi/ai-governance/tax#> ;
+.
+
+:ConformityAssessmentConcept
+    a                skos:Concept ;
+    skos:broader     :ByAssessmentType ;
+    skos:prefLabel   "Conformity Assessment"@en ;
+    skos:definition  "Formal assessment against regulatory requirements."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+    rdfs:seeAlso     aigov:ConformityAssessment ;
+.
+
+:BiasAssessmentConcept
+    a                skos:Concept ;
+    skos:broader     :ByAssessmentType ;
+    skos:prefLabel   "Bias Assessment"@en ;
+    skos:definition  "Assessment of bias in data, model, or deployment context."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+    rdfs:seeAlso     aigov:BiasAssessment ;
+.
+
+:ExplainabilityAssessmentConcept
+    a                skos:Concept ;
+    skos:broader     :ByAssessmentType ;
+    skos:prefLabel   "Explainability Assessment"@en ;
+    skos:definition  "Assessment of AI system explainability and interpretability."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+    rdfs:seeAlso     aigov:ExplainabilityReport ;
+.
+
+:HumanOversightAssessmentConcept
+    a                skos:Concept ;
+    skos:broader     :ByAssessmentType ;
+    skos:prefLabel   "Human Oversight Assessment"@en ;
+    skos:definition  "Assessment of human oversight adequacy."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+    rdfs:seeAlso     aigov:HumanOversightPlan ;
+.
+
+:DataGovernanceAssessmentConcept
+    a                skos:Concept ;
+    skos:broader     :ByAssessmentType ;
+    skos:prefLabel   "Data Governance Assessment"@en ;
+    skos:definition  "Assessment of data governance measures for training and evaluation data."@en ;
+    skos:inScheme    <https://meta.linked.archi/ai-governance/tax#> ;
+    rdfs:seeAlso     aigov:DataGovernanceRecord ;
+.

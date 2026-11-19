@@ -1,0 +1,23 @@
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# AISEP module manifest — verification extension (spec §6.5): TestCase, Verification, TestResult,
+# AcceptanceCriterion. No test vocabulary exists upstream; OSLC QM/RM terms are referenced by
+# skos:*Match only (not imported, spec §12).
+# aisep:ownsNamespace is deliberately NOT declared: the aisep# namespace is shared by aisep-core and the
+# three ext-* modules, so a namespace prefix cannot tell them apart. The shapes use sh:targetClass on
+# this module's own classes, so they only fire on its instances.
+
+<https://aisep.example/module/ext-verification>
+    a                arch:Metamodel ;
+    skos:prefLabel   "验证扩展"@zh ;
+    skos:altLabel    "Verification extension"@en ;
+    aisep:moduleKind aisep:Extension ;
+    owl:versionInfo  "0.2.0" ;
+    aisep:loads      "vendor/meta.linked.archi/ttl/core.ttl" ,
+                     "vendor/meta.linked.archi/ttl/archimate4_onto.ttl" ,
+                     "modules/ext-verification/onto.ttl" ;
+    aisep:shapesFile "modules/ext-verification/shapes.ttl" ;
+    aisep:impactFile "modules/ext-verification/impact.ttl" .   # spec v0.2 §5/§9: only declared overrides take effect

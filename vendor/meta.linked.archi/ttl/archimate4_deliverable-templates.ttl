@@ -1,0 +1,268 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix archdt:  <https://meta.linked.archi/core-deliverable-templates#> .
+@prefix archq:   <https://meta.linked.archi/core-questions#> .
+@prefix am4vp:   <https://meta.linked.archi/archimate4/viewpoints#> .
+@prefix am4q:    <https://meta.linked.archi/archimate4/questions#> .
+@prefix :        <https://meta.linked.archi/archimate4/deliverable-templates#> .
+
+#################################################################
+# ArchiMate 4.0 Deliverable Templates
+#
+# Each section answers the concerns it names by asking model
+# questions (arch:sectionAsks), in reading order. A generator
+# pre-binds every question with the deliverable's model, the
+# section's viewpoint and the template's parameters, and reports a
+# question it cannot ask instead of leaving it out. A finding
+# question with no answers reads "none found" for its concern.
+#
+# The questions are the core set (archq:) and the ArchiMate 4.0 set
+# (am4q:); they read the model together with the ArchiMate 4.0
+# ontology and viewpoints.
+#################################################################
+
+# ── Shared template parameter ────────────────────────────────────
+
+:ModelParameter
+    a               sh:Parameter ;
+    sh:path         arch:model ;
+    sh:name         "model" ;
+    sh:class        arch:Model ;
+    sh:optional     false ;
+    sh:order        1 ;
+    sh:description  "The model the document is produced from. Pre-bound into every question that declares ?model."@en ;
+.
+
+#################################################################
+# Architecture Definition Document
+#################################################################
+
+:ArchitectureDefinitionDocument
+    a                             arch:DeliverableTemplate ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate4/deliverable-templates#" ;
+    vann:preferredNamespacePrefix "am4dt" ;
+    dcterms:title                 "Linked.Archi ArchiMate 4.0 Deliverable Templates"@en ;
+    owl:versionInfo               "4.0"@en ;
+    dcterms:description           '''Deliverable template definitions for generating architecture documents from ArchiMate 4.0
+models: each section answers the concerns it names by asking model questions of the model.'''@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    skos:prefLabel                "Architecture Definition Document"@en ;
+    skos:definition               '''The primary ArchiMate 4.0 deliverable documenting the target architecture
+across business, application, and technology domains, and answering for each domain the
+concerns its viewpoint frames.'''@en ;
+    arch:templateRequiresViewpoint
+        am4vp:OrganizationViewpoint, am4vp:ProcessCooperationViewpoint,
+        am4vp:ApplicationStructureViewpoint, am4vp:TechnologyViewpoint,
+        am4vp:LayeredViewpoint, am4vp:ImplementationAndDeploymentViewpoint,
+        am4vp:ImplementationAndMigrationViewpoint ;
+    arch:templateHasSection       :ADD-S1, :ADD-S2, :ADD-S3, :ADD-S4, :ADD-S5, :ADD-S6, :ADD-S7, :ADD-S8 ;
+    arch:templateTargetsPurpose   archvp:Designing, archvp:Informing ;
+    arch:templateHasFormat        archdt:MarkdownFormat, archdt:HTMLFormat, archdt:PDFFormat ;
+    arch:templateParameter        :ModelParameter ;
+.
+
+:ADD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Business Domain"@en ;
+    skos:definition "Who are the actors and roles, and who is responsible for what?"@en ;
+    arch:sectionViewpoint am4vp:OrganizationViewpoint ;
+    arch:sectionAddressesConcern am4vp:CompetenciesAuthorityResponsibilities ;
+    arch:sectionAsks ( am4q:viewpoint-scope am4q:responsibility-assignments ) ;
+    arch:sectionResultKey "businessDomain" .
+
+:ADD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Process Cooperation"@en ;
+    skos:definition "How do processes cooperate, is each performed by someone, and is every service delivered?"@en ;
+    arch:sectionViewpoint am4vp:ProcessCooperationViewpoint ;
+    arch:sectionAddressesConcern am4vp:ProcessDependencies, am4vp:Responsibilities, am4vp:Completeness ;
+    arch:sectionAsks ( am4q:viewpoint-scope am4q:unassigned-behaviour am4q:unrealised-services ) ;
+    arch:sectionResultKey "processCooperation" .
+
+:ADD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Application Domain"@en ;
+    skos:definition "Which applications are there, how do they depend on each other, and who reads and writes which data?"@en ;
+    arch:sectionViewpoint am4vp:ApplicationStructureViewpoint ;
+    arch:sectionAddressesConcern am4vp:ApplicationStructure, am4vp:ApplicationDependencies,
+                                 am4vp:InformationStructure ;
+    arch:sectionAsks ( am4q:viewpoint-scope am4q:application-dependencies am4q:data-access am4q:data-never-written ) ;
+    arch:sectionResultKey "applicationDomain" .
+
+:ADD-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    skos:prefLabel "4. Technology Domain"@en ;
+    skos:definition "What infrastructure is there, and does every application run on some of it?"@en ;
+    arch:sectionViewpoint am4vp:TechnologyViewpoint ;
+    arch:sectionAddressesConcern am4vp:InfrastructureQuality, am4vp:ApplicationPlatforms ;
+    arch:sectionAsks ( am4q:viewpoint-scope am4q:applications-without-technology ) ;
+    arch:sectionResultKey "technologyDomain" .
+
+:ADD-S5 a arch:TemplateSection ; arch:sectionOrder 5 ;
+    skos:prefLabel "5. Cross-Domain Overview"@en ;
+    skos:definition "How do the domains connect, and where would a change propagate across them?"@en ;
+    arch:sectionViewpoint am4vp:LayeredViewpoint ;
+    arch:sectionAddressesConcern am4vp:Consistency, am4vp:ImpactOfChange, am4vp:ReductionOfComplexity ;
+    arch:sectionAsks ( am4q:elements-by-domain am4q:cross-domain-relationships ) ;
+    arch:sectionResultKey "crossDomainOverview" .
+
+:ADD-S6 a arch:TemplateSection ; arch:sectionOrder 6 ;
+    skos:prefLabel "6. Implementation & Deployment"@en ;
+    skos:definition "Which artifacts realise which applications, and where are they deployed?"@en ;
+    arch:sectionViewpoint am4vp:ImplementationAndDeploymentViewpoint ;
+    arch:sectionAddressesConcern am4vp:ApplicationPlatforms ;
+    arch:sectionAsks ( am4q:viewpoint-scope ) ;
+    arch:sectionResultKey "implementationDeployment" .
+
+:ADD-S7 a arch:TemplateSection ; arch:sectionOrder 7 ;
+    skos:prefLabel "7. Realisation Roadmap"@en ;
+    skos:definition "Which work packages deliver this architecture, and what does each deliverable realise?"@en ;
+    arch:sectionViewpoint am4vp:ImplementationAndMigrationViewpoint ;
+    arch:sectionAddressesConcern am4vp:ArchitectureVision ;
+    arch:sectionAsks ( am4q:work-package-deliverables ) ;
+    arch:sectionResultKey "roadmap" .
+
+:ADD-S8 a arch:TemplateSection ; arch:sectionOrder 8 ;
+    skos:prefLabel "Appendix. Quality of this Description"@en ;
+    skos:definition "Can the reader rely on this document as a complete, consistent description?"@en ;
+    skos:scopeNote "No viewpoint: the appendix reports on the model, not a view of it."@en ;
+    arch:sectionAddressesConcern archvp:QualityConcern, am4vp:Completeness, am4vp:Consistency ;
+    arch:sectionAsks ( archq:viewpoint-conformance archq:not-in-any-view archq:orphans
+                       archq:missing-definitions archq:duplicate-labels archq:relationship-integrity ) ;
+    arch:sectionResultKey "quality" .
+
+#################################################################
+# Architecture Requirements Specification
+#################################################################
+
+:ArchitectureRequirementsSpec
+    a                             arch:DeliverableTemplate ;
+    skos:prefLabel                "Architecture Requirements Specification"@en ;
+    skos:definition               '''Documents who the architecture is for, what they want to achieve, and the
+requirements that follow — and whether each requirement is traced to the design that meets it.'''@en ;
+    arch:templateRequiresViewpoint
+        am4vp:StakeholderViewpoint, am4vp:GoalRealizationViewpoint,
+        am4vp:RequirementsRealizationViewpoint, am4vp:MotivationViewpoint ;
+    arch:templateHasSection       :ARS-S1, :ARS-S2, :ARS-S3 ;
+    arch:templateTargetsPurpose   archvp:Deciding ;
+    arch:templateHasFormat        archdt:MarkdownFormat, archdt:PDFFormat ;
+    arch:templateParameter        :ModelParameter ;
+.
+
+:ARS-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Stakeholders and Drivers"@en ;
+    skos:definition "Who has a stake, and what drives and concerns them?"@en ;
+    arch:sectionViewpoint am4vp:StakeholderViewpoint ;
+    arch:sectionAddressesConcern am4vp:ArchitectureMission, am4vp:Motivation ;
+    arch:sectionAsks ( am4q:viewpoint-scope am4q:stakeholder-motivation ) ;
+    arch:sectionResultKey "stakeholders" .
+
+:ARS-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Goals and Outcomes"@en ;
+    skos:definition "What do we want to achieve, and how do goals refine into outcomes and requirements?"@en ;
+    arch:sectionViewpoint am4vp:GoalRealizationViewpoint ;
+    arch:sectionAddressesConcern am4vp:ArchitectureStrategy ;
+    arch:sectionAsks ( am4q:viewpoint-scope ) ;
+    arch:sectionResultKey "goals" .
+
+:ARS-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Requirements and their Realisation"@en ;
+    skos:definition "Which requirements are there, what meets each one, and which are not yet met by any design element?"@en ;
+    arch:sectionViewpoint am4vp:RequirementsRealizationViewpoint ;
+    arch:sectionAddressesConcern am4vp:ArchitectureTactics, am4vp:Completeness ;
+    arch:sectionAsks ( am4q:requirement-traceability am4q:unrealised-requirements ) ;
+    arch:sectionResultKey "requirements" .
+
+#################################################################
+# Architecture Principles Document
+#################################################################
+
+:ArchitecturePrinciplesDocument
+    a                             arch:DeliverableTemplate ;
+    skos:prefLabel                "Architecture Principles Document"@en ;
+    skos:definition               '''Documents the architecture principles, what motivates each, how they are
+made concrete as requirements, and how the strategy they serve is realised.'''@en ;
+    arch:templateRequiresViewpoint
+        am4vp:MotivationViewpoint, am4vp:StrategyViewpoint, am4vp:CapabilityMapViewpoint ;
+    arch:templateHasSection       :APD-S1, :APD-S2 ;
+    arch:templateTargetsPurpose   archvp:Governing ;
+    arch:templateHasFormat        archdt:MarkdownFormat, archdt:PDFFormat ;
+    arch:templateParameter        :ModelParameter ;
+.
+
+:APD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Principles"@en ;
+    skos:definition "Which principles govern the architecture, why, and which have been made concrete?"@en ;
+    arch:sectionViewpoint am4vp:MotivationViewpoint ;
+    arch:sectionAddressesConcern am4vp:ArchitecturePolicies, am4vp:Motivation ;
+    arch:sectionAsks ( am4q:principle-rationale am4q:principles-without-requirements ) ;
+    arch:sectionResultKey "principles" .
+
+:APD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Strategy Alignment"@en ;
+    skos:definition "Which capabilities does the strategy need, and is each one realised?"@en ;
+    arch:sectionViewpoint am4vp:CapabilityMapViewpoint ;
+    arch:sectionAddressesConcern am4vp:StrategyDevelopment, am4vp:ArchitectureStrategy ;
+    arch:sectionAsks ( am4q:viewpoint-scope am4q:capability-realisation am4q:unrealised-capabilities ) ;
+    arch:sectionResultKey "strategy" .
+
+#################################################################
+# Change Impact Assessment
+#
+# Produced for one element under change, and optionally a baseline
+# and a target plateau: every section asks about that element. The
+# core template archdt:ChangeImpactAssessment is the framework-
+# neutral outline.
+#################################################################
+
+:ChangeImpactAssessment
+    a                             arch:DeliverableTemplate ;
+    skos:prefLabel                "Change Impact Assessment (ArchiMate 4.0)"@en ;
+    skos:definition               '''Assesses a proposed change to one element: what depends on it, which
+views must be updated, and — where baseline and target plateaus are given — what the change adds
+and removes.'''@en ;
+    rdfs:seeAlso                  archdt:ChangeImpactAssessment ;
+    arch:templateRequiresViewpoint am4vp:LayeredViewpoint, am4vp:MigrationViewpoint ;
+    arch:templateHasSection       :CIA-S1, :CIA-S2, :CIA-S3 ;
+    arch:templateTargetsPurpose   archvp:Deciding, archvp:Governing ;
+    arch:templateHasFormat        archdt:MarkdownFormat, archdt:PDFFormat, archdt:SlideFormat ;
+    arch:templateParameter        :ModelParameter,
+        [ a sh:Parameter ; sh:path arch:focus ; sh:name "focus" ; sh:nodeKind sh:IRI ;
+          sh:optional false ; sh:order 2 ;
+          sh:description "The element under change."@en ],
+        [ a sh:Parameter ; sh:path arch:from ; sh:name "from" ; sh:nodeKind sh:IRI ;
+          sh:optional true ; sh:order 3 ;
+          sh:description "The baseline plateau. Section 3 asks its question only when both plateaus are given."@en ],
+        [ a sh:Parameter ; sh:path arch:to ; sh:name "to" ; sh:nodeKind sh:IRI ;
+          sh:optional true ; sh:order 4 ;
+          sh:description "The target plateau. Section 3 asks its question only when both plateaus are given."@en ] ;
+.
+
+:CIA-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. What Depends on the Element"@en ;
+    skos:definition "What is related to the element, and what is affected if it changes?"@en ;
+    arch:sectionViewpoint am4vp:LayeredViewpoint ;
+    arch:sectionAddressesConcern am4vp:ImpactOfChange, am4vp:Dependencies ;
+    arch:sectionAsks ( archq:neighbours am4q:impact-of-change ) ;
+    arch:sectionResultKey "impact" .
+
+:CIA-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Views to Update"@en ;
+    skos:definition "Which views present the element and will need revising?"@en ;
+    arch:sectionAddressesConcern archvp:GovernanceConcern ;
+    arch:sectionAsks ( archq:views-showing ) ;
+    arch:sectionResultKey "views" .
+
+:CIA-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Baseline to Target"@en ;
+    skos:definition "What does the target add and remove against the baseline?"@en ;
+    arch:sectionViewpoint am4vp:MigrationViewpoint ;
+    arch:sectionAddressesConcern am4vp:ModelHistory ;
+    arch:sectionAsks ( am4q:plateau-difference ) ;
+    arch:sectionResultKey "migration" .

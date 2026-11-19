@@ -1,0 +1,735 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix edgy:    <https://meta.linked.archi/edgy/onto#> .
+@prefix :        <https://meta.linked.archi/edgy/shapes#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/edgy/shapes#>
+    a                             owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by-sa/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/edgy/shapes#" ;
+    vann:preferredNamespacePrefix "edgysh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi EDGY 23 SHACL Shapes"@en ;
+    dcterms:description           '''SHACL validation shapes for EDGY 23 enterprise design models.
+Enforces element labeling requirements, relationship source/target constraints,
+and core link domain/range validity.'''@en ;
+    dcterms:created               "2025-06-27"^^xsd:date ;
+    dcterms:modified              "2026-04-17"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/edgy/shapes/23#> ;
+    owl:versionInfo               "23"@en ;
+    dcterms:source  <https://enterprise.design/wiki/Enterprise_Elements> ;
+    prov:wasDerivedFrom <https://enterprise.design/wiki/Enterprise_Elements> ;
+.
+
+
+#################################################################
+# Element Shapes — All Enterprise Elements
+#################################################################
+
+:EnterpriseElementShape
+    a               sh:NodeShape ;
+    sh:targetClass  edgy:EnterpriseElement ;
+    sh:name         "Enterprise Element Shape"@en ;
+    sh:description  "Every EDGY enterprise element must have a preferred label."@en ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "Every enterprise element must have at least one skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+
+#################################################################
+# Element Shapes — Base Elements
+#################################################################
+
+:PeopleShape
+    a               sh:NodeShape ;
+    sh:targetClass  edgy:People ;
+    sh:name         "People Shape"@en ;
+    sh:description  "Constraints for People element instances."@en ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "A People element must have a skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+:OutcomeShape
+    a               sh:NodeShape ;
+    sh:targetClass  edgy:Outcome ;
+    sh:name         "Outcome Shape"@en ;
+    sh:description  "Constraints for Outcome element instances."@en ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "An Outcome element must have a skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+:ActivityShape
+    a               sh:NodeShape ;
+    sh:targetClass  edgy:Activity ;
+    sh:name         "Activity Shape"@en ;
+    sh:description  "Constraints for Activity element instances."@en ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "An Activity element must have a skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+:ObjectShape
+    a               sh:NodeShape ;
+    sh:targetClass  edgy:Object ;
+    sh:name         "Object Shape"@en ;
+    sh:description  "Constraints for Object element instances."@en ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  "An Object element must have a skos:prefLabel."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+
+#################################################################
+# Relationship Shapes — Source/Target Constraints
+#################################################################
+
+:LinkShape
+    a               sh:NodeShape ;
+    sh:targetClass  edgy:Link ;
+    sh:name         "Link Shape"@en ;
+    sh:description  "A Link qualified relationship must have exactly one source and one target, both enterprise elements."@en ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    edgy:EnterpriseElement ;
+        sh:message  "A Link must have exactly one arch:source that is an EnterpriseElement."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    edgy:EnterpriseElement ;
+        sh:message  "A Link must have exactly one arch:target that is an EnterpriseElement."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+:FlowShape
+    a               sh:NodeShape ;
+    sh:targetClass  edgy:Flow ;
+    sh:name         "Flow Shape"@en ;
+    sh:description  "A Flow qualified relationship must have exactly one source and one target, both enterprise elements."@en ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    edgy:EnterpriseElement ;
+        sh:message  "A Flow must have exactly one arch:source that is an EnterpriseElement."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    edgy:EnterpriseElement ;
+        sh:message  "A Flow must have exactly one arch:target that is an EnterpriseElement."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+:TreeShape
+    a               sh:NodeShape ;
+    sh:targetClass  edgy:Tree ;
+    sh:name         "Tree Shape"@en ;
+    sh:description  "A Tree qualified relationship must have exactly one source (parent) and one target (child) of the same element type."@en ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    edgy:EnterpriseElement ;
+        sh:message  "A Tree must have exactly one arch:source that is an EnterpriseElement."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    edgy:EnterpriseElement ;
+        sh:message  "A Tree must have exactly one arch:target that is an EnterpriseElement."@en ;
+        sh:severity sh:Violation ;
+    ] ;
+.
+
+
+#################################################################
+# Core Link Domain/Range Shapes — Identity Facet
+#################################################################
+
+:ContextualisesPurposeShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:contextualisesPurpose ;
+    sh:name         "contextualisesPurpose domain"@en ;
+    sh:description  "Only Story elements may contextualise a Purpose."@en ;
+    sh:class        edgy:Story ;
+    sh:message      "edgy:contextualisesPurpose — source must be a Story."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:ContextualisesPurposeRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:contextualisesPurpose ;
+    sh:name         "contextualisesPurpose range"@en ;
+    sh:description  "contextualisesPurpose must target a Purpose."@en ;
+    sh:class        edgy:Purpose ;
+    sh:message      "edgy:contextualisesPurpose — target must be a Purpose."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:ExpressesPurposeShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:expressesPurpose ;
+    sh:name         "expressesPurpose domain"@en ;
+    sh:description  "Only Content elements may express a Purpose."@en ;
+    sh:class        edgy:Content ;
+    sh:message      "edgy:expressesPurpose — source must be a Content."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:ExpressesPurposeRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:expressesPurpose ;
+    sh:name         "expressesPurpose range"@en ;
+    sh:description  "expressesPurpose must target a Purpose."@en ;
+    sh:class        edgy:Purpose ;
+    sh:message      "edgy:expressesPurpose — target must be a Purpose."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:ConveysStoryShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:conveysStory ;
+    sh:name         "conveysStory domain"@en ;
+    sh:description  "Only Content elements may convey a Story."@en ;
+    sh:class        edgy:Content ;
+    sh:message      "edgy:conveysStory — source must be a Content."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:ConveysStoryRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:conveysStory ;
+    sh:name         "conveysStory range"@en ;
+    sh:description  "conveysStory must target a Story."@en ;
+    sh:class        edgy:Story ;
+    sh:message      "edgy:conveysStory — target must be a Story."@en ;
+    sh:severity     sh:Violation ;
+.
+
+
+#################################################################
+# Core Link Domain/Range Shapes — Experience Facet
+#################################################################
+
+:IsPartOfJourneyShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:isPartOfJourney ;
+    sh:name         "isPartOfJourney domain"@en ;
+    sh:description  "Only Task elements may be part of a Journey."@en ;
+    sh:class        edgy:Task ;
+    sh:message      "edgy:isPartOfJourney — source must be a Task."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:IsPartOfJourneyRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:isPartOfJourney ;
+    sh:name         "isPartOfJourney range"@en ;
+    sh:description  "isPartOfJourney must target a Journey."@en ;
+    sh:class        edgy:Journey ;
+    sh:message      "edgy:isPartOfJourney — target must be a Journey."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:UsesChannelShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:usesChannel ;
+    sh:name         "usesChannel domain"@en ;
+    sh:description  "Only Task elements may use a Channel."@en ;
+    sh:class        edgy:Task ;
+    sh:message      "edgy:usesChannel — source must be a Task."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:UsesChannelRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:usesChannel ;
+    sh:name         "usesChannel range"@en ;
+    sh:description  "usesChannel must target a Channel."@en ;
+    sh:class        edgy:Channel ;
+    sh:message      "edgy:usesChannel — target must be a Channel."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:TraversesChannelShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:traversesChannel ;
+    sh:name         "traversesChannel domain"@en ;
+    sh:description  "Only Journey elements may traverse a Channel."@en ;
+    sh:class        edgy:Journey ;
+    sh:message      "edgy:traversesChannel — source must be a Journey."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:TraversesChannelRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:traversesChannel ;
+    sh:name         "traversesChannel range"@en ;
+    sh:description  "traversesChannel must target a Channel."@en ;
+    sh:class        edgy:Channel ;
+    sh:message      "edgy:traversesChannel — target must be a Channel."@en ;
+    sh:severity     sh:Violation ;
+.
+
+
+#################################################################
+# Core Link Domain/Range Shapes — Architecture Facet
+#################################################################
+
+:RequiresAssetShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:requiresAsset ;
+    sh:name         "requiresAsset domain"@en ;
+    sh:description  "Only Capability elements may require an Asset."@en ;
+    sh:class        edgy:Capability ;
+    sh:message      "edgy:requiresAsset — source must be a Capability."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:RequiresAssetRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:requiresAsset ;
+    sh:name         "requiresAsset range"@en ;
+    sh:description  "requiresAsset must target an Asset."@en ;
+    sh:class        edgy:Asset ;
+    sh:message      "edgy:requiresAsset — target must be an Asset."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:RealisesCapabilityShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:realisesCapability ;
+    sh:name         "realisesCapability domain"@en ;
+    sh:description  "Only Process elements may realise a Capability."@en ;
+    sh:class        edgy:Process ;
+    sh:message      "edgy:realisesCapability — source must be a Process."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:RealisesCapabilityRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:realisesCapability ;
+    sh:name         "realisesCapability range"@en ;
+    sh:description  "realisesCapability must target a Capability."@en ;
+    sh:class        edgy:Capability ;
+    sh:message      "edgy:realisesCapability — target must be a Capability."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:ProcessRequiresAssetShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:processRequiresAsset ;
+    sh:name         "processRequiresAsset domain"@en ;
+    sh:description  "Only Process elements may require an Asset (process context)."@en ;
+    sh:class        edgy:Process ;
+    sh:message      "edgy:processRequiresAsset — source must be a Process."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:ProcessRequiresAssetRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:processRequiresAsset ;
+    sh:name         "processRequiresAsset range"@en ;
+    sh:description  "processRequiresAsset must target an Asset."@en ;
+    sh:class        edgy:Asset ;
+    sh:message      "edgy:processRequiresAsset — target must be an Asset."@en ;
+    sh:severity     sh:Violation ;
+.
+
+
+#################################################################
+# Core Link Domain/Range Shapes — Intersection Links
+#################################################################
+
+## Organisation links
+
+:BuildsBrandShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:buildsBrand ;
+    sh:class        edgy:Organisation ;
+    sh:message      "edgy:buildsBrand — source must be an Organisation."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:BuildsBrandRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:buildsBrand ;
+    sh:class        edgy:Brand ;
+    sh:message      "edgy:buildsBrand — target must be a Brand."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:MakesProductShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:makesProduct ;
+    sh:class        edgy:Organisation ;
+    sh:message      "edgy:makesProduct — source must be an Organisation."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:MakesProductRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:makesProduct ;
+    sh:class        edgy:Product ;
+    sh:message      "edgy:makesProduct — target must be a Product."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:EmbodiesBrandShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:embodiesBrand ;
+    sh:class        edgy:Product ;
+    sh:message      "edgy:embodiesBrand — source must be a Product."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:EmbodiesBrandRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:embodiesBrand ;
+    sh:class        edgy:Brand ;
+    sh:message      "edgy:embodiesBrand — target must be a Brand."@en ;
+    sh:severity     sh:Violation ;
+.
+
+## Product / Experience links
+
+:ServesTaskShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:servesTask ;
+    sh:class        edgy:Product ;
+    sh:message      "edgy:servesTask — source must be a Product."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:ServesTaskRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:servesTask ;
+    sh:class        edgy:Task ;
+    sh:message      "edgy:servesTask — target must be a Task."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:FeaturesInJourneyShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:featuresInJourney ;
+    sh:class        edgy:Product ;
+    sh:message      "edgy:featuresInJourney — source must be a Product."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:FeaturesInJourneyRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:featuresInJourney ;
+    sh:class        edgy:Journey ;
+    sh:message      "edgy:featuresInJourney — target must be a Journey."@en ;
+    sh:severity     sh:Violation ;
+.
+
+## Product / Architecture links
+
+:RequiresCapabilityShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:requiresCapability ;
+    sh:class        edgy:Product ;
+    sh:message      "edgy:requiresCapability — source must be a Product."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:RequiresCapabilityRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:requiresCapability ;
+    sh:class        edgy:Capability ;
+    sh:message      "edgy:requiresCapability — target must be a Capability."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:CreatesProductShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:createsProduct ;
+    sh:class        edgy:Process ;
+    sh:message      "edgy:createsProduct — source must be a Process."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:CreatesProductRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:createsProduct ;
+    sh:class        edgy:Product ;
+    sh:message      "edgy:createsProduct — target must be a Product."@en ;
+    sh:severity     sh:Violation ;
+.
+
+## Organisation / Identity links
+
+:PursuesPurposeShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:pursuesPurpose ;
+    sh:class        edgy:Organisation ;
+    sh:message      "edgy:pursuesPurpose — source must be an Organisation."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:PursuesPurposeRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:pursuesPurpose ;
+    sh:class        edgy:Purpose ;
+    sh:message      "edgy:pursuesPurpose — target must be a Purpose."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:AuthorsStoryShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:authorsStory ;
+    sh:class        edgy:Organisation ;
+    sh:message      "edgy:authorsStory — source must be an Organisation."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:AuthorsStoryRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:authorsStory ;
+    sh:class        edgy:Story ;
+    sh:message      "edgy:authorsStory — target must be a Story."@en ;
+    sh:severity     sh:Violation ;
+.
+
+## Organisation / Architecture links
+
+:HasCapabilityShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:hasCapability ;
+    sh:class        edgy:Organisation ;
+    sh:message      "edgy:hasCapability — source must be an Organisation."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:HasCapabilityRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:hasCapability ;
+    sh:class        edgy:Capability ;
+    sh:message      "edgy:hasCapability — target must be a Capability."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:PerformsProcessShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:performsProcess ;
+    sh:class        edgy:Organisation ;
+    sh:message      "edgy:performsProcess — source must be an Organisation."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:PerformsProcessRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:performsProcess ;
+    sh:class        edgy:Process ;
+    sh:message      "edgy:performsProcess — target must be a Process."@en ;
+    sh:severity     sh:Violation ;
+.
+
+## Brand / Identity links
+
+:EvokesStoryShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:evokesStory ;
+    sh:class        edgy:Brand ;
+    sh:message      "edgy:evokesStory — source must be a Brand."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:EvokesStoryRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:evokesStory ;
+    sh:class        edgy:Story ;
+    sh:message      "edgy:evokesStory — target must be a Story."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:RepresentsPurposeShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:representsPurpose ;
+    sh:class        edgy:Brand ;
+    sh:message      "edgy:representsPurpose — source must be a Brand."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:RepresentsPurposeRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:representsPurpose ;
+    sh:class        edgy:Purpose ;
+    sh:message      "edgy:representsPurpose — target must be a Purpose."@en ;
+    sh:severity     sh:Violation ;
+.
+
+## Brand / Experience links
+
+:SupportsTaskShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:supportsTask ;
+    sh:class        edgy:Brand ;
+    sh:message      "edgy:supportsTask — source must be a Brand."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:SupportsTaskRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:supportsTask ;
+    sh:class        edgy:Task ;
+    sh:message      "edgy:supportsTask — target must be a Task."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:AppearsInJourneyShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:appearsInJourney ;
+    sh:class        edgy:Brand ;
+    sh:message      "edgy:appearsInJourney — source must be a Brand."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:AppearsInJourneyRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:appearsInJourney ;
+    sh:class        edgy:Journey ;
+    sh:message      "edgy:appearsInJourney — target must be a Journey."@en ;
+    sh:severity     sh:Violation ;
+.
+
+
+#################################################################
+# Core Link Domain/Range Shapes — Base Element Relationships
+#################################################################
+
+:PerformsActivityShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:performsActivity ;
+    sh:or (
+        [ sh:class edgy:People ]
+        [ sh:class edgy:Object ]
+    ) ;
+    sh:message      "edgy:performsActivity — source must be People or Object."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:PerformsActivityRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:performsActivity ;
+    sh:class        edgy:Activity ;
+    sh:message      "edgy:performsActivity — target must be an Activity."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:UsesObjectShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:usesObject ;
+    sh:class        edgy:People ;
+    sh:message      "edgy:usesObject — source must be People."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:UsesObjectRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:usesObject ;
+    sh:class        edgy:Object ;
+    sh:message      "edgy:usesObject — target must be an Object."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:AchievesOutcomeShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:achievesOutcome ;
+    sh:class        edgy:People ;
+    sh:message      "edgy:achievesOutcome — source must be People."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:AchievesOutcomeRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:achievesOutcome ;
+    sh:class        edgy:Outcome ;
+    sh:message      "edgy:achievesOutcome — target must be an Outcome."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:LeadsToOutcomeShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:leadsToOutcome ;
+    sh:class        edgy:Activity ;
+    sh:message      "edgy:leadsToOutcome — source must be an Activity."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:LeadsToOutcomeRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:leadsToOutcome ;
+    sh:class        edgy:Outcome ;
+    sh:message      "edgy:leadsToOutcome — target must be an Outcome."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:NeededToAchieveShape
+    a               sh:NodeShape ;
+    sh:targetSubjectsOf edgy:neededToAchieve ;
+    sh:class        edgy:Object ;
+    sh:message      "edgy:neededToAchieve — source must be an Object."@en ;
+    sh:severity     sh:Violation ;
+.
+
+:NeededToAchieveRangeShape
+    a               sh:NodeShape ;
+    sh:targetObjectsOf edgy:neededToAchieve ;
+    sh:class        edgy:Outcome ;
+    sh:message      "edgy:neededToAchieve — target must be an Outcome."@en ;
+    sh:severity     sh:Violation ;
+.

@@ -1,0 +1,62 @@
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix ddd:   <https://aisep.example/ont/ddd#> .
+@prefix :      <https://aisep.example/model/ddd-legal/> .
+
+# Legal DDD model: context map with Customer/Supplier, an OHS/PL -> ACL upstream-downstream,
+# Partnership and Shared Kernel; aggregates with root entities; domain service/policy triggering events;
+# a command with a payload value object. UpstreamDownstream/CustomerSupplier and SubdomainImplementation are
+# aisep:assertedShortcut (v0.2 §6.4), so drawing them directly is legal.
+
+:model a arch:Model ; skos:prefLabel "DDD 合法样例"@zh .
+
+# ── Strategic ─────────────────────────────────────────────
+:domain a ddd:Domain ; arch:inModel :model ; skos:prefLabel "采购领域"@zh .
+:contextMap a ddd:ContextMap ; arch:inModel :model ; skos:prefLabel "采购上下文映射"@zh .
+:team a ddd:Team ; arch:inModel :model ; skos:prefLabel "订单团队"@zh .
+:orderingSub a ddd:Subdomain ; arch:inModel :model ; skos:prefLabel "下单"@zh ; ddd:subdomainType ddd:Core .
+
+:orderingBC a ddd:BoundedContext ; arch:inModel :model ; skos:prefLabel "订单上下文"@zh ; ddd:contextType ddd:Application .
+:inventoryBC a ddd:BoundedContext ; arch:inModel :model ; skos:prefLabel "库存上下文"@zh ; ddd:contextType ddd:System .
+:pricingBC a ddd:BoundedContext ; arch:inModel :model ; skos:prefLabel "定价上下文"@zh ; ddd:contextType ddd:Feature .
+
+# Customer/Supplier: inventory (supplier, upstream) -> ordering (customer, downstream); exposes an inventory aggregate
+:rel-cs a ddd:CustomerSupplier ; arch:inModel :model ;
+    arch:source :inventoryBC ; arch:target :orderingBC ;
+    ddd:exposedAggregate :stockAgg .
+
+# Upstream-Downstream with roles: pricing [OHS, PL] -> ordering [ACL]
+:rel-ud a ddd:UpstreamDownstream ; arch:inModel :model ;
+    arch:source :pricingBC ; arch:target :orderingBC ;
+    ddd:upstreamRole ddd:OpenHost , ddd:PublishedLanguage ;
+    ddd:downstreamRole ddd:AntiCorruptionLayer .
+
+:rel-partnership a ddd:Partnership ; arch:inModel :model ; arch:source :inventoryBC ; arch:target :pricingBC .
+:rel-kernel a ddd:SharedKernel ; arch:inModel :model ; arch:source :orderingBC ; arch:target :pricingBC .
+
+:rel-impl a ddd:SubdomainImplementation ; arch:inModel :model ; arch:source :orderingBC ; arch:target :orderingSub .
+
+# ── Tactical ──────────────────────────────────────────────
+:orderAgg a ddd:Aggregate ; arch:inModel :model ; skos:prefLabel "订单聚合"@zh .
+:order a ddd:Entity ; arch:inModel :model ; skos:prefLabel "订单"@zh .
+:address a ddd:ValueObject ; arch:inModel :model ; skos:prefLabel "收货地址"@zh .
+:stockAgg a ddd:Aggregate ; arch:inModel :model ; skos:prefLabel "库存聚合"@zh .
+:stockItem a ddd:Entity ; arch:inModel :model ; skos:prefLabel "库存项"@zh .
+:orderView a ddd:ReadModel ; arch:inModel :model ; skos:prefLabel "订单列表"@zh .
+
+:rel-own-order a ddd:Ownership ; arch:inModel :model ; arch:source :orderingBC ; arch:target :orderAgg .
+:rel-own-stock a ddd:Ownership ; arch:inModel :model ; arch:source :inventoryBC ; arch:target :stockAgg .
+:rel-root-order a ddd:RootContainment ; arch:inModel :model ; arch:source :orderAgg ; arch:target :order .
+:rel-contains-address a ddd:Containment ; arch:inModel :model ; arch:source :orderAgg ; arch:target :address .
+:rel-root-stock a ddd:RootContainment ; arch:inModel :model ; arch:source :stockAgg ; arch:target :stockItem .
+
+:placeOrder a ddd:DomainService ; arch:inModel :model ; skos:prefLabel "下单服务"@zh .
+:orderPlaced a ddd:DomainEvent ; arch:inModel :model ; skos:prefLabel "订单已提交"@zh .
+:reserveStockPolicy a ddd:Policy ; arch:inModel :model ; skos:prefLabel "提交后预留库存"@zh .
+:reserveStock a ddd:Command ; arch:inModel :model ; skos:prefLabel "预留库存"@zh ;
+    ddd:payload :reservationRequest .                       # optional command payload (spec v0.2 §6.4, D3)
+:reservationRequest a ddd:ValueObject ; arch:inModel :model ; skos:prefLabel "预留请求"@zh .
+:orderApp a ddd:ApplicationService ; arch:inModel :model ; skos:prefLabel "订单应用服务"@zh .
+
+:rel-trig-event a ddd:EventTriggering ; arch:inModel :model ; arch:source :placeOrder ; arch:target :orderPlaced .
+:rel-trig-cmd a ddd:EventTriggering ; arch:inModel :model ; arch:source :reserveStockPolicy ; arch:target :reserveStock .

@@ -1,0 +1,111 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix archdt:  <https://meta.linked.archi/core-deliverable-templates#> .
+@prefix fourplus1vp: <https://meta.linked.archi/4plus1/viewpoints#> .
+@prefix :        <https://meta.linked.archi/4plus1/deliverable-templates#> .
+
+<https://meta.linked.archi/4plus1/deliverable-templates#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/4plus1/deliverable-templates#" ;
+    vann:preferredNamespacePrefix "fourplus1dt" ;
+    dcterms:title                      "4+1 View Model Deliverable Templates"@en ;
+    dcterms:description                """Deliverable templates for the 4+1 Architectural View Model.
+Defines a Software Architecture Document (SAD) structured around the five views,
+following the template pattern from Kruchten's original paper and the RUP SAD template."""@en ;
+    dcterms:created               "2026-05-06"^^xsd:date ;
+    dcterms:modified              "2026-05-06"^^xsd:date ;
+    dcterms:creator                    "Kalin Maldzhanski" ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/4plus1/deliverable-templates/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+#################################################################
+# Software Architecture Document (SAD)
+#################################################################
+
+:SoftwareArchitectureDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Software Architecture Document (4+1)"@en ;
+    skos:definition         """A software architecture document structured around the 4+1 views.
+Each section corresponds to one of Kruchten's five views, providing a complete
+architecture description from multiple perspectives. Based on the RUP Software
+Architecture Document template."""@en ;
+    arch:templateRequiresViewpoint
+        fourplus1vp:LogicalViewpoint,
+        fourplus1vp:ProcessViewpoint,
+        fourplus1vp:DevelopmentViewpoint,
+        fourplus1vp:PhysicalViewpoint,
+        fourplus1vp:ScenariosViewpoint ;
+    arch:templateHasSection :SAD-S1, :SAD-S2, :SAD-S3, :SAD-S4, :SAD-S5, :SAD-S6, :SAD-S7 ;
+    arch:templateTargetsPurpose archvp:Designing, archvp:Informing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:HTMLFormat ;
+.
+
+#################################################################
+# Sections
+#################################################################
+
+:SAD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Introduction & Architectural Goals"@en ;
+    skos:definition """Purpose of the document, scope of the system, architectural goals
+and constraints, and references to requirements driving the architecture."""@en ;
+.
+
+:SAD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint fourplus1vp:ScenariosViewpoint ;
+    skos:prefLabel "2. Architectural Scenarios"@en ;
+    skos:definition """Key use cases and scenarios that drive and validate the architecture.
+Each scenario traces through the other four views, demonstrating how the
+architecture supports the most important user goals."""@en ;
+.
+
+:SAD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint fourplus1vp:LogicalViewpoint ;
+    skos:prefLabel "3. Logical View"@en ;
+    skos:definition """Functional decomposition — key abstractions, their responsibilities,
+and relationships. Class diagrams, domain models, service interfaces,
+or equivalent representations from the chosen modeling language."""@en ;
+.
+
+:SAD-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    arch:sectionViewpoint fourplus1vp:ProcessViewpoint ;
+    skos:prefLabel "4. Process View"@en ;
+    skos:definition """Runtime behavior — processes, threads, communication mechanisms,
+synchronization, and concurrency patterns. Activity diagrams, sequence
+diagrams, or process models showing how the system handles load and
+failure."""@en ;
+.
+
+:SAD-S5 a arch:TemplateSection ; arch:sectionOrder 5 ;
+    arch:sectionViewpoint fourplus1vp:DevelopmentViewpoint ;
+    skos:prefLabel "5. Development View"@en ;
+    skos:definition """Software organization — modules, packages, layers, subsystems,
+build structure, and team ownership. Component diagrams, package
+diagrams, or repository/service boundaries."""@en ;
+.
+
+:SAD-S6 a arch:TemplateSection ; arch:sectionOrder 6 ;
+    arch:sectionViewpoint fourplus1vp:PhysicalViewpoint ;
+    skos:prefLabel "6. Physical View"@en ;
+    skos:definition """Deployment topology — mapping of software to hardware, nodes,
+networks, availability zones, and resource allocation. Deployment
+diagrams or infrastructure-as-code references."""@en ;
+.
+
+:SAD-S7 a arch:TemplateSection ; arch:sectionOrder 7 ;
+    skos:prefLabel "7. Quality & Architectural Decisions"@en ;
+    skos:definition """Cross-cutting quality attribute requirements, key architectural
+decisions with rationale, and known trade-offs. References to ADRs
+and quality attribute scenarios."""@en ;
+.

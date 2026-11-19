@@ -1,0 +1,103 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix ddd:   <https://aisep.example/ont/ddd#> .
+@prefix dddsh: <https://aisep.example/ont/ddd/shapes#> .
+
+# DDD-specific rules (spec §6.4). ArchiMate legality of DDD relationships is NOT repeated here:
+# it comes from archimate4_shapes via the ⊑ am4 axioms in align.ttl (inheritsHubRules=true).
+# Data graph must contain onto.ttl (sh:class follows rdfs:subClassOf* in the data graph).
+
+# R1 Customer/Supplier: Conformist and Open Host roles are not applicable (CML rule).
+dddsh:CustomerSupplierRolesShape a sh:NodeShape ;
+    sh:targetClass ddd:CustomerSupplier ;
+    sh:property [
+        sh:path ddd:downstreamRole ;
+        sh:not [ sh:in ( ddd:Conformist ) ] ;
+        sh:message "DDD: a Customer/Supplier relationship must not use the Conformist (CF) downstream role"@en ;
+    ] ;
+    sh:property [
+        sh:path ddd:upstreamRole ;
+        sh:not [ sh:in ( ddd:OpenHost ) ] ;
+        sh:message "DDD: a Customer/Supplier relationship must not use the Open Host (OHS) upstream role"@en ;
+    ] .
+
+# R2 Symmetric relationships (Partnership, Shared Kernel) take no roles.
+dddsh:SymmetricNoRolesShape a sh:NodeShape ;
+    sh:targetClass ddd:Partnership , ddd:SharedKernel ;
+    sh:property [ sh:path ddd:upstreamRole ; sh:maxCount 0 ;
+        sh:message "DDD: Partnership/Shared Kernel is symmetric and takes no upstream/downstream role"@en ] ;
+    sh:property [ sh:path ddd:downstreamRole ; sh:maxCount 0 ;
+        sh:message "DDD: Partnership/Shared Kernel is symmetric and takes no upstream/downstream role"@en ] .
+
+# R3 Role values come from the matching scheme.
+dddsh:UpstreamRoleValueShape a sh:NodeShape ;
+    sh:targetSubjectsOf ddd:upstreamRole ;
+    sh:property [ sh:path ddd:upstreamRole ; sh:in ( ddd:OpenHost ddd:PublishedLanguage ) ;
+        sh:message "DDD: ddd:upstreamRole must be ddd:OpenHost or ddd:PublishedLanguage"@en ] .
+dddsh:DownstreamRoleValueShape a sh:NodeShape ;
+    sh:targetSubjectsOf ddd:downstreamRole ;
+    sh:property [ sh:path ddd:downstreamRole ; sh:in ( ddd:AntiCorruptionLayer ddd:Conformist ) ;
+        sh:message "DDD: ddd:downstreamRole must be ddd:AntiCorruptionLayer or ddd:Conformist"@en ] .
+
+# R4 Element classifiers come from their schemes.
+dddsh:SubdomainTypeShape a sh:NodeShape ;
+    sh:targetSubjectsOf ddd:subdomainType ;
+    sh:property [ sh:path ddd:subdomainType ; sh:in ( ddd:Core ddd:Supporting ddd:Generic ) ;
+        sh:message "DDD: ddd:subdomainType must be ddd:Core, ddd:Supporting or ddd:Generic"@en ] .
+dddsh:ContextTypeShape a sh:NodeShape ;
+    sh:targetSubjectsOf ddd:contextType ;
+    sh:property [ sh:path ddd:contextType ; sh:in ( ddd:Feature ddd:Application ddd:System ) ;
+        sh:message "DDD: ddd:contextType must be ddd:Feature, ddd:Application or ddd:System"@en ] .
+
+# R5 Every aggregate has exactly one root, and every aggregate is owned by exactly one bounded context.
+dddsh:AggregateShape a sh:NodeShape ;
+    sh:targetClass ddd:Aggregate ;
+    sh:property [
+        sh:path [ sh:inversePath arch:source ] ;
+        sh:qualifiedValueShape [ sh:class ddd:RootContainment ] ;
+        sh:qualifiedMinCount 1 ; sh:qualifiedMaxCount 1 ;
+        sh:message "DDD: an Aggregate must have exactly one root entity (one ddd:RootContainment from it)"@en ;
+    ] ;
+    sh:property [
+        sh:path [ sh:inversePath arch:target ] ;
+        sh:qualifiedValueShape [ sh:class ddd:Ownership ;
+            sh:property [ sh:path arch:source ; sh:class ddd:BoundedContext ] ] ;
+        sh:qualifiedMinCount 1 ; sh:qualifiedMaxCount 1 ;
+        sh:message "DDD: an Aggregate must be owned by exactly one Bounded Context (one ddd:Ownership to it)"@en ;
+    ] .
+
+# R6 The aggregate root is an Entity.
+dddsh:RootIsEntityShape a sh:NodeShape ;
+    sh:targetClass ddd:RootContainment ;
+    sh:property [ sh:path arch:target ; sh:class ddd:Entity ;
+        sh:message "DDD: the root of an Aggregate must be a ddd:Entity"@en ] .
+
+# R7 An exposed aggregate must belong to (be owned by) the upstream context.
+dddsh:ExposedAggregateShape a sh:NodeShape ;
+    sh:targetClass ddd:UpstreamDownstream ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "DDD: exposed aggregate {?agg} is not owned by the upstream bounded context"@en ;
+        sh:select """
+            SELECT $this ?agg WHERE {
+              $this <https://aisep.example/ont/ddd#exposedAggregate> ?agg ;
+                    <https://meta.linked.archi/core#source> ?up .
+              FILTER NOT EXISTS {
+                ?own a/<http://www.w3.org/2000/01/rdf-schema#subClassOf>* <https://aisep.example/ont/ddd#Ownership> ;
+                     <https://meta.linked.archi/core#source> ?up ;
+                     <https://meta.linked.archi/core#target> ?agg .
+              }
+            }""" ;
+    ] .
+
+# R8 (spec v0.2 §6.4, D3) Optional command payload: only on a Command, and the value is a data object.
+# sh:class am4:DataObject needs ddd/align.ttl in the data graph for DDD data types (ValueObject ⊑ DataObject).
+dddsh:PayloadShape a sh:NodeShape ;
+    sh:targetSubjectsOf ddd:payload ;
+    sh:class ddd:Command ;
+    sh:message "DDD: ddd:payload may only be stated on a ddd:Command"@en ;
+    sh:property [ sh:path ddd:payload ; sh:class am4:DataObject ;
+        sh:message "DDD: ddd:payload must point to a data object (am4:DataObject, e.g. a ddd:ValueObject or ddd:Aggregate)"@en ] .

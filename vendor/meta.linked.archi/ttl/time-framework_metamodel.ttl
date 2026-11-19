@@ -1,0 +1,75 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix timefw:  <https://meta.linked.archi/time-framework/onto#> .
+@prefix timetax: <https://meta.linked.archi/time-framework/tax#> .
+@prefix :        <https://meta.linked.archi/time-framework/metamodel#> .
+
+<https://meta.linked.archi/time-framework/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/time-framework/metamodel#" ;
+    vann:preferredNamespacePrefix "timemm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi TIME Framework Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for the TIME (Tolerate, Invest, Migrate, Eliminate)
+framework. Ties together the TIME ontology and controlled vocabularies into
+a single discoverable resource for application portfolio rationalization.'''@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-05-02"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/time-framework/metamodel/0.2.0#> ;
+    owl:versionInfo               "0.2.0"@en ;
+    dcterms:source  <https://www.leanix.net/en/wiki/apm/gartner-time-model> ;
+    prov:wasDerivedFrom <https://www.leanix.net/en/wiki/apm/gartner-time-model> ;
+.
+
+:TIMEFramework
+    a               arch:Framework ;
+    skos:prefLabel  "TIME Framework"@en ;
+    skos:definition '''The Gartner TIME (Tolerate, Invest, Migrate, Eliminate) framework
+for application portfolio rationalization. Classifies applications into four
+quadrants based on functional fit (business value) and technical fit (technical
+health), guiding investment and retirement decisions.'''@en ;
+    dcterms:publisher    "Gartner"@en ;
+    rdfs:seeAlso    <https://www.gartner.com/en/information-technology/topics/enterprise-apps>,
+                    <https://www.leanix.net/en/wiki/apm/gartner-time-model>,
+                    <https://help.sap.com/docs/leanix/ea/time> ;
+.
+
+:TIME
+    a                             arch:Metamodel ;
+    skos:prefLabel                "TIME Metamodel"@en ;
+    dcterms:description               '''The complete TIME metamodel definition, aggregating the TIME
+ontology (classes, properties, controlled vocabularies) for application
+portfolio fit assessment and disposition classification.'''@en ;
+
+    arch:basedOnFramework         :TIMEFramework ;
+
+    ## Content — entity types and relationships
+    arch:modelConcepts            <https://meta.linked.archi/time-framework/onto#> ;
+
+    ## Controlled vocabularies
+    arch:conceptClassification    <https://meta.linked.archi/time-framework/tax#> ;
+
+    ## SHACL validation shapes
+    arch:formalRules              <https://meta.linked.archi/time-framework/shapes#> ;
+
+    ## Derivation rules — disposition movement (SHACL Rules + PROV-O)
+    ## File: time-derivation.ttl
+    arch:derivationRules          <https://meta.linked.archi/time-framework/derivation#> ;
+
+    ## Cross-language mappings — TIME ↔ ArchiMate, Backstage, TOGAF
+    ## File: time-crossmappings.ttl
+    arch:crossLanguageMappings    <https://meta.linked.archi/time-framework/crossmappings#> ;
+.

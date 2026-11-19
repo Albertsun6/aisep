@@ -1,0 +1,98 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix iso-thes: <http://purl.org/iso25964/skos-thes#> .
+
+@prefix refa:    <https://meta.linked.archi/ref-arch#> .
+@prefix tactax:  <https://meta.linked.archi/tactics/tax#> .
+@prefix adtax:   <https://meta.linked.archi/arch-decision/tax#> .
+@prefix :        <https://meta.linked.archi/ref-arch/tax#> .
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/ref-arch/tax#>
+    a                             skos:ConceptScheme ;
+    skos:prefLabel                "Reference Architecture Concept Scheme"@en ;
+    dcterms:description           "Classification of the Reference Architecture element types: building blocks, standards and tactics."@en ;
+    skos:hasTopConcept            :ElementKind ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ref-arch/tax#" ;
+    vann:preferredNamespacePrefix "refatax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Reference Architecture Taxonomy"@en ;
+    dcterms:created               "2026-11-16"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+#################################################################
+# Element types
+#################################################################
+
+:ElementKind
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/ref-arch/tax#> ;
+    skos:prefLabel    "Element Kind"@en ;
+    skos:definition   "The Reference Architecture element types, by what they contribute to a reference architecture."@en ;
+    skos:inScheme     <https://meta.linked.archi/ref-arch/tax#> ;
+.
+
+:BuildingBlocks
+    a                 skos:Concept ;
+    skos:broader      :ElementKind ;
+    skos:prefLabel    "Building Blocks"@en ;
+    skos:definition   "The reusable components a reference architecture is assembled from: architecture building blocks and the solution building blocks that realise them."@en ;
+    skos:inScheme     <https://meta.linked.archi/ref-arch/tax#> ;
+    skos:narrower     refa:ABB, refa:SBB ;
+.
+
+:Standards
+    a                 skos:Concept ;
+    skos:broader      :ElementKind ;
+    skos:prefLabel    "Standards"@en ;
+    skos:definition   "The standards a reference architecture prescribes."@en ;
+    skos:inScheme     <https://meta.linked.archi/ref-arch/tax#> ;
+    skos:narrower     refa:Standard ;
+.
+
+:Tactics
+    a                 skos:Concept ;
+    skos:broader      :ElementKind ;
+    skos:prefLabel    "Tactics"@en ;
+    skos:definition   "Design techniques that achieve a quality attribute response. The Tactics extension classifies its tactics by the quality attribute they serve."@en ;
+    skos:inScheme     <https://meta.linked.archi/ref-arch/tax#> ;
+    skos:narrower     refa:Tactic ;
+.
+
+:ElementKindOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    iso-thes:superOrdinate :ElementKind ;
+    skos:prefLabel         "Element Kind Order"@en ;
+    skos:memberList        ( :BuildingBlocks :Standards :Tactics ) ;
+.
+
+
+#################################################################
+# Palette grouping
+#
+# Linked.Archi modelling guidance: the classification dimensions a
+# palette groups element types by. The metamodel manifest points to
+# it (arch:paletteGrouping).
+#################################################################
+
+:PaletteGrouping
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Palette Grouping"@en ;
+    skos:definition "The classification dimensions a palette groups element types by: the building blocks, standards and tactics of a reference architecture, then the tactics by quality attribute, then the decision records and forces they are applied in."@en ;
+    skos:memberList ( :ElementKind tactax:ByQualityAttribute adtax:ElementKind ) ;
+.

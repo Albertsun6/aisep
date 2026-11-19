@@ -1,0 +1,7 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+
+# AISEP patch (spec §6.1): upstream OWL places Grouping and Location only under am4:CompositeElement, while the
+# upstream taxonomy files them under the common domain; AISEP follows the taxonomy. Kept in AISEP's own graph.
+am4:Grouping rdfs:subClassOf am4:CommonDomainElement .
+am4:Location rdfs:subClassOf am4:CommonDomainElement .

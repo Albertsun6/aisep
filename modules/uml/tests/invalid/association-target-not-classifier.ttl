@@ -1,0 +1,11 @@
+# expect: Association target must be a Classifier.
+# Invalid per uml_shapes :AssociationShape — an Association relates Classifiers; uml:Action is not one.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix :     <https://aisep.example/model/uml-bad/> .
+
+:model a arch:Model ; skos:prefLabel "UML 负例"@zh .
+:Quotation a uml:Class ; arch:inModel :model ; skos:prefLabel "报价单"@zh .
+:approve a uml:Action ; arch:inModel :model ; skos:prefLabel "批准"@zh .
+:assoc1 a uml:Association ; arch:inModel :model ; arch:source :Quotation ; arch:target :approve .

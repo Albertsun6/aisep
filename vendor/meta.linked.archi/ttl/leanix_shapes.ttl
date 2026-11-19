@@ -1,0 +1,651 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ap:      <https://meta.linked.archi/arch-processes#> .
+@prefix lmm:     <https://meta.linked.archi/leanix/onto#> .
+@prefix lmm3:    <https://meta.linked.archi/leanix/v3/onto#> .
+@prefix :        <https://meta.linked.archi/leanix/shapes#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/leanix/shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/leanix/onto#>,
+                                  <https://meta.linked.archi/leanix/v3/onto#>,
+                                  <https://meta.linked.archi/arch-processes#>,
+                                  <https://meta.linked.archi/core-shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/leanix/shapes#" ;
+    vann:preferredNamespacePrefix "lmmsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi LeanIX SHACL Shapes"@en ;
+    dcterms:description           '''SHACL shapes for validating SAP LeanIX Meta Model fact sheet data.
+Covers both published LeanIX ontologies — v4 (lmm:) and v3 (lmm3:) — because both are live
+namespaces rooted at FactSheet.
+
+Fact sheet naming applies to both versions. Value-set and cardinality rules constrain v4
+attributes (DD-23), while endpoint shapes constrain v4 relationship pairs. The ontology
+deliberately does not close the attribute vocabularies in OWL.
+
+This is not an official SAP document.'''@en ;
+    dcterms:created               "2026-08-04"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    skos:editorialNote
+            '''Covers every endpoint pair SAP's meta model diagram draws, subtype-specific relations and
+same-type hierarchies included; the v4 fact sheet attribute rules — the status and subscription type
+value sets, the completion range, and that a dated lifecycle phase carries both halves; and the naming
+rule.'''@en ;
+    dcterms:publisher             "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/leanix/shapes/0.3.0#> ;
+    owl:priorVersion              <https://meta.linked.archi/leanix/shapes/0.2.0#> ;
+    owl:versionInfo               "0.3.0"@en ;
+.
+
+#################################################################
+# Element instance requirements — the authoritative LeanIX naming rule
+#
+# core-shapes carries no label shape. arch:Element means "a node in a model", and
+# some notations have nodes that are legitimately unnamed (BPMN gateways and
+# events, ArchiMate junctions), so naming policy is owned by each metamodel.
+# See DD-24 in doc/guide/design-decisions.md.
+#
+# FactSheet is the single root of the LeanIX element hierarchy in each of the two
+# published namespaces, so these two targets reach all fact sheet classes
+# through rdfs:subClassOf reasoning.
+#
+# Every LeanIX fact sheet is addressed by name in the portal, so all are required
+# to carry one. LeanIX has no unnamed-by-design constructs.
+#
+# Targets LeanIX classes, never arch:Element. In a merged multi-notation graph,
+# targeting arch:Element would impose LeanIX's naming policy on every other
+# notation's elements.
+#################################################################
+
+:LeanIXFactSheetLabelShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''Requires a language-tagged skos:prefLabel on every LeanIX fact sheet, in both
+the v4 and v3 namespaces. Reaches all fact sheet classes via the FactSheet roots.'''@en ;
+    sh:targetClass lmm:FactSheet ,
+                   lmm3:FactSheet ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  '''Every LeanIX fact sheet must have at least one skos:prefLabel, and it must
+be language-tagged (rdf:langString), e.g. "Payments Platform"@en.'''@en ;
+    ] ;
+.
+
+#################################################################
+# Fact sheet attributes — the DD-23 half of the state vocabularies
+#
+# The ontology declares :FactSheetStatus and :SubscriptionType as open classes
+# with named individuals and does not close them with owl:oneOf, because closing
+# a vocabulary in OWL prevents a downstream workspace from adding a value
+# without editing a published document. The value set is a constraint on our
+# data, not a logical truth, so it lives here — where a consumer can replace it.
+#
+# The same goes for "at most one": no property above is declared
+# owl:FunctionalProperty, since under the Open World Assumption that entails
+# owl:sameAs between two distinct values on a data error, silently merging
+# them instead of reporting the error. sh:maxCount reports it.
+#
+# Targets lmm: only, not lmm3:. Meta Model v3 publishes no attributes.
+#
+# A validation profile running these needs the data graph plus leanix/onto,
+# leanix/v3/onto, core-onto and core-shapes.
+#
+# arch-processes is NOT required, despite the lifecycle stage values being its
+# individuals. sh:in compares IRIs and needs no triples about them: an
+# unrecognised stage is reported identically whether or not the extension is
+# loaded — measured, not assumed. Load it for querying, where the stages' labels,
+# ordering and closeMatch links live, or if a downstream shape ever tightens
+# lifecycle to sh:class ap:LifecycleStage, which would need the type triples.
+# The owl:imports above is a statement about vocabulary, not a load requirement.
+#################################################################
+
+:LeanIXFactSheetAttributeShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''Value-set and cardinality rules for the v4 fact sheet attributes. Says nothing
+about whether an attribute is present: LeanIX requires none of them, and a scope-limited pull
+legitimately returns a fact sheet with only a name.'''@en ;
+    sh:targetClass lmm:FactSheet ;
+
+    sh:property [
+        sh:path     lmm:factSheetStatus ;
+        sh:maxCount 1 ;
+        sh:in       ( lmm:StatusActive lmm:StatusArchived lmm:StatusBroken ) ;
+        sh:message  '''A fact sheet has at most one status, drawn from lmm:StatusActive,
+lmm:StatusArchived and lmm:StatusBroken. A string literal such as "ACTIVE" does not satisfy this —
+the value is the individual whose skos:notation is that token.'''@en ;
+    ] ;
+
+    sh:property [
+        sh:path         lmm:completion ;
+        sh:maxCount     1 ;
+        sh:datatype     xsd:decimal ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 1 ;
+        sh:message      '''Completion is a single xsd:decimal ratio between 0 and 1. A percentage
+(80) fails the range check; a double fails the datatype check.'''@en ;
+    ] ;
+
+    sh:property [
+        sh:path     ap:atLifecycleStage ;
+        sh:maxCount 1 ;
+        sh:in       ( ap:Plan ap:PhaseIn ap:Active ap:PhaseOut ap:Retired ) ;
+        sh:message  '''A fact sheet is in at most one lifecycle stage at a time, drawn from the five
+stages of ap:ApplicationLifecycle. LeanIX fixes this set — plan, phaseIn, active, phaseOut,
+endOfLife — so an unrecognised stage means the phase token was not resolved.'''@en ;
+    ] ;
+.
+
+:LeanIXLifecyclePhaseShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''A dated phase is only worth emitting if both halves are there — the stage and
+the date it began. Either one alone says nothing a roadmap can use.'''@en ;
+    sh:targetClass lmm:LifecyclePhase ;
+
+    sh:property [
+        sh:path     ap:atLifecycleStage ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in       ( ap:Plan ap:PhaseIn ap:Active ap:PhaseOut ap:Retired ) ;
+        sh:message  "A lifecycle phase names exactly one stage, drawn from the five stages of ap:ApplicationLifecycle."@en ;
+    ] ;
+
+    sh:property [
+        sh:path     lmm:phaseStart ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:message  '''A lifecycle phase carries exactly one start date, as xsd:date. A phase with no
+date is the fact sheet's current stage, which belongs on the fact sheet as ap:atLifecycleStage rather
+than as a phase node.'''@en ;
+    ] ;
+.
+
+:LeanIXSubscriptionShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''One subscription is one person's responsibility of one type. Roles are
+many-valued and workspace-defined, so they are unconstrained beyond datatype.'''@en ;
+    sh:targetClass lmm:Subscription ;
+
+    sh:property [
+        sh:path     lmm:subscriptionType ;
+        sh:maxCount 1 ;
+        sh:in       ( lmm:Responsible lmm:Accountable lmm:Observer ) ;
+        sh:message  '''A subscription has at most one type, drawn from lmm:Responsible,
+lmm:Accountable and lmm:Observer.'''@en ;
+    ] ;
+
+    sh:property [
+        sh:path     lmm:subscriber ;
+        sh:maxCount 1 ;
+        sh:class    arch:Stakeholder ;
+        sh:message  "A subscription belongs to at most one subscriber, and a subscriber is an arch:Stakeholder."@en ;
+    ] ;
+
+    sh:property [
+        sh:path     lmm:subscriberEmail ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message  "A subscription carries at most one subscriber email, as a plain xsd:string."@en ;
+    ] ;
+
+    sh:property [
+        sh:path     lmm:subscriptionRole ;
+        sh:datatype xsd:string ;
+        sh:message  "Subscription roles are plain xsd:string names; a subscription may cover several."@en ;
+    ] ;
+
+    sh:or (
+        [ sh:property [ sh:path lmm:subscriber     ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path lmm:subscriberEmail ; sh:minCount 1 ] ]
+    ) ;
+    sh:message     '''A subscription identifies its subscriber somehow — as an arch:Stakeholder where
+the converter has a stable identity to mint one from, otherwise by email. A subscription naming
+neither records a responsibility belonging to nobody.'''@en ;
+.
+
+:LeanIXTagShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''A tag node exists to keep a name and its group together, so the name is
+required. The group is not: LeanIX permits ungrouped tags.'''@en ;
+    sh:targetClass lmm:Tag ;
+
+    sh:property [
+        sh:path     lmm:tagName ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message  "A tag carries exactly one name, as a plain xsd:string."@en ;
+    ] ;
+
+    sh:property [
+        sh:path     lmm:tagGroup ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message  "A tag belongs to at most one tag group, named as a plain xsd:string."@en ;
+    ] ;
+.
+
+#################################################################
+# Relationship endpoints — the pairs SAP's meta model draws
+#
+# Each relationship type admits the pairs of fact sheet types SAP LeanIX Meta
+# Model v4 draws it between (leanIX-v4-onto.ttl). arch:domainIncludes and
+# arch:rangeIncludes there list each end on its own, which admits more pairs
+# than the meta model draws — a supports between two platforms — and are
+# advisory by construction (DD-8). So the pairs are a shape per relationship
+# type: one permitted (source, targets) row per source type, in the pattern of
+# the ArchiMate metamodels' relationship shapes, which a modelling tool also
+# reads to offer each relationship only where it is permitted.
+#
+# What is deliberately NOT repeated: cardinality. core-shapes
+# QualifiedRelationshipShape already requires exactly one arch:source and one
+# arch:target on every arch:QualifiedRelationship.
+#
+# On a scope-limited pull, where an edge is exported but its far end is not, the
+# target is an IRI with no rdf:type: core reports the missing end, and the shape
+# here names the relationship whose pair failed — what an operator needs to widen
+# the pull.
+#
+# Subtypes pass: sh:class resolves the rdfs:subClassOf closure from the shapes
+# graph, so a lmm:BusinessApplication satisfies sh:class lmm:Application and a
+# lmm:Process sh:class lmm:BusinessContext.
+#################################################################
+
+:SupportsEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Supports ;
+    sh:message     "A lmm:Supports (Supports) runs only between the fact sheet types SAP's meta model draws it between: Application → Business Capability, Business Context; Platform → Objective; Initiative → Objective; Business Capability → Platform; Data Product → Initiative, Business Capability. Also Provider → Initiative; optional Microservice → Business Application, Extension."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Application ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:BusinessCapability ] [ sh:class lmm:BusinessContext ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Platform ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Objective ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Initiative ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Objective ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:BusinessCapability ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Platform ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:DataProduct ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Initiative ] [ sh:class lmm:BusinessCapability ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Provider ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Initiative ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Microservice ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:BusinessApplication ] [ sh:class lmm:Extension ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:UsesEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Uses ;
+    sh:message     "A lmm:Uses (Uses) runs only between the fact sheet types SAP's meta model draws it between: Application → IT Component; Organization → Application, Data Product; Interface → IT Component; System → IT Component."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Application ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:ITComponent ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Organization ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Application ] [ sh:class lmm:DataProduct ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Interface ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:ITComponent ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:System ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:ITComponent ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:OwnsEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Owns ;
+    sh:message     "A lmm:Owns (Owns) runs only between the fact sheet types SAP's meta model draws it between: Organization → Objective, Initiative, Business Context, IT Component. Also optional Team → Microservice."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Organization ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Objective ] [ sh:class lmm:Initiative ] [ sh:class lmm:BusinessContext ] [ sh:class lmm:ITComponent ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Team ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Microservice ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:AffectsEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Affects ;
+    sh:message     "A lmm:Affects (Affects) runs only between the fact sheet types SAP's meta model draws it between: Initiative → Platform, Application, Business Context, Data Object, Interface, IT Component, Tech Category, System."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Initiative ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Platform ] [ sh:class lmm:Application ] [ sh:class lmm:BusinessContext ] [ sh:class lmm:DataObject ] [ sh:class lmm:Interface ] [ sh:class lmm:ITComponent ] [ sh:class lmm:TechCategory ] [ sh:class lmm:System ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:ImprovesEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Improves ;
+    sh:message     "A lmm:Improves (Improves) runs only between the fact sheet types SAP's meta model draws it between: Objective → Business Capability, ESG Capability; Initiative → Business Capability."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Objective ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:BusinessCapability ] [ sh:class lmm:ESGCapability ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Initiative ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:BusinessCapability ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:ProvidesEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Provides ;
+    sh:message     "A lmm:Provides (Provides) runs only between the fact sheet types SAP's meta model draws it between: Application → Interface; Provider → Contract."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Application ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Interface ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Provider ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Contract ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:ConsumesEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Consumes ;
+    sh:message     "A lmm:Consumes (Consumes) runs only between the fact sheet types SAP's meta model draws it between: Application → Interface, Data Product."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Application ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Interface ] [ sh:class lmm:DataProduct ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:CrudEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Crud ;
+    sh:message     "A lmm:Crud (CRUD) runs only between the fact sheet types SAP's meta model draws it between: Application → Data Object."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Application ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:DataObject ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:TransfersEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Transfers ;
+    sh:message     "A lmm:Transfers (Transfers) runs only between the fact sheet types SAP's meta model draws it between: Interface → Data Object."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Interface ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:DataObject ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:OffersEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Offers ;
+    sh:message     "A lmm:Offers (Offers) runs only between the fact sheet types SAP's meta model draws it between: Provider → IT Component."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Provider ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:ITComponent ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:BelongsToEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:BelongsTo ;
+    sh:message     "A lmm:BelongsTo (Belongs To) runs only between the fact sheet types SAP's meta model draws it between: IT Component → Tech Category."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:ITComponent ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:TechCategory ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:ImplementsEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Implements ;
+    sh:message     "A lmm:Implements (Implements) runs only between the fact sheet types SAP's meta model draws it between: IT Component → Platform."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:ITComponent ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Platform ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:RunsEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Runs ;
+    sh:message     "A lmm:Runs (Runs) runs only between the fact sheet types SAP's meta model draws it between: Platform → Application."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Platform ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Application ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:RunsOnEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:RunsOn ;
+    sh:message     "A lmm:RunsOn (Runs On) runs only between the fact sheet types SAP's meta model draws it between: Application → System. Also optional AI Agent → Business Application."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Application ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:System ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:AIAgent ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:BusinessApplication ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:IsAssociatedWithEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:IsAssociatedWith ;
+    sh:message     "A lmm:IsAssociatedWith (Is Associated With) runs only between the fact sheet types SAP's meta model draws it between: Business Context → Business Capability; Business Capability → ESG Capability."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:BusinessContext ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:BusinessCapability ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:BusinessCapability ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:ESGCapability ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:ProducesEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Produces ;
+    sh:message     "A lmm:Produces (Produces) runs only between the fact sheet types SAP's meta model draws it between: Application → Data Product."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Application ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:DataProduct ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:RealizesEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Realizes ;
+    sh:message     "A lmm:Realizes (Realizes) runs only between the fact sheet types SAP's meta model draws it between: Data Product → Data Object."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:DataProduct ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:DataObject ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:DerivesFromEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:DerivesFrom ;
+    sh:message     "A lmm:DerivesFrom (Derives From) runs only between the fact sheet types SAP's meta model draws it between: Data Product → Data Product."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:DataProduct ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:DataProduct ] ) ] ]
+        ) ]
+    ) ;
+.
+
+:IsAttachedToEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:IsAttachedTo ;
+    sh:message     "A lmm:IsAttachedTo (Is Attached To) runs only between the fact sheet types SAP's meta model draws it between: Contract → Application."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Contract ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Application ] ) ] ]
+        ) ]
+    ) ;
+.
+
+
+:PowersEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:Powers ;
+    sh:message     "A lmm:Powers runs from an Extension to a Business Application."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Extension ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:BusinessApplication ] ) ] ]
+        ) ]
+    ) ;
+.
+
+
+#################################################################
+# Fact sheet hierarchy — parent and child of one fact sheet type
+#
+# A LeanIX hierarchy does not cross types: a business capability's
+# children are business capabilities, an application's are
+# applications. lmm:parentOf states only FactSheet → FactSheet, which
+# OWL cannot narrow to "the same type", so the rule is a shape: one
+# permitted (source, target) pair per fact sheet type, in the pattern
+# the relationship shapes of the ArchiMate metamodels use — which a
+# modelling tool also reads to offer the relationship only between two
+# fact sheets of one type. A subtype is of its type: a Project
+# may be the child of a Program, both Initiatives.
+#################################################################
+
+:FactSheetHierarchyEndpointsShape
+    a              sh:NodeShape ;
+    sh:targetClass lmm:FactSheetHierarchy ;
+    sh:message     "A lmm:FactSheetHierarchy must run from a parent fact sheet to a child of the same fact sheet type. Includes optional Data Product and Contract fact sheets."@en ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Objective ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Objective ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Initiative ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Initiative ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Platform ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Platform ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:BusinessCapability ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:BusinessCapability ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Organization ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Organization ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:BusinessContext ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:BusinessContext ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Application ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Application ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Interface ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Interface ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:DataObject ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:DataObject ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:ITComponent ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:ITComponent ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:TechCategory ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:TechCategory ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Provider ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Provider ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:System ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:System ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:DataProduct ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:DataProduct ] ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class lmm:Contract ] ]
+            [ sh:property [ sh:path arch:target ; sh:or ( [ sh:class lmm:Contract ] ) ] ]
+        ) ]
+    ) ;
+.

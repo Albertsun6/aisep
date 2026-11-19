@@ -1,0 +1,72 @@
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix :        <https://meta.linked.archi/archimate3/reference-models#> .
+
+#################################################################
+# Reference Models (SKOS Concept Scheme)
+#
+# Catalog of reusable architecture patterns and industry reference
+# architectures relevant to ArchiMate modeling.
+#################################################################
+
+:ArchiMateReferenceModels
+    a                skos:ConceptScheme ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate3/reference-models#" ;
+    vann:preferredNamespacePrefix "amrm" ;
+    dcterms:title                 "Linked.Archi ArchiMate 3.2 Reference Models"@en ;
+    owl:versionInfo               "3.2"@en ;
+    skos:prefLabel   "ArchiMate Reference Models"@en ;
+    dcterms:description  '''Catalog of reference architectures, patterns, and building blocks
+that can be used as starting points for ArchiMate models.'''@en ;
+    dcterms:description   "Reference model definitions for ArchiMate 3.2 architecture patterns."@en ;
+    dcterms:creator  "Kalin Maldzhanski"^^xsd:string ;
+    skos:hasTopConcept :ReferencePatterns, :IndustryReferenceModels ;
+.
+
+## Architecture Patterns
+
+:ReferencePatterns
+    a skos:Concept ; skos:topConceptOf :ArchiMateReferenceModels ;
+    skos:prefLabel "Architecture Patterns"@en ;
+    skos:definition "Reusable architecture patterns expressed in ArchiMate."@en ;
+    skos:inScheme :ArchiMateReferenceModels ;
+.
+:LayeredPattern       a skos:Concept ; skos:prefLabel "Layered Architecture"@en ;
+    skos:definition "Separation of concerns through horizontal layers (presentation, business logic, data)."@en ;
+    skos:broader :ReferencePatterns ; skos:inScheme :ArchiMateReferenceModels .
+:MicroservicesPattern a skos:Concept ; skos:prefLabel "Microservices Architecture"@en ;
+    skos:definition "Decomposition into independently deployable services with well-defined interfaces."@en ;
+    skos:broader :ReferencePatterns ; skos:inScheme :ArchiMateReferenceModels .
+:EventDrivenPattern   a skos:Concept ; skos:prefLabel "Event-Driven Architecture"@en ;
+    skos:definition "Asynchronous communication through events, enabling loose coupling."@en ;
+    skos:broader :ReferencePatterns ; skos:inScheme :ArchiMateReferenceModels .
+:SOAPattern           a skos:Concept ; skos:prefLabel "Service-Oriented Architecture"@en ;
+    skos:definition "Business capabilities exposed as reusable services with standardized interfaces."@en ;
+    skos:broader :ReferencePatterns ; skos:inScheme :ArchiMateReferenceModels .
+
+## Industry Reference Models
+
+:IndustryReferenceModels
+    a skos:Concept ; skos:topConceptOf :ArchiMateReferenceModels ;
+    skos:prefLabel "Industry Reference Models"@en ;
+    skos:definition "Industry-standard reference architectures and frameworks."@en ;
+    skos:inScheme :ArchiMateReferenceModels ;
+.
+:BIAN    a skos:Concept ; skos:prefLabel "BIAN (Banking Industry Architecture Network)"@en ;
+    skos:definition "Service landscape for the banking industry."@en ;
+    rdfs:seeAlso <https://bian.org/> ;
+    skos:broader :IndustryReferenceModels ; skos:inScheme :ArchiMateReferenceModels .
+:TMForum a skos:Concept ; skos:prefLabel "TM Forum Frameworx"@en ;
+    skos:definition "Reference architecture for telecommunications."@en ;
+    rdfs:seeAlso <https://www.tmforum.org/> ;
+    skos:broader :IndustryReferenceModels ; skos:inScheme :ArchiMateReferenceModels .
+:ACORD   a skos:Concept ; skos:prefLabel "ACORD Framework"@en ;
+    skos:definition "Data standards and architecture for insurance industry."@en ;
+    rdfs:seeAlso <https://www.acord.org/> ;
+    skos:broader :IndustryReferenceModels ; skos:inScheme :ArchiMateReferenceModels .

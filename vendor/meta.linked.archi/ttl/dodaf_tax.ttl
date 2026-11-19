@@ -1,0 +1,97 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix dodaf:   <https://meta.linked.archi/dodaf/onto#> .
+@prefix :        <https://meta.linked.archi/dodaf/tax#> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/dodaf/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "DoDAF Concept Scheme"@en ;
+    dcterms:description  "Classification of DoDAF 2.02 entities by viewpoint."@en ;
+    skos:hasTopConcept :ByViewpoint ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/dodaf/tax#" ;
+    vann:preferredNamespacePrefix "dodaftax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi DoDAF Taxonomy"@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "2.02"@en ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/> ;
+    prov:wasDerivedFrom <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/> .
+
+
+
+#################################################################
+# By Viewpoint
+#################################################################
+
+:ByViewpoint
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/dodaf/tax#> ;
+    skos:prefLabel       "Entity by Viewpoint"@en ;
+    skos:inScheme        <https://meta.linked.archi/dodaf/tax#> ;
+.
+
+:AllViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "All Viewpoint (AV)"@en ;
+    skos:definition "Overarching aspects of architecture context that relate to all viewpoints."@en ;
+    skos:inScheme <https://meta.linked.archi/dodaf/tax#> .
+
+:CapabilityViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Capability Viewpoint (CV)"@en ;
+    skos:definition "Capability requirements, delivery timing, and deployed capability."@en ;
+    skos:inScheme <https://meta.linked.archi/dodaf/tax#> ;
+    rdfs:seeAlso dodaf:Capability, dodaf:CapabilityIncrement, dodaf:DesiredEffect .
+
+:DataInformationViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Data and Information Viewpoint (DIV)"@en ;
+    skos:definition "Data relationships and alignment structures — conceptual, logical, and physical data models."@en ;
+    skos:inScheme <https://meta.linked.archi/dodaf/tax#> ;
+    rdfs:seeAlso dodaf:ConceptualDataEntity, dodaf:LogicalDataEntity, dodaf:PhysicalDataEntity .
+
+:OperationalViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Operational Viewpoint (OV)"@en ;
+    skos:definition "Operational scenarios, activities, and requirements that support capabilities."@en ;
+    skos:inScheme <https://meta.linked.archi/dodaf/tax#> ;
+    rdfs:seeAlso dodaf:OperationalActivity, dodaf:OperationalNode, dodaf:ResourceFlow,
+                 dodaf:Performer, dodaf:OperationalRule, dodaf:Condition, dodaf:Location .
+
+:ProjectViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Project Viewpoint (PV)"@en ;
+    skos:definition "Relationships between operational/capability requirements and projects being implemented."@en ;
+    skos:inScheme <https://meta.linked.archi/dodaf/tax#> ;
+    rdfs:seeAlso dodaf:Project, dodaf:Milestone, dodaf:Organization .
+
+:ServicesViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Services Viewpoint (SvcV)"@en ;
+    skos:definition "Design for solutions articulating performers, activities, services, and their exchanges."@en ;
+    skos:inScheme <https://meta.linked.archi/dodaf/tax#> ;
+    rdfs:seeAlso dodaf:Service, dodaf:ServiceFunction, dodaf:ServiceInterface .
+
+:StandardsViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Standards Viewpoint (StdV)"@en ;
+    skos:definition "Applicable operational, business, technical, and industry standards."@en ;
+    skos:inScheme <https://meta.linked.archi/dodaf/tax#> ;
+    rdfs:seeAlso dodaf:Standard, dodaf:StandardsForecast .
+
+:SystemsViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Systems Viewpoint (SV)"@en ;
+    skos:definition "Legacy system descriptions — systems, their composition, interconnectivity, and context."@en ;
+    skos:inScheme <https://meta.linked.archi/dodaf/tax#> ;
+    rdfs:seeAlso dodaf:System, dodaf:SystemFunction, dodaf:SystemInterface, dodaf:Measure .

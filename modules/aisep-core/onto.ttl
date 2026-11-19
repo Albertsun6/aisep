@@ -1,0 +1,144 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix bpmn:  <https://meta.linked.archi/bpmn/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+
+# AISEP core vocabulary (spec §4, §5, §6.6, §6.7, §9). License: CC-BY-4.0.
+# Only aisep: terms are defined here; upstream terms are referenced, never redefined.
+
+<https://aisep.example/ont/aisep> a owl:Ontology ;
+    rdfs:label "AISEP core vocabulary"@en ;
+    owl:versionInfo "0.2.0" .
+
+########## Module manifest terms (CONTRACT.md "Module layout") ##########
+
+aisep:ModuleKind a skos:ConceptScheme ;
+    skos:prefLabel "模块种类"@zh , "Module kind"@en .
+aisep:Language  a skos:Concept ; skos:inScheme aisep:ModuleKind ; skos:prefLabel "语言"@zh , "Language"@en ;
+    skos:definition "Contributes instantiable element and relationship types (e.g. BPMN, DDD)."@en .
+aisep:Extension a skos:Concept ; skos:inScheme aisep:ModuleKind ; skos:prefLabel "扩展"@zh , "Extension"@en ;
+    skos:definition "Contributes cross-cutting properties or nodes attachable to any element."@en .
+aisep:Framework a skos:Concept ; skos:inScheme aisep:ModuleKind ; skos:prefLabel "框架"@zh , "Framework"@en ;
+    skos:definition "Contributes processes and deliverables (e.g. a tailored ADM)."@en .
+aisep:Alignment a skos:Concept ; skos:inScheme aisep:ModuleKind ; skos:prefLabel "对齐"@zh , "Alignment"@en ;
+    skos:definition "Contains only subClassOf/subPropertyOf axioms hooking a Language onto the hub."@en .
+
+aisep:moduleKind a owl:ObjectProperty ; rdfs:domain arch:Metamodel ; rdfs:range skos:Concept ;
+    skos:prefLabel "module kind"@en .
+aisep:loads a owl:DatatypeProperty ; rdfs:domain arch:Metamodel ; rdfs:range xsd:string ;
+    skos:definition "Root- or module-relative path of an RDF file this module needs, in load order."@en .
+aisep:shapesFile a owl:DatatypeProperty ; rdfs:domain arch:Metamodel ; rdfs:range xsd:string ;
+    skos:definition "Path of a SHACL file run in L3 for this module."@en .
+aisep:alignmentFile a owl:DatatypeProperty ; rdfs:domain arch:Metamodel ; rdfs:range xsd:string ;
+    skos:definition "Path of the file holding this module's subClassOf/subPropertyOf axioms to the hub."@en .
+aisep:inheritsHubRules a owl:DatatypeProperty ; rdfs:domain arch:Metamodel ; rdfs:range xsd:boolean ;
+    skos:definition "If true, instances of this Language are also constrained by the ArchiMate 4.0 relationship tables (spec §10.2)."@en .
+aisep:ownsNamespace a owl:DatatypeProperty ; rdfs:domain arch:Metamodel ; rdfs:range xsd:string ;
+    skos:definition "IRI prefix whose classes belong to this module (derives aisep:notation, scopes validation)."@en .
+aisep:impactFile a owl:DatatypeProperty ; rdfs:domain arch:Metamodel ; rdfs:range xsd:string ;
+    skos:definition "Path of a file of aisep:dependency overrides (spec §9). Only files declared here take effect (spec §5)."@en .
+
+########## Notation levels (spec §7.2: refines goes code -> design -> hub) ##########
+
+aisep:NotationLevel a skos:ConceptScheme ;
+    skos:prefLabel "记法层级"@zh ; skos:altLabel "Notation level"@en .
+aisep:LevelCode   a skos:Concept ; skos:inScheme aisep:NotationLevel ; skos:prefLabel "代码级"@zh ; skos:altLabel "code"@en ;
+    skos:notation "0" ; skos:definition "Finest level (UML)."@en .
+aisep:LevelDesign a skos:Concept ; skos:inScheme aisep:NotationLevel ; skos:prefLabel "设计级"@zh ; skos:altLabel "design"@en ;
+    skos:notation "1" ; skos:definition "Design notations (DDD, BPMN)."@en .
+aisep:LevelHub    a skos:Concept ; skos:inScheme aisep:NotationLevel ; skos:prefLabel "枢纽级"@zh ; skos:altLabel "hub"@en ;
+    skos:notation "2" ; skos:definition "The hub notation (ArchiMate 4.0)."@en .
+aisep:notationLevel a owl:ObjectProperty ; rdfs:domain arch:Metamodel ; rdfs:range skos:Concept ;
+    skos:definition "Level of a notation module. arch:Refines must go from a strictly lower to a higher level; refines within one notation is forbidden (spec §7.2). Extension modules have no level."@en .
+
+########## Derived-only shortcut (spec §6.4) ##########
+
+aisep:assertedShortcut a owl:AnnotationProperty ; rdfs:range xsd:boolean ;
+    skos:definition "On a qualified relationship class: true = asserting it where the ArchiMate 4.0 tables permit it only as a derivation is an accepted modelling convention (no L2 'derived-only' Warning; impact counts it). Inherited by subclasses."@en .
+
+########## Derived notation (spec §6.7) ##########
+
+aisep:notation a owl:ObjectProperty ; rdfs:domain arch:ModelConcept ; rdfs:range arch:Metamodel ;
+    skos:definition "Derived by `aisep build` from the namespace of the element's type; never authored."@en .
+
+########## Label exemption (spec §4: junction/gateway may be unlabeled) ##########
+
+aisep:labelOptional a owl:AnnotationProperty ; rdfs:range xsd:boolean ;
+    skos:definition "On a class: its instances (and instances of its subclasses) need no skos:prefLabel."@en .
+am4:AndJunction aisep:labelOptional true .
+am4:OrJunction  aisep:labelOptional true .
+bpmn:Gateway    aisep:labelOptional true .
+
+########## Governance (spec §6.6, ADR-009): approval records; arch:approvalState is DERIVED by `aisep build` ##########
+# arch:Proposed and arch:Approved exist upstream; the two missing states are AISEP terms.
+# Decision values are distinct from the approval states (aisep:DecisionApproved vs arch:Approved).
+
+aisep:ApprovalRecord a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "批准记录"@zh ; skos:altLabel "Approval record"@en ;
+    skos:definition "The only authored governance fact: a decision taken at a gate about one or more elements, models or ADRs. arch:approvalState is derived from these (latest by prov:generatedAtTime)."@en .
+aisep:Gates a skos:ConceptScheme ; skos:prefLabel "关口"@zh ; skos:altLabel "Gates"@en .
+aisep:GateRequirements a skos:Concept ; skos:inScheme aisep:Gates ; skos:prefLabel "需求确认"@zh ; skos:altLabel "Requirements confirmation"@en .
+aisep:GateArchitecture a skos:Concept ; skos:inScheme aisep:Gates ; skos:prefLabel "架构决策"@zh ; skos:altLabel "Architecture decision"@en .
+aisep:GateDesign       a skos:Concept ; skos:inScheme aisep:Gates ; skos:prefLabel "设计评审"@zh ; skos:altLabel "Design review"@en .
+aisep:GateMerge        a skos:Concept ; skos:inScheme aisep:Gates ; skos:prefLabel "代码合并"@zh ; skos:altLabel "Code merge"@en .
+aisep:GateRelease      a skos:Concept ; skos:inScheme aisep:Gates ; skos:prefLabel "发布上线"@zh ; skos:altLabel "Release"@en .
+aisep:Decisions a skos:ConceptScheme ; skos:prefLabel "批准结论"@zh ; skos:altLabel "Approval decisions"@en .
+aisep:DecisionApproved a skos:Concept ; skos:inScheme aisep:Decisions ; skos:prefLabel "批准"@zh ; skos:altLabel "Approved"@en .
+aisep:DecisionRejected a skos:Concept ; skos:inScheme aisep:Decisions ; skos:prefLabel "否决"@zh ; skos:altLabel "Rejected"@en .
+aisep:gate a owl:ObjectProperty ; rdfs:domain aisep:ApprovalRecord ; rdfs:range skos:Concept ;
+    skos:definition "The gate (aisep:Gates) at which the decision was taken."@en .
+aisep:decision a owl:ObjectProperty ; rdfs:domain aisep:ApprovalRecord ; rdfs:range skos:Concept ;
+    skos:definition "aisep:DecisionApproved or aisep:DecisionRejected."@en .
+aisep:approvedBy a owl:ObjectProperty ; rdfs:domain aisep:ApprovalRecord ;
+    skos:definition "The person deciding (arch:Stakeholder or prov:Agent)."@en .
+aisep:approves a owl:ObjectProperty ; rdfs:domain aisep:ApprovalRecord ;
+    skos:definition "An element, model or ADR the decision is about."@en .
+aisep:evidence a owl:DatatypeProperty ; rdfs:domain aisep:ApprovalRecord ;
+    skos:definition "REQUIRED, exactly one string: commit or hash of the validation report the decision was based on (which version was approved)."@en .
+aisep:activity a owl:ObjectProperty ; rdfs:domain aisep:ApprovalRecord ; rdfs:range aisep:AgentActivity ;
+    skos:definition "Optional, at most one: the completed AI activity this decision is about (spec v0.4 §6.6, ADR-013). If aisep:evidence is a 40-hex commit it must equal the activity's aisep:headCommit."@en .
+
+########## Completed AI activity (spec v0.4 §6.7, ADR-013; draft, finalised with the MCP interface design) ##########
+# Written only when a task passes a gate (governance.record_approval), linked from the approval record by
+# aisep:activity. Runtime state is NOT stored; the elements an activity changed are derived by model.diff.
+# prov:Activity / prov:Agent / prov:wasAssociatedWith / prov:startedAtTime / prov:endedAtTime are PROV-O, used as-is
+# and not redeclared here (prov:Activity is only referenced as a superclass: it owns no notation, so
+# aisep:AgentActivity is notation-neutral and concrete exactly like aisep:ApprovalRecord; the three PROV predicates
+# are authoring-profile predicates, tools/aisep.py PREDICATE_ALLOW).
+
+aisep:AgentActivity a owl:Class ; rdfs:subClassOf arch:Element , prov:Activity ;
+    skos:prefLabel "AI 活动"@zh ; skos:altLabel "Agent activity"@en ;
+    skos:definition "One COMPLETED AI activity: exactly one prov:wasAssociatedWith (the agent), prov:startedAtTime <= prov:endedAtTime, aisep:sessionRef, aisep:branch, aisep:baseCommit (merge-base with the model main branch) and aisep:headCommit. The changed elements are not stored (model.diff(baseCommit, headCommit))."@en .
+aisep:sessionRef a owl:DatatypeProperty ; rdfs:domain aisep:AgentActivity ; rdfs:range xsd:string ;
+    skos:definition "Exactly one non-empty string: the external orchestrator's session id (opaque to the metamodel; not bound to a specific orchestrator)."@en .
+aisep:branch a owl:DatatypeProperty ; rdfs:domain aisep:AgentActivity ; rdfs:range xsd:string ;
+    skos:definition "Exactly one non-empty string: the git branch name of the activity."@en .
+aisep:baseCommit a owl:DatatypeProperty ; rdfs:domain aisep:AgentActivity ; rdfs:range xsd:string ;
+    skos:definition "Exactly one 40-hex git commit: the merge-base of the branch with the model main branch (not the main branch tip)."@en .
+aisep:headCommit a owl:DatatypeProperty ; rdfs:domain aisep:AgentActivity ; rdfs:range xsd:string ;
+    skos:definition "Exactly one 40-hex git commit: the branch commit the activity ended at."@en .
+
+aisep:Rejected   a arch:ApprovalState , owl:NamedIndividual ; skos:prefLabel "已否决"@zh , "Rejected"@en .
+aisep:Superseded a arch:ApprovalState , owl:NamedIndividual ; skos:prefLabel "已取代"@zh , "Superseded"@en .
+
+########## Impact vocabulary (spec §9) ##########
+
+aisep:DependencyDirection a skos:ConceptScheme ;
+    skos:prefLabel "依赖方向"@zh , "Dependency direction"@en .
+aisep:Forward  a skos:Concept ; skos:inScheme aisep:DependencyDirection ; skos:prefLabel "forward"@en ;
+    skos:definition "Target depends on source."@en .
+aisep:Backward a skos:Concept ; skos:inScheme aisep:DependencyDirection ; skos:prefLabel "backward"@en ;
+    skos:definition "Source depends on target."@en .
+aisep:Both     a skos:Concept ; skos:inScheme aisep:DependencyDirection ; skos:prefLabel "both"@en ;
+    skos:definition "Source and target depend on each other."@en .
+aisep:None     a skos:Concept ; skos:inScheme aisep:DependencyDirection ; skos:prefLabel "none"@en ;
+    skos:definition "No dependency; listed only at hop 1 as 'related'."@en .
+
+aisep:dependency a owl:AnnotationProperty ;
+    skos:definition "On a qualified relationship CLASS: its dependency direction. Inherited along rdfs:subClassOf unless overridden."@en .

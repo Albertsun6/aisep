@@ -1,0 +1,809 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix bs:      <https://meta.linked.archi/backstage/onto#> .
+@prefix :        <https://meta.linked.archi/examples/payflow/> .
+
+#################################################################
+# Model Declaration
+#################################################################
+
+:PayFlowModel
+    a                          arch:Model ;
+    skos:prefLabel             "PayFlow — Backstage Catalog Model"@en ;
+    dcterms:title              "PayFlow — Backstage Catalog Model"@en ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/examples/payflow/" ;
+    vann:preferredNamespacePrefix "payflow" ;
+    arch:modelConformsToMetamodel <https://meta.linked.archi/backstage/metamodel#BackstageCatalog> ;
+    dcterms:created            "2025-06-27"^^xsd:date ;
+    dcterms:creator            "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:description        "Backstage software catalog model for PayFlow — a fintech platform providing payment processing, merchant onboarding, and financial reporting."@en ;
+.
+
+
+#################################################################
+# Organisation-specific reference data (bs:ResourceType individuals)
+#
+# bs:ResourceType is open (DD-23, no owl:oneOf): the documented
+# examples (database, s3-bucket, kubernetes-cluster) do not cover
+# a message broker or an in-memory cache, so PayFlow mints its own,
+# exactly as backstage-shapes.ttl's ResourceTypeShape comment says
+# an adopter should.
+#################################################################
+
+:MessageBrokerResourceType
+    a              bs:ResourceType ;
+    skos:prefLabel "Message Broker"@en ;
+    skos:notation  "message-broker" ;
+.
+
+:CacheResourceType
+    a              bs:ResourceType ;
+    skos:prefLabel "Cache"@en ;
+    skos:notation  "cache" ;
+.
+
+
+#################################################################
+# Domains
+#################################################################
+
+:PaymentsDomain
+    a              bs:Domain ;
+    bs:name        "payments" ;
+    skos:prefLabel "Payments"@en ;
+    skos:definition "Domain covering payment processing, fraud detection, and payouts."@en ;
+.
+
+:MerchantDomain
+    a              bs:Domain ;
+    bs:name        "merchant-services" ;
+    skos:prefLabel "Merchant Services"@en ;
+    skos:definition "Domain covering merchant onboarding, reporting, and self-service."@en ;
+.
+
+:PlatformDomain
+    a              bs:Domain ;
+    bs:name        "platform" ;
+    skos:prefLabel "Platform"@en ;
+    skos:definition "Domain covering shared infrastructure, observability, and developer tooling."@en ;
+.
+
+
+#################################################################
+# Groups (Teams)
+#################################################################
+
+:PaymentsSquad
+    a              bs:Group ;
+    bs:name        "payments-squad" ;
+    bs:groupType   bs:TeamGroupType ;
+    skos:prefLabel "Payments Squad"@en ;
+    skos:definition "Squad responsible for payment processing, fraud, and payout services."@en ;
+.
+
+:MerchantSquad
+    a              bs:Group ;
+    bs:name        "merchant-squad" ;
+    bs:groupType   bs:TeamGroupType ;
+    skos:prefLabel "Merchant Squad"@en ;
+    skos:definition "Squad responsible for merchant onboarding and reporting."@en ;
+.
+
+:PlatformTeam
+    a              bs:Group ;
+    bs:name        "platform-team" ;
+    bs:groupType   bs:TeamGroupType ;
+    skos:prefLabel "Platform Team"@en ;
+    skos:definition "Team providing shared infrastructure and developer experience tooling."@en ;
+.
+
+:SRETeam
+    a              bs:Group ;
+    bs:name        "sre-team" ;
+    bs:groupType   bs:TeamGroupType ;
+    skos:prefLabel "SRE Team"@en ;
+    skos:definition "Site Reliability Engineering team managing production reliability."@en ;
+.
+
+# Organisational hierarchy (spec.parent, canonical direction child → parent — see DD on
+# GroupParentage): SRE sits inside the Platform Team org line.
+:SRETeam bs:childOf :PlatformTeam .
+:SRETeam bs:qualifiedGroupParentage :qr-SRETeam-childOf-PlatformTeam .
+:qr-SRETeam-childOf-PlatformTeam a bs:GroupParentage ;
+    arch:source :SRETeam ; arch:target :PlatformTeam ;
+    rdf:reifies <<( :SRETeam bs:childOf :PlatformTeam )>> .
+
+
+#################################################################
+# Users
+#################################################################
+
+:AliceEngineer
+    a              bs:User ;
+    bs:name        "alice.chen" ;
+    skos:prefLabel "alice.chen"@en ;
+    skos:definition "Senior backend engineer in the Payments Squad specialising in transaction processing and fraud detection."@en ;
+.
+
+:BobPlatform
+    a              bs:User ;
+    bs:name        "bob.eriksson" ;
+    skos:prefLabel "bob.eriksson"@en ;
+    skos:definition "Platform engineer in the Platform Team responsible for shared infrastructure and developer tooling."@en ;
+.
+
+:AliceEngineer bs:memberOf :PaymentsSquad .
+:AliceEngineer bs:qualifiedGroupMembership :qr-AliceEngineer-memberOf-PaymentsSquad .
+:qr-AliceEngineer-memberOf-PaymentsSquad a bs:GroupMembership ;
+    arch:source :AliceEngineer ; arch:target :PaymentsSquad ;
+    rdf:reifies <<( :AliceEngineer bs:memberOf :PaymentsSquad )>> .
+:BobPlatform bs:memberOf :PlatformTeam .
+:BobPlatform bs:qualifiedGroupMembership :qr-BobPlatform-memberOf-PlatformTeam .
+:qr-BobPlatform-memberOf-PlatformTeam a bs:GroupMembership ;
+    arch:source :BobPlatform ; arch:target :PlatformTeam ;
+    rdf:reifies <<( :BobPlatform bs:memberOf :PlatformTeam )>> .
+
+
+#################################################################
+# Systems
+#################################################################
+
+:PaymentGateway
+    a              bs:System ;
+    bs:name        "payment-gateway" ;
+    skos:prefLabel "Payment Gateway"@en ;
+    skos:definition "System handling payment processing, fraud detection, and merchant payouts."@en ;
+.
+
+:MerchantPortal
+    a              bs:System ;
+    bs:name        "merchant-portal" ;
+    skos:prefLabel "Merchant Portal"@en ;
+    skos:definition "System providing merchant self-service, onboarding, and financial reporting."@en ;
+.
+
+:ObservabilityPlatform
+    a              bs:System ;
+    bs:name        "observability-platform" ;
+    skos:prefLabel "Observability Platform"@en ;
+    skos:definition "Shared system providing metrics, logging, tracing, and alerting."@en ;
+.
+
+
+#################################################################
+# Components
+#################################################################
+
+:PaymentProcessor
+    a                  bs:Component ;
+    bs:name             "payment-processor" ;
+    skos:prefLabel      "payment-processor"@en ;
+    skos:definition     "Core service processing payment transactions — authorisation, capture, refund."@en ;
+    bs:lifecycleState   bs:Production ;
+.
+
+:FraudService
+    a                  bs:Component ;
+    bs:name             "fraud-service" ;
+    skos:prefLabel      "fraud-service"@en ;
+    skos:definition     "Real-time fraud scoring service using ML models to evaluate transaction risk before authorisation."@en ;
+    bs:lifecycleState   bs:Production ;
+.
+
+:FraudModelScorer
+    a                  bs:Component ;
+    bs:name             "fraud-model-scorer" ;
+    skos:prefLabel      "fraud-model-scorer"@en ;
+    skos:definition     "ML scoring sub-component of fraud-service, packaged and deployed separately."@en ;
+    bs:lifecycleState   bs:Experimental ;
+    bs:subcomponentOf   :FraudService ;
+.
+
+:FraudModelScorer bs:qualifiedComponentComposition :qr-FraudModelScorer-subcomponentOf-FraudService .
+:qr-FraudModelScorer-subcomponentOf-FraudService a bs:ComponentComposition ;
+    arch:source :FraudModelScorer ; arch:target :FraudService ;
+    rdf:reifies <<( :FraudModelScorer bs:subcomponentOf :FraudService )>> .
+
+:PayoutService
+    a                  bs:Component ;
+    bs:name             "payout-service" ;
+    skos:prefLabel      "payout-service"@en ;
+    skos:definition     "Service managing scheduled merchant payouts and settlement."@en ;
+    bs:lifecycleState   bs:Production ;
+.
+
+:MerchantOnboarding
+    a                  bs:Component ;
+    bs:name             "merchant-onboarding" ;
+    skos:prefLabel      "merchant-onboarding"@en ;
+    skos:definition     "Service handling merchant registration, KYC, and account activation."@en ;
+    bs:lifecycleState   bs:Production ;
+.
+
+:ReportingService
+    a                  bs:Component ;
+    bs:name             "reporting-service" ;
+    skos:prefLabel      "reporting-service"@en ;
+    skos:definition     "Service generating financial reports and analytics for merchants."@en ;
+    bs:lifecycleState   bs:Experimental ;
+    bs:dependsOn        :PaymentProcessor ;
+.
+
+:ReportingService bs:qualifiedDependency :qr-ReportingService-dependsOn-PaymentProcessor .
+:qr-ReportingService-dependsOn-PaymentProcessor a bs:Dependency ;
+    arch:source :ReportingService ; arch:target :PaymentProcessor ;
+    rdf:reifies <<( :ReportingService bs:dependsOn :PaymentProcessor )>> .
+
+:WebhookDispatcher
+    a                  bs:Component ;
+    bs:name             "webhook-dispatcher" ;
+    skos:prefLabel      "webhook-dispatcher"@en ;
+    skos:definition     "Platform service delivering event notifications to merchant webhook endpoints."@en ;
+    bs:lifecycleState   bs:Production ;
+.
+
+
+#################################################################
+# APIs
+#################################################################
+
+## bs:definition carries the API document verbatim, in the format bs:apiType declares.
+## The descriptor format requires the field, and bssh:ApiDefinitionShape reports its absence
+## at sh:Warning rather than sh:Violation because an EA-level lift may legitimately keep only
+## the type and a source location and drop the body. The stubs below are trimmed to the
+## envelope for readability; a real catalogue carries the whole document.
+
+:PaymentsAPI
+    a              bs:API ;
+    bs:name        "payments-api" ;
+    bs:apiType     bs:OpenAPI ;
+    skos:prefLabel "Payments API (OpenAPI)"@en ;
+    skos:definition "REST API for payment initiation, status, and refunds. OpenAPI 3.1 spec."@en ;
+    bs:definition  '''openapi: 3.1.0
+info:
+  title: Payments API
+  version: "2.4.0"
+servers:
+  - url: https://api.example.com/payments/v2
+paths:
+  /payments: { post: { summary: Initiate a payment } }
+  /payments/{id}: { get: { summary: Retrieve payment status } }
+  /payments/{id}/refunds: { post: { summary: Refund a payment } }''' ;
+.
+
+:MerchantAPI
+    a              bs:API ;
+    bs:name        "merchant-api" ;
+    bs:apiType     bs:OpenAPI ;
+    skos:prefLabel "Merchant API (OpenAPI)"@en ;
+    skos:definition "REST API for merchant account management and configuration."@en ;
+    bs:definition  '''openapi: 3.1.0
+info:
+  title: Merchant API
+  version: "1.9.0"
+servers:
+  - url: https://api.example.com/merchants/v1
+paths:
+  /merchants: { get: { summary: List merchants } }
+  /merchants/{id}: { get: { summary: Retrieve a merchant } }''' ;
+.
+
+:PaymentEventsAPI
+    a              bs:API ;
+    bs:name        "payment-events" ;
+    bs:apiType     bs:AsyncAPI ;
+    skos:prefLabel "Payment Events (AsyncAPI)"@en ;
+    skos:definition "Kafka-based event stream for payment lifecycle events. AsyncAPI 2.6 spec."@en ;
+    bs:definition  '''asyncapi: 2.6.0
+info:
+  title: Payment Events
+  version: "1.2.0"
+servers:
+  events: { url: kafka.example.com:9092, protocol: kafka }
+channels:
+  payment.authorised: { subscribe: { message: { name: PaymentAuthorised } } }
+  payment.settled:    { subscribe: { message: { name: PaymentSettled } } }''' ;
+.
+
+:FraudScoringAPI
+    a              bs:API ;
+    bs:name        "fraud-scoring" ;
+    bs:apiType     bs:GRPC ;
+    skos:prefLabel "Fraud Scoring API (gRPC)"@en ;
+    skos:definition "Low-latency gRPC API for real-time transaction fraud scoring."@en ;
+    bs:definition  '''syntax = "proto3";
+package payflow.fraud.v1;
+
+service FraudScoring {
+  rpc Score (ScoreRequest) returns (ScoreResponse);
+}
+
+message ScoreRequest  { string transaction_id = 1; int64 amount_minor = 2; string currency = 3; }
+message ScoreResponse { float risk_score = 1; bool decline = 2; }''' ;
+.
+
+
+#################################################################
+# Resources
+#################################################################
+
+:PaymentsDB
+    a              bs:Resource ;
+    bs:name        "payments-db" ;
+    bs:resourceType bs:DatabaseResourceType ;
+    skos:prefLabel "payments-db (PostgreSQL)"@en ;
+    skos:definition "Primary PostgreSQL database for payment transactions and state."@en ;
+.
+
+:MerchantDB
+    a              bs:Resource ;
+    bs:name        "merchant-db" ;
+    bs:resourceType bs:DatabaseResourceType ;
+    skos:prefLabel "merchant-db (PostgreSQL)"@en ;
+    skos:definition "PostgreSQL database for merchant accounts and configuration."@en ;
+.
+
+:EventBus
+    a              bs:Resource ;
+    bs:name        "event-bus" ;
+    bs:resourceType :MessageBrokerResourceType ;
+    skos:prefLabel "event-bus (Kafka)"@en ;
+    skos:definition "Apache Kafka cluster for event streaming between services."@en ;
+.
+
+:RedisCache
+    a              bs:Resource ;
+    bs:name        "redis-cache" ;
+    bs:resourceType :CacheResourceType ;
+    skos:prefLabel "redis-cache"@en ;
+    skos:definition "Redis cluster for session caching and rate limiting."@en ;
+.
+
+
+#################################################################
+# Relationships — Ownership
+#################################################################
+
+:PaymentProcessor bs:ownedBy :PaymentsSquad .
+:PaymentProcessor bs:qualifiedOwnership :qr-PaymentProcessor-ownedBy-PaymentsSquad .
+:qr-PaymentProcessor-ownedBy-PaymentsSquad a bs:Ownership ;
+    arch:source :PaymentProcessor ; arch:target :PaymentsSquad ;
+    rdf:reifies <<( :PaymentProcessor bs:ownedBy :PaymentsSquad )>> .
+:FraudService bs:ownedBy :PaymentsSquad .
+:FraudService bs:qualifiedOwnership :qr-FraudService-ownedBy-PaymentsSquad .
+:qr-FraudService-ownedBy-PaymentsSquad a bs:Ownership ;
+    arch:source :FraudService ; arch:target :PaymentsSquad ;
+    rdf:reifies <<( :FraudService bs:ownedBy :PaymentsSquad )>> .
+:PayoutService bs:ownedBy :PaymentsSquad .
+:PayoutService bs:qualifiedOwnership :qr-PayoutService-ownedBy-PaymentsSquad .
+:qr-PayoutService-ownedBy-PaymentsSquad a bs:Ownership ;
+    arch:source :PayoutService ; arch:target :PaymentsSquad ;
+    rdf:reifies <<( :PayoutService bs:ownedBy :PaymentsSquad )>> .
+:MerchantOnboarding bs:ownedBy :MerchantSquad .
+:MerchantOnboarding bs:qualifiedOwnership :qr-MerchantOnboarding-ownedBy-MerchantSquad .
+:qr-MerchantOnboarding-ownedBy-MerchantSquad a bs:Ownership ;
+    arch:source :MerchantOnboarding ; arch:target :MerchantSquad ;
+    rdf:reifies <<( :MerchantOnboarding bs:ownedBy :MerchantSquad )>> .
+:ReportingService bs:ownedBy :MerchantSquad .
+:ReportingService bs:qualifiedOwnership :qr-ReportingService-ownedBy-MerchantSquad .
+:qr-ReportingService-ownedBy-MerchantSquad a bs:Ownership ;
+    arch:source :ReportingService ; arch:target :MerchantSquad ;
+    rdf:reifies <<( :ReportingService bs:ownedBy :MerchantSquad )>> .
+:WebhookDispatcher bs:ownedBy :PlatformTeam .
+:WebhookDispatcher bs:qualifiedOwnership :qr-WebhookDispatcher-ownedBy-PlatformTeam .
+:qr-WebhookDispatcher-ownedBy-PlatformTeam a bs:Ownership ;
+    arch:source :WebhookDispatcher ; arch:target :PlatformTeam ;
+    rdf:reifies <<( :WebhookDispatcher bs:ownedBy :PlatformTeam )>> .
+:PaymentGateway bs:ownedBy :PaymentsSquad .
+:PaymentGateway bs:qualifiedOwnership :qr-PaymentGateway-ownedBy-PaymentsSquad .
+:qr-PaymentGateway-ownedBy-PaymentsSquad a bs:Ownership ;
+    arch:source :PaymentGateway ; arch:target :PaymentsSquad ;
+    rdf:reifies <<( :PaymentGateway bs:ownedBy :PaymentsSquad )>> .
+:MerchantPortal bs:ownedBy :MerchantSquad .
+:MerchantPortal bs:qualifiedOwnership :qr-MerchantPortal-ownedBy-MerchantSquad .
+:qr-MerchantPortal-ownedBy-MerchantSquad a bs:Ownership ;
+    arch:source :MerchantPortal ; arch:target :MerchantSquad ;
+    rdf:reifies <<( :MerchantPortal bs:ownedBy :MerchantSquad )>> .
+:ObservabilityPlatform bs:ownedBy :SRETeam .
+:ObservabilityPlatform bs:qualifiedOwnership :qr-ObservabilityPlatform-ownedBy-SRETeam .
+:qr-ObservabilityPlatform-ownedBy-SRETeam a bs:Ownership ;
+    arch:source :ObservabilityPlatform ; arch:target :SRETeam ;
+    rdf:reifies <<( :ObservabilityPlatform bs:ownedBy :SRETeam )>> .
+
+
+#################################################################
+# Relationships — System Membership
+#################################################################
+
+:PaymentProcessor bs:partOfSystem :PaymentGateway .
+:PaymentProcessor bs:qualifiedSystemMembership :qr-PaymentProcessor-partOfSystem-PaymentGateway .
+:qr-PaymentProcessor-partOfSystem-PaymentGateway a bs:SystemMembership ;
+    arch:source :PaymentProcessor ; arch:target :PaymentGateway ;
+    rdf:reifies <<( :PaymentProcessor bs:partOfSystem :PaymentGateway )>> .
+:FraudService bs:partOfSystem :PaymentGateway .
+:FraudService bs:qualifiedSystemMembership :qr-FraudService-partOfSystem-PaymentGateway .
+:qr-FraudService-partOfSystem-PaymentGateway a bs:SystemMembership ;
+    arch:source :FraudService ; arch:target :PaymentGateway ;
+    rdf:reifies <<( :FraudService bs:partOfSystem :PaymentGateway )>> .
+:PayoutService bs:partOfSystem :PaymentGateway .
+:PayoutService bs:qualifiedSystemMembership :qr-PayoutService-partOfSystem-PaymentGateway .
+:qr-PayoutService-partOfSystem-PaymentGateway a bs:SystemMembership ;
+    arch:source :PayoutService ; arch:target :PaymentGateway ;
+    rdf:reifies <<( :PayoutService bs:partOfSystem :PaymentGateway )>> .
+:WebhookDispatcher bs:partOfSystem :PaymentGateway .
+:WebhookDispatcher bs:qualifiedSystemMembership :qr-WebhookDispatcher-partOfSystem-PaymentGateway .
+:qr-WebhookDispatcher-partOfSystem-PaymentGateway a bs:SystemMembership ;
+    arch:source :WebhookDispatcher ; arch:target :PaymentGateway ;
+    rdf:reifies <<( :WebhookDispatcher bs:partOfSystem :PaymentGateway )>> .
+:MerchantOnboarding bs:partOfSystem :MerchantPortal .
+:MerchantOnboarding bs:qualifiedSystemMembership :qr-MerchantOnboarding-partOfSystem-MerchantPortal .
+:qr-MerchantOnboarding-partOfSystem-MerchantPortal a bs:SystemMembership ;
+    arch:source :MerchantOnboarding ; arch:target :MerchantPortal ;
+    rdf:reifies <<( :MerchantOnboarding bs:partOfSystem :MerchantPortal )>> .
+:ReportingService bs:partOfSystem :MerchantPortal .
+:ReportingService bs:qualifiedSystemMembership :qr-ReportingService-partOfSystem-MerchantPortal .
+:qr-ReportingService-partOfSystem-MerchantPortal a bs:SystemMembership ;
+    arch:source :ReportingService ; arch:target :MerchantPortal ;
+    rdf:reifies <<( :ReportingService bs:partOfSystem :MerchantPortal )>> .
+
+
+#################################################################
+# Relationships — API Provision
+#################################################################
+
+:PaymentProcessor bs:providesAPI :PaymentsAPI .
+:PaymentProcessor bs:qualifiedAPIProvision :qr-PaymentProcessor-providesAPI-PaymentsAPI .
+:qr-PaymentProcessor-providesAPI-PaymentsAPI a bs:APIProvision ;
+    arch:source :PaymentProcessor ; arch:target :PaymentsAPI ;
+    rdf:reifies <<( :PaymentProcessor bs:providesAPI :PaymentsAPI )>> .
+:PaymentProcessor bs:providesAPI :PaymentEventsAPI .
+:PaymentProcessor bs:qualifiedAPIProvision :qr-PaymentProcessor-providesAPI-PaymentEventsAPI .
+:qr-PaymentProcessor-providesAPI-PaymentEventsAPI a bs:APIProvision ;
+    arch:source :PaymentProcessor ; arch:target :PaymentEventsAPI ;
+    rdf:reifies <<( :PaymentProcessor bs:providesAPI :PaymentEventsAPI )>> .
+:FraudService bs:providesAPI :FraudScoringAPI .
+:FraudService bs:qualifiedAPIProvision :qr-FraudService-providesAPI-FraudScoringAPI .
+:qr-FraudService-providesAPI-FraudScoringAPI a bs:APIProvision ;
+    arch:source :FraudService ; arch:target :FraudScoringAPI ;
+    rdf:reifies <<( :FraudService bs:providesAPI :FraudScoringAPI )>> .
+:MerchantOnboarding bs:providesAPI :MerchantAPI .
+:MerchantOnboarding bs:qualifiedAPIProvision :qr-MerchantOnboarding-providesAPI-MerchantAPI .
+:qr-MerchantOnboarding-providesAPI-MerchantAPI a bs:APIProvision ;
+    arch:source :MerchantOnboarding ; arch:target :MerchantAPI ;
+    rdf:reifies <<( :MerchantOnboarding bs:providesAPI :MerchantAPI )>> .
+
+
+#################################################################
+# Relationships — API Consumption
+#################################################################
+
+:PayoutService bs:consumesAPI :PaymentsAPI .
+:PayoutService bs:qualifiedAPIConsumption :qr-PayoutService-consumesAPI-PaymentsAPI .
+:qr-PayoutService-consumesAPI-PaymentsAPI a bs:APIConsumption ;
+    arch:source :PayoutService ; arch:target :PaymentsAPI ;
+    rdf:reifies <<( :PayoutService bs:consumesAPI :PaymentsAPI )>> .
+:MerchantOnboarding bs:consumesAPI :PaymentsAPI .
+:MerchantOnboarding bs:qualifiedAPIConsumption :qr-MerchantOnboarding-consumesAPI-PaymentsAPI .
+:qr-MerchantOnboarding-consumesAPI-PaymentsAPI a bs:APIConsumption ;
+    arch:source :MerchantOnboarding ; arch:target :PaymentsAPI ;
+    rdf:reifies <<( :MerchantOnboarding bs:consumesAPI :PaymentsAPI )>> .
+:WebhookDispatcher bs:consumesAPI :PaymentEventsAPI .
+:WebhookDispatcher bs:qualifiedAPIConsumption :qr-WebhookDispatcher-consumesAPI-PaymentEventsAPI .
+:qr-WebhookDispatcher-consumesAPI-PaymentEventsAPI a bs:APIConsumption ;
+    arch:source :WebhookDispatcher ; arch:target :PaymentEventsAPI ;
+    rdf:reifies <<( :WebhookDispatcher bs:consumesAPI :PaymentEventsAPI )>> .
+:PaymentProcessor bs:consumesAPI :FraudScoringAPI .
+:PaymentProcessor bs:qualifiedAPIConsumption :qr-PaymentProcessor-consumesAPI-FraudScoringAPI .
+:qr-PaymentProcessor-consumesAPI-FraudScoringAPI a bs:APIConsumption ;
+    arch:source :PaymentProcessor ; arch:target :FraudScoringAPI ;
+    rdf:reifies <<( :PaymentProcessor bs:consumesAPI :FraudScoringAPI )>> .
+:ReportingService bs:consumesAPI :PaymentsAPI .
+:ReportingService bs:qualifiedAPIConsumption :qr-ReportingService-consumesAPI-PaymentsAPI .
+:qr-ReportingService-consumesAPI-PaymentsAPI a bs:APIConsumption ;
+    arch:source :ReportingService ; arch:target :PaymentsAPI ;
+    rdf:reifies <<( :ReportingService bs:consumesAPI :PaymentsAPI )>> .
+
+
+#################################################################
+# Relationships — Resource Usage
+#################################################################
+
+:PaymentProcessor bs:usesResource :PaymentsDB .
+:PaymentProcessor bs:qualifiedResourceUsage :qr-PaymentProcessor-usesResource-PaymentsDB .
+:qr-PaymentProcessor-usesResource-PaymentsDB a bs:ResourceUsage ;
+    arch:source :PaymentProcessor ; arch:target :PaymentsDB ;
+    rdf:reifies <<( :PaymentProcessor bs:usesResource :PaymentsDB )>> .
+:PaymentProcessor bs:usesResource :EventBus .
+:PaymentProcessor bs:qualifiedResourceUsage :qr-PaymentProcessor-usesResource-EventBus .
+:qr-PaymentProcessor-usesResource-EventBus a bs:ResourceUsage ;
+    arch:source :PaymentProcessor ; arch:target :EventBus ;
+    rdf:reifies <<( :PaymentProcessor bs:usesResource :EventBus )>> .
+:PaymentProcessor bs:usesResource :RedisCache .
+:PaymentProcessor bs:qualifiedResourceUsage :qr-PaymentProcessor-usesResource-RedisCache .
+:qr-PaymentProcessor-usesResource-RedisCache a bs:ResourceUsage ;
+    arch:source :PaymentProcessor ; arch:target :RedisCache ;
+    rdf:reifies <<( :PaymentProcessor bs:usesResource :RedisCache )>> .
+:FraudService bs:usesResource :RedisCache .
+:FraudService bs:qualifiedResourceUsage :qr-FraudService-usesResource-RedisCache .
+:qr-FraudService-usesResource-RedisCache a bs:ResourceUsage ;
+    arch:source :FraudService ; arch:target :RedisCache ;
+    rdf:reifies <<( :FraudService bs:usesResource :RedisCache )>> .
+:PayoutService bs:usesResource :PaymentsDB .
+:PayoutService bs:qualifiedResourceUsage :qr-PayoutService-usesResource-PaymentsDB .
+:qr-PayoutService-usesResource-PaymentsDB a bs:ResourceUsage ;
+    arch:source :PayoutService ; arch:target :PaymentsDB ;
+    rdf:reifies <<( :PayoutService bs:usesResource :PaymentsDB )>> .
+:MerchantOnboarding bs:usesResource :MerchantDB .
+:MerchantOnboarding bs:qualifiedResourceUsage :qr-MerchantOnboarding-usesResource-MerchantDB .
+:qr-MerchantOnboarding-usesResource-MerchantDB a bs:ResourceUsage ;
+    arch:source :MerchantOnboarding ; arch:target :MerchantDB ;
+    rdf:reifies <<( :MerchantOnboarding bs:usesResource :MerchantDB )>> .
+:WebhookDispatcher bs:usesResource :EventBus .
+:WebhookDispatcher bs:qualifiedResourceUsage :qr-WebhookDispatcher-usesResource-EventBus .
+:qr-WebhookDispatcher-usesResource-EventBus a bs:ResourceUsage ;
+    arch:source :WebhookDispatcher ; arch:target :EventBus ;
+    rdf:reifies <<( :WebhookDispatcher bs:usesResource :EventBus )>> .
+:ReportingService bs:usesResource :PaymentsDB .
+:ReportingService bs:qualifiedResourceUsage :qr-ReportingService-usesResource-PaymentsDB .
+:qr-ReportingService-usesResource-PaymentsDB a bs:ResourceUsage ;
+    arch:source :ReportingService ; arch:target :PaymentsDB ;
+    rdf:reifies <<( :ReportingService bs:usesResource :PaymentsDB )>> .
+:ReportingService bs:usesResource :MerchantDB .
+:ReportingService bs:qualifiedResourceUsage :qr-ReportingService-usesResource-MerchantDB .
+:qr-ReportingService-usesResource-MerchantDB a bs:ResourceUsage ;
+    arch:source :ReportingService ; arch:target :MerchantDB ;
+    rdf:reifies <<( :ReportingService bs:usesResource :MerchantDB )>> .
+
+
+#################################################################
+# Relationships — Domain Membership
+#################################################################
+
+:PaymentGateway bs:belongsToDomain :PaymentsDomain .
+:PaymentGateway bs:qualifiedDomainMembership :qr-PaymentGateway-belongsToDomain-PaymentsDomain .
+:qr-PaymentGateway-belongsToDomain-PaymentsDomain a bs:DomainMembership ;
+    arch:source :PaymentGateway ; arch:target :PaymentsDomain ;
+    rdf:reifies <<( :PaymentGateway bs:belongsToDomain :PaymentsDomain )>> .
+:MerchantPortal bs:belongsToDomain :MerchantDomain .
+:MerchantPortal bs:qualifiedDomainMembership :qr-MerchantPortal-belongsToDomain-MerchantDomain .
+:qr-MerchantPortal-belongsToDomain-MerchantDomain a bs:DomainMembership ;
+    arch:source :MerchantPortal ; arch:target :MerchantDomain ;
+    rdf:reifies <<( :MerchantPortal bs:belongsToDomain :MerchantDomain )>> .
+:ObservabilityPlatform bs:belongsToDomain :PlatformDomain .
+:ObservabilityPlatform bs:qualifiedDomainMembership :qr-ObservabilityPlatform-belongsToDomain-PlatformDomain .
+:qr-ObservabilityPlatform-belongsToDomain-PlatformDomain a bs:DomainMembership ;
+    arch:source :ObservabilityPlatform ; arch:target :PlatformDomain ;
+    rdf:reifies <<( :ObservabilityPlatform bs:belongsToDomain :PlatformDomain )>> .
+
+
+#################################################################
+# Templates (kind: Template)
+#
+# Note the apiVersion, and note WHICH source it comes from. Template
+# is the one kind that is not part of the catalog model: the
+# scaffolder plugin owns it and versions it separately, so it sits on
+# scaffolder.backstage.io/v1beta3 while every other entity above is
+# on backstage.io/v1alpha1. That is why bs:apiVersion is retained per
+# entity rather than assumed constant across a catalogue.
+#
+#   Template.v1beta3.schema.json  ->  scaffolder.backstage.io/v1beta3   (used here)
+#   descriptor format page        ->  backstage.io/v1beta2              (stale)
+#
+# The schema is what the catalogue enforces. See the scope note on
+# bs:Template.
+#
+# spec.type is bs:componentType, not a vocabulary of its own: a
+# template's type names the kind of component it CREATES, and the
+# descriptor format says it should match that component's own type.
+# So :NewServiceTemplate produces services, and the services below
+# that were scaffolded from it agree.
+#
+# spec.lifecycle is declared on Template by the schema, though the
+# rendered documentation does not mention the field.
+#################################################################
+
+:NewServiceTemplate
+    a                  bs:Template ;
+    bs:apiVersion      "scaffolder.backstage.io/v1beta3" ;
+    bs:kind            "Template" ;
+    bs:name            "new-payment-service" ;
+    bs:componentType   bs:ServiceType ;
+    bs:lifecycleState  bs:Production ;
+    bs:timeSaved       "PT6H"^^xsd:duration ;
+    skos:prefLabel     "new-payment-service"@en ;
+    skos:definition    "Scaffolder template for a new payment-domain backend service: repository, CI pipeline, TechDocs skeleton, and catalog-info.yaml."@en ;
+.
+
+:LibraryTemplate
+    a                  bs:Template ;
+    bs:apiVersion      "scaffolder.backstage.io/v1beta3" ;
+    bs:kind            "Template" ;
+    bs:name            "shared-library" ;
+    bs:componentType   bs:LibraryType ;
+    bs:lifecycleState  bs:Experimental ;
+    bs:timeSaved       "PT2H30M"^^xsd:duration ;
+    skos:prefLabel     "shared-library"@en ;
+    skos:definition    "Scaffolder template for a shared internal library, wired to the internal package registry."@en ;
+.
+
+:NewServiceTemplate bs:ownedBy :PlatformTeam .
+:NewServiceTemplate bs:qualifiedOwnership :qr-NewServiceTemplate-ownedBy-PlatformTeam .
+:qr-NewServiceTemplate-ownedBy-PlatformTeam a bs:Ownership ;
+    arch:source :NewServiceTemplate ; arch:target :PlatformTeam ;
+    rdf:reifies <<( :NewServiceTemplate bs:ownedBy :PlatformTeam )>> .
+:LibraryTemplate    bs:ownedBy :PlatformTeam .
+:LibraryTemplate bs:qualifiedOwnership :qr-LibraryTemplate-ownedBy-PlatformTeam .
+:qr-LibraryTemplate-ownedBy-PlatformTeam a bs:Ownership ;
+    arch:source :LibraryTemplate ; arch:target :PlatformTeam ;
+    rdf:reifies <<( :LibraryTemplate bs:ownedBy :PlatformTeam )>> .
+
+
+#################################################################
+# Relationships — Scaffolding (backstage.io/source-template)
+#
+# Both forms, deliberately. bs:sourceTemplate keeps the annotation
+# literal the catalogue wrote; bs:scaffoldedFrom is the resolved
+# edge. Neither is derived from the other — see the scope notes on
+# both properties.
+#
+# What the pair buys is the governance question in both directions:
+# which services came from the approved template, and — the half
+# that needs the relation rather than the literal — which came from
+# none. :WebhookDispatcher and :FraudModelScorer predate the
+# template and carry neither, which is the answer to the second.
+#################################################################
+
+:PayoutService
+    bs:sourceTemplate  "template:default/new-payment-service" ;
+    bs:scaffoldedFrom  :NewServiceTemplate ;
+.
+
+:PayoutService bs:qualifiedScaffolding :qr-PayoutService-scaffoldedFrom-NewServiceTemplate .
+:qr-PayoutService-scaffoldedFrom-NewServiceTemplate a bs:Scaffolding ;
+    arch:source :PayoutService ; arch:target :NewServiceTemplate ;
+    rdf:reifies <<( :PayoutService bs:scaffoldedFrom :NewServiceTemplate )>> .
+
+:ReportingService
+    bs:sourceTemplate  "template:default/new-payment-service" ;
+    bs:scaffoldedFrom  :NewServiceTemplate ;
+.
+
+:ReportingService bs:qualifiedScaffolding :qr-ReportingService-scaffoldedFrom-NewServiceTemplate .
+:qr-ReportingService-scaffoldedFrom-NewServiceTemplate a bs:Scaffolding ;
+    arch:source :ReportingService ; arch:target :NewServiceTemplate ;
+    rdf:reifies <<( :ReportingService bs:scaffoldedFrom :NewServiceTemplate )>> .
+
+## An edge whose resource carries metadata (P-4, P-7): the direct triple, the qualified
+## predicate and the resource, which records the scaffolding date — a fact about the EVENT,
+## not about either entity.
+:MerchantOnboarding
+    bs:sourceTemplate          "template:default/new-payment-service" ;
+    bs:scaffoldedFrom          :NewServiceTemplate ;
+    bs:qualifiedScaffolding :Scaffolding-MerchantOnboarding ;
+.
+
+:Scaffolding-MerchantOnboarding
+    a               bs:Scaffolding ;
+    arch:source     :MerchantOnboarding ;
+    arch:target     :NewServiceTemplate ;
+    rdf:reifies     <<( :MerchantOnboarding bs:scaffoldedFrom :NewServiceTemplate )>> ;
+    skos:prefLabel  "merchant-onboarding scaffolded from new-payment-service"@en ;
+    dcterms:created "2025-03-14"^^xsd:date ;
+.
+
+## An unresolved reference: the annotation names a template this pull did not include,
+## so the literal is retained and no edge is asserted. A consumer can tell the difference
+## between "not scaffolded" and "scaffolded from something we cannot see".
+:FraudService
+    bs:sourceTemplate  "template:default/legacy-ml-service" ;
+.
+
+
+#################################################################
+# Status (read-only, from the catalog API)
+#
+# Only a lift of the catalog API produces these; an authored
+# descriptor has no status key. One node per item, because two
+# items flattened onto the entity would leave two levels and two
+# messages with nothing pairing them.
+#
+# Read the error item the right way round. Where the type is
+# backstage.io/catalog-processing, an error means the catalogue
+# could NOT ingest the source and has deliberately kept the last
+# version that did — so the item says the record beside it is
+# stale, not that the record is wrong.
+#################################################################
+
+:ReportingService bs:hasStatusItem :ReportingServiceStatus-1 .
+
+:ReportingServiceStatus-1
+    a                bs:StatusItem ;
+    bs:statusType    "backstage.io/catalog-processing" ;
+    bs:statusLevel   bs:ErrorLevel ;
+    bs:statusMessage "NotFoundError: catalog-info.yaml not found at refs/heads/main" ;
+.
+
+:WebhookDispatcher bs:hasStatusItem :WebhookDispatcherStatus-1 .
+
+:WebhookDispatcherStatus-1
+    a                bs:StatusItem ;
+    bs:statusType    "backstage.io/catalog-processing" ;
+    bs:statusLevel   bs:WarningLevel ;
+    bs:statusMessage "Entity has no spec.owner; owner was inferred from CODEOWNERS" ;
+.
+
+## Two items on one entity, from two different systems — the case that makes a node per
+## item necessary rather than tidy.
+:PaymentProcessor bs:hasStatusItem :PaymentProcessorStatus-1, :PaymentProcessorStatus-2 .
+
+:PaymentProcessorStatus-1
+    a                bs:StatusItem ;
+    bs:statusType    "backstage.io/catalog-processing" ;
+    bs:statusLevel   bs:InfoLevel ;
+    bs:statusMessage "Entity refreshed from url:https://git.example.com/payflow/payment-processor" ;
+.
+
+:PaymentProcessorStatus-2
+    a                bs:StatusItem ;
+    bs:statusType    "example.com/slo-checker" ;
+    bs:statusLevel   bs:WarningLevel ;
+    bs:statusMessage "Error budget for the current window is 8% remaining" ;
+.
+
+
+#################################################################
+# Labels — one predicate per key, in PayFlow's own namespace
+#
+# The pattern bs:label documents. The keys are PayFlow's, so the
+# predicates are PayFlow's; bs:label is the parent, which keeps
+# "every label on this entity" a one-triple query without anyone
+# minting terms in the bs: namespace.
+#################################################################
+
+:tier
+    a                  owl:DatatypeProperty ;
+    rdfs:subPropertyOf bs:label ;
+    skos:prefLabel     "Tier"@en ;
+    skos:definition    "PayFlow's criticality banding, from the label key example.com/tier."@en ;
+.
+
+:pciScope
+    a                  owl:DatatypeProperty ;
+    rdfs:subPropertyOf bs:label ;
+    skos:prefLabel     "PCI Scope"@en ;
+    skos:definition    "Whether the entity is in scope for PCI DSS assessment, from the label key example.com/pci-scope."@en ;
+.
+
+:PaymentProcessor :tier "gold" ; :pciScope "true" .
+:FraudService     :tier "gold" ; :pciScope "true" .
+:PayoutService    :tier "gold" ; :pciScope "true" .
+:ReportingService :tier "bronze" ; :pciScope "false" .
+
+
+#################################################################
+# Views
+#################################################################
+
+:PayFlowServiceCatalogView
+    a                            arch:View ;
+    skos:prefLabel               "PayFlow Service Catalog"@en ;
+    arch:viewConformsToViewpoint <https://meta.linked.archi/backstage/viewpoints#ServiceCatalog> ;
+.
+
+:PayFlowAPIDependencyView
+    a                            arch:View ;
+    skos:prefLabel               "PayFlow API Dependency Map"@en ;
+    arch:viewConformsToViewpoint <https://meta.linked.archi/backstage/viewpoints#APIDependency> ;
+.
+
+:PayFlowOwnershipView
+    a                            arch:View ;
+    skos:prefLabel               "PayFlow Ownership Matrix"@en ;
+    arch:viewConformsToViewpoint <https://meta.linked.archi/backstage/viewpoints#OwnershipMatrix> ;
+.

@@ -1,0 +1,55 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix :        <https://meta.linked.archi/c4/reference-data#> .
+
+#################################################################
+# C4 Reference Data (SKOS Concept Scheme)
+#################################################################
+
+:C4ReferenceData
+    a                skos:ConceptScheme ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/c4/reference-data#" ;
+    vann:preferredNamespacePrefix "c4rd" ;
+    dcterms:title                 "Linked.Archi C4 Reference Data"@en ;
+    owl:versionInfo               "0.1.0"@en ;
+    skos:prefLabel   "C4 Reference Data"@en ;
+    dcterms:description  "Controlled vocabularies and reference data for annotating C4 architecture model elements."@en ;
+    dcterms:creator  "Kalin Maldzhanski"^^xsd:string ;
+    skos:hasTopConcept :ContainerTechnologies, :DeploymentEnvironments ;
+.
+
+## Container Technologies
+
+:ContainerTechnologies
+    a skos:Concept ; skos:topConceptOf :C4ReferenceData ;
+    skos:prefLabel "Container Technologies"@en ;
+    skos:definition "Common technology stacks for C4 containers."@en ;
+    skos:inScheme :C4ReferenceData ;
+.
+:WebApp        a skos:Concept ; skos:prefLabel "Web Application"@en ;       skos:broader :ContainerTechnologies ; skos:inScheme :C4ReferenceData .
+:MobileApp     a skos:Concept ; skos:prefLabel "Mobile Application"@en ;    skos:broader :ContainerTechnologies ; skos:inScheme :C4ReferenceData .
+:DesktopApp    a skos:Concept ; skos:prefLabel "Desktop Application"@en ;   skos:broader :ContainerTechnologies ; skos:inScheme :C4ReferenceData .
+:APIService    a skos:Concept ; skos:prefLabel "API Service"@en ;           skos:broader :ContainerTechnologies ; skos:inScheme :C4ReferenceData .
+:Microservice  a skos:Concept ; skos:prefLabel "Microservice"@en ;          skos:broader :ContainerTechnologies ; skos:inScheme :C4ReferenceData .
+:Database      a skos:Concept ; skos:prefLabel "Database"@en ;              skos:broader :ContainerTechnologies ; skos:inScheme :C4ReferenceData .
+:MessageBroker a skos:Concept ; skos:prefLabel "Message Broker"@en ;        skos:broader :ContainerTechnologies ; skos:inScheme :C4ReferenceData .
+:FileSystem    a skos:Concept ; skos:prefLabel "File System"@en ;           skos:broader :ContainerTechnologies ; skos:inScheme :C4ReferenceData .
+:ServerlessFunc a skos:Concept ; skos:prefLabel "Serverless Function"@en ;  skos:broader :ContainerTechnologies ; skos:inScheme :C4ReferenceData .
+
+## Deployment Environments
+
+:DeploymentEnvironments
+    a skos:Concept ; skos:topConceptOf :C4ReferenceData ;
+    skos:prefLabel "Deployment Environments"@en ;
+    skos:definition "Standard deployment environments for C4 deployment diagrams."@en ;
+    skos:inScheme :C4ReferenceData ;
+.
+:DevEnv        a skos:Concept ; skos:prefLabel "Development"@en ;        skos:broader :DeploymentEnvironments ; skos:inScheme :C4ReferenceData .
+:TestEnv       a skos:Concept ; skos:prefLabel "Test"@en ;              skos:broader :DeploymentEnvironments ; skos:inScheme :C4ReferenceData .
+:StagingEnv    a skos:Concept ; skos:prefLabel "Staging"@en ;           skos:broader :DeploymentEnvironments ; skos:inScheme :C4ReferenceData .
+:ProductionEnv a skos:Concept ; skos:prefLabel "Production"@en ;        skos:broader :DeploymentEnvironments ; skos:inScheme :C4ReferenceData .

@@ -1,0 +1,264 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix :        <https://meta.linked.archi/c4/onto#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/c4/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/c4/onto#" ;
+    vann:preferredNamespacePrefix "c4" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi C4 Model Ontology"@en ;
+    dcterms:description                '''An RDF/OWL ontology for the C4 model — the abstract, notation-independent
+software architecture visualization model created by Simon Brown. Defines the four core
+abstraction levels (Person, Software System, Container, Component) and their relationships.
+
+This ontology covers the C4 model itself, not any specific tooling implementation.
+For Structurizr-specific concepts (deployment nodes, infrastructure nodes, deployment
+environments), see the Structurizr extension ontology (structurizr-onto.ttl) which
+imports this ontology.
+This is not an official c4model.com document.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-10-10"^^xsd:date ;
+    skos:changeNote               "2026-10-10: added the container kinds Database, MobileApp and ClientSideWebApp and the external ExternalPerson and ExternalSoftwareSystem as subclasses, each drawn by a descriptor of its own. Linked every term to its c4model.com page and Structurizr DSL section (Person's former c4model.com/abstractions/person link was a 404). c4:technology also applies to components and to Using relationships, as c4model.com's notation page asks."@en ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/c4/onto/0.3.0#> ;
+    owl:versionInfo               "0.3.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/c4/onto/0.2.0#> ;
+    rdfs:seeAlso                  <https://c4model.com/> ;
+    dcterms:source  <https://c4model.com/> ;
+    prov:wasDerivedFrom <https://c4model.com/> ;
+    skos:historyNote              '''0.3.0: Split C4 model from Structurizr implementation. This ontology
+now contains only the abstract C4 model concepts. Deployment nodes, infrastructure nodes,
+and deployment relationships moved to structurizr-onto.ttl.
+0.2.0: Modernized to Linked.Archi conventions.'''@en ;
+.
+
+#################################################################
+# Element Classes — The C4 Abstraction Hierarchy
+#################################################################
+
+:Person
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Person"@en ;
+    skos:definition '''A human user of the software system — a user, actor, role, or persona.
+Corresponds to C4 Level 1 (System Context).'''@en ;
+    rdfs:seeAlso    <https://c4model.com/abstractions> ,
+                    <https://docs.structurizr.com/dsl/language#person> ;
+.
+
+:SoftwareSystem
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Software System"@en ;
+    skos:definition '''The highest level of abstraction — a software system that delivers value
+to its users. Includes the system being designed and external systems it depends on.
+Corresponds to C4 Level 1 (System Context).'''@en ;
+    rdfs:seeAlso    <https://c4model.com/abstractions/software-system> ,
+                    <https://docs.structurizr.com/dsl/language#softwaresystem> ;
+.
+
+:Container
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Container"@en ;
+    skos:definition '''A deployable/runnable unit within a software system — a web application,
+API service, database, message broker, file system, etc. Not a Docker container
+(though it may run in one). Corresponds to C4 Level 2.'''@en ;
+    rdfs:seeAlso    <https://c4model.com/abstractions/container> ,
+                    <https://docs.structurizr.com/dsl/language#container> ;
+.
+
+:Component
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Component"@en ;
+    skos:definition '''A grouping of related functionality within a container — a module, package,
+or cohesive set of classes. Not a class or function. Corresponds to C4 Level 3.'''@en ;
+    rdfs:seeAlso    <https://c4model.com/abstractions/component> ,
+                    <https://docs.structurizr.com/dsl/language#component> ;
+.
+
+
+#################################################################
+# Element Types — kinds of container, and external elements
+#
+# A kind of element with a look of its own is a subclass with a descriptor of
+# its own in the notation; a look for an audience is a notation set picked by a
+# presentation context. The container kinds are those c4model.com lists on its
+# container page; Structurizr draws them with its Cylinder, MobileDevicePortrait
+# and WebBrowser shapes. External people and software systems are the
+# supporting elements of a system context diagram.
+#################################################################
+
+:Database
+    a               owl:Class ;
+    rdfs:subClassOf :Container ;
+    skos:prefLabel  "Database"@en ;
+    skos:definition '''A container that holds data, such as a schema in a relational database
+management system, a document store or a graph database. Drawn as a cylinder.'''@en ;
+    rdfs:seeAlso    <https://c4model.com/abstractions/container> ,
+                    <https://docs.structurizr.com/dsl/language#element-style> ;
+.
+
+:MobileApp
+    a               owl:Class ;
+    rdfs:subClassOf :Container ;
+    skos:prefLabel  "Mobile App"@en ;
+    skos:definition '''A container that is an app on a mobile device, such as an iOS or Android app.
+Drawn in a device frame.'''@en ;
+    rdfs:seeAlso    <https://c4model.com/abstractions/container> ,
+                    <https://docs.structurizr.com/dsl/language#element-style> ;
+.
+
+:ClientSideWebApp
+    a               owl:Class ;
+    rdfs:subClassOf :Container ;
+    skos:prefLabel  "Client-side Web Application"@en ;
+    skos:definition '''A container that runs in the user's web browser, such as a JavaScript single-page
+application. Drawn in a browser window.'''@en ;
+    rdfs:seeAlso    <https://c4model.com/abstractions/container> ,
+                    <https://docs.structurizr.com/dsl/language#element-style> ;
+.
+
+:ExternalPerson
+    a               owl:Class ;
+    rdfs:subClassOf :Person ;
+    skos:prefLabel  "External Person"@en ;
+    skos:definition '''A person outside the organisation or team that owns the software system in scope,
+such as another organisation's user. Drawn in grey.'''@en ;
+    rdfs:seeAlso    <https://c4model.com/diagrams/system-context> ,
+                    <https://c4model.com/abstractions> ;
+.
+
+:ExternalSoftwareSystem
+    a               owl:Class ;
+    rdfs:subClassOf :SoftwareSystem ;
+    skos:prefLabel  "External Software System"@en ;
+    skos:definition '''A software system outside the scope of the one being described, which it depends on or
+which depends on it, typically owned by another team or organisation. Drawn in grey.'''@en ;
+    rdfs:seeAlso    <https://c4model.com/diagrams/system-context> ,
+                    <https://c4model.com/abstractions/software-system> ;
+.
+
+
+#################################################################
+# Relationship Types — Uses
+#################################################################
+
+:uses
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Uses"@en ;
+    skos:definition      "Indicates that one element uses or interacts with another."@en ;
+    arch:domainIncludes  arch:Element ;
+    arch:rangeIncludes   arch:Element ;
+    rdfs:seeAlso         <https://c4model.com/diagrams/notation> ,
+                         <https://docs.structurizr.com/dsl/language#relationship> ;
+.
+
+:Using
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :uses ;
+    skos:prefLabel       "Using"@en ;
+    skos:definition      "A using relationship indicates that one element uses or interacts with another."@en ;
+    rdfs:seeAlso         <https://c4model.com/diagrams/notation> ,
+                         <https://docs.structurizr.com/dsl/language#relationship> ;
+.
+
+:qualifiedUsing
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Using ;
+    arch:unqualifiedForm :uses ;
+.
+
+
+#################################################################
+# Relationship Types — Containment
+#################################################################
+
+:hasContainer
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Has Container"@en ;
+    skos:definition      "A software system contains containers."@en ;
+    arch:domainIncludes  :SoftwareSystem ;
+    arch:rangeIncludes   :Container ;
+    rdfs:seeAlso         <https://c4model.com/abstractions> ,
+                         <https://docs.structurizr.com/dsl/language#container> ;
+.
+
+:ContainerContainment
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasContainer ;
+    skos:prefLabel       "Container Containment"@en ;
+    skos:definition      "A containment relationship from a software system to a container."@en ;
+    rdfs:seeAlso         <https://c4model.com/abstractions> ,
+                         <https://docs.structurizr.com/dsl/language#container> ;
+.
+
+:qualifiedContainerContainment
+    a                    owl:ObjectProperty ;
+    rdfs:range           :ContainerContainment ;
+    arch:unqualifiedForm :hasContainer ;
+.
+
+:hasComponent
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Has Component"@en ;
+    skos:definition      "A container contains components."@en ;
+    arch:domainIncludes  :Container ;
+    arch:rangeIncludes   :Component ;
+    rdfs:seeAlso         <https://c4model.com/abstractions> ,
+                         <https://docs.structurizr.com/dsl/language#component> ;
+.
+
+:ComponentContainment
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasComponent ;
+    skos:prefLabel       "Component Containment"@en ;
+    skos:definition      "A containment relationship from a container to a component."@en ;
+    rdfs:seeAlso         <https://c4model.com/abstractions> ,
+                         <https://docs.structurizr.com/dsl/language#component> ;
+.
+
+:qualifiedComponentContainment
+    a                    owl:ObjectProperty ;
+    rdfs:range           :ComponentContainment ;
+    arch:unqualifiedForm :hasComponent ;
+.
+
+
+#################################################################
+# Attribute Properties
+#################################################################
+
+:technology
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Technology"@en ;
+    skos:definition '''Technology used by a container or a component (e.g., 'Spring Boot', 'PostgreSQL',
+'React'), or the technology or protocol of a relationship between containers (e.g., 'JSON/HTTPS').'''@en ;
+    arch:domainIncludes :Container , :Component , :Using ;
+    rdfs:range      xsd:string ;
+    rdfs:seeAlso    <https://c4model.com/diagrams/notation> ,
+                    <https://docs.structurizr.com/dsl/language#technology> ;
+.

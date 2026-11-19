@@ -1,0 +1,1114 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix eaop:    <https://meta.linked.archi/eaonapage/onto#> .
+@prefix aptax:   <https://meta.linked.archi/arch-processes/tax#> .
+@prefix :        <https://meta.linked.archi/eaonapage/tax#> .
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## FILE ORGANIZATION
+##
+## Single unified SKOS ConceptScheme with four top-level grouping concepts:
+##
+##   :ArtifactTypes           → 6 CSVLOD types → 24 specific artifacts
+##   :MaturityStages          → Stage 0, 1, 2, 3
+##   :GovernanceModel         → Tiers, Bodies, Activities
+##   :ClassificationDimensions
+##       ├── :NatureDimension    → Rules, Structures, Changes
+##       ├── :FocusDimension     → Business-Focused, IT-Focused
+##       ├── :ScopeDimension     → Organization-Wide, Initiative-Scoped, Project-Scoped
+##       ├── :LifecycleDimension → Permanent, Long-Lived, Short-Lived
+##       └── :FrequencyDimension → Essential, Common, Uncommon
+##
+## All concepts belong to the single scheme <.../eaonapage/tax#>.
+## Faceted classification is achieved through properties on artifact types
+## (eaop:artifactNature, eaop:artifactFocus, etc.) pointing to dimension
+## concepts — not through separate schemes.
+##
+## See: W3C SKOS Primer §2.5 (concept schemes), §4.1 (collections)
+## ═══════════════════════════════════════════════════════════════════════════════
+
+
+<https://meta.linked.archi/eaonapage/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "EA on a Page Classification"@en ;
+    dcterms:description  '''Unified classification scheme for the EA on a Page framework.
+Organizes EA artifacts (CSVLOD taxonomy), maturity stages, governance model,
+and classification dimensions into a single navigable hierarchy with four
+top-level grouping concepts.'''@en ;
+    skos:hasTopConcept :ArtifactTypes, :MaturityStages, :GovernanceModel,
+                       :ClassificationDimensions ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/eaonapage/tax#" ;
+    vann:preferredNamespacePrefix "eaoptax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EA on a Page Taxonomy"@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-06-15"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.3.0"@en ;
+    prov:wasDerivedFrom           "EA on a Page (Svyatoslav Kotusev, 2017)" ;
+    rdfs:seeAlso                  <https://eaonapage.com/> .
+
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## CSVLOD Artifact Types — Grouping Concept
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ArtifactTypes
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "EA Artifact Types"@en ;
+    skos:definition   '''The six general types of EA artifacts identified empirically by the
+CSVLOD taxonomy: Considerations, Standards, Visions, Landscapes, Outlines, and
+Designs. Each type is characterized by its nature (rules/structures/changes) and
+focus (business/IT).'''@en ;
+    skos:narrower     :Considerations, :Standards, :Visions,
+                      :Landscapes, :Outlines, :Designs ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## CSVLOD Types (6 artifact types under :ArtifactTypes)
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:Considerations
+    a                 skos:Concept, eaop:ArtifactType ;
+    skos:broader    :ArtifactTypes ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Considerations"@en ;
+    skos:definition   "Global conceptual rules and fundamental considerations important for business and relevant to IT. Dual EA artifacts relevant to both business leaders and architects."@en ;
+    skos:scopeNote    '''Considerations represent planning decisions on how an organization needs to work
+from the business and IT perspective. They are developed collaboratively by senior
+business executives and architects and then used to influence all downstream
+architectural decisions. Considerations can be viewed as the overarching
+organizational context for information systems planning. The general purpose of
+all Considerations is to help achieve the agreement on basic principles, values,
+directions and aims. The proper use of Considerations leads to improved overall
+conceptual consistency between business and IT.'''@en ;
+    skos:example      "Architecture principles, policies, business continuity requirements."@en ;
+    eaop:artifactNature :Rules ;
+    eaop:artifactFocus :BusinessFocused ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    rdfs:seeAlso      eaop:Consideration ;
+.
+
+:Standards
+    a                 skos:Concept, eaop:ArtifactType ;
+    skos:broader    :ArtifactTypes ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Standards"@en ;
+    skos:definition   "Global technical rules, standards, patterns and best practices relevant to IT systems. Not dual — relevant mostly to architects."@en ;
+    skos:scopeNote    '''Standards represent mostly planning decisions on how all IT systems should be
+implemented and some facts on current approaches and technologies. They are
+developed collaboratively by architects and technical subject-matter experts and
+used to shape the architectures of all IT initiatives. Standards can be regarded
+as proven reusable means for IT systems implementation. The general purpose of
+all Standards is to help achieve technical consistency, technological homogeneity
+and regulatory compliance. The proper use of Standards leads to faster delivery
+of new IT initiatives and reduced IT-related costs, risks and complexity.'''@en ;
+    skos:example      "Technology standards prescribing application platforms, database systems, integration patterns."@en ;
+    eaop:artifactNature :Rules ;
+    eaop:artifactFocus :ITFocused ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    rdfs:seeAlso      eaop:Standard ;
+.
+
+:Visions
+    a                 skos:Concept, eaop:ArtifactType ;
+    skos:broader    :ArtifactTypes ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Visions"@en ;
+    skos:definition   "High-level conceptual descriptions of an organization from the business perspective. Dual EA artifacts relevant to both business leaders and architects, often focusing on the long-term future up to 3-5 years ahead."@en ;
+    skos:scopeNote    '''Visions represent mostly planning decisions on what IT should deliver to an
+organization in the long run. They are developed collaboratively by senior business
+executives and architects and then used to guide IT investments, identify,
+prioritize and launch new IT initiatives. Visions can be considered as shared views
+of an organization and its future agreed by business and IT. The general purpose
+of all Visions is to help achieve the alignment between IT investments and
+long-term business outcomes. The proper use of Visions leads to improved strategic
+alignment and effectiveness of IT investments.'''@en ;
+    skos:example      "Business capability maps, target state architectures, strategic roadmaps."@en ;
+    eaop:artifactNature :Structures ;
+    eaop:artifactFocus :BusinessFocused ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :LongLived ;
+    rdfs:seeAlso      eaop:Vision ;
+.
+
+:Landscapes
+    a                 skos:Concept, eaop:ArtifactType ;
+    skos:broader    :ArtifactTypes ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Landscapes"@en ;
+    skos:definition   "High-level technical descriptions of the organizational IT landscape. Not dual — relevant predominantly to architects, more often focusing on the current state."@en ;
+    skos:scopeNote    '''Landscapes represent mostly facts on the current IT landscape and some planning
+decisions on its future evolution. They are developed and maintained by architects
+and used to rationalize the IT landscape, manage the lifecycle of IT assets and
+plan new IT initiatives. Landscapes can be viewed as a knowledge base of reference
+materials on the IT landscape. The general purpose of all Landscapes is to help
+understand, analyze and modify the structure of the IT landscape. The proper use
+of Landscapes leads to increased reuse and reduced duplication of IT assets,
+improved IT agility and decreased dependence on legacy IT systems.'''@en ;
+    skos:example      "Landscape diagrams, application inventories, infrastructure maps, IT roadmaps."@en ;
+    eaop:artifactNature :Structures ;
+    eaop:artifactFocus :ITFocused ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :LongLived ;
+    rdfs:seeAlso      eaop:Landscape ;
+.
+
+:Outlines
+    a                 skos:Concept, eaop:ArtifactType ;
+    skos:broader    :ArtifactTypes ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Outlines"@en ;
+    skos:definition   "High-level descriptions of separate IT initiatives understandable to business leaders. Dual EA artifacts relevant to both business executives and architects, usually focusing on the mid-term future up to 1-2 years ahead."@en ;
+    skos:scopeNote    '''Outlines represent planning decisions on how approximately specific IT initiatives
+should be implemented. They are developed collaboratively by architects and
+business executives and then used to evaluate, approve and fund specific IT
+initiatives. Outlines can be regarded essentially as benefit, time and price tags
+for proposed IT initiatives. The general purpose of all Outlines is to help
+estimate the overall business impact and value of proposed IT initiatives. The
+proper use of Outlines leads to improved efficiency and ROI of IT investments.'''@en ;
+    skos:example      "Solution overviews, options assessments, initiative proposals."@en ;
+    eaop:artifactNature :Changes ;
+    eaop:artifactFocus :BusinessFocused ;
+    eaop:artifactScope :InitiativeScoped ;
+    eaop:artifactLifecycle :ShortLived ;
+    rdfs:seeAlso      eaop:Outline ;
+.
+
+:Designs
+    a                 skos:Concept, eaop:ArtifactType ;
+    skos:broader    :ArtifactTypes ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Designs"@en ;
+    skos:definition   "Detailed technical and functional descriptions of separate IT projects actionable for project teams. Dual EA artifacts relevant to both project teams and architects, usually focusing on the short-term future up to one year ahead."@en ;
+    skos:scopeNote    '''Designs represent planning decisions on how exactly specific IT projects should be
+implemented. They are developed collaboratively by architects, IT project teams
+and business representatives and then used by project teams to implement IT
+projects. Designs can be considered as communication interfaces between architects
+and project teams. The general purpose of all Designs is to help implement
+approved IT projects according to business and architectural requirements. The
+proper use of Designs leads to improved overall quality of project delivery.'''@en ;
+    skos:example      "Solution designs, preliminary solution designs."@en ;
+    eaop:artifactNature :Changes ;
+    eaop:artifactFocus :ITFocused ;
+    eaop:artifactScope :ProjectScoped ;
+    eaop:artifactLifecycle :ShortLived ;
+    rdfs:seeAlso      eaop:Design ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Considerations — 5 artifacts
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:Principle
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Considerations ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Principle"@en ;
+    skos:altLabel   "Principles"@en ;
+    skos:definition "Global high-level guidelines influencing all decision-making and planning in an organization."@en ;
+    eaop:usageFrequency :Essential ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    eaop:usedInProcess eaop:StrategicPlanning ;
+.
+
+:Policy
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Considerations ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Policy"@en ;
+    skos:altLabel   "Policies"@en ;
+    skos:definition "Overarching organizational norms typically of a restrictive nature providing compulsory prescriptions in certain areas."@en ;
+    eaop:usageFrequency :Common ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    eaop:usedInProcess eaop:StrategicPlanning ;
+.
+
+:ConceptualDataModel
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Considerations ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Conceptual Data Model"@en ;
+    skos:definition "Abstract definitions of the main data entities critical for the business of an organization and their relationship."@en ;
+    eaop:usageFrequency :Uncommon ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    eaop:usedInProcess eaop:StrategicPlanning ;
+.
+
+:AnalyticalReport
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Considerations ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Analytical Report"@en ;
+    skos:definition "Executive-level analyses of relevant technology trends and their potential impact on the business of an organization."@en ;
+    eaop:usageFrequency :Uncommon ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    eaop:usedInProcess eaop:StrategicPlanning ;
+.
+
+:DirectionStatement
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Considerations ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Direction Statement"@en ;
+    skos:definition "Conceptual messages communicating major organization-wide decisions with far-reaching consequences."@en ;
+    eaop:usageFrequency :Uncommon ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    eaop:usedInProcess eaop:StrategicPlanning ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Standards — 5 artifacts
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:TechnologyReferenceModel
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Standards ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Technology Reference Model"@en ;
+    skos:definition "Structured graphical representations of all technologies used in an organization."@en ;
+    eaop:usageFrequency :Essential ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    eaop:usedInProcess eaop:TechnologyOptimization ;
+.
+
+:Guideline
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Standards ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Guideline"@en ;
+    skos:altLabel   "Guidelines"@en ;
+    skos:definition "IT-specific implementation-level prescriptions applicable in narrow technology-specific areas or domains."@en ;
+    eaop:usageFrequency :Essential ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    eaop:usedInProcess eaop:TechnologyOptimization ;
+.
+
+:Pattern
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Standards ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Pattern"@en ;
+    skos:altLabel   "Patterns"@en ;
+    skos:definition "Generic reusable solutions to commonly occurring problems in the design of IT systems."@en ;
+    eaop:usageFrequency :Common ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    eaop:usedInProcess eaop:TechnologyOptimization ;
+.
+
+:ITPrinciple
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Standards ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "IT Principle"@en ;
+    skos:altLabel   "IT Principles"@en ;
+    skos:definition "Global high-level IT-specific guidelines influencing all IT-related decisions and plans in an organization."@en ;
+    eaop:usageFrequency :Common ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    eaop:usedInProcess eaop:TechnologyOptimization ;
+.
+
+:LogicalDataModel
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Standards ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Logical Data Model"@en ;
+    skos:definition "Logical or physical platform-specific definitions of common data entities and their relationship."@en ;
+    eaop:usageFrequency :Uncommon ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :Permanent ;
+    eaop:usedInProcess eaop:TechnologyOptimization ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Visions — 5 artifacts
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:BusinessCapabilityModel
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Visions ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Business Capability Model"@en ;
+    skos:definition "Structured graphical representations of all organizational business capabilities, their relationship and hierarchy."@en ;
+    eaop:usageFrequency :Essential ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :LongLived ;
+    eaop:usedInProcess eaop:StrategicPlanning ;
+.
+
+:Roadmap
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Visions ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Roadmap"@en ;
+    skos:definition "Structured graphical views of all planned IT initiatives in specific business areas having direct business value."@en ;
+    eaop:usageFrequency :Essential ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :LongLived ;
+    eaop:usedInProcess eaop:StrategicPlanning ;
+.
+
+:TargetState
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Visions ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Target State"@en ;
+    skos:definition "High-level graphical descriptions of the desired long-term future state of an organization."@en ;
+    eaop:usageFrequency :Common ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :LongLived ;
+    eaop:usedInProcess eaop:StrategicPlanning ;
+.
+
+:ValueChain
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Visions ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Value Chain"@en ;
+    skos:definition "Structured graphical representations of the added value chain of an organization."@en ;
+    eaop:usageFrequency :Uncommon ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :LongLived ;
+    eaop:usedInProcess eaop:StrategicPlanning ;
+.
+
+:ContextDiagram
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Visions ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Context Diagram"@en ;
+    skos:definition "High-level graphical descriptions of the current operational flows of an organization."@en ;
+    eaop:usageFrequency :Uncommon ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :LongLived ;
+    eaop:usedInProcess eaop:StrategicPlanning ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Landscapes — 4 artifacts
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:LandscapeDiagram
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Landscapes ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Landscape Diagram"@en ;
+    skos:definition "Technical boxes-and-arrows schemes of different scopes and granularities describing the organizational IT landscape."@en ;
+    eaop:usageFrequency :Essential ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :LongLived ;
+    eaop:usedInProcess eaop:TechnologyOptimization ;
+.
+
+:Inventory
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Landscapes ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Inventory"@en ;
+    skos:definition "Structured catalogs of currently available IT assets describing their essential properties and features."@en ;
+    eaop:usageFrequency :Common ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :LongLived ;
+    eaop:usedInProcess eaop:TechnologyOptimization ;
+.
+
+:EnterpriseSystemPortfolio
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Landscapes ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Enterprise System Portfolio"@en ;
+    skos:definition "Structured high-level mappings of all essential IT systems to relevant business capabilities."@en ;
+    eaop:usageFrequency :Common ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :LongLived ;
+    eaop:usedInProcess eaop:TechnologyOptimization ;
+.
+
+:ITRoadmap
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Landscapes ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "IT Roadmap"@en ;
+    skos:definition "Structured graphical views of all planned IT initiatives of a purely technical nature having no visible business impact."@en ;
+    eaop:usageFrequency :Common ;
+    eaop:artifactScope :OrganizationWide ;
+    eaop:artifactLifecycle :LongLived ;
+    eaop:usedInProcess eaop:TechnologyOptimization ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Outlines — 3 artifacts
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:SolutionOverview
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Outlines ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Solution Overview"@en ;
+    skos:definition "High-level descriptions of specific proposed IT solutions understandable to business leaders."@en ;
+    eaop:usageFrequency :Essential ;
+    eaop:artifactScope :InitiativeScoped ;
+    eaop:artifactLifecycle :ShortLived ;
+    eaop:usedInProcess eaop:InitiativeDelivery ;
+.
+
+:OptionsAssessment
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Outlines ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Options Assessment"@en ;
+    skos:definition "Lists of available high-level implementation options for specific IT initiatives with their pros and cons."@en ;
+    eaop:usageFrequency :Common ;
+    eaop:artifactScope :InitiativeScoped ;
+    eaop:artifactLifecycle :ShortLived ;
+    eaop:usedInProcess eaop:InitiativeDelivery ;
+.
+
+:InitiativeProposal
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Outlines ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Initiative Proposal"@en ;
+    skos:definition "Very early idea-level descriptions of proposed IT initiatives and their justifications."@en ;
+    eaop:usageFrequency :Uncommon ;
+    eaop:artifactScope :InitiativeScoped ;
+    eaop:artifactLifecycle :ShortLived ;
+    eaop:usedInProcess eaop:InitiativeDelivery ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Designs — 2 artifacts
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:SolutionDesign
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Designs ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Solution Design"@en ;
+    skos:definition "Detailed technical and functional specifications of approved IT solutions actionable for project teams."@en ;
+    eaop:usageFrequency :Essential ;
+    eaop:artifactScope :ProjectScoped ;
+    eaop:artifactLifecycle :ShortLived ;
+    eaop:usedInProcess eaop:InitiativeDelivery ;
+.
+
+:PreliminarySolutionDesign
+    a               skos:Concept, eaop:ArtifactType ;
+    skos:broader    :Designs ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Preliminary Solution Design"@en ;
+    skos:definition "Preliminary high-level technical and functional designs of specific approved IT solutions."@en ;
+    eaop:usageFrequency :Uncommon ;
+    eaop:artifactScope :ProjectScoped ;
+    eaop:artifactLifecycle :ShortLived ;
+    eaop:usedInProcess eaop:InitiativeDelivery ;
+.
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## EA Maturity Stages
+##
+## Based on "EA Maturity on a Page" (Kotusev). Four stages from no architecture
+## to true enterprise architecture. The model is descriptive, not prescriptive.
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:MaturityStages
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Maturity Stages"@en ;
+    skos:definition   '''Classification of EA practice maturity into four stages based on
+empirical observation across 27+ organizations. Describes what is typically
+observed at each stage, not what should be achieved in a linear progression.'''@en ;
+    skos:narrower     :StageZero, :StageOne, :StageTwo, :StageThree ;
+    rdfs:seeAlso      <https://eaonapage.com/> ;
+.
+
+:StageZero
+    a                 skos:Concept, eaop:MaturityStage ;
+    skos:broader      :MaturityStages ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Stage Zero — No Architecture"@en ;
+    skos:altLabel     "Stage 0"@en ;
+    skos:definition   '''No established EA practice. IT decisions are made ad hoc by individual
+project teams without overarching governance, standards, or strategic alignment.
+There are no dedicated architecture roles, no shared artifacts, and no
+architecture governance bodies.'''@en ;
+    skos:scopeNote    '''Typical characteristics: no EA artifacts in use, no architecture roles,
+no governance arrangements, no strategic IT planning. IT is purely reactive.'''@en ;
+    eaop:maturityChallenge "Duplicate systems and redundant technologies proliferate unchecked."@en ;
+    eaop:maturityChallenge "IT investments are not aligned with business strategy."@en ;
+    eaop:maturityChallenge "No shared understanding of the IT landscape across the organization."@en ;
+    eaop:maturityChallenge "Integration between systems is ad hoc and fragile."@en ;
+.
+
+:StageOne
+    a                 skos:Concept, eaop:MaturityStage ;
+    skos:broader      :MaturityStages ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Stage One — IT Optimization"@en ;
+    skos:altLabel     "Stage 1"@en ;
+    skos:definition   '''EA practice focused on technology rationalization. Standards and
+Landscapes are the primary artifacts. The Technology Optimization process is
+established. Architecture governance is informal or limited to technology
+standards compliance.'''@en ;
+    skos:scopeNote    '''Typical artifacts: Technology Reference Models, Landscape Diagrams,
+Inventories. Typical roles: enterprise architects focused on technology.
+Governance: informal technology standards review.'''@en ;
+    eaop:maturityStageProcess eaop:TechnologyOptimization ;
+    eaop:maturityStageArtifact eaop:Standard, eaop:Landscape ;
+    eaop:maturityBenefit "Reduced technology duplication through standards enforcement."@en ;
+    eaop:maturityBenefit "Shared visibility of the current IT landscape."@en ;
+    eaop:maturityBenefit "More informed technology selection decisions."@en ;
+    eaop:maturityChallenge "EA perceived as IT-only function with limited business engagement."@en ;
+    eaop:maturityChallenge "Architecture governance may be seen as bureaucratic overhead."@en ;
+    eaop:maturityChallenge "Difficulty demonstrating business value of EA practice."@en ;
+.
+
+:StageTwo
+    a                 skos:Concept, eaop:MaturityStage ;
+    skos:broader      :MaturityStages ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Stage Two — Solution Delivery"@en ;
+    skos:altLabel     "Stage 2"@en ;
+    skos:definition   '''EA practice extends to guiding project delivery. Initiative Delivery
+process is established alongside Technology Optimization. Outlines and Designs
+are produced for major initiatives. Solution architect roles emerge. Architecture
+review becomes a formal gate in the project lifecycle.'''@en ;
+    skos:scopeNote    '''Typical artifacts: all Stage One artifacts plus Solution Overviews,
+Options Assessments, Solution Designs. Typical roles: enterprise architects
+and solution architects. Governance: formal architecture review board for
+project-level decisions.'''@en ;
+    eaop:maturityStageProcess eaop:TechnologyOptimization, eaop:InitiativeDelivery ;
+    eaop:maturityStageArtifact eaop:Standard, eaop:Landscape, eaop:Outline, eaop:Design ;
+    eaop:maturityBenefit "Improved solution quality through architecture review."@en ;
+    eaop:maturityBenefit "Better standards compliance in project implementations."@en ;
+    eaop:maturityBenefit "Reduced rework through early architecture guidance."@en ;
+    eaop:maturityBenefit "Reuse of proven patterns and reference architectures."@en ;
+    eaop:maturityChallenge "Architecture review may slow project delivery if not well-integrated."@en ;
+    eaop:maturityChallenge "Tension between enterprise standards and project-specific needs."@en ;
+    eaop:maturityChallenge "Strategic alignment still limited without business engagement."@en ;
+.
+
+:StageThree
+    a                 skos:Concept, eaop:MaturityStage ;
+    skos:broader      :MaturityStages ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Stage Three — Enterprise Architecture"@en ;
+    skos:altLabel     "Stage 3"@en ;
+    skos:definition   '''Full EA practice with all three processes established. Strategic Planning
+is active, producing Considerations and Visions that guide investment decisions.
+All six CSVLOD artifact types are in use. Architecture governance spans from
+enterprise strategy to project delivery. Business leaders actively participate
+in architecture-informed strategic planning.'''@en ;
+    skos:scopeNote    '''Typical artifacts: all 24 artifacts across all six CSVLOD types.
+Typical roles: enterprise architects, solution architects, business leaders,
+IT leaders. Governance: multi-tier governance with strategic and operational
+review bodies, formal escalation paths, and governed artifact lifecycle.'''@en ;
+    eaop:maturityStageProcess eaop:StrategicPlanning, eaop:TechnologyOptimization,
+                              eaop:InitiativeDelivery ;
+    eaop:maturityStageArtifact eaop:Consideration, eaop:Standard, eaop:Vision,
+                               eaop:Landscape, eaop:Outline, eaop:Design ;
+    eaop:maturityBenefit "IT investments aligned with business strategy."@en ;
+    eaop:maturityBenefit "Business leaders actively engaged in architecture-informed planning."@en ;
+    eaop:maturityBenefit "Coherent technology landscape with managed evolution."@en ;
+    eaop:maturityBenefit "Consistent solution quality across the portfolio."@en ;
+    eaop:maturityBenefit "Reduced total cost of ownership through rationalization and reuse."@en ;
+    eaop:maturityChallenge "Sustaining business engagement over time."@en ;
+    eaop:maturityChallenge "Keeping architecture artifacts current as the organization evolves."@en ;
+    eaop:maturityChallenge "Balancing governance rigor with organizational agility."@en ;
+    eaop:maturityChallenge "Measuring and communicating the value of EA to the business."@en ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## EA Governance / Function
+##
+## Based on "EA Function on a Page" (Kotusev). Classifies governance
+## arrangements, architecture tiers, and governance body types.
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:GovernanceModel
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Governance Model"@en ;
+    skos:definition   '''Classification of EA governance arrangements including architecture
+tiers, governance body types, and governance activities. Based on EA Function
+on a Page by Kotusev.'''@en ;
+    skos:narrower     :ArchitectureTiersGroup, :GovernanceBodiesGroup,
+                      :ParticipantsGroup, :ProcessesGroup, :ProcessPhasesGroup,
+                      :GovernanceActivitiesGroup ;
+    rdfs:seeAlso      <https://eaonapage.com/> ;
+.
+
+
+## ─── Architecture Tiers ────────────────────────────────────────────────────
+
+:ArchitectureTiersGroup
+    a                 skos:Concept ;
+    skos:broader      :GovernanceModel ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Architecture Tiers"@en ;
+    skos:definition   "Levels in the architecture governance hierarchy."@en ;
+.
+
+:OneTierModel
+    a                 skos:Concept, eaop:ArchitectureTier ;
+    skos:broader      :ArchitectureTiersGroup ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "One-Tier Model"@en ;
+    skos:definition   '''A single EA team handles all architecture activities — strategic
+planning, technology optimization, and initiative delivery. Typical in smaller
+organizations or early-maturity EA practices.'''@en ;
+    eaop:tierLevel    1 ;
+.
+
+:TwoTierModel
+    a                 skos:Concept, eaop:ArchitectureTier ;
+    skos:broader      :ArchitectureTiersGroup ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Two-Tier Model"@en ;
+    skos:definition   '''Enterprise architects handle strategic and technology artifacts
+(Considerations, Visions, Standards, Landscapes) while solution architects
+handle initiative-level artifacts (Outlines, Designs). The most common
+governance model observed in practice.'''@en ;
+    eaop:tierLevel    2 ;
+.
+
+:ThreeTierModel
+    a                 skos:Concept, eaop:ArchitectureTier ;
+    skos:broader      :ArchitectureTiersGroup ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Three-Tier Model"@en ;
+    skos:definition   '''Adds a domain or segment architecture layer between enterprise and
+solution tiers. Domain architects manage domain-specific standards, landscapes,
+and cross-initiative coordination. Typical in large, complex organizations.'''@en ;
+    eaop:tierLevel    3 ;
+.
+
+
+## ─── Governance Bodies ─────────────────────────────────────────────────────
+
+:GovernanceBodiesGroup
+    a                 skos:Concept ;
+    skos:broader      :GovernanceModel ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Governance Bodies"@en ;
+    skos:definition   "Types of organizational bodies that govern architecture decisions."@en ;
+    skos:narrower     eaop:GovernanceBody ;
+.
+
+## ─── EA Processes and their phases ─────────────────────────────────────────
+
+:ProcessesGroup
+    a                 skos:Concept ;
+    skos:broader      :GovernanceModel ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "EA Processes"@en ;
+    skos:definition   "The three core processes of an EA practice."@en ;
+    skos:narrower     eaop:StrategicPlanning, eaop:InitiativeDelivery, eaop:TechnologyOptimization ;
+.
+
+:ProcessPhasesGroup
+    a                 skos:Concept ;
+    skos:broader      :GovernanceModel ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "EA Process Phases"@en ;
+    skos:definition   "The phases an initiative passes through within the core EA processes."@en ;
+    skos:narrower     eaop:StrategicPlanningCycle, eaop:Initiation, eaop:Realization ;
+.
+
+## ─── Participants ──────────────────────────────────────────────────────────
+
+:ParticipantsGroup
+    a                 skos:Concept ;
+    skos:broader      :GovernanceModel ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Participants"@en ;
+    skos:definition   "The stakeholders who take part in the EA practice's processes."@en ;
+    skos:narrower     eaop:BusinessLeader, eaop:ITLeader, eaop:EnterpriseArchitect,
+                      eaop:SolutionArchitect ;
+.
+
+:ArchitectureReviewBoard
+    a                 skos:Concept, eaop:GovernanceBody ;
+    skos:broader      :GovernanceBodiesGroup ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Architecture Review Board"@en ;
+    skos:definition   '''A governance body that reviews and approves architecture artifacts,
+particularly Outlines and Designs, for standards compliance and strategic
+alignment. Typically operates at the solution/project tier.'''@en ;
+.
+
+:SteeringCommittee
+    a                 skos:Concept, eaop:GovernanceBody ;
+    skos:broader      :GovernanceBodiesGroup ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Steering Committee"@en ;
+    skos:definition   '''A senior governance body that oversees strategic architecture
+direction, approves Visions and Considerations, and resolves escalated
+architecture decisions. Typically includes business and IT leaders.'''@en ;
+.
+
+:TechnologyCouncil
+    a                 skos:Concept, eaop:GovernanceBody ;
+    skos:broader      :GovernanceBodiesGroup ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Technology Council"@en ;
+    skos:definition   '''A governance body focused on technology standards and landscape
+rationalization. Reviews and approves Standards artifacts, manages the
+Technology Reference Model, and governs technology lifecycle decisions.'''@en ;
+.
+
+
+## ─── Governance Activities ─────────────────────────────────────────────────
+
+:GovernanceActivitiesGroup
+    a                 skos:Concept ;
+    skos:broader      :GovernanceModel ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Governance Activities"@en ;
+    skos:definition   "Types of governance activities in an EA practice."@en ;
+.
+
+:ReviewActivity
+    a               skos:Concept ;
+    skos:broader    :GovernanceActivitiesGroup ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Architecture Review"@en ;
+    skos:definition "Review of architecture artifacts against standards, principles, and strategic direction."@en ;
+    rdfs:seeAlso    eaop:ArchitectureReview ;
+.
+
+:ApprovalActivity
+    a               skos:Concept ;
+    skos:broader    :GovernanceActivitiesGroup ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Approval"@en ;
+    skos:definition "Formal approval of an architecture artifact or initiative to proceed."@en ;
+    rdfs:seeAlso    eaop:Approval ;
+.
+
+:AmendmentActivity
+    a               skos:Concept ;
+    skos:broader    :GovernanceActivitiesGroup ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Amendment"@en ;
+    skos:definition "Modification of an approved architecture artifact to reflect changed requirements."@en ;
+    rdfs:seeAlso    eaop:Amendment ;
+.
+
+:ExemptionActivity
+    a               skos:Concept ;
+    skos:broader    :GovernanceActivitiesGroup ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Exemption"@en ;
+    skos:definition "Temporary deviation from established standards or principles for a specific initiative."@en ;
+    rdfs:seeAlso    eaop:Exemption ;
+.
+
+:EscalationActivity
+    a               skos:Concept ;
+    skos:broader    :GovernanceActivitiesGroup ;
+    skos:inScheme   <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel  "Escalation"@en ;
+    skos:definition "Escalation of a decision or conflict to a higher-tier governance body."@en ;
+    rdfs:seeAlso    eaop:Escalation ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Classification Dimensions
+##
+## The CSVLOD taxonomy classifies artifacts along multiple independent axes.
+## These are grouped under :ClassificationDimensions for navigability.
+## Artifact types reference dimension values via properties (eaop:artifactNature,
+## eaop:artifactFocus, eaop:artifactScope, eaop:artifactLifecycle, eaop:usageFrequency).
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ClassificationDimensions
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Classification Dimensions"@en ;
+    skos:definition   '''The independent facets used to classify EA artifacts. Each artifact
+is classified along all dimensions simultaneously (post-coordinated).'''@en ;
+    skos:narrower     :NatureDimension, :FocusDimension, :ScopeDimension,
+                      :LifecycleDimension, :FrequencyDimension ;
+.
+
+
+## ─── Nature (What do artifacts describe?) ──────────────────────────────────
+##
+## The first dimension of the CSVLOD taxonomy classifies EA artifacts based on
+## what objects they describe.
+##
+## | Nature     | Describe                                                         | Scope                                              | Format                   | Question                                          | Lifecycle                                           | Role                                                | Purpose                                                             |
+## |------------|------------------------------------------------------------------|----------------------------------------------------|--------------------------|---------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|---------------------------------------------------------------------|
+## | Rules      | General global rules defining an organization or its divisions   | Very broad, often relate to an entire organization | Often textual            | How do we work or want to work?                   | Permanent, created once and then periodically updated | Basis for all other planning decisions              | Help achieve consistency and homogeneity of all planning decisions  |
+## | Structures | High-level structures of an organization or its parts            | Broad, often cover large areas of an organization  | Usually graphical        | What approximately do we have or want to have?    | Permanent, created once and then continuously updated | High-level maps facilitating decision-making        | Help understand what changes are desirable and how to implement them |
+## | Changes    | Specific proposed incremental changes to an organization         | Narrow, limited to separate IT initiatives/projects | Mix of textual/graphical | What exactly are we going to change right now?     | Temporary, created for specific purposes then discarded | Tactical plans of an organization                   | Help plan separate changes in detail                                |
+##
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:NatureDimension
+    a                 skos:Concept ;
+    skos:broader      :ClassificationDimensions ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Nature"@en ;
+    skos:definition   '''Classification of EA artifacts by what objects they describe. The first
+dimension of the CSVLOD taxonomy organizes all EA artifacts into rules, structures
+and changes.'''@en ;
+    skos:narrower     :Rules, :Structures, :Changes ;
+.
+
+:Rules
+    a                 skos:Concept ;
+    skos:broader      :NatureDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Rules"@en ;
+    skos:definition   '''EA artifacts that describe general global rules defining an organization
+or its divisions. Rules are permanent, created once and periodically updated. They
+do not refer to specific instances but apply to all instances of a certain type.
+Rules provide the basis for all other planning decisions and answer: "How do we
+work or want to work?"'''@en ;
+    skos:scopeNote    "Often represented in textual formats. Intangible and uncountable. The most stable and infrequently changing EA artifacts."@en ;
+    skos:example      "Considerations (principles, policies) and Standards (technology reference models, patterns)."@en ;
+.
+
+:Structures
+    a                 skos:Concept ;
+    skos:broader      :NatureDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Structures"@en ;
+    skos:definition   '''EA artifacts that describe high-level structures of an organization or
+its parts. Structures refer to specific but relatively abstract instances and
+often describe relationships between them. They are permanent, created once and
+continuously updated. Structures provide high-level maps facilitating
+decision-making and answer: "What approximately do we have or want to have?"'''@en ;
+    skos:scopeNote    "Usually represented in graphical formats. Tangible and countable. Change together with an organization and its plans."@en ;
+    skos:example      "Visions (capability maps, target architectures) and Landscapes (application maps, inventories)."@en ;
+.
+
+:Changes
+    a                 skos:Concept ;
+    skos:broader      :NatureDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Changes"@en ;
+    skos:definition   '''EA artifacts that describe specific proposed incremental changes to
+an organization — separate change initiatives or projects. Changes thoroughly
+describe concrete instances with internal details. They are temporary, created
+for specific purposes and then discarded. Changes represent the tactical plans
+and answer: "What exactly are we going to change right now?"'''@en ;
+    skos:scopeNote    "Usually represented in mixed textual and graphical formats. The most volatile EA artifacts with short lifespans limited to project timeframes."@en ;
+    skos:example      "Outlines (solution overviews, options assessments) and Designs (solution designs, detailed specifications)."@en ;
+.
+
+
+## ─── Focus (How do artifacts describe objects?) ────────────────────────────
+##
+## The second dimension of the CSVLOD taxonomy classifies EA artifacts based on
+## how they describe objects.
+##
+## | Focus            | Language                               | Domains                                                                             | Format                                                               | Stakeholders                       | Role                                           | Purpose                              |
+## |------------------|----------------------------------------|-------------------------------------------------------------------------------------|----------------------------------------------------------------------|------------------------------------|------------------------------------------------|--------------------------------------|
+## | Business-Focused | Technology-neutral business language   | Business domain and often other relevant domains at a high level                    | Brief, intuitive, largely informal, only the most essential info     | Business leaders and architects    | Communication interfaces between business & IT | Help business leaders manage IT      |
+## | IT-Focused       | Technical IT-specific language         | Applications, data, integration, infrastructure, security and sometimes business    | Can be voluminous, formal, strict notations, comprehensive details   | Architects and other IT specialists | Internal IT tools invisible to business        | Help architects organize IT          |
+##
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:FocusDimension
+    a                 skos:Concept ;
+    skos:broader      :ClassificationDimensions ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Focus"@en ;
+    skos:definition   '''Classification of EA artifacts by how they describe objects. The second
+dimension of the CSVLOD taxonomy classifies all EA artifacts into business-focused
+and IT-focused.'''@en ;
+    skos:narrower     :BusinessFocused, :ITFocused ;
+.
+
+:BusinessFocused
+    a                 skos:Concept ;
+    skos:broader      :FocusDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Business-Focused"@en ;
+    skos:definition   '''EA artifacts that tend to be technology-neutral and use plain business
+language (money, customers, capabilities, business goals). They are brief, largely
+informal, use intuitive presentation formats, and contain only the most essential
+information relevant to executive-level audience. Business-focused artifacts are
+always dual — they serve as communication interfaces between business and IT.
+All are either developed collaboratively by architects and business executives, or
+at least consciously approved by business leaders.'''@en ;
+    skos:scopeNote    "Help business leaders manage IT without understanding its technical details."@en ;
+.
+
+:ITFocused
+    a                 skos:Concept ;
+    skos:broader      :FocusDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "IT-Focused"@en ;
+    skos:definition   '''EA artifacts that tend to be purely technical and use highly IT-specific
+language (systems, applications, databases, platforms, networks). They can be
+voluminous, formal, and detailed, sometimes using specialized modeling notations.
+IT-focused artifacts are intended primarily for architects and other IT specialists
+— used as reference materials for decision-making and project implementation within
+the IT department. Essentially internal IT tools invisible to business.'''@en ;
+    skos:scopeNote    "Help architects organize IT according to their best understanding of the business interests."@en ;
+.
+
+
+## ─── Scope ──────────────────────────────────────────────────────────────────
+
+:ScopeDimension
+    a                 skos:Concept ;
+    skos:broader      :ClassificationDimensions ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Scope"@en ;
+    skos:definition   "Classification of EA artifacts by organizational scope."@en ;
+    skos:narrower     :OrganizationWide, :InitiativeScoped, :ProjectScoped ;
+.
+
+:OrganizationWide
+    a                 skos:Concept ;
+    skos:broader      :ScopeDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Organization-Wide"@en ;
+    skos:definition   "Artifacts that apply across the entire organization."@en ;
+.
+
+:InitiativeScoped
+    a                 skos:Concept ;
+    skos:broader      :ScopeDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Initiative-Scoped"@en ;
+    skos:definition   "Artifacts scoped to a specific initiative or programme of work."@en ;
+.
+
+:ProjectScoped
+    a                 skos:Concept ;
+    skos:broader      :ScopeDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Project-Scoped"@en ;
+    skos:definition   "Artifacts scoped to a specific delivery project."@en ;
+.
+
+
+## ─── Lifecycle ──────────────────────────────────────────────────────────────
+
+:LifecycleDimension
+    a                 skos:Concept ;
+    skos:broader      :ClassificationDimensions ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Lifecycle"@en ;
+    skos:definition   "Classification of EA artifacts by temporal lifecycle."@en ;
+    skos:narrower     :Permanent, :LongLived, :ShortLived ;
+.
+
+:Permanent
+    a                 skos:Concept ;
+    skos:broader      :LifecycleDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Permanent"@en ;
+    skos:definition   "Artifacts developed once and updated periodically — rarely change fundamentally."@en ;
+.
+
+:LongLived
+    a                 skos:Concept ;
+    skos:broader      :LifecycleDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Long-Lived"@en ;
+    skos:definition   "Artifacts maintained continuously and evolving as the organization changes."@en ;
+.
+
+:ShortLived
+    a                 skos:Concept ;
+    skos:broader      :LifecycleDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Short-Lived"@en ;
+    skos:definition   "Artifacts produced for a specific initiative or project, then archived."@en ;
+.
+
+
+## ─── Usage Frequency ────────────────────────────────────────────────────────
+
+:FrequencyDimension
+    a                 skos:Concept ;
+    skos:broader      :ClassificationDimensions ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Usage Frequency"@en ;
+    skos:definition   "Classification of EA artifact types by how commonly they are used across organizations."@en ;
+    skos:narrower     :Essential, :Common, :Uncommon ;
+.
+
+:Essential
+    a                 skos:Concept ;
+    skos:broader      :FrequencyDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Essential"@en ;
+    skos:definition   "Used by the majority of organizations with an EA practice."@en ;
+.
+
+:Common
+    a                 skos:Concept ;
+    skos:broader      :FrequencyDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Common"@en ;
+    skos:definition   "Used by 25-50% of organizations with an EA practice."@en ;
+.
+
+:Uncommon
+    a                 skos:Concept ;
+    skos:broader      :FrequencyDimension ;
+    skos:inScheme     <https://meta.linked.archi/eaonapage/tax#> ;
+    skos:prefLabel    "Uncommon"@en ;
+    skos:definition   "Used by 10-25% of organizations with an EA practice."@en ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Palette grouping
+##
+## Linked.Archi modelling guidance, not the framework: the classification
+## dimensions a palette groups element types by. The metamodel manifest points
+## to it (arch:paletteGrouping).
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:PaletteGrouping
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Palette Grouping"@en ;
+    skos:definition "The classification dimensions a palette groups element types by: the groups of the governance model — bodies, participants, processes, phases and activities — then the process types of the Architecture Processes extension, which the framework's processes specialise."@en ;
+    skos:memberList ( :GovernanceModel aptax:ElementKind ) ;
+.
+

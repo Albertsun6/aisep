@@ -1,0 +1,26 @@
+# expect: EC7:
+# Invalid: aisep:packageUrl that is a download URL, not a purl.
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix arch:   <https://meta.linked.archi/core#> .
+@prefix am4:    <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep:  <https://aisep.example/ont/aisep#> .
+@prefix :       <https://aisep.example/model/ext-code-test/> .
+
+:model a arch:Model ;
+    skos:prefLabel "代码追溯测试模型"@zh .
+
+:quoteSvc a am4:ApplicationComponent ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务"@zh .
+
+:pkg a aisep:Deployable ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务发布包"@zh ;
+    aisep:packageUrl "https://pypi.org/project/quote-service/1.4.0/" .
+
+:real a am4:Realization ;
+    arch:inModel :model ;
+    arch:source :pkg ;
+    arch:target :quoteSvc .

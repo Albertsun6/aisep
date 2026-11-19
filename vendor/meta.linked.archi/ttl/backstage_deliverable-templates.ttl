@@ -1,0 +1,470 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix bs:      <https://meta.linked.archi/backstage/onto#> .
+@prefix bsvp:    <https://meta.linked.archi/backstage/viewpoints#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix archdt:  <https://meta.linked.archi/core-deliverable-templates#> .
+@prefix :        <https://meta.linked.archi/backstage/deliverable-templates#> .
+
+#################################################################
+# Document Declaration
+#
+# This file is a catalogue, not a vocabulary: it declares no
+# classes and no properties, only arch:DeliverableTemplate and
+# arch:TemplateSection individuals. The owl:Ontology triple is
+# nonetheless correct and is not a claim about the contents. It
+# is the document-level declaration DD-14 requires — the subject
+# that owl:imports, owl:versionIRI and the vann prefix metadata
+# attach to, and the node the doc generator reads to place its
+# output. A file without it is skipped by the generator, and its
+# owl:imports has nothing to hang off.
+#
+# The sibling catalogues do the same: backstage-viewpoints.ttl
+# and backstage-notation.ttl each declare zero owl:Class and are
+# each an owl:Ontology. The files that declare
+# skos:ConceptScheme instead — backstage-tax.ttl and
+# backstage-reference-data.ttl — do so because their contents
+# genuinely are skos:Concepts, which these are not.
+#
+# The aggregating role sits where it belongs, on the metamodel
+# manifest: arch:hasDeliverableTemplate is what makes these
+# templates discoverable as a set. NOTE that the manifest must be
+# extended with :OrganizationStructureDocument, which is new in
+# this revision and otherwise reachable only by knowing this
+# file's IRI.
+#
+# Previously this block was absent entirely and the namespace
+# metadata hung off :ServiceCatalogDocument, so one template
+# claimed to be the file.
+#################################################################
+
+<https://meta.linked.archi/backstage/deliverable-templates#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/backstage/onto#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/backstage/deliverable-templates#" ;
+    vann:preferredNamespacePrefix "bsdt" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Backstage Deliverable Templates"@en ;
+    dcterms:description           '''Catalogue of deliverable templates for generating architecture
+documents from Backstage catalog models — a service catalog, a system architecture document, and an
+organization structure document. Declares no classes or properties; the vocabulary these individuals
+instantiate (arch:DeliverableTemplate, arch:TemplateSection) is defined in the core ontology.'''@en ;
+    dcterms:publisher             "Linked.Archi"@en , <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/backstage/deliverable-templates/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source                <https://backstage.io/docs/features/software-catalog/descriptor-format> ;
+    rdfs:seeAlso                  <https://backstage.io/docs/features/software-catalog/> ,
+                                  <https://github.com/backstage/backstage> ,
+                                  <https://github.com/backstage/backstage/tree/master/docs/features/software-catalog> ;
+    prov:wasDerivedFrom           <https://backstage.io/docs/features/software-catalog/descriptor-format> ;
+    skos:editorialNote            '''Query conventions for this file, so a section added later does
+not silently render empty.
+
+1. Dependency traversal uses the alternative path (bs:dependsOn|bs:usesResource). bs:usesResource is
+   a subproperty of bs:dependsOn, so entailment runs upward only: a query on bs:usesResource alone
+   matches nothing a current lift emits, and an empty section looks like an empty estate rather than
+   a broken query. The alternative path is also correct when the generator runs without a reasoner,
+   which it does not guarantee.
+
+2. Domain membership is reached through the system. spec.domain is declared on System only, so a
+   Component or API reaches its Domain via bs:partOfSystem/bs:belongsToDomain, never directly.
+
+3. Enumerated values render from skos:notation, which carries the exact catalog token ("production",
+   "openapi"), not from skos:prefLabel. The value sets are open, so no query filters on a fixed list
+   of individuals.
+
+4. spec.type is a different property per kind, so it is read as an alternative path over
+   bs:componentType, bs:apiType, bs:resourceType, bs:systemType, bs:domainType and bs:groupType.
+
+5. Rows with a missing optional value are returned, not filtered out. An entity with no lifecycle or
+   no owner is the finding a governance reader is looking for; dropping it makes the estate look
+   complete.'''@en ;
+.
+
+#################################################################
+# Service Catalog Document
+#################################################################
+
+:ServiceCatalogDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Service Catalog Document"@en ;
+    skos:definition         '''A Backstage-based service catalog document progressing from a full
+service inventory through ownership governance and API dependency analysis to a lifecycle portfolio.
+Suitable for platform engineering reviews and developer onboarding.'''@en ;
+    arch:templateResource   "templates/service-catalog-document.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        bsvp:ServiceCatalog, bsvp:OwnershipMatrix, bsvp:APIDependency, bsvp:LifecyclePortfolio ;
+    arch:templateHasSection :SCD-S1, :SCD-S2, :SCD-S3, :SCD-S4 ;
+    arch:templateTargetsPurpose archvp:Informing, archvp:Governing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:HTMLFormat ;
+.
+
+:SCD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint bsvp:ServiceCatalog ;
+    arch:sectionResultKey "serviceCatalog" ;
+    skos:prefLabel "1. Service Catalog"@en ;
+    skos:definition "Inventory of all registered components, systems, APIs and resources."@en ;
+    arch:sectionQuery """
+PREFIX bs:   <https://meta.linked.archi/backstage/onto#>
+PREFIX arch: <https://meta.linked.archi/core#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?name ?label ?type ?specType ?lifecycle ?description ?domain ?system WHERE {
+    ?element a ?type ;
+             skos:prefLabel ?label .
+    VALUES ?type { bs:Component bs:System bs:API bs:Resource }
+    OPTIONAL { ?element bs:name ?name }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element (bs:componentType|bs:apiType|bs:resourceType|bs:systemType)/skos:notation ?specType
+    }
+    OPTIONAL { ?element bs:lifecycleState/skos:notation ?lifecycle }
+    OPTIONAL {
+        { ?element bs:belongsToDomain ?dom }
+        UNION
+        { ?element bs:partOfSystem/bs:belongsToDomain ?dom }
+        ?dom skos:prefLabel ?domain .
+        FILTER(lang(?domain) = "en")
+    }
+    OPTIONAL {
+        ?element bs:partOfSystem ?sys .
+        ?sys skos:prefLabel ?system .
+        FILTER(lang(?system) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?domain ?label
+"""^^xsd:string .
+
+:SCD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint bsvp:OwnershipMatrix ;
+    arch:sectionResultKey "ownershipMatrix" ;
+    skos:prefLabel "2. Ownership Matrix"@en ;
+    skos:definition "Which groups or users own which catalog entities."@en ;
+    skos:historyNote '''Owner kind is now reported rather than assumed, and Domains are included
+among the ownable kinds. The spec allows a User owner as well as a Group, and a matrix that renders
+both as "team" hides single-person ownership — which is the case a governance review most wants to
+find.'''@en ;
+    arch:sectionQuery """
+PREFIX bs:   <https://meta.linked.archi/backstage/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?elementLabel ?type ?owner ?ownerLabel ?ownerKind WHERE {
+    ?element a ?type ;
+             skos:prefLabel ?elementLabel ;
+             bs:ownedBy ?owner .
+    ?owner skos:prefLabel ?ownerLabel .
+    VALUES ?type { bs:Component bs:System bs:API bs:Resource bs:Domain }
+    OPTIONAL {
+        ?owner a ?ownerKind .
+        VALUES ?ownerKind { bs:Group bs:User }
+    }
+    FILTER(lang(?elementLabel) = "en")
+    FILTER(lang(?ownerLabel) = "en")
+} ORDER BY ?ownerLabel ?type ?elementLabel
+"""^^xsd:string .
+
+:SCD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint bsvp:APIDependency ;
+    arch:sectionResultKey "apiDependencies" ;
+    skos:prefLabel "3. API Dependencies"@en ;
+    skos:definition "API provision and consumption relationships across components and systems."@en ;
+    arch:sectionQuery """
+PREFIX bs:   <https://meta.linked.archi/backstage/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?api ?apiLabel ?apiType ?visibility ?provider ?providerLabel ?consumer ?consumerLabel WHERE {
+    ?api a bs:API ;
+         skos:prefLabel ?apiLabel .
+    OPTIONAL { ?api bs:apiType/skos:notation ?apiType }
+    OPTIONAL { ?api bs:apiVisibility/skos:notation ?visibility }
+    OPTIONAL {
+        ?provider bs:providesAPI ?api .
+        ?provider skos:prefLabel ?providerLabel .
+        FILTER(lang(?providerLabel) = "en")
+    }
+    OPTIONAL {
+        ?consumer bs:consumesAPI ?api .
+        ?consumer skos:prefLabel ?consumerLabel .
+        FILTER(lang(?consumerLabel) = "en")
+    }
+    FILTER(lang(?apiLabel) = "en")
+} ORDER BY ?apiLabel ?providerLabel ?consumerLabel
+"""^^xsd:string .
+
+:SCD-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    arch:sectionViewpoint bsvp:LifecyclePortfolio ;
+    arch:sectionResultKey "lifecyclePortfolio" ;
+    skos:prefLabel "4. Lifecycle Portfolio"@en ;
+    skos:definition "Components and APIs grouped by lifecycle state, with their owners."@en ;
+    skos:scopeNote '''New section. Entities with no lifecycle state are returned rather than filtered
+out, and sort first, because an uncatalogued lifecycle is the finding. The value set is open, so the
+renderer groups by whatever states appear rather than by a fixed three.'''@en ;
+    arch:sectionQuery """
+PREFIX bs:   <https://meta.linked.archi/backstage/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?kind ?lifecycle ?ownerLabel WHERE {
+    ?element a ?kind ;
+             skos:prefLabel ?label .
+    VALUES ?kind { bs:Component bs:API }
+    OPTIONAL { ?element bs:lifecycleState/skos:notation ?lifecycle }
+    OPTIONAL {
+        ?element bs:ownedBy ?owner .
+        ?owner skos:prefLabel ?ownerLabel .
+        FILTER(lang(?ownerLabel) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?lifecycle ?kind ?label
+"""^^xsd:string .
+
+#################################################################
+# System Architecture Document
+#################################################################
+
+:SystemArchitectureDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "System Architecture Document"@en ;
+    skos:definition         '''A Backstage-based system architecture document progressing from domain
+organization through system dependencies and API landscape analysis to component composition.
+Suitable for architecture reviews and system design discussions.'''@en ;
+    arch:templateResource   "templates/system-architecture-document.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        bsvp:DomainOverview, bsvp:SystemDependency, bsvp:APIDependency ;
+    arch:templateHasSection :SAD-S1, :SAD-S2, :SAD-S3, :SAD-S4 ;
+    arch:templateTargetsPurpose archvp:Designing, archvp:Informing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:HTMLFormat ;
+.
+
+:SAD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint bsvp:DomainOverview ;
+    arch:sectionResultKey "domainOverview" ;
+    skos:prefLabel "1. Domain Overview"@en ;
+    skos:definition "Domains, their nesting, and their constituent systems and components."@en ;
+    skos:historyNote "Adds the parent domain, so a catalogue using spec.subdomainOf renders as a hierarchy instead of a flat list of peers."@en ;
+    arch:sectionQuery """
+PREFIX bs:   <https://meta.linked.archi/backstage/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?domain ?domainLabel ?parentLabel ?description ?system ?systemLabel ?component ?componentLabel
+WHERE {
+    ?domain a bs:Domain ;
+            skos:prefLabel ?domainLabel .
+    OPTIONAL { ?domain skos:definition ?description }
+    OPTIONAL {
+        ?domain bs:subdomainOf ?parent .
+        ?parent skos:prefLabel ?parentLabel .
+        FILTER(lang(?parentLabel) = "en")
+    }
+    OPTIONAL {
+        ?system bs:belongsToDomain ?domain ;
+                a bs:System ;
+                skos:prefLabel ?systemLabel .
+        FILTER(lang(?systemLabel) = "en")
+        OPTIONAL {
+            ?component bs:partOfSystem ?system ;
+                       a bs:Component ;
+                       skos:prefLabel ?componentLabel .
+            FILTER(lang(?componentLabel) = "en")
+        }
+    }
+    FILTER(lang(?domainLabel) = "en")
+} ORDER BY ?parentLabel ?domainLabel ?systemLabel ?componentLabel
+"""^^xsd:string .
+
+:SAD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint bsvp:SystemDependency ;
+    arch:sectionResultKey "systemDependencies" ;
+    skos:prefLabel "2. System Dependencies"@en ;
+    skos:definition "System-level dependencies, whether via a consumed API or a direct dependency."@en ;
+    arch:sectionQuery """
+PREFIX bs:   <https://meta.linked.archi/backstage/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?system ?systemLabel ?dependsOn ?dependsOnLabel ?dependencyType WHERE {
+    ?system a bs:System ;
+            skos:prefLabel ?systemLabel .
+    {
+        # Indirect: a component in this system consumes an API provided from another system.
+        ?comp bs:partOfSystem ?system ;
+              bs:consumesAPI ?api .
+        ?provider bs:providesAPI ?api ;
+                  bs:partOfSystem ?depSys .
+        ?depSys skos:prefLabel ?dependsOnLabel .
+        BIND("API" AS ?dependencyType)
+        BIND(?depSys AS ?dependsOn)
+        FILTER(?system != ?depSys)
+    } UNION {
+        # Direct: spec.dependsOn from a component in this system, onto a resource or a component.
+        ?comp bs:partOfSystem ?system .
+        ?comp (bs:dependsOn|bs:usesResource) ?dep .
+        ?dep skos:prefLabel ?dependsOnLabel .
+        BIND(?dep AS ?dependsOn)
+        BIND(IF(EXISTS { ?dep a bs:Resource }, "Resource", "Component") AS ?dependencyType)
+    }
+    FILTER(lang(?systemLabel) = "en")
+    FILTER(lang(?dependsOnLabel) = "en")
+} ORDER BY ?systemLabel ?dependencyType ?dependsOnLabel
+"""^^xsd:string .
+
+:SAD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint bsvp:APIDependency ;
+    arch:sectionResultKey "apiLandscape" ;
+    skos:prefLabel "3. API Landscape"@en ;
+    skos:definition "API provision and consumption across the system boundary."@en ;
+    skos:scopeNote '''Visibility is what makes this a boundary analysis rather than a listing: the
+system model defines a System as hiding its private APIs, so a private API consumed from outside its
+own system is an encapsulation breach the reader should be able to spot at a glance.'''@en ;
+    arch:sectionQuery """
+PREFIX bs:   <https://meta.linked.archi/backstage/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?api ?apiLabel ?apiType ?visibility ?description ?provider ?providerLabel ?consumer ?consumerLabel
+WHERE {
+    ?api a bs:API ;
+         skos:prefLabel ?apiLabel .
+    OPTIONAL { ?api skos:definition ?description }
+    OPTIONAL { ?api bs:apiType/skos:notation ?apiType }
+    OPTIONAL { ?api bs:apiVisibility/skos:notation ?visibility }
+    OPTIONAL {
+        ?provider bs:providesAPI ?api .
+        ?provider skos:prefLabel ?providerLabel .
+        FILTER(lang(?providerLabel) = "en")
+    }
+    OPTIONAL {
+        ?consumer bs:consumesAPI ?api .
+        ?consumer skos:prefLabel ?consumerLabel .
+        FILTER(lang(?consumerLabel) = "en")
+    }
+    FILTER(lang(?apiLabel) = "en")
+} ORDER BY ?apiLabel
+"""^^xsd:string .
+
+:SAD-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    arch:sectionViewpoint bsvp:SystemDependency ;
+    arch:sectionResultKey "componentComposition" ;
+    skos:prefLabel "4. Component Composition"@en ;
+    skos:definition "Component nesting within systems, from spec.subcomponentOf."@en ;
+    skos:scopeNote "New section: component-to-component containment reached no deliverable, so a catalogue using subcomponentOf rendered as a flat list of components."@en ;
+    arch:sectionQuery """
+PREFIX bs:   <https://meta.linked.archi/backstage/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?component ?componentLabel ?parent ?parentLabel ?system ?systemLabel WHERE {
+    ?component a bs:Component ;
+               skos:prefLabel ?componentLabel ;
+               bs:subcomponentOf ?parent .
+    ?parent skos:prefLabel ?parentLabel .
+    OPTIONAL {
+        ?component bs:partOfSystem ?system .
+        ?system skos:prefLabel ?systemLabel .
+        FILTER(lang(?systemLabel) = "en")
+    }
+    FILTER(lang(?componentLabel) = "en")
+    FILTER(lang(?parentLabel) = "en")
+} ORDER BY ?systemLabel ?parentLabel ?componentLabel
+"""^^xsd:string .
+
+#################################################################
+# Organization Structure Document
+#
+# New. The catalog models an organization as well as a software
+# landscape, and none of that half reached a deliverable: group
+# hierarchy and user membership appeared nowhere, and a team
+# surfaced only as a name in an ownership column.
+#################################################################
+
+:OrganizationStructureDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Organization Structure Document"@en ;
+    skos:definition         '''The organizational half of the Backstage catalog: the group hierarchy,
+who belongs to each group, and what each group is accountable for. Suitable for ownership reviews and
+onboarding.'''@en ;
+    arch:templateResource   "templates/organization-structure-document.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        bsvp:OrganizationStructure, bsvp:OwnershipMatrix ;
+    arch:templateHasSection :OSD-S1, :OSD-S2, :OSD-S3 ;
+    arch:templateTargetsPurpose archvp:Informing, archvp:Governing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:HTMLFormat ;
+.
+
+:OSD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint bsvp:OrganizationStructure ;
+    arch:sectionResultKey "groupHierarchy" ;
+    skos:prefLabel "1. Group Hierarchy"@en ;
+    skos:definition "Groups and their parents, from spec.parent."@en ;
+    skos:scopeNote '''A group with no parent is a root and the descriptor format permits several, so
+the renderer builds a forest rather than a tree. Parentless groups are returned for that reason
+rather than filtered out.'''@en ;
+    arch:sectionQuery """
+PREFIX bs:   <https://meta.linked.archi/backstage/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?group ?groupLabel ?groupType ?displayName ?email ?parent ?parentLabel WHERE {
+    ?group a bs:Group ;
+           skos:prefLabel ?groupLabel .
+    OPTIONAL { ?group bs:groupType/skos:notation ?groupType }
+    OPTIONAL { ?group bs:displayName ?displayName }
+    OPTIONAL { ?group bs:email ?email }
+    OPTIONAL {
+        ?group bs:childOf ?parent .
+        ?parent skos:prefLabel ?parentLabel .
+        FILTER(lang(?parentLabel) = "en")
+    }
+    FILTER(lang(?groupLabel) = "en")
+} ORDER BY ?parentLabel ?groupLabel
+"""^^xsd:string .
+
+:OSD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint bsvp:OrganizationStructure ;
+    arch:sectionResultKey "groupMembership" ;
+    skos:prefLabel "2. Group Membership"@en ;
+    skos:definition "Users and the groups they belong to, from spec.memberOf."@en ;
+    skos:scopeNote "Direct membership only — the descriptor format states that transitive memberships are not listed, so a renderer must not present this as an effective-membership roster."@en ;
+    arch:sectionQuery """
+PREFIX bs:   <https://meta.linked.archi/backstage/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?group ?groupLabel ?user ?userLabel ?displayName ?email WHERE {
+    ?user a bs:User ;
+          skos:prefLabel ?userLabel ;
+          bs:memberOf ?group .
+    ?group skos:prefLabel ?groupLabel .
+    OPTIONAL { ?user bs:displayName ?displayName }
+    OPTIONAL { ?user bs:email ?email }
+    FILTER(lang(?userLabel) = "en")
+    FILTER(lang(?groupLabel) = "en")
+} ORDER BY ?groupLabel ?userLabel
+"""^^xsd:string .
+
+:OSD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint bsvp:OwnershipMatrix ;
+    arch:sectionResultKey "accountability" ;
+    skos:prefLabel "3. Accountability"@en ;
+    skos:definition "What each group or user is the ultimate owner of, counted by kind."@en ;
+    skos:scopeNote '''A load view rather than a listing — the Service Catalog Document already lists
+the pairs. Counting by kind is what shows one team owning forty components while its neighbour owns
+two, which no alphabetical matrix makes visible.'''@en ;
+    arch:sectionQuery """
+PREFIX bs:   <https://meta.linked.archi/backstage/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?owner ?ownerLabel ?kind (COUNT(?element) AS ?ownedCount) WHERE {
+    ?element bs:ownedBy ?owner ;
+             a ?kind .
+    ?owner skos:prefLabel ?ownerLabel .
+    VALUES ?kind { bs:Component bs:System bs:API bs:Resource bs:Domain }
+    FILTER(lang(?ownerLabel) = "en")
+} GROUP BY ?owner ?ownerLabel ?kind
+  ORDER BY DESC(?ownedCount) ?ownerLabel
+"""^^xsd:string .

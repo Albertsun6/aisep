@@ -1,0 +1,40 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# Quality payload (spec §6.6). License: CC-BY-4.0.
+# Upstream arch:QualityMeasure has no value/unit/threshold/time. AISEP adds aisep:value, aisep:unit,
+# aisep:target; the time is prov:generatedAtTime (PROV-O, used as-is). The measured characteristic is
+# upstream arch:measuredQualityAttribute -> an ISO 25010 individual (e.g. iso25010:TimeBehaviour); the
+# element carries the measure via upstream arch:hasQualityMeasure.
+# Decisions: upstream ad: terms used as-is; link Decision -> concept with ad:RelatedConcept (qualified),
+# never ad:AffectsConcept (its source is an Option; spec §6.6).
+
+<https://aisep.example/ont/aisep/ext-governance> a owl:Ontology ;
+    rdfs:label "AISEP governance and quality extension"@en ;
+    owl:versionInfo "0.2.0" .
+
+aisep:value a owl:DatatypeProperty ;
+    rdfs:domain arch:QualityMeasure ; rdfs:range xsd:decimal ;
+    skos:prefLabel "度量值"@zh , "value"@en ;
+    skos:definition "The measured value."@en .
+
+aisep:unit a owl:DatatypeProperty ;
+    rdfs:domain arch:QualityMeasure ; rdfs:range xsd:string ;
+    skos:prefLabel "单位"@zh , "unit"@en ;
+    skos:definition "Unit of aisep:value and aisep:target, as a UCUM code (e.g. \"ms\", \"%\", \"/s\")."@en .
+
+aisep:target a owl:DatatypeProperty ;
+    rdfs:domain arch:QualityMeasure ; rdfs:range xsd:decimal ;
+    skos:prefLabel "目标值"@zh , "target"@en ;
+    skos:definition "Threshold or target the value is judged against, in the same unit."@en .
+
+########## Approval records (spec v0.2 §6.6, ADR-009, D10) ##########
+# The vocabulary (aisep:ApprovalRecord ⊑ arch:Element, aisep:gate/decision/approvedBy/approves/evidence, the SKOS
+# schemes aisep:Gates and aisep:Decisions) is declared ONCE in modules/aisep-core/onto.ttl (loaded by this
+# module's manifest), because core L1 needs it in every scope. Not re-declared here (single source of truth);
+# this module contributes the full L3 shapes (EG11..EG16 in shapes.ttl).

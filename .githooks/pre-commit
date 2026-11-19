@@ -1,0 +1,5 @@
+#!/bin/sh
+# AISEP: commits are accepted only when `gate` passes (spec §10.1, ADR-012 G10).
+PY="${AISEP_PY:-$HOME/Desktop/AISEP/spike-linked-archi/.venv/bin/python}"
+cd "$(git rev-parse --show-toplevel)" || exit 1
+exec "$PY" tools/aisep.py gate

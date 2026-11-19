@@ -1,0 +1,132 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix c4:      <https://meta.linked.archi/c4/onto#> .
+@prefix :        <https://meta.linked.archi/c4/structurizr#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/c4/structurizr#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/c4/onto#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/c4/structurizr#" ;
+    vann:preferredNamespacePrefix "structurizr" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Structurizr Extension Ontology"@en ;
+    dcterms:description                '''Structurizr-specific extensions to the C4 model ontology. Adds deployment
+modeling concepts (deployment nodes, infrastructure nodes, deployment environments,
+container instances) that are part of the Structurizr tooling but not part of the
+abstract C4 model.
+
+Imports the C4 model ontology (c4-onto.ttl) — all C4 core concepts are available
+via the c4: namespace.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-10-10"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/c4/structurizr/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    rdfs:seeAlso                  <https://structurizr.com/>,
+                                  <https://docs.structurizr.com/dsl/language>,
+                                  <https://docs.structurizr.com/server/diagrams/notation> ;
+    dcterms:source  <https://structurizr.com/> ;
+    prov:wasDerivedFrom <https://structurizr.com/> ;
+    skos:historyNote              '''0.1.0: Split from c4-onto.ttl v0.2.0. Deployment nodes, infrastructure
+nodes, and deployment relationships are Structurizr implementation concepts, not part
+of the abstract C4 model defined at c4model.com.'''@en ;
+.
+
+
+#################################################################
+# Element Classes — Structurizr Deployment Model
+#################################################################
+
+:DeploymentNode
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Deployment Node"@en ;
+    skos:definition '''A physical or virtual infrastructure element that hosts software —
+a server, VM, container host, Kubernetes cluster, cloud region, availability zone,
+or any nestable infrastructure boundary. Deployment nodes can be nested to represent
+infrastructure hierarchies (e.g., AWS → Region → EKS Cluster → Pod).'''@en ;
+    rdfs:seeAlso    <https://docs.structurizr.com/dsl/language#deploymentnode> ,
+                    <https://c4model.com/diagrams/deployment> ;
+.
+
+:InfrastructureNode
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Infrastructure Node"@en ;
+    skos:definition '''A specific infrastructure component that is not a deployment target but
+provides supporting services — load balancer, firewall, DNS server, CDN, API gateway,
+service mesh proxy.'''@en ;
+    rdfs:seeAlso    <https://docs.structurizr.com/dsl/language#infrastructurenode> ,
+                    <https://c4model.com/diagrams/deployment> ;
+.
+
+
+#################################################################
+# Relationship Types — Deployment
+#################################################################
+
+:deployedOn
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "Deployed On"@en ;
+    skos:definition      "A container is deployed on a deployment node."@en ;
+    arch:domainIncludes  c4:Container ;
+    arch:rangeIncludes   :DeploymentNode ;
+    rdfs:seeAlso         <https://docs.structurizr.com/dsl/language#containerinstance> ,
+                         <https://c4model.com/diagrams/deployment> ;
+.
+
+:Deployment
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :deployedOn ;
+    skos:prefLabel       "Deployment"@en ;
+    skos:definition      "A deployment relationship from a container to a deployment node."@en ;
+    rdfs:seeAlso         <https://docs.structurizr.com/dsl/language#containerinstance> ,
+                         <https://c4model.com/diagrams/deployment> ;
+.
+
+:qualifiedDeployment
+    a                    owl:ObjectProperty ;
+    rdfs:range           :Deployment ;
+    arch:unqualifiedForm :deployedOn ;
+.
+
+
+#################################################################
+# Attribute Properties
+#################################################################
+
+:instances
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Instances"@en ;
+    skos:definition "Number of instances of a deployment node (e.g., 3 replicas)."@en ;
+    arch:domainIncludes :DeploymentNode ;
+    rdfs:range      xsd:integer ;
+    rdfs:seeAlso    <https://docs.structurizr.com/dsl/language#instances> ;
+.
+
+:environment
+    a               owl:DatatypeProperty ;
+    skos:prefLabel  "Environment"@en ;
+    skos:definition "Deployment environment name (e.g., 'Development', 'Staging', 'Production')."@en ;
+    arch:domainIncludes :DeploymentNode ;
+    rdfs:range      xsd:string ;
+    rdfs:seeAlso    <https://docs.structurizr.com/dsl/language#deploymentenvironment> ;
+.

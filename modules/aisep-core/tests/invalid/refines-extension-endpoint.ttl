@@ -1,0 +1,24 @@
+# expect: declares no aisep:notationLevel
+# Spec §7.2: refines links notations of the code/design/hub levels; an extension element (no level) cannot refine.
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix am4vp: <https://meta.linked.archi/archimate4/viewpoints#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:crm a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "客户关系系统"@zh .
+:alice a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "张架构师"@zh .
+:approval-20261101-crm a aisep:ApprovalRecord ; aisep:evidence "3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e" ; arch:inModel :t ; skos:prefLabel "客户关系系统架构评审"@zh ;
+    aisep:gate aisep:GateArchitecture ; aisep:decision aisep:DecisionApproved ; aisep:approvedBy :alice ;
+    prov:generatedAtTime "2026-11-01T10:00:00Z"^^xsd:dateTime ; aisep:approves :crm .
+:rel-approval-refines-crm a arch:Refines ; arch:inModel :t ; arch:source :approval-20261101-crm ; arch:target :crm .

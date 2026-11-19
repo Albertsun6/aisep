@@ -1,0 +1,14 @@
+# expect: Value does not have class
+# Invalid per bpmn_onto-shapes :ExclusiveGatewayShape — bpmn:default must be a bpmn:SequenceFlow, here it points at a task.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix :     <https://aisep.example/model/bpmn-bad/> .
+
+:model a arch:Model ; skos:prefLabel "BPMN 负例"@zh .
+
+:t1 a bpmn:UserTask ; arch:inModel :model ; skos:prefLabel "审核"@zh .
+:t2 a bpmn:UserTask ; arch:inModel :model ; skos:prefLabel "批准"@zh .
+:gw a bpmn:ExclusiveGateway ; arch:inModel :model ; skos:prefLabel "是否通过"@zh ; bpmn:default :t2 .
+:sf1 a bpmn:SequenceFlow ; arch:inModel :model ; arch:source :t1 ; arch:target :gw .
+:sf2 a bpmn:SequenceFlow ; arch:inModel :model ; arch:source :gw ; arch:target :t2 .

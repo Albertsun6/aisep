@@ -1,0 +1,115 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ammm:    <https://meta.linked.archi/archimate3/metamodel#> .
+@prefix am4mm:   <https://meta.linked.archi/archimate4/metamodel#> .
+@prefix :        <https://meta.linked.archi/archimate/framework#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/archimate/framework#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate/framework#" ;
+    vann:preferredNamespacePrefix "amfw" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "ArchiMate — Version-Neutral Framework Identity"@en ;
+    dcterms:description           '''The single arch:Framework individual for ArchiMate the
+language, as distinct from ArchiMate 3.2 and ArchiMate 4.0 the releases.
+
+It exists because there was no way to ask a version-independent question. Each version's
+manifest declared its own :ArchiMateFramework in its own namespace —
+archimate3/metamodel#ArchiMateFramework and archimate4/metamodel#ArchiMateFramework — with
+a version in its label, so "ArchiMate, the language" had two IRIs that nothing related, and
+the natural query returned nothing:
+
+    SELECT ?model WHERE {
+      ?model arch:modelConformsToMetamodel/arch:basedOnFramework ?fw .
+      FILTER(?fw = amfw:ArchiMateFramework)
+    }
+
+Consumers had to enumerate the metamodels instead — VALUES ?mm { ammm:ArchiMate3.2
+am4mm:ArchiMate4 } — an explicit list that grows with every release.
+
+This file lives at modelingLanguages/archimate/, above the 3.2/ and 4.0/ version
+directories, and its namespace carries no version, because that is what it is for. Nothing
+release-specific belongs here: version detail stays on the arch:Metamodel instances, which
+is where it was already correct. A model still conforms to ArchiMate 3.2, not to ArchiMate
+in general.'''@en ;
+    dcterms:created               "2026-08-13"^^xsd:date ;
+    dcterms:modified              "2026-08-13"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/archimate/framework/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source                <https://www.opengroup.org/archimate-forum> ;
+    prov:wasDerivedFrom           <https://www.opengroup.org/archimate-forum> ;
+    rdfs:seeAlso                  <https://meta.linked.archi/archimate3/metamodel#>,
+                                  <https://meta.linked.archi/archimate4/metamodel#> ;
+    skos:editorialNote            '''arch:basedOnFramework means "the Framework this Metamodel is a version of";
+both manifests point it here.
+
+The old per-version IRIs are kept, deprecated, with owl:sameAs back to
+amfw:ArchiMateFramework so published references keep resolving to something meaningful.
+They are no longer typed arch:Framework, so a consumer asking `?fw a arch:Framework` gets
+one ArchiMate framework rather than three. Do not reintroduce the type on them.'''@en ;
+.
+
+
+#################################################################
+# The Framework
+#################################################################
+
+:ArchiMateFramework
+    a                    arch:Framework ;
+    skos:prefLabel       "ArchiMate"@en ;
+    skos:definition      '''The ArchiMate enterprise architecture modelling language, published
+by The Open Group. Provides a uniform representation for diagrams that describe enterprise
+architectures, spanning business, application and technology concerns together with
+strategy, motivation, and implementation and migration.'''@en ;
+    skos:scopeNote       '''The language, not a release. Deliberately carries no version in its
+label or its IRI: the releases are the arch:Metamodel individuals
+archimate3/metamodel#ArchiMate3.2 and archimate4/metamodel#ArchiMate4, each of which
+declares its own owl:versionInfo and points here with arch:basedOnFramework.
+
+Use this IRI to select every ArchiMate model regardless of release:
+
+    ?model arch:modelConformsToMetamodel/arch:basedOnFramework amfw:ArchiMateFramework .
+
+Use the metamodel IRI when the release matters — which validity matrix applies, whether
+Value Stream exists, whether layers or domains organise the palette.'''@en ;
+    dcterms:publisher    "The Open Group"@en ;
+    rdfs:seeAlso         <https://www.opengroup.org/archimate-forum>,
+                         <https://pubs.opengroup.org/architecture/archimate3-doc>,
+                         <https://pubs.opengroup.org/architecture/archimate4-doc/> ;
+.
+
+
+#################################################################
+# Releases
+#
+# Declared from this side as well as from each manifest, so that a
+# consumer who dereferences the framework IRI alone can still find the
+# versions. arch:basedOnFramework is asserted in both directions'
+# documents; RDF merge makes the duplication harmless.
+#################################################################
+
+ammm:ArchiMate3.2
+    arch:basedOnFramework :ArchiMateFramework ;
+.
+
+am4mm:ArchiMate4
+    arch:basedOnFramework :ArchiMateFramework ;
+.

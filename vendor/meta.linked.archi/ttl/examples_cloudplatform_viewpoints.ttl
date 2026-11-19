@@ -1,0 +1,79 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+@prefix cp:      <https://meta.linked.archi/examples/cloudplatform/onto#> .
+@prefix :        <https://meta.linked.archi/examples/cloudplatform/viewpoints#> .
+
+<https://meta.linked.archi/examples/cloudplatform/viewpoints#>
+    a owl:Ontology ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    cc:license "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri "https://meta.linked.archi/examples/cloudplatform/viewpoints#" ;
+    vann:preferredNamespacePrefix "cpvp" ;
+    dcterms:title "Cloud Platform Viewpoints"@en ;
+    dcterms:created "2026-05-03"^^xsd:date ;
+    owl:versionInfo "0.1.0"@en ;
+    dcterms:description                "Architecture viewpoint definitions for Custom Metamodel."@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+## Stakeholders
+:PlatformEngineer a arch:Stakeholder ; skos:prefLabel "Platform Engineer"@en .
+:SolutionArchitect a arch:Stakeholder ; skos:prefLabel "Solution Architect"@en .
+:SRE a arch:Stakeholder ; skos:prefLabel "Site Reliability Engineer"@en .
+:Developer a arch:Stakeholder ; skos:prefLabel "Developer"@en .
+
+## Viewpoints
+
+:ServiceDependencyViewpoint
+    a               arch:Viewpoint ;
+    skos:prefLabel  "Service Dependency View"@en ;
+    skos:definition "Shows microservices, their API dependencies, and event-driven communication."@en ;
+    arch:includesConcept cp:Microservice, cp:APIGateway, cp:MessageBroker,
+                         cp:EventTopic, cp:Publishing, cp:Subscription,
+                         am4:Serving, am4:Flow ;
+    arch:targetsStakeholder :SolutionArchitect, :Developer ;
+    arch:viewpointFramesConcern archvp:DependencyConcern ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewType arch:Diagram .
+
+:DeploymentViewpoint
+    a               arch:Viewpoint ;
+    skos:prefLabel  "Deployment View"@en ;
+    skos:definition "Shows containers, Kubernetes clusters, and deployment topology."@en ;
+    arch:includesConcept cp:Microservice, cp:Container, cp:KubernetesCluster,
+                         cp:Deployment, am4:Assignment ;
+    arch:targetsStakeholder :PlatformEngineer, :SRE ;
+    arch:viewpointFramesConcern archvp:DeploymentConcern ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewType arch:Diagram .
+
+:DataFlowViewpoint
+    a               arch:Viewpoint ;
+    skos:prefLabel  "Data Flow View"@en ;
+    skos:definition "Shows how data flows between services through databases, caches, and event topics."@en ;
+    arch:includesConcept cp:Microservice, cp:ManagedDatabase, cp:CacheStore,
+                         cp:EventTopic, cp:MessageBroker,
+                         am4:Access, am4:Flow ;
+    arch:targetsStakeholder :SolutionArchitect, :Developer ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewType arch:Diagram .
+
+:PlatformOverviewViewpoint
+    a               arch:Viewpoint ;
+    skos:prefLabel  "Platform Overview"@en ;
+    skos:definition "High-level view of all platform components for executive communication."@en ;
+    arch:includesConcept cp:Microservice, cp:APIGateway, cp:MessageBroker,
+                         cp:ManagedDatabase, cp:ObservabilityStack,
+                         cp:KubernetesCluster ;
+    arch:targetsStakeholder :SolutionArchitect ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:viewpointHasPurpose archvp:Informing ;
+    arch:viewType arch:Diagram .
+

@@ -1,0 +1,525 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix uaf:     <https://meta.linked.archi/uaf/onto#> .
+@prefix :        <https://meta.linked.archi/uaf/viewpoints#> .
+
+<https://meta.linked.archi/uaf/viewpoints#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uaf/viewpoints#" ;
+    vann:preferredNamespacePrefix "uafvp" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "UAF 1.2 Architecture Viewpoints"@en ;
+    dcterms:description                '''UAF 1.2 viewpoints modeled as arch:Viewpoint individuals. UAF defines
+10 viewpoints that organize architectural concerns. Each viewpoint specifies
+the concepts it includes, its purpose, and the concerns it frames.
+
+This is not an official OMG document.'''@en ;
+    dcterms:created               "2025-12-01"^^xsd:date ;
+    dcterms:modified              "2026-02-01"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source  <https://www.omg.org/spec/UAF/1.2/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UAF/1.2/> ;
+    owl:versionIRI                <https://meta.linked.archi/uaf/viewpoints/1.2#> ;
+    owl:versionInfo               "1.2"@en ;
+.
+
+
+#################################################################
+# Viewpoint Catalog (SKOS)
+#################################################################
+
+:ViewpointCatalog
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "UAF Viewpoint Catalog"@en ;
+    dcterms:description  "Hierarchical classification of UAF 1.2 architecture viewpoints organized by domain concern."@en ;
+    skos:hasTopConcept :ArchMgmtVPs, :StrategicVPs, :OperationalVPs,
+                       :ServicesVPs, :PersonnelVPs, :ResourcesVPs,
+                       :SecurityVPs, :ProjectsVPs, :StandardsVPs,
+                       :ActualResourcesVPs ;
+.
+
+:ArchMgmtVPs        a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Architecture Management Viewpoint (Am)"@en .
+:StrategicVPs       a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Strategic Viewpoint (St)"@en .
+:OperationalVPs     a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Operational Viewpoint (Op)"@en .
+:ServicesVPs        a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Services Viewpoint (Sv)"@en .
+:PersonnelVPs       a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Personnel Viewpoint (Pr)"@en .
+:ResourcesVPs       a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Resources Viewpoint (Rs)"@en .
+:SecurityVPs        a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Security Viewpoint (Sc)"@en .
+:ProjectsVPs        a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Projects Viewpoint (Pj)"@en .
+:StandardsVPs       a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Standards Viewpoint (Sd)"@en .
+:ActualResourcesVPs a skos:Concept ; skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+    skos:prefLabel "Actual Resources Viewpoint (Ar)"@en .
+
+
+#################################################################
+# Stakeholder Individuals
+#################################################################
+
+:EnterpriseArchitect   a arch:Stakeholder ; skos:prefLabel "Enterprise Architect"@en .
+:CapabilityPlanner     a arch:Stakeholder ; skos:prefLabel "Capability Planner"@en .
+:SystemEngineer        a arch:Stakeholder ; skos:prefLabel "System Engineer"@en .
+:ServiceArchitect      a arch:Stakeholder ; skos:prefLabel "Service Architect"@en .
+:SecurityArchitect     a arch:Stakeholder ; skos:prefLabel "Security Architect"@en .
+:ProgramManager        a arch:Stakeholder ; skos:prefLabel "Program Manager"@en .
+:OperationalPlanner    a arch:Stakeholder ; skos:prefLabel "Operational Planner"@en .
+:ResourceManager       a arch:Stakeholder ; skos:prefLabel "Resource Manager"@en .
+:PersonnelManager      a arch:Stakeholder ; skos:prefLabel "Personnel Manager"@en .
+:StandardsAuthority    a arch:Stakeholder ; skos:prefLabel "Standards Authority"@en .
+
+
+#################################################################
+# Architecture Management Viewpoint (Am)
+#################################################################
+
+:Am-Motivation
+    a arch:Viewpoint ;
+    skos:prefLabel  "Am-Mv: Architecture Management Motivation"@en ;
+    skos:definition "Describes the enterprise vision, goals, and objectives that drive architecture development."@en ;
+    arch:viewType   arch:Diagram, arch:Catalog ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern ;
+    arch:includesConcept uaf:Architecture, uaf:ArchitecturalDescription, uaf:Stakeholder ;
+    arch:targetsStakeholder :EnterpriseArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ArchMgmtVPs ;
+.
+
+:Am-Taxonomy
+    a arch:Viewpoint ;
+    skos:prefLabel  "Am-Tx: Architecture Management Taxonomy"@en ;
+    skos:definition "Hierarchical classification of architectural descriptions, views, and viewpoints."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern ;
+    arch:includesConcept uaf:Architecture, uaf:View, uaf:Viewpoint, uaf:WholeLifeEnterprise ;
+    arch:targetsStakeholder :EnterpriseArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ArchMgmtVPs ;
+.
+
+
+#################################################################
+# Strategic Viewpoint (St)
+#################################################################
+
+:St-Motivation
+    a arch:Viewpoint ;
+    skos:prefLabel  "St-Mv: Strategic Motivation"@en ;
+    skos:definition "Enterprise vision, goals, objectives, and the drivers and challenges that motivate capability planning."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern ;
+    arch:includesConcept uaf:EnterpriseVision, uaf:EnterpriseGoal, uaf:EnterpriseObjective,
+                         uaf:Mission, uaf:Driver, uaf:Opportunity, uaf:Challenge ;
+    arch:targetsStakeholder :CapabilityPlanner, :EnterpriseArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :StrategicVPs ;
+.
+
+:St-Taxonomy
+    a arch:Viewpoint ;
+    skos:prefLabel  "St-Tx: Strategic Taxonomy (Capability Taxonomy)"@en ;
+    skos:definition "Hierarchical decomposition of capabilities required by the enterprise."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:DependencyConcern ;
+    arch:includesConcept uaf:Capability ;
+    arch:targetsStakeholder :CapabilityPlanner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :StrategicVPs ;
+.
+
+:St-Structure
+    a arch:Viewpoint ;
+    skos:prefLabel  "St-Sr: Strategic Structure (Capability Configuration)"@en ;
+    skos:definition "Internal composition of capability configurations showing how resources combine to deliver capabilities."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:includesConcept uaf:Capability, uaf:CapabilityConfiguration ;
+    arch:targetsStakeholder :CapabilityPlanner, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :StrategicVPs ;
+.
+
+:St-Connectivity
+    a arch:Viewpoint ;
+    skos:prefLabel  "St-Cn: Strategic Connectivity (Capability Dependencies)"@en ;
+    skos:definition "Dependencies and relationships between capabilities."@en ;
+    arch:viewType   arch:Diagram, arch:Matrix ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:viewpointFramesConcern archvp:DependencyConcern ;
+    arch:includesConcept uaf:Capability ;
+    arch:targetsStakeholder :CapabilityPlanner, :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :StrategicVPs ;
+.
+
+:St-Roadmap
+    a arch:Viewpoint ;
+    skos:prefLabel  "St-Rm: Strategic Roadmap (Capability Phasing)"@en ;
+    skos:definition "Planned achievement of capabilities at different points in time."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:viewpointFramesConcern archvp:EvolutionConcern ;
+    arch:includesConcept uaf:Capability, uaf:Project ;
+    arch:targetsStakeholder :CapabilityPlanner, :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :StrategicVPs ;
+.
+
+
+#################################################################
+# Operational Viewpoint (Op)
+#################################################################
+
+:Op-Taxonomy
+    a arch:Viewpoint ;
+    skos:prefLabel  "Op-Tx: Operational Taxonomy"@en ;
+    skos:definition "Hierarchical decomposition of operational activities and performers."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:includesConcept uaf:OperationalActivity, uaf:OperationalPerformer ;
+    arch:targetsStakeholder :OperationalPlanner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:Op-Structure
+    a arch:Viewpoint ;
+    skos:prefLabel  "Op-Sr: Operational Structure"@en ;
+    skos:definition "Internal composition of operational performers and their relationships."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:includesConcept uaf:OperationalPerformer, uaf:OperationalArchitecture ;
+    arch:targetsStakeholder :OperationalPlanner, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:Op-Connectivity
+    a arch:Viewpoint ;
+    skos:prefLabel  "Op-Cn: Operational Connectivity"@en ;
+    skos:definition "Operational exchanges and connectors between operational performers."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:viewpointFramesConcern archvp:IntegrationConcern ;
+    arch:includesConcept uaf:OperationalPerformer, uaf:OperationalExchange, uaf:OperationalConnector ;
+    arch:targetsStakeholder :OperationalPlanner, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:Op-Processes
+    a arch:Viewpoint ;
+    skos:prefLabel  "Op-Pr: Operational Processes"@en ;
+    skos:definition "Operational activity flows showing inputs, outputs, and control flows."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern ;
+    arch:includesConcept uaf:OperationalActivity, uaf:OperationalPerformer, uaf:OperationalExchange ;
+    arch:targetsStakeholder :OperationalPlanner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:Op-Constraints
+    a arch:Viewpoint ;
+    skos:prefLabel  "Op-Ct: Operational Constraints"@en ;
+    skos:definition "Rules and constraints governing operational activities and performers."@en ;
+    arch:viewType   arch:Catalog ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern ;
+    arch:includesConcept uaf:OperationalConstraint, uaf:OperationalActivity ;
+    arch:targetsStakeholder :OperationalPlanner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+:Op-HighLevelConcept
+    a arch:Viewpoint ;
+    skos:prefLabel  "Op-Hc: High-Level Operational Concept"@en ;
+    skos:definition "High-level graphical overview of the operational concept showing main performers and interactions."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:includesConcept uaf:HighLevelOperationalConcept, uaf:OperationalPerformer ;
+    arch:targetsStakeholder :OperationalPlanner, :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :OperationalVPs ;
+.
+
+
+#################################################################
+# Services Viewpoint (Sv)
+#################################################################
+
+:Sv-Taxonomy
+    a arch:Viewpoint ;
+    skos:prefLabel  "Sv-Tx: Services Taxonomy"@en ;
+    skos:definition "Hierarchical classification of services provided by the enterprise."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:includesConcept uaf:Service, uaf:ServiceFunction ;
+    arch:targetsStakeholder :ServiceArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ServicesVPs ;
+.
+
+:Sv-Structure
+    a arch:Viewpoint ;
+    skos:prefLabel  "Sv-Sr: Services Structure"@en ;
+    skos:definition "Internal composition of services and their interfaces."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:includesConcept uaf:Service, uaf:ServiceInterface, uaf:ServiceArchitecture ;
+    arch:targetsStakeholder :ServiceArchitect, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ServicesVPs ;
+.
+
+:Sv-Connectivity
+    a arch:Viewpoint ;
+    skos:prefLabel  "Sv-Cn: Services Connectivity"@en ;
+    skos:definition "Service exchanges and interaction paths between services."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:viewpointFramesConcern archvp:IntegrationConcern ;
+    arch:includesConcept uaf:Service, uaf:ServiceExchange, uaf:ServiceContract ;
+    arch:targetsStakeholder :ServiceArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ServicesVPs ;
+.
+
+
+#################################################################
+# Personnel Viewpoint (Pr)
+#################################################################
+
+:Pr-Taxonomy
+    a arch:Viewpoint ;
+    skos:prefLabel  "Pr-Tx: Personnel Taxonomy"@en ;
+    skos:definition "Hierarchical classification of organizations, posts, and roles."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:includesConcept uaf:Organization, uaf:Post, uaf:Person ;
+    arch:targetsStakeholder :PersonnelManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PersonnelVPs ;
+.
+
+:Pr-Structure
+    a arch:Viewpoint ;
+    skos:prefLabel  "Pr-Sr: Personnel Structure"@en ;
+    skos:definition "Organizational structure showing posts, responsibilities, and reporting relationships."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:includesConcept uaf:Organization, uaf:Post, uaf:Responsibility, uaf:OrganizationalResource ;
+    arch:targetsStakeholder :PersonnelManager, :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PersonnelVPs ;
+.
+
+
+#################################################################
+# Resources Viewpoint (Rs)
+#################################################################
+
+:Rs-Taxonomy
+    a arch:Viewpoint ;
+    skos:prefLabel  "Rs-Tx: Resources Taxonomy"@en ;
+    skos:definition "Hierarchical classification of resource performers and functions."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:includesConcept uaf:ResourcePerformer, uaf:Function ;
+    arch:targetsStakeholder :ResourceManager, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ResourcesVPs ;
+.
+
+:Rs-Structure
+    a arch:Viewpoint ;
+    skos:prefLabel  "Rs-Sr: Resources Structure"@en ;
+    skos:definition "Internal composition of resource performers and their configurations."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:includesConcept uaf:ResourcePerformer, uaf:ResourceArchitecture, uaf:KnownResource ;
+    arch:targetsStakeholder :SystemEngineer, :ResourceManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ResourcesVPs ;
+.
+
+:Rs-Connectivity
+    a arch:Viewpoint ;
+    skos:prefLabel  "Rs-Cn: Resources Connectivity"@en ;
+    skos:definition "Resource exchanges and connectors between resource performers."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:viewpointFramesConcern archvp:IntegrationConcern ;
+    arch:includesConcept uaf:ResourcePerformer, uaf:ResourceExchange, uaf:ResourceConnector ;
+    arch:targetsStakeholder :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ResourcesVPs ;
+.
+
+:Rs-Processes
+    a arch:Viewpoint ;
+    skos:prefLabel  "Rs-Pr: Resources Processes"@en ;
+    skos:definition "Resource function flows showing how resource performers execute functions."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern ;
+    arch:includesConcept uaf:ResourcePerformer, uaf:Function, uaf:ResourceExchange ;
+    arch:targetsStakeholder :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ResourcesVPs ;
+.
+
+
+#################################################################
+# Security Viewpoint (Sc)
+#################################################################
+
+:Sc-Taxonomy
+    a arch:Viewpoint ;
+    skos:prefLabel  "Sc-Tx: Security Taxonomy"@en ;
+    skos:definition "Classification of security assets, controls, and control families."@en ;
+    arch:viewType   arch:Diagram, arch:Catalog ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern ;
+    arch:includesConcept uaf:SecurityAsset, uaf:SecurityControl, uaf:SecurityControlFamily ;
+    arch:targetsStakeholder :SecurityArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :SecurityVPs ;
+.
+
+:Sc-Structure
+    a arch:Viewpoint ;
+    skos:prefLabel  "Sc-Sr: Security Structure"@en ;
+    skos:definition "Security enclaves and the controls applied within them."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern ;
+    arch:includesConcept uaf:SecurityEnclave, uaf:SecurityControl, uaf:SecurityConstraint ;
+    arch:targetsStakeholder :SecurityArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :SecurityVPs ;
+.
+
+:Sc-Constraints
+    a arch:Viewpoint ;
+    skos:prefLabel  "Sc-Ct: Security Constraints"@en ;
+    skos:definition "Security constraints and policies governing the enterprise."@en ;
+    arch:viewType   arch:Catalog ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern ;
+    arch:includesConcept uaf:SecurityConstraint, uaf:SecurityAsset ;
+    arch:targetsStakeholder :SecurityArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :SecurityVPs ;
+.
+
+
+#################################################################
+# Projects Viewpoint (Pj)
+#################################################################
+
+:Pj-Structure
+    a arch:Viewpoint ;
+    skos:prefLabel  "Pj-Sr: Projects Structure"@en ;
+    skos:definition "Project portfolio showing projects, phases, and their relationships."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:EvolutionConcern ;
+    arch:includesConcept uaf:Project, uaf:ProjectPhase, uaf:ProjectMilestone ;
+    arch:targetsStakeholder :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ProjectsVPs ;
+.
+
+:Pj-Roadmap
+    a arch:Viewpoint ;
+    skos:prefLabel  "Pj-Rm: Projects Roadmap"@en ;
+    skos:definition "Timeline perspective on projects with milestones and capability delivery dates."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:viewpointFramesConcern archvp:EvolutionConcern ;
+    arch:includesConcept uaf:Project, uaf:ProjectMilestone, uaf:Capability ;
+    arch:targetsStakeholder :ProgramManager, :CapabilityPlanner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ProjectsVPs ;
+.
+
+:Pj-Traceability
+    a arch:Viewpoint ;
+    skos:prefLabel  "Pj-Tr: Projects Traceability"@en ;
+    skos:definition "Mapping of projects to capabilities they deliver and resources they consume."@en ;
+    arch:viewType   arch:Matrix ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:viewpointFramesConcern archvp:DependencyConcern ;
+    arch:includesConcept uaf:Project, uaf:Capability, uaf:ResourcePerformer ;
+    arch:targetsStakeholder :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ProjectsVPs ;
+.
+
+
+#################################################################
+# Standards Viewpoint (Sd)
+#################################################################
+
+:Sd-Taxonomy
+    a arch:Viewpoint ;
+    skos:prefLabel  "Sd-Tx: Standards Taxonomy"@en ;
+    skos:definition "Classification of applicable standards and protocols."@en ;
+    arch:viewType   arch:Catalog ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern ;
+    arch:includesConcept uaf:Standard, uaf:StandardProfile, uaf:Protocol ;
+    arch:targetsStakeholder :StandardsAuthority, :SystemEngineer ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :StandardsVPs ;
+.
+
+:Sd-Traceability
+    a arch:Viewpoint ;
+    skos:prefLabel  "Sd-Tr: Standards Traceability"@en ;
+    skos:definition "Mapping of standards to the solution elements they govern."@en ;
+    arch:viewType   arch:Matrix ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:viewpointFramesConcern archvp:GovernanceConcern ;
+    arch:includesConcept uaf:Standard, uaf:ResourcePerformer, uaf:Service ;
+    arch:targetsStakeholder :StandardsAuthority ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :StandardsVPs ;
+.
+
+
+#################################################################
+# Actual Resources Viewpoint (Ar)
+#################################################################
+
+:Ar-Structure
+    a arch:Viewpoint ;
+    skos:prefLabel  "Ar-Sr: Actual Resources Structure"@en ;
+    skos:definition "Specific named instances of organizations, resources, and services deployed in the real world."@en ;
+    arch:viewType   arch:Diagram, arch:Catalog ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:DeploymentConcern ;
+    arch:includesConcept uaf:ActualOrganization, uaf:ActualResource, uaf:ActualPerson,
+                         uaf:ActualPost, uaf:ActualService ;
+    arch:targetsStakeholder :ResourceManager, :ProgramManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ActualResourcesVPs ;
+.
+
+:Ar-Connectivity
+    a arch:Viewpoint ;
+    skos:prefLabel  "Ar-Cn: Actual Resources Connectivity"@en ;
+    skos:definition "Actual connections and exchanges between deployed resources and services."@en ;
+    arch:viewType   arch:Diagram ;
+    arch:viewpointHasPurpose <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:viewpointFramesConcern archvp:DeploymentConcern, archvp:IntegrationConcern ;
+    arch:includesConcept uaf:ActualResource, uaf:ActualService ;
+    arch:targetsStakeholder :ResourceManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :ActualResourcesVPs ;
+.

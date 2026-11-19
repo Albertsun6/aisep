@@ -1,0 +1,11 @@
+# expect: Value does not have class
+# Invalid per bpmn_onto-shapes :LaneShape — bpmn:flowNodeRefs must point at bpmn:FlowNode; a DataObject is not one.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix :     <https://aisep.example/model/bpmn-bad/> .
+
+:model a arch:Model ; skos:prefLabel "BPMN 负例"@zh .
+
+:lane a bpmn:Lane ; arch:inModel :model ; skos:prefLabel "采购员"@zh ; bpmn:flowNodeRefs :doc .
+:doc a bpmn:DataObject ; arch:inModel :model ; skos:prefLabel "报价单"@zh .

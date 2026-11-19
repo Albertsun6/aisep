@@ -1,0 +1,120 @@
+@prefix owl:             <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:             <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:            <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:             <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix adms:            <http://www.w3.org/ns/adms#> .
+@prefix dcterms:         <http://purl.org/dc/terms/> .
+@prefix bibo:            <http://purl.org/ontology/bibo/> .
+@prefix vaem:            <http://www.linkedmodel.org/schema/vaem> .
+@prefix vann:            <http://purl.org/vocab/vann/> .
+@prefix pav:             <http://purl.org/pav/> .
+@prefix prov:            <http://www.w3.org/ns/prov#> .
+@prefix cc:              <http://creativecommons.org/ns#> .
+
+@prefix skos:            <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:          <http://schema.org/> .
+@prefix arch:            <https://meta.linked.archi/core#> .
+@prefix :                <https://meta.linked.archi/iso42010#> .
+
+<https://meta.linked.archi/iso42010#>
+    rdf:type owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/iso42010#" ;
+    vann:preferredNamespacePrefix "iso42010" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ISO/IEC/IEEE 42010 Architecture Description Concepts"@en ;
+    dcterms:description                '''
+SKOS taxonomy of architecture description concepts from ISO/IEC/IEEE 42010:2022.
+This is the architecture description standard that the Linked.Archi core ontology aligns to.
+Covers the key concepts of system, architecture, architecture description, stakeholder, concern,
+architecture viewpoint, architecture view, architecture model, architecture decision,
+architecture rationale, correspondence, and correspondence rule.
+                                   '''@en ;
+    dcterms:source  <https://www.iso.org/standard/74393.html> ;
+    prov:wasDerivedFrom <https://www.iso.org/standard/74393.html> ;
+    dcterms:abstract              '''
+Architecture description concepts from ISO/IEC/IEEE 42010, modelled as SKOS concepts with
+rdfs:seeAlso links to the corresponding classes in the Linked.Archi core ontology.
+      '''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:issued                "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2019-03-17"^^xsd:date ;
+    dcterms:publisher
+                                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/iso42010/0.1.0#> ;
+    owl:versionInfo               "0.1.0" ;
+    schema:citation               "ISO/IEC/IEEE 42010:2022 Software, systems and enterprise — Architecture description" ;
+    prov:wasDerivedFrom           "ISO/IEC/IEEE 42010:2022" ;
+    rdfs:seeAlso                  <https://www.iso.org/standard/74393.html> .
+
+
+## ─── Architecture Description Concepts (SKOS Concepts) ──────────────────────
+
+:System
+    a               owl:Class ;
+    skos:prefLabel  "System"@en ;
+    skos:definition "A combination of interacting elements organized to achieve one or more stated purposes. A system is a construct or collection of different elements that together produce results not obtainable by the elements alone."@en ;
+    rdfs:seeAlso    arch:System .
+
+:Architecture
+    a               owl:Class ;
+    skos:prefLabel  "Architecture"@en ;
+    skos:definition "Fundamental concepts or properties of a system in its environment embodied in its elements, relationships, and in the principles of its design and evolution."@en .
+
+:ArchitectureDescription
+    a               owl:Class ;
+    skos:prefLabel  "Architecture Description"@en ;
+    skos:definition "A work product used to express an architecture. An architecture description is composed of architecture views, each conforming to an architecture viewpoint."@en ;
+    rdfs:seeAlso    arch:ArchitectureDescription .
+
+:Stakeholder
+    a               owl:Class ;
+    skos:prefLabel  "Stakeholder"@en ;
+    skos:definition "An individual, team, organization, or classes thereof, having an interest in a system. Stakeholders have concerns with respect to the system."@en ;
+    rdfs:seeAlso    arch:Stakeholder .
+
+:Concern
+    a               owl:Class ;
+    skos:prefLabel  "Concern"@en ;
+    skos:definition "An interest in a system relevant to one or more of its stakeholders. Concerns include system considerations such as performance, reliability, security, distribution, and evolvability."@en ;
+    rdfs:seeAlso    arch:Concern .
+
+:ArchitectureViewpoint
+    a               owl:Class ;
+    skos:prefLabel  "Architecture Viewpoint"@en ;
+    skos:definition "A work product establishing the conventions for the construction, interpretation, and use of architecture views to frame specific system concerns. A viewpoint includes model kinds, notations, and conventions."@en ;
+    rdfs:seeAlso    arch:Viewpoint .
+
+:ArchitectureView
+    a               owl:Class ;
+    skos:prefLabel  "Architecture View"@en ;
+    skos:definition "A work product expressing the architecture of a system with respect to specific system concerns, governed by its architecture viewpoint. A view is composed of one or more architecture models."@en ;
+    rdfs:seeAlso    arch:View .
+
+:ArchitectureModel
+    a               owl:Class ;
+    skos:prefLabel  "Architecture Model"@en ;
+    skos:definition "A work product that uses the conventions of its associated model kind to address specific system concerns within an architecture view."@en ;
+    rdfs:seeAlso    arch:Model .
+
+:ArchitectureDecision
+    a               owl:Class ;
+    skos:prefLabel  "Architecture Decision"@en ;
+    skos:definition "A decision that pertains to the architecture of a system. Architecture decisions affect the architecture and are justified by architecture rationale."@en .
+
+:ArchitectureRationale
+    a               owl:Class ;
+    skos:prefLabel  "Architecture Rationale"@en ;
+    skos:definition "A record of the reasoning and justification behind architecture decisions, including the alternatives considered, trade-offs evaluated, and the basis for the chosen approach."@en .
+
+:Correspondence
+    a               owl:Class ;
+    skos:prefLabel  "Correspondence"@en ;
+    skos:definition "A relation between architecture description elements. Correspondences express and enforce architecture relations such as composition, refinement, consistency, traceability, dependency, constraint, and obligation."@en .
+
+:CorrespondenceRule
+    a               owl:Class ;
+    skos:prefLabel  "Correspondence Rule"@en ;
+    skos:definition "A rule that governs correspondences and enforces constraints on architecture description elements, ensuring consistency and integrity across architecture views and models."@en .

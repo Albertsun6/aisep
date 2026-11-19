@@ -1,0 +1,68 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+@prefix bibo:     <http://purl.org/ontology/bibo/> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix radar:    <https://meta.linked.archi/tech-radar/onto#> .
+@prefix radartax: <https://meta.linked.archi/tech-radar/tax#> .
+@prefix :         <https://meta.linked.archi/tech-radar/metamodel#> .
+
+<https://meta.linked.archi/tech-radar/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/tech-radar/metamodel#" ;
+    vann:preferredNamespacePrefix "radarmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Technology Radar Metamodel Definition"@en ;
+    dcterms:description           '''Metamodel manifest for the Technology Radar framework.
+Ties together the Tech Radar ontology and controlled vocabularies into a
+single discoverable resource for technology governance.'''@en ;
+    dcterms:created               "2026-06-22"^^xsd:date ;
+    dcterms:modified              "2026-06-22"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/tech-radar/metamodel/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    prov:wasDerivedFrom           <https://www.thoughtworks.com/radar> ;
+.
+
+:TechRadarFramework
+    a               arch:Framework ;
+    skos:prefLabel  "Technology Radar Framework"@en ;
+    skos:definition '''The Technology Radar framework for technology governance.
+Classifies technologies into rings (Adopt, Trial, Assess, Hold, Retire) and
+quadrants (Techniques, Platforms, Tools, Languages & Frameworks), tracking
+movement over time to guide adoption and retirement decisions.
+
+Originated at ThoughtWorks (2010). Widely adopted by technology organizations
+for making technology choices visible and governed.'''@en ;
+    dcterms:publisher    "ThoughtWorks (Thoughtworks)"@en ;
+    rdfs:seeAlso    <https://www.thoughtworks.com/radar>,
+                    <https://www.thoughtworks.com/en-gb/insights/blog/birth-technology-radar> ;
+.
+
+:TechRadar
+    a                             arch:Metamodel ;
+    skos:prefLabel                "Technology Radar Metamodel"@en ;
+    dcterms:description           '''The complete Technology Radar metamodel definition, providing
+classes for technologies, assessments, and radar publications with controlled
+vocabularies for rings, quadrants, and movement tracking.'''@en ;
+
+    arch:basedOnFramework         :TechRadarFramework ;
+
+    ## Content — entity types and relationships
+    arch:modelConcepts            <https://meta.linked.archi/tech-radar/onto#> ;
+
+    ## Controlled vocabularies
+    arch:conceptClassification    <https://meta.linked.archi/tech-radar/tax#> ;
+
+    ## SHACL validation shapes
+    arch:formalRules              <https://meta.linked.archi/tech-radar/shapes#> ;
+.

@@ -1,0 +1,170 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix fina:    <https://meta.linked.archi/financial-architecture/onto#> .
+@prefix :        <https://meta.linked.archi/financial-architecture/reference-data#> .
+
+<https://meta.linked.archi/financial-architecture/reference-data#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/financial-architecture/onto#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/financial-architecture/reference-data#" ;
+    vann:preferredNamespacePrefix "finard" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Financial Architecture Reference Data"@en ;
+    dcterms:description                '''Reference data for financial architecture — cost categories,
+investment types, and cost periods.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/financial-architecture/reference-data/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+#################################################################
+# Cost Categories
+#################################################################
+
+:LicenseCost
+    a               fina:CostCategory ;
+    skos:prefLabel  "License Cost"@en ;
+    skos:definition "Software licensing fees — perpetual licenses, subscription fees, per-user/per-core pricing."@en ;
+    skos:notation   "LICENSE" ;
+.
+
+:InfrastructureCost
+    a               fina:CostCategory ;
+    skos:prefLabel  "Infrastructure Cost"@en ;
+    skos:definition "Hosting, compute, storage, network, and data center costs — on-premises or cloud."@en ;
+    skos:notation   "INFRA" ;
+.
+
+:LaborCost
+    a               fina:CostCategory ;
+    skos:prefLabel  "Labor Cost"@en ;
+    skos:definition "Development, operations, and support staff costs — internal FTEs and external contractors."@en ;
+    skos:notation   "LABOR" ;
+.
+
+:SupportCost
+    a               fina:CostCategory ;
+    skos:prefLabel  "Support Cost"@en ;
+    skos:definition "Vendor support contracts, SLAs, and maintenance agreements."@en ;
+    skos:notation   "SUPPORT" ;
+.
+
+:IntegrationCost
+    a               fina:CostCategory ;
+    skos:prefLabel  "Integration Cost"@en ;
+    skos:definition "Cost of integrating with other systems — API development, middleware, data transformation."@en ;
+    skos:notation   "INTEGRATION" ;
+.
+
+:ComplianceCost
+    a               fina:CostCategory ;
+    skos:prefLabel  "Compliance Cost"@en ;
+    skos:definition "Cost of meeting regulatory requirements — audits, certifications, security controls, reporting."@en ;
+    skos:notation   "COMPLIANCE" ;
+.
+
+:OpportunityCost
+    a               fina:CostCategory ;
+    skos:prefLabel  "Opportunity Cost"@en ;
+    skos:definition "Value foregone by not pursuing alternative investments or approaches."@en ;
+    skos:notation   "OPPORTUNITY" ;
+.
+
+:TechnicalDebtInterest
+    a               fina:CostCategory ;
+    skos:prefLabel  "Technical Debt Interest"@en ;
+    skos:definition "Ongoing cost of maintaining suboptimal solutions — workarounds, manual processes, performance degradation."@en ;
+    skos:notation   "DEBT_INTEREST" ;
+.
+
+:TrainingCost
+    a               fina:CostCategory ;
+    skos:prefLabel  "Training Cost"@en ;
+    skos:definition "Cost of training staff on new technologies, tools, or processes."@en ;
+    skos:notation   "TRAINING" ;
+.
+
+:DecommissioningCost
+    a               fina:CostCategory ;
+    skos:prefLabel  "Decommissioning Cost"@en ;
+    skos:definition "Cost of decommissioning a system — data migration, contract termination, cleanup."@en ;
+    skos:notation   "DECOMMISSION" ;
+.
+
+
+#################################################################
+# Investment Types
+#################################################################
+
+:RunInvestment
+    a               fina:InvestmentType ;
+    skos:prefLabel  "Run"@en ;
+    skos:definition '''Investment to keep current systems operational — maintenance,
+patching, license renewals, infrastructure refresh. No new capabilities
+are added.'''@en ;
+    skos:notation   "RUN" ;
+.
+
+:GrowInvestment
+    a               fina:InvestmentType ;
+    skos:prefLabel  "Grow"@en ;
+    skos:definition '''Investment to expand capabilities or capacity — new features,
+scaling, geographic expansion, new integrations. Builds on existing
+architecture.'''@en ;
+    skos:notation   "GROW" ;
+.
+
+:TransformInvestment
+    a               fina:InvestmentType ;
+    skos:prefLabel  "Transform"@en ;
+    skos:definition '''Investment in fundamental modernization or replacement — platform
+migration, architecture redesign, technology stack replacement. Changes
+the architecture significantly.'''@en ;
+    skos:notation   "TRANSFORM" ;
+.
+
+
+#################################################################
+# Cost Periods
+#################################################################
+
+:Annual
+    a               fina:CostPeriod ;
+    skos:prefLabel  "Annual"@en ;
+    skos:definition "Cost applies on an annual basis."@en ;
+    skos:notation   "ANNUAL" ;
+.
+
+:Monthly
+    a               fina:CostPeriod ;
+    skos:prefLabel  "Monthly"@en ;
+    skos:definition "Cost applies on a monthly basis."@en ;
+    skos:notation   "MONTHLY" ;
+.
+
+:Quarterly
+    a               fina:CostPeriod ;
+    skos:prefLabel  "Quarterly"@en ;
+    skos:definition "Cost applies on a quarterly basis."@en ;
+    skos:notation   "QUARTERLY" ;
+.
+
+:OneTime
+    a               fina:CostPeriod ;
+    skos:prefLabel  "One-Time"@en ;
+    skos:definition "A one-time cost that does not recur."@en ;
+    skos:notation   "ONE_TIME" ;
+.

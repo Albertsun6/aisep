@@ -1,0 +1,285 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix uml:     <https://meta.linked.archi/uml/onto#> .
+@prefix :        <https://meta.linked.archi/examples/uml/> .
+
+#################################################################
+# UML reference example — a class model and a state machine
+#
+# Written to pin down two things the shapes got wrong before
+# uml-onto 0.3.0 / uml-shapes 0.3.0:
+#
+#  1. The unlabelled transitions below are CORRECT UML. `[*] --> Idle`
+#     has no trigger and needs no name, and UML 2.5.1 §7.4 makes
+#     NamedElement::name [0..1] everywhere. uml/shapes# must report
+#     nothing for them.
+#
+#  2. :OrderPlacedAssociation is an unlabelled Association, and
+#     :OrderIsAnItem is an unlabelled Generalization. Since uml-onto
+#     0.3.0 an Association is a Classifier and therefore a NamedElement,
+#     as UML says — so it now reaches the same shapes a Transition does.
+#     Both must still pass. The old asymmetry, where an association
+#     escaped a check its sibling failed, is what made the defect
+#     visible.
+#
+# Everything a reader navigates by name IS named, so the opt-in
+# uml/publication-shapes# passes on this file too.
+#
+# Data graph of the `uml-instances` and `uml-publication` validation
+# profiles in .scripts/validate.sh.
+#################################################################
+
+:UMLExampleModel
+    a                             arch:Model ;
+    skos:prefLabel                "UML Reference Example"@en ;
+    dcterms:description           '''Reference instance data for the Linked.Archi UML ontology:
+a small ordering domain as a class model, and the order lifecycle as a state machine. Exists
+mainly so the UML shapes are exercised against instances rather than against the ontology's
+own enumeration individuals.'''@en ;
+    arch:modelConformsToMetamodel <https://meta.linked.archi/uml/metamodel#UML2> ;
+    dcterms:created               "2026-08-13"^^xsd:date ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+.
+
+
+#################################################################
+# Package
+#################################################################
+
+:OrderingPackage
+    a              uml:Package ;
+    skos:prefLabel "Ordering"@en ;
+.
+
+
+#################################################################
+# Classifiers
+#################################################################
+
+:Order
+    a               uml:Class ;
+    skos:prefLabel  "Order"@en ;
+    uml:visibility  uml:Public ;
+    uml:isAbstract  false ;
+.
+
+:LineItem
+    a               uml:Class ;
+    skos:prefLabel  "Line Item"@en ;
+    uml:visibility  uml:Public ;
+.
+
+:Item
+    a               uml:Class ;
+    skos:prefLabel  "Item"@en ;
+    uml:visibility  uml:Public ;
+    uml:isAbstract  true ;
+.
+
+:Priceable
+    a               uml:Interface ;
+    skos:prefLabel  "Priceable"@en ;
+    uml:visibility  uml:Public ;
+.
+
+:Currency
+    a               uml:Enumeration ;
+    skos:prefLabel  "Currency"@en ;
+.
+
+:EUR
+    a               uml:EnumerationLiteral ;
+    skos:prefLabel  "EUR"@en ;
+.
+
+:USD
+    a               uml:EnumerationLiteral ;
+    skos:prefLabel  "USD"@en ;
+.
+
+
+#################################################################
+# Features
+#################################################################
+
+:orderTotal
+    a                    uml:Property ;
+    skos:prefLabel       "total"@en ;
+    uml:visibility       uml:Private ;
+    uml:lower            1 ;
+    uml:upper            1 ;
+    uml:aggregationKind  uml:None ;
+.
+
+:orderLines
+    a                    uml:Property ;
+    skos:prefLabel       "lines"@en ;
+    uml:visibility       uml:Private ;
+    uml:lower            1 ;
+    uml:upper            -1 ;
+    uml:aggregationKind  uml:Composite ;
+.
+
+:calculateTotal
+    a               uml:Operation ;
+    skos:prefLabel  "calculateTotal"@en ;
+    uml:visibility  uml:Public ;
+.
+
+
+#################################################################
+# Relationships
+#
+# :OrderPlacedAssociation and :OrderIsAnItem carry no skos:prefLabel on
+# purpose. An unnamed association and an unnamed generalization are both
+# ordinary UML, and both are now NamedElement-reachable — Association
+# through Classifier, Generalization is not a NamedElement at all.
+#################################################################
+
+:OrderPlacedAssociation
+    a               uml:Association ;
+    arch:source     :Order ;
+    arch:target     :LineItem ;
+.
+
+:Order uml:associatedWith :LineItem .
+
+:OrderIsAnItem
+    a               uml:Generalization ;
+    arch:source     :LineItem ;
+    arch:target     :Item ;
+.
+
+:LineItem uml:generalizes :Item .
+
+:OrderRealizesPriceable
+    a               uml:InterfaceRealization ;
+    arch:source     :Order ;
+    arch:target     :Priceable ;
+    skos:prefLabel  "Order realizes Priceable"@en ;
+.
+
+:Order uml:realizesInterface :Priceable .
+
+
+#################################################################
+# State machine — the unlabelled-transition case
+#
+# In PlantUML terms:
+#
+#   [*]      --> Idle
+#   Idle     --> Submitted : submit
+#   Submitted --> Fulfilled
+#   Fulfilled --> [*]
+#
+# Three of the four transitions have no name. Before uml-shapes 0.3.0
+# every one of them was reported as a violation of NamedElementShape,
+# and there was nothing a converter could do about it that was not worse.
+#################################################################
+
+:OrderLifecycle
+    a               uml:StateMachine ;
+    skos:prefLabel  "Order Lifecycle"@en ;
+.
+
+:OrderLifecycleRegion
+    a               uml:Region ;
+.
+
+:OrderStart
+    a                    uml:Pseudostate ;
+    uml:pseudostateKind  uml:InitialPseudostate ;
+.
+
+:Idle
+    a               uml:State ;
+    skos:prefLabel  "Idle"@en ;
+.
+
+:Submitted
+    a               uml:State ;
+    skos:prefLabel  "Submitted"@en ;
+.
+
+:Fulfilled
+    a               uml:State ;
+    skos:prefLabel  "Fulfilled"@en ;
+.
+
+:OrderEnd
+    a               uml:FinalState ;
+.
+
+## Unnamed: an initial transition has no trigger to name it after.
+:T1
+    a                   uml:Transition ;
+    arch:source         :OrderStart ;
+    arch:target         :Idle ;
+    uml:transitionKind  uml:ExternalTransition ;
+.
+
+## Named: this one has a trigger.
+:T2
+    a                   uml:Transition ;
+    arch:source         :Idle ;
+    arch:target         :Submitted ;
+    skos:prefLabel      "submit"@en ;
+    uml:transitionKind  uml:ExternalTransition ;
+.
+
+## Unnamed: a completion transition.
+:T3
+    a                   uml:Transition ;
+    arch:source         :Submitted ;
+    arch:target         :Fulfilled ;
+    uml:transitionKind  uml:ExternalTransition ;
+.
+
+## Unnamed: reaching the final state.
+:T4
+    a                   uml:Transition ;
+    arch:source         :Fulfilled ;
+    arch:target         :OrderEnd ;
+    uml:transitionKind  uml:ExternalTransition ;
+.
+
+
+#################################################################
+# Interaction — participants named, messages not required to be
+#################################################################
+
+:PlaceOrderInteraction
+    a               uml:Interaction ;
+    skos:prefLabel  "Place Order"@en ;
+    uml:hasLifeline :CustomerLifeline, :OrderServiceLifeline ;
+    uml:hasMessage  :SubmitMessage, :AckMessage ;
+.
+
+:CustomerLifeline
+    a               uml:Lifeline ;
+    skos:prefLabel  "customer"@en ;
+.
+
+:OrderServiceLifeline
+    a               uml:Lifeline ;
+    skos:prefLabel  "orderService"@en ;
+.
+
+:SubmitMessage
+    a                uml:Message ;
+    skos:prefLabel   "submit()"@en ;
+    uml:messageSort  uml:SynchCall ;
+    uml:messageKind  uml:Complete ;
+.
+
+## A reply message is drawn, not named — no skos:prefLabel, deliberately.
+:AckMessage
+    a                uml:Message ;
+    uml:messageSort  uml:Reply ;
+    uml:messageKind  uml:Complete ;
+.

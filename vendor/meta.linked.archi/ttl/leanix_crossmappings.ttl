@@ -1,0 +1,211 @@
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix lmm:     <https://meta.linked.archi/leanix/onto#> .
+@prefix am:      <https://meta.linked.archi/archimate3/onto#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+
+<https://meta.linked.archi/leanix/crossmappings#>
+    a                owl:Ontology ;
+    owl:imports      <https://meta.linked.archi/leanix/onto#> ;
+    cc:license       "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/leanix/crossmappings#" ;
+    vann:preferredNamespacePrefix "lmmxm" ;
+    dcterms:creator  "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title    "Linked.Archi LeanIX Cross-Language Mappings"@en ;
+    dcterms:description '''Cross-language SKOS mappings between SAP LeanIX Meta Model v4 fact sheet
+types and relations and ArchiMate modeling language concepts, for both ArchiMate
+3.2 and ArchiMate 4.0.
+
+These mappings are editorial. SAP LeanIX publishes guidance on how its meta
+model relates to enterprise architecture practice, but no normative
+element-level correspondence to ArchiMate, and the ArchiMate specification does
+not mention LeanIX. The assertions here express semantic proximity based on the
+fact sheet definitions in the LeanIX documentation and the concept definitions
+in the ArchiMate specifications.
+
+LeanIX is a portfolio tool: a fact sheet is the unit of inventory, ownership and
+lifecycle, and its relations record support and dependency rather than detailed
+behaviour. Where a fact sheet type and an ArchiMate concept describe the same
+kind of thing at the same grain — Business Capability and Capability, Value
+Stream and Value Stream, Data Object and Data Object — the mapping is
+skos:closeMatch; exactMatch is avoided throughout because each fact sheet type
+carries portfolio semantics (lifecycle, subscriptions, completion) that the
+ArchiMate concept does not. Where LeanIX collapses several ArchiMate concepts
+into one type (Interface, IT Component) the mappings are skos:relatedMatch and
+fan out.
+
+Relation mappings carry a caveat on direction. LeanIX relations are stored on
+the fact sheet that owns them (an application requires an IT component; an IT
+component is part of a platform), which often runs opposite to the ArchiMate
+reading (the IT component serves the application; the platform aggregates the
+component). The SKOS assertions relate the relationship types only; a query that
+translates instances must reverse the direction where the comment says so.
+
+These are type-level statements. Instance-level correspondence is asserted in
+the export's Linked.Archi fact sheet index, against a shared id namespace.
+
+Not mapped, deliberately: lmm:FactSheet (abstract), lmm:BusinessContext
+(broad grouping; its more specific subtypes are mapped), and subscriptions, tags, status and
+lifecycle phases, which are portfolio metadata rather than architecture.'''@en ;
+    dcterms:issued   "2026-09-25"^^xsd:date ;
+    dcterms:modified "2026-11-16"^^xsd:date ;
+    owl:versionInfo  "0.2.0"@en ;
+    dcterms:source   <https://help.sap.com/docs/leanix/ea/meta-model>,
+                     <https://help.sap.com/docs/leanix/ea/fact-sheets>,
+                     <https://pubs.opengroup.org/architecture/archimate3-doc/>,
+                     <https://pubs.opengroup.org/architecture/archimate4-doc/> ;
+.
+
+
+#################################################################
+# LeanIX ↔ ArchiMate 3.2
+#################################################################
+#
+# Editorial mappings — no official cross-notation specification
+# exists. These express semantic proximity based on the LeanIX
+# Meta Model v4 and the ArchiMate 3.2 specification.
+
+## Strategy
+#  A business capability is the same idea in both: what the business can do,
+#  independent of how. A value stream likewise. Objectives are goals; the
+#  measurable end state an objective names is sometimes an outcome instead.
+lmm:BusinessCapability       skos:closeMatch    am:Capability .
+lmm:ValueStream              skos:closeMatch    am:ValueStream .
+lmm:Objective                skos:closeMatch    am:Goal .
+lmm:Objective                skos:relatedMatch  am:Outcome .
+
+## Business
+#  An organization is a business actor. A LeanIX
+#  process is an ArchiMate business process at portfolio grain. A LeanIX product
+#  is an offered bundle, which is what an ArchiMate product is.
+lmm:Organization             skos:closeMatch    am:BusinessActor .
+lmm:Process                  skos:closeMatch    am:BusinessProcess .
+lmm:Product                  skos:closeMatch    am:Product .
+
+## Application
+#  The application fact sheet is the central inventory unit and corresponds to
+#  an application component; a microservice is a fine-grained component that
+#  may be modelled as a part of a larger one.
+lmm:Application              skos:closeMatch    am:ApplicationComponent .
+lmm:BusinessApplication      skos:closeMatch    am:ApplicationComponent .
+lmm:Microservice             skos:relatedMatch  am:ApplicationComponent .
+
+## Interfaces and data
+#  A LeanIX interface is a connection between two applications with a data
+#  flow — part interface, part flow relationship. ArchiMate separates these.
+lmm:Interface                skos:relatedMatch  am:ApplicationInterface .
+lmm:Interface                skos:relatedMatch  am:Flow .
+lmm:DataObject               skos:closeMatch    am:DataObject .
+lmm:DataObject               skos:relatedMatch  am:BusinessObject .
+
+## Technology
+#  IT Component covers software, hardware and services from a provider. The
+#  subtype decides which ArchiMate concept fits, so the type maps to each.
+lmm:ITComponent              skos:relatedMatch  am:SystemSoftware .
+lmm:ITComponent              skos:relatedMatch  am:Node .
+lmm:ITComponent              skos:relatedMatch  am:Device .
+lmm:ITComponent              skos:relatedMatch  am:TechnologyService .
+lmm:System                   skos:relatedMatch  am:Node .
+lmm:TechCategory             skos:relatedMatch  am:Grouping .
+lmm:Platform                 skos:relatedMatch  am:Grouping .
+#  A provider is an external organisation supplying technology.
+lmm:Provider                 skos:relatedMatch  am:BusinessActor .
+
+## Implementation and migration
+#  An initiative is a time-bound change effort — a work package.
+lmm:Initiative               skos:closeMatch    am:WorkPackage .
+
+## Relationships
+#  Application → capability support is realisation in most ArchiMate method
+#  guides (the application realises part of the capability); serving is the
+#  weaker, also-used reading.
+lmm:Supports                 skos:relatedMatch  am:Realization .
+lmm:Supports                 skos:relatedMatch  am:Serving .
+lmm:IsAssociatedWith         skos:relatedMatch  am:Realization .
+#  Direction reversed: application uses IT component ≈ IT component serves
+#  application; organisation uses application ≈ application serves organisation.
+lmm:Uses                     skos:relatedMatch  am:Serving .
+lmm:Consumes                 skos:relatedMatch  am:Serving .
+#  Providing an interface is owning it: composition in ArchiMate.
+lmm:Provides                 skos:relatedMatch  am:Composition .
+lmm:Crud                     skos:closeMatch    am:Access .
+lmm:Transfers                skos:relatedMatch  am:Access .
+#  Part-whole relations. Belonging to a category runs from part to whole in
+#  LeanIX (reversed relative to ArchiMate aggregation).
+lmm:BelongsTo                skos:relatedMatch  am:Aggregation .
+lmm:Implements               skos:relatedMatch  am:Realization .
+lmm:FactSheetHierarchy       skos:relatedMatch  am:Composition .
+lmm:FactSheetHierarchy       skos:relatedMatch  am:Aggregation .
+#  Motivation and change.
+lmm:Improves                 skos:relatedMatch  am:Influence .
+lmm:Affects                  skos:relatedMatch  am:Association .
+lmm:Owns                     skos:relatedMatch  am:Assignment .
+lmm:Offers                   skos:relatedMatch  am:Assignment .
+
+
+#################################################################
+# LeanIX ↔ ArchiMate 4.0
+#################################################################
+#
+# Editorial mappings, as above. ArchiMate 4.0 drops the layer prefix from
+# behaviour and service concepts, so those targets change.
+
+## Strategy
+lmm:BusinessCapability       skos:closeMatch    am4:Capability .
+lmm:ValueStream              skos:closeMatch    am4:ValueStream .
+lmm:Objective                skos:closeMatch    am4:Goal .
+lmm:Objective                skos:relatedMatch  am4:Outcome .
+
+## Business
+lmm:Organization             skos:closeMatch    am4:BusinessActor .
+lmm:Process                  skos:closeMatch    am4:Process .
+lmm:Product                  skos:closeMatch    am4:Product .
+
+## Application
+lmm:Application              skos:closeMatch    am4:ApplicationComponent .
+lmm:BusinessApplication      skos:closeMatch    am4:ApplicationComponent .
+lmm:Microservice             skos:relatedMatch  am4:ApplicationComponent .
+
+## Interfaces and data
+lmm:Interface                skos:relatedMatch  am4:ApplicationInterface .
+lmm:Interface                skos:relatedMatch  am4:Flow .
+lmm:DataObject               skos:closeMatch    am4:DataObject .
+lmm:DataObject               skos:relatedMatch  am4:BusinessObject .
+
+## Technology
+lmm:ITComponent              skos:relatedMatch  am4:SystemSoftware .
+lmm:ITComponent              skos:relatedMatch  am4:Node .
+lmm:ITComponent              skos:relatedMatch  am4:Device .
+lmm:ITComponent              skos:relatedMatch  am4:Service .
+lmm:System                   skos:relatedMatch  am4:Node .
+lmm:TechCategory             skos:relatedMatch  am4:Grouping .
+lmm:Platform                 skos:relatedMatch  am4:Grouping .
+lmm:Provider                 skos:relatedMatch  am4:BusinessActor .
+
+## Implementation and migration
+lmm:Initiative               skos:closeMatch    am4:WorkPackage .
+
+## Relationships
+lmm:Supports                 skos:relatedMatch  am4:Realization .
+lmm:Supports                 skos:relatedMatch  am4:Serving .
+lmm:IsAssociatedWith         skos:relatedMatch  am4:Realization .
+lmm:Uses                     skos:relatedMatch  am4:Serving .
+lmm:Consumes                 skos:relatedMatch  am4:Serving .
+lmm:Provides                 skos:relatedMatch  am4:Composition .
+lmm:Crud                     skos:closeMatch    am4:Access .
+lmm:Transfers                skos:relatedMatch  am4:Access .
+lmm:BelongsTo                skos:relatedMatch  am4:Aggregation .
+lmm:Implements               skos:relatedMatch  am4:Realization .
+lmm:FactSheetHierarchy       skos:relatedMatch  am4:Composition .
+lmm:FactSheetHierarchy       skos:relatedMatch  am4:Aggregation .
+lmm:Improves                 skos:relatedMatch  am4:Influence .
+lmm:Affects                  skos:relatedMatch  am4:Association .
+lmm:Owns                     skos:relatedMatch  am4:Assignment .
+lmm:Offers                   skos:relatedMatch  am4:Assignment .

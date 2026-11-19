@@ -1,0 +1,590 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <http://schema.org/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix mlsys:   <https://meta.linked.archi/ml-systems/onto#> .
+@prefix :        <https://meta.linked.archi/ai-governance/onto#> .
+
+<https://meta.linked.archi/ai-governance/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/ml-systems/onto#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ai-governance/onto#" ;
+    vann:preferredNamespacePrefix "aigov" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi AI Ethics & Governance Extension"@en ;
+    dcterms:description                '''Extension ontology for AI ethics and governance. Provides element
+types, properties, and reference data for managing AI system risk classification,
+conformity assessment, bias assessment, explainability documentation, human oversight
+plans, and governance policies.
+
+Builds on the ML-Enabled Systems extension (mlsys:) by adding the governance layer
+that connects ML components to regulatory frameworks (EU AI Act), ethical principles
+(OECD AI Principles), and organizational AI governance policies.
+
+Motivated by Gartner 2025 Leadership Vision identifying AI ethics and governance as
+a critical gap in EA teams, and by the EU AI Act (Regulation 2024/1689) requiring
+formal risk classification and conformity assessment for high-risk AI systems.
+Trademarked names referenced herein are property of their respective owners.'''@en ;
+    dcterms:abstract              "Ontology for AI ethics and governance within the Linked.Archi ecosystem."@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ai-governance/onto/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    rdfs:seeAlso                  <https://eur-lex.europa.eu/eli/reg/2024/1689/oj>,
+                                  <https://oecd.ai/en/ai-principles>,
+                                  <https://www.nist.gov/itl/ai-risk-management-framework> ;
+    schema:citation               "Linked.Archi AI Ethics & Governance Extension" ;
+.
+
+
+#################################################################
+# Supporting Classes
+#################################################################
+
+:RiskLevel
+    a               owl:Class ;
+    skos:prefLabel  "AI Risk Level"@en ;
+    skos:definition '''Classification of AI system risk according to the EU AI Act
+(Regulation 2024/1689). Risk levels determine the regulatory obligations
+that apply to an AI system.'''@en ;
+.
+
+:AIPrinciple
+    a               owl:Class ;
+    skos:prefLabel  "AI Principle"@en ;
+    skos:definition '''A responsible AI principle — an ethical guideline that AI systems
+should adhere to. Sourced from OECD AI Principles, EU Ethics Guidelines
+for Trustworthy AI, and organizational AI policies.'''@en ;
+.
+
+:OversightMode
+    a               owl:Class ;
+    skos:prefLabel  "Human Oversight Mode"@en ;
+    skos:definition '''The mode of human oversight applied to an AI system. Determines
+the degree of human involvement in AI decision-making.'''@en ;
+.
+
+:EngagementStatus
+    a               owl:Class ;
+    skos:prefLabel  "Assessment Status"@en ;
+    skos:definition "Status of a conformity or bias assessment."@en ;
+.
+
+
+#################################################################
+# Core Element — AI System (Governance Wrapper)
+#################################################################
+
+:AISystem
+    a               owl:Class ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "AI System"@en ;
+    skos:definition '''An AI system subject to governance — the governance wrapper around
+one or more ML models and their serving infrastructure. An AISystem is the
+unit of governance: it is what gets risk-classified, assessed for conformity,
+and monitored for compliance.
+
+An AISystem links to the underlying ML components via wrapsMLModel and
+wrapsServingInfra, connecting the governance layer to the technical layer
+defined in the ML-Enabled Systems extension.
+
+Aligned with the EU AI Act definition: "a machine-based system that is designed
+to operate with varying levels of autonomy and that may exhibit adaptiveness
+after deployment and that, for explicit or implicit objectives, infers, from
+the input it receives, how to generate outputs such as predictions, content,
+recommendations, or decisions that can influence physical or virtual
+environments."'''@en ;
+    rdfs:seeAlso    <https://eur-lex.europa.eu/eli/reg/2024/1689/oj> ;
+.
+
+
+#################################################################
+# Governance Artifacts
+#################################################################
+
+:RiskClassification
+    a               owl:Class ;
+    skos:prefLabel  "Risk Classification"@en ;
+    skos:definition '''A risk level assignment for an AI system. Records the assessed risk
+level, the rationale for the classification, the assessor, and the date.
+Risk classification determines which regulatory obligations apply under
+the EU AI Act.'''@en ;
+.
+
+:ConformityAssessment
+    a               owl:Class ;
+    skos:prefLabel  "Conformity Assessment"@en ;
+    skos:definition '''A formal assessment of an AI system against regulatory requirements
+or organizational AI governance policies. Records which principles were
+assessed, the assessment result (pass/fail/conditional), findings,
+and remediation actions.'''@en ;
+.
+
+:BiasAssessment
+    a               owl:Class ;
+    skos:prefLabel  "Bias Assessment"@en ;
+    skos:definition '''An assessment of bias in an AI system — covering training data bias,
+model output bias, and deployment context bias. Records the bias metrics
+used, the protected attributes examined, the findings, and any mitigation
+measures applied or recommended.'''@en ;
+.
+
+:ExplainabilityReport
+    a               owl:Class ;
+    skos:prefLabel  "Explainability Report"@en ;
+    skos:definition '''Documentation of how an AI system's decisions can be explained to
+affected persons, operators, and regulators. Covers the explainability
+method used (SHAP, LIME, attention maps, rule extraction), the level
+of explanation (local vs global), and the target audience.'''@en ;
+.
+
+:HumanOversightPlan
+    a               owl:Class ;
+    skos:prefLabel  "Human Oversight Plan"@en ;
+    skos:definition '''A plan for human oversight of an AI system. Specifies the oversight
+mode (human-in-the-loop, human-on-the-loop, human-in-command), the
+roles responsible for oversight, escalation procedures, and the
+conditions under which human intervention is required.'''@en ;
+.
+
+:AIGovernancePolicy
+    a               owl:Class ;
+    skos:prefLabel  "AI Governance Policy"@en ;
+    skos:definition '''An organizational policy governing AI development and deployment.
+Defines the principles, standards, processes, and roles that apply
+to AI systems within the organization. May reference external
+frameworks (EU AI Act, OECD Principles, NIST AI RMF).'''@en ;
+.
+
+:AIIncident
+    a               owl:Class ;
+    skos:prefLabel  "AI Incident"@en ;
+    skos:definition '''A record of an incident involving an AI system — bias events,
+safety failures, drift-induced errors, adversarial attacks, or
+privacy breaches. Records the incident description, affected
+parties, root cause analysis, and remediation actions.'''@en ;
+.
+
+:TransparencyRecord
+    a               owl:Class ;
+    skos:prefLabel  "Transparency Record"@en ;
+    skos:definition '''Documentation provided to users or affected persons about an AI
+system's behavior, capabilities, and limitations. Required by the
+EU AI Act for limited-risk and high-risk AI systems.'''@en ;
+.
+
+:DataGovernanceRecord
+    a               owl:Class ;
+    skos:prefLabel  "Data Governance Record"@en ;
+    skos:definition '''A record of data governance measures applied to training and
+evaluation data — data quality checks, representativeness analysis,
+consent verification, anonymization measures, and data retention
+policies.'''@en ;
+.
+
+
+#################################################################
+# Concerns (AI Governance-specific)
+#################################################################
+
+:RegulatoryComplianceConcern
+    a               arch:Concern ;
+    skos:prefLabel  "AI Regulatory Compliance"@en ;
+    skos:definition '''Compliance of AI systems with applicable regulations — EU AI Act,
+GDPR, sector-specific regulations (financial services, healthcare,
+employment). Includes risk classification, conformity assessment,
+and ongoing monitoring obligations.'''@en ;
+.
+
+:AIAccountabilityConcern
+    a               arch:Concern ;
+    skos:prefLabel  "AI Accountability"@en ;
+    skos:definition '''Clear assignment of responsibility for AI system behavior —
+who is accountable for decisions made by or with AI assistance,
+who is responsible for monitoring, and who handles incidents.'''@en ;
+.
+
+:AITransparencyConcern
+    a               arch:Concern ;
+    skos:prefLabel  "AI Transparency"@en ;
+    skos:definition '''The degree to which AI system behavior, capabilities, and
+limitations are communicated to users, affected persons, and
+regulators. Includes disclosure obligations under the EU AI Act.'''@en ;
+.
+
+:HumanOversightConcern
+    a               arch:Concern ;
+    skos:prefLabel  "Human Oversight of AI"@en ;
+    skos:definition '''Ensuring appropriate human control over AI system decisions —
+the ability to understand, intervene in, and override AI outputs
+when necessary.'''@en ;
+.
+
+
+#################################################################
+# Viewpoints
+#################################################################
+
+:AIGovernanceOverviewViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "AI Governance Overview"@en ;
+    skos:definition             '''High-level overview of AI governance across the organization —
+which AI systems exist, their risk classifications, conformity assessment
+status, and governing policies. The entry point for AI governance
+stakeholders.'''@en ;
+    arch:targetsStakeholder     mlsys:EthicsOfficer ;
+    arch:viewpointFramesConcern :RegulatoryComplianceConcern, :AIAccountabilityConcern ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Governing>,
+                                <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:includesConcept        :AISystem, :RiskClassification, :ConformityAssessment,
+                                :AIGovernancePolicy ;
+    arch:viewType               arch:Catalog, arch:Matrix ;
+.
+
+:AIRiskAssessmentViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "AI Risk Assessment"@en ;
+    skos:definition             '''Detailed view of AI system risk — risk classification rationale,
+bias assessments, explainability reports, and human oversight plans.
+Used for conformity assessment preparation and regulatory reporting.'''@en ;
+    arch:targetsStakeholder     mlsys:EthicsOfficer, mlsys:DataScientist ;
+    arch:viewpointFramesConcern :RegulatoryComplianceConcern, :HumanOversightConcern ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Governing>,
+                                <https://meta.linked.archi/core-viewpoints#Deciding> ;
+    arch:includesConcept        :AISystem, :RiskClassification, :BiasAssessment,
+                                :ExplainabilityReport, :HumanOversightPlan ;
+    arch:viewType               arch:Matrix, arch:Catalog ;
+.
+
+:AITransparencyViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "AI Transparency & Disclosure"@en ;
+    skos:definition             '''View of transparency obligations — which AI systems require
+disclosure to users, what transparency records exist, and what
+information is provided to affected persons.'''@en ;
+    arch:targetsStakeholder     mlsys:EthicsOfficer ;
+    arch:viewpointFramesConcern :AITransparencyConcern ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:includesConcept        :AISystem, :TransparencyRecord ;
+    arch:viewType               arch:Catalog ;
+.
+
+:AIIncidentViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "AI Incident Tracking"@en ;
+    skos:definition             '''View of AI incidents — bias events, safety failures,
+adversarial attacks, and their resolution. Used for post-incident
+analysis and continuous improvement of AI governance.'''@en ;
+    arch:targetsStakeholder     mlsys:EthicsOfficer, mlsys:MLEngineer ;
+    arch:viewpointFramesConcern :AIAccountabilityConcern, :RegulatoryComplianceConcern ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:includesConcept        :AISystem, :AIIncident ;
+    arch:viewType               arch:Catalog ;
+.
+
+
+#################################################################
+# Properties — AI System Links
+#################################################################
+
+:wrapsMLModel
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "wraps ML model"@en ;
+    skos:definition      "Links an AI system governance wrapper to the ML model it governs."@en ;
+    arch:domainIncludes  :AISystem ;
+    arch:rangeIncludes   mlsys:MLModel ;
+.
+
+:wrapsServingInfra
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "wraps serving infrastructure"@en ;
+    skos:definition      "Links an AI system governance wrapper to the serving infrastructure it governs."@en ;
+    arch:domainIncludes  :AISystem ;
+    arch:rangeIncludes   mlsys:ServingInfrastructure ;
+.
+
+:governedBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "governed by"@en ;
+    skos:definition      "Links an AI system to the governance policy that applies to it."@en ;
+    arch:domainIncludes  :AISystem ;
+    arch:rangeIncludes   :AIGovernancePolicy ;
+.
+
+
+#################################################################
+# Properties — Risk Classification
+#################################################################
+
+:hasRiskClassification
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has risk classification"@en ;
+    skos:definition      "Links an AI system to its risk classification."@en ;
+    arch:domainIncludes  :AISystem ;
+    arch:rangeIncludes   :RiskClassification ;
+.
+
+:classifiedAs
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "classified as"@en ;
+    skos:definition      "The risk level assigned in a risk classification."@en ;
+    arch:domainIncludes  :RiskClassification ;
+    arch:rangeIncludes   :RiskLevel ;
+.
+
+:classificationRationale
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "classification rationale"@en ;
+    skos:definition  "The rationale for the risk classification decision."@en ;
+    rdfs:domain      :RiskClassification ;
+    rdfs:range       xsd:string ;
+.
+
+:classificationDate
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "classification date"@en ;
+    skos:definition  "The date the risk classification was performed."@en ;
+    rdfs:domain      :RiskClassification ;
+    rdfs:range       xsd:date ;
+.
+
+:classifiedBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "classified by"@en ;
+    skos:definition      "The stakeholder who performed the risk classification."@en ;
+    arch:domainIncludes  :RiskClassification ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.
+
+
+#################################################################
+# Properties — Assessments
+#################################################################
+
+:hasConformityAssessment
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has conformity assessment"@en ;
+    skos:definition      "Links an AI system to a conformity assessment."@en ;
+    arch:domainIncludes  :AISystem ;
+    arch:rangeIncludes   :ConformityAssessment ;
+.
+
+:hasBiasAssessment
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has bias assessment"@en ;
+    skos:definition      "Links an AI system to a bias assessment."@en ;
+    arch:domainIncludes  :AISystem ;
+    arch:rangeIncludes   :BiasAssessment ;
+.
+
+:hasExplainabilityReport
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has explainability report"@en ;
+    skos:definition      "Links an AI system to its explainability documentation."@en ;
+    arch:domainIncludes  :AISystem ;
+    arch:rangeIncludes   :ExplainabilityReport ;
+.
+
+:hasHumanOversightPlan
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has human oversight plan"@en ;
+    skos:definition      "Links an AI system to its human oversight plan."@en ;
+    arch:domainIncludes  :AISystem ;
+    arch:rangeIncludes   :HumanOversightPlan ;
+.
+
+:hasTransparencyRecord
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has transparency record"@en ;
+    skos:definition      "Links an AI system to its transparency documentation."@en ;
+    arch:domainIncludes  :AISystem ;
+    arch:rangeIncludes   :TransparencyRecord ;
+.
+
+:hasDataGovernanceRecord
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has data governance record"@en ;
+    skos:definition      "Links an AI system to its data governance documentation."@en ;
+    arch:domainIncludes  :AISystem ;
+    arch:rangeIncludes   :DataGovernanceRecord ;
+.
+
+:hasIncident
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "has incident"@en ;
+    skos:definition      "Links an AI system to an incident record."@en ;
+    arch:domainIncludes  :AISystem ;
+    arch:rangeIncludes   :AIIncident ;
+.
+
+
+#################################################################
+# Properties — Assessment Details
+#################################################################
+
+:assessedAgainstPrinciple
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "assessed against principle"@en ;
+    skos:definition      "Links an assessment to the AI principle it evaluates."@en ;
+    arch:domainIncludes  :ConformityAssessment, :BiasAssessment ;
+    arch:rangeIncludes   :AIPrinciple ;
+.
+
+:assessmentResult
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "assessment result"@en ;
+    skos:definition  "The result of an assessment — Pass, Fail, or Conditional with rationale."@en ;
+    rdfs:range       xsd:string ;
+.
+
+:assessmentDate
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "assessment date"@en ;
+    skos:definition  "The date the assessment was performed."@en ;
+    rdfs:range       xsd:date ;
+.
+
+:assessedBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "assessed by"@en ;
+    skos:definition      "The stakeholder who performed the assessment."@en ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.
+
+:assessmentFindings
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "assessment findings"@en ;
+    skos:definition  "Detailed findings from the assessment."@en ;
+    rdfs:range       xsd:string ;
+.
+
+:remediationAction
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "remediation action"@en ;
+    skos:definition  "Required or recommended remediation action based on assessment findings."@en ;
+    rdfs:range       xsd:string ;
+.
+
+
+#################################################################
+# Properties — Human Oversight
+#################################################################
+
+:oversightMode
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "oversight mode"@en ;
+    skos:definition      "The mode of human oversight applied to an AI system."@en ;
+    arch:domainIncludes  :HumanOversightPlan ;
+    arch:rangeIncludes   :OversightMode ;
+.
+
+:oversightResponsible
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "oversight responsible"@en ;
+    skos:definition      "The stakeholder or role responsible for human oversight."@en ;
+    arch:domainIncludes  :HumanOversightPlan ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.
+
+:escalationProcedure
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "escalation procedure"@en ;
+    skos:definition  "Description of the escalation procedure when human intervention is required."@en ;
+    rdfs:domain      :HumanOversightPlan ;
+    rdfs:range       xsd:string ;
+.
+
+:interventionConditions
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "intervention conditions"@en ;
+    skos:definition  "Conditions under which human intervention is required."@en ;
+    rdfs:domain      :HumanOversightPlan ;
+    rdfs:range       xsd:string ;
+.
+
+
+#################################################################
+# Properties — Incidents
+#################################################################
+
+:incidentDate
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "incident date"@en ;
+    skos:definition  "The date the AI incident occurred."@en ;
+    rdfs:domain      :AIIncident ;
+    rdfs:range       xsd:date ;
+.
+
+:incidentDescription
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "incident description"@en ;
+    skos:definition  "Description of the AI incident."@en ;
+    rdfs:domain      :AIIncident ;
+    rdfs:range       xsd:string ;
+.
+
+:rootCauseAnalysis
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "root cause analysis"@en ;
+    skos:definition  "Root cause analysis of the AI incident."@en ;
+    rdfs:domain      :AIIncident ;
+    rdfs:range       xsd:string ;
+.
+
+:incidentSeverity
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "incident severity"@en ;
+    skos:definition  "Severity of the AI incident (critical, high, medium, low)."@en ;
+    rdfs:domain      :AIIncident ;
+    rdfs:range       xsd:string ;
+.
+
+
+#################################################################
+# Properties — Policy
+#################################################################
+
+:policyScope
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "policy scope"@en ;
+    skos:definition  "The scope of the AI governance policy (organization-wide, business unit, project)."@en ;
+    rdfs:domain      :AIGovernancePolicy ;
+    rdfs:range       xsd:string ;
+.
+
+:referencesFramework
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "references framework"@en ;
+    skos:definition  "External framework referenced by the policy (EU AI Act, OECD Principles, NIST AI RMF, ISO 42001)."@en ;
+    rdfs:domain      :AIGovernancePolicy ;
+    rdfs:range       xsd:string ;
+.
+
+:policyEffectiveDate
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "policy effective date"@en ;
+    skos:definition  "The date the governance policy takes effect."@en ;
+    rdfs:domain      :AIGovernancePolicy ;
+    rdfs:range       xsd:date ;
+.
+
+:mandatesPrinciple
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "mandates principle"@en ;
+    skos:definition      "Links a governance policy to the AI principles it mandates."@en ;
+    arch:domainIncludes  :AIGovernancePolicy ;
+    arch:rangeIncludes   :AIPrinciple ;
+.

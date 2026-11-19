@@ -1,0 +1,4 @@
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# Spec §9: the test depends on what it verifies (source depends on target).
+aisep:Verification aisep:dependency aisep:Backward .

@@ -1,0 +1,285 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:     <http://purl.org/ontology/bibo/> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+
+@prefix edgy:     <https://meta.linked.archi/edgy/onto#> .
+@prefix :         <https://meta.linked.archi/edgy/tax#> .
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/edgy/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "EDGY 23 Concept Scheme"@en ;
+    dcterms:description  "Classification of EDGY 23 enterprise elements into base elements, facet elements (by facet category), intersection elements, relationships, and labels."@en ;
+    skos:hasTopConcept :BaseElements, :FacetElements, :IntersectionElements, :Relationships, :Labels ;
+    rdfs:seeAlso     <https://enterprise.design/wiki/Enterprise_Elements> ;
+    cc:license                    "http://creativecommons.org/licenses/by-sa/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/edgy/tax#" ;
+    vann:preferredNamespacePrefix "edgytax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EDGY 23 Taxonomy"@en ;
+    dcterms:created               "2025-06-27"^^xsd:date ;
+    dcterms:modified              "2026-05-17"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "23"@en ;
+    dcterms:source  <https://enterprise.design/wiki/Enterprise_Elements> ;
+    prov:wasDerivedFrom <https://enterprise.design/wiki/Enterprise_Elements> .
+
+
+
+#################################################################
+# Top Concept: Base Elements
+#################################################################
+
+:BaseElements
+    a              skos:Concept ;
+    skos:prefLabel "Base Elements"@en ;
+    skos:definition "Four generic elements to describe what is happening in an enterprise and its ecosystem: People, Outcome, Activity, and Object."@en ;
+    skos:scopeNote "Base elements are the most fundamental building blocks of the EDGY language. All facet and intersection elements are specializations of one of these four base elements."@en ;
+    skos:topConceptOf <https://meta.linked.archi/edgy/tax#> ;
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    rdfs:seeAlso   edgy:BaseElement,
+                   <https://enterprise.design/wiki/Enterprise_Elements> ;
+    skos:narrower  edgy:People, edgy:Outcome, edgy:Activity, edgy:Object ;
+.
+
+
+#################################################################
+# Top Concept: Facet Elements
+#################################################################
+
+:FacetElements
+    a              skos:Concept ;
+    skos:prefLabel "Facet Elements"@en ;
+    skos:definition "Nine elements that describe an enterprise using a specific enterprise design facet, subdivided into three facet categories: Identity, Architecture, and Experience."@en ;
+    skos:scopeNote "Each facet element specializes one of the four base elements and adds facet-specific semantics. Identity: Purpose (outcome), Story (activity), Content (object). Architecture: Capability (outcome), Process (activity), Asset (object). Experience: Task (outcome), Journey (activity), Channel (object)."@en ;
+    skos:topConceptOf <https://meta.linked.archi/edgy/tax#> ;
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    rdfs:seeAlso   edgy:FacetElement,
+                   <https://enterprise.design/wiki/Enterprise_Design_Facets> ;
+    skos:narrower  :IdentityElements, :ArchitectureElements, :ExperienceElements ;
+.
+
+## Identity Facet Category
+
+:IdentityElements
+    a              skos:Concept ;
+    skos:prefLabel "Identity Elements"@en ;
+    skos:definition "Elements belonging to the Identity facet — answering why the enterprise exists, who it is, and what matters to it: Purpose, Story, and Content."@en ;
+    skos:broader   :FacetElements ;
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    rdfs:seeAlso   edgy:IdentityElement,
+                   <https://enterprise.design/wiki/Identity> ;
+    skos:narrower  edgy:Purpose, edgy:Story, edgy:Content ;
+.
+
+## Architecture Facet Category
+
+:ArchitectureElements
+    a              skos:Concept ;
+    skos:prefLabel "Architecture Elements"@en ;
+    skos:definition "Elements belonging to the Architecture facet — answering how the enterprise runs, what it is capable of, and what makes everything work together: Capability, Process, and Asset."@en ;
+    skos:broader   :FacetElements ;
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    rdfs:seeAlso   edgy:ArchitectureElement,
+                   <https://enterprise.design/wiki/Architecture> ;
+    skos:narrower  edgy:Capability, edgy:Process, edgy:Asset ;
+.
+
+## Experience Facet Category
+
+:ExperienceElements
+    a              skos:Concept ;
+    skos:prefLabel "Experience Elements"@en ;
+    skos:definition "Elements belonging to the Experience facet — answering what role the enterprise plays in people's lives: Task, Journey, and Channel."@en ;
+    skos:broader   :FacetElements ;
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    rdfs:seeAlso   edgy:ExperienceElement,
+                   <https://enterprise.design/wiki/Experience> ;
+    skos:narrower  edgy:Task, edgy:Journey, edgy:Channel ;
+.
+
+
+#################################################################
+# Top Concept: Intersection Elements
+#################################################################
+
+:IntersectionElements
+    a              skos:Concept ;
+    skos:prefLabel "Intersection Elements"@en ;
+    skos:definition "Three elements that sit at the intersection of two facets: Organisation (Identity ∩ Architecture), Product (Architecture ∩ Experience), Brand (Identity ∩ Experience)."@en ;
+    skos:scopeNote "Intersection elements bridge two facets and enable cross-facet design conversations. All three are specializations of the Object base element."@en ;
+    skos:topConceptOf <https://meta.linked.archi/edgy/tax#> ;
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    rdfs:seeAlso   edgy:IntersectionElement,
+                   <https://enterprise.design/wiki/Enterprise_Design_Facets> ;
+    skos:narrower  edgy:Organisation, edgy:Product, edgy:Brand ;
+.
+
+
+#################################################################
+# Top Concept: Relationships
+#################################################################
+
+:Relationships
+    a              skos:Concept ;
+    skos:prefLabel "Relationships"@en ;
+    skos:definition "Three relationship types used to connect enterprise elements: Link (structural association), Flow (dynamic sequence), and Tree (containment/aggregation)."@en ;
+    skos:topConceptOf <https://meta.linked.archi/edgy/tax#> ;
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    rdfs:seeAlso   edgy:EnterpriseRelationship,
+                   <https://enterprise.design/wiki/Link>,
+                   <https://enterprise.design/wiki/Flow>,
+                   <https://enterprise.design/wiki/Tree> ;
+    skos:narrower  edgy:Link, edgy:Flow, edgy:Tree ;
+.
+
+
+#################################################################
+# Top Concept: Labels
+#################################################################
+
+:Labels
+    a              skos:Concept ;
+    skos:prefLabel "Labels"@en ;
+    skos:definition "Two label types used to annotate enterprise elements: Tagging (differentiation by values) and Metrics (quantity or quality measurement)."@en ;
+    skos:topConceptOf <https://meta.linked.archi/edgy/tax#> ;
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    rdfs:seeAlso   edgy:EnterpriseLabel,
+                   <https://enterprise.design/wiki/Tagging>,
+                   <https://enterprise.design/wiki/Metrics> ;
+    skos:narrower  edgy:Tagging, edgy:Metrics ;
+.
+
+
+#################################################################
+# Individual Element Concepts (for navigation/palette generation)
+#################################################################
+
+## Base Elements
+
+edgy:People
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :BaseElements ;
+.
+
+edgy:Outcome
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :BaseElements ;
+.
+
+edgy:Activity
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :BaseElements ;
+.
+
+edgy:Object
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :BaseElements ;
+.
+
+## Identity Facet Elements
+
+edgy:Purpose
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :IdentityElements ;
+.
+
+edgy:Story
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :IdentityElements ;
+.
+
+edgy:Content
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :IdentityElements ;
+.
+
+## Architecture Facet Elements
+
+edgy:Capability
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :ArchitectureElements ;
+.
+
+edgy:Process
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :ArchitectureElements ;
+.
+
+edgy:Asset
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :ArchitectureElements ;
+.
+
+## Experience Facet Elements
+
+edgy:Task
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :ExperienceElements ;
+.
+
+edgy:Journey
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :ExperienceElements ;
+.
+
+edgy:Channel
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :ExperienceElements ;
+.
+
+## Intersection Elements
+
+edgy:Organisation
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :IntersectionElements ;
+.
+
+edgy:Product
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :IntersectionElements ;
+.
+
+edgy:Brand
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :IntersectionElements ;
+.
+
+## Relationships
+
+edgy:Link
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :Relationships ;
+.
+
+edgy:Flow
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :Relationships ;
+.
+
+edgy:Tree
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :Relationships ;
+.
+
+## Labels
+
+edgy:Tagging
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :Labels ;
+.
+
+edgy:Metrics
+    skos:inScheme  <https://meta.linked.archi/edgy/tax#> ;
+    skos:broader   :Labels ;
+.

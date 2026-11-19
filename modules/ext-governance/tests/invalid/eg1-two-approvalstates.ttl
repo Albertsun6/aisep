@@ -1,0 +1,20 @@
+# expect: EG1:
+# Invalid: two approval states on one element.
+# v0.2 (§6.6, D10): hand-written arch:approvalState is itself forbidden (L1); EG1 still guards the derived value.
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix ad:    <https://meta.linked.archi/arch-decision#> .
+@prefix iso:   <https://meta.linked.archi/iso25010#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/ext-governance-test/> .
+
+:model a arch:Model ;
+    skos:prefLabel "治理扩展测试模型"@zh .
+
+:quoteSvc a am4:ApplicationComponent ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务"@zh ;
+    arch:approvalState arch:Proposed , arch:Approved .

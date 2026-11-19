@@ -1,0 +1,21 @@
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# ArchiMate 4.0 hub (spec §6.1): vendored Linked.Archi files used as-is, plus the AISEP patch.
+# The relationship tables (vendor/.../archimate4_relationship-tables.ttl, RDF 1.2) are read only by `aisep.py check` (L2),
+# never by rdflib/pyshacl. Upstream core-shapes' MINUS constraints are rewritten to FILTER NOT EXISTS at load time.
+<https://aisep.example/module/am4> a arch:Metamodel ;
+    skos:prefLabel "ArchiMate 4.0（枢纽）"@zh , "ArchiMate 4.0 (hub)"@en ;
+    aisep:moduleKind aisep:Language ;
+    owl:versionInfo "0.2.0" ;
+    aisep:loads "vendor/meta.linked.archi/ttl/core.ttl" ,
+                "vendor/meta.linked.archi/ttl/archimate4_onto.ttl" ,
+                "vendor/meta.linked.archi/ttl/archimate4_viewpoints.ttl" ,
+                "modules/am4/patch.ttl" ;
+    aisep:shapesFile "vendor/meta.linked.archi/ttl/core-shapes.ttl" ,
+                     "vendor/meta.linked.archi/ttl/archimate4_shapes.ttl" ;
+    aisep:inheritsHubRules true ;
+    aisep:notationLevel aisep:LevelHub ;   # spec §7.2: code -> design -> hub
+    aisep:ownsNamespace "https://meta.linked.archi/archimate4/onto#" .

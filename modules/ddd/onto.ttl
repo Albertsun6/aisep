@@ -1,0 +1,222 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix ddd:  <https://aisep.example/ont/ddd#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# AISEP DDD language (spec §6.4). Concept names follow the Context Mapper CML metamodel (Apache-2.0)
+# and jMolecules annotations (Apache-2.0); definitions are AISEP's own wording (no ddd-crew text).
+# skos:exactMatch / skos:closeMatch values are plain literals naming the CML grammar concept ("cml:...")
+# or the jMolecules annotation FQN ("jmolecules:...").
+# This file defines the language against core only; the ⊑ am4 alignment lives in align.ttl.
+
+<https://aisep.example/ont/ddd#>
+    a owl:Ontology ;
+    dcterms:title "AISEP DDD language"@en ;
+    owl:versionInfo "0.2.0" ;
+    dcterms:source <https://github.com/ContextMapper/context-mapper-dsl> , <https://github.com/xmolecules/jmolecules> .
+
+#################################################################
+# Elements
+#################################################################
+
+ddd:Domain a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Domain"@en , "领域"@zh ;
+    skos:definition "The sphere of knowledge and activity a software system addresses."@en ;
+    skos:exactMatch "cml:Domain" .
+
+ddd:Subdomain a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Subdomain"@en , "子域"@zh ;
+    skos:definition "A part of a domain, classified by ddd:subdomainType."@en ;
+    skos:exactMatch "cml:Subdomain" .
+
+ddd:BoundedContext a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Bounded Context"@en , "限界上下文"@zh ;
+    skos:definition "A boundary within which one model and its ubiquitous language apply consistently."@en ;
+    skos:exactMatch "cml:BoundedContext" , "jmolecules:org.jmolecules.ddd.annotation.BoundedContext" .
+
+ddd:ContextMap a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Context Map"@en , "上下文映射"@zh ;
+    skos:definition "A view of a set of bounded contexts and the relationships between them."@en ;
+    skos:exactMatch "cml:ContextMap" .
+
+ddd:Team a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Team"@en , "团队"@zh ;
+    skos:definition "A group of people that owns and develops one or more bounded contexts."@en ;
+    skos:closeMatch "cml:BoundedContextType/TEAM" .
+
+ddd:Aggregate a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Aggregate"@en , "聚合"@zh ;
+    skos:definition "A cluster of entities and value objects changed together as one consistency unit, entered through its root entity."@en ;
+    skos:exactMatch "cml:Aggregate" ;
+    skos:closeMatch "jmolecules:org.jmolecules.ddd.annotation.AggregateRoot" .
+
+ddd:Entity a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Entity"@en , "实体"@zh ;
+    skos:definition "A domain object distinguished by its identity rather than by its attributes."@en ;
+    skos:exactMatch "cml:Entity" , "jmolecules:org.jmolecules.ddd.annotation.Entity" .
+
+ddd:ValueObject a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Value Object"@en , "值对象"@zh ;
+    skos:definition "An immutable domain object defined only by its attribute values."@en ;
+    skos:exactMatch "cml:ValueObject" , "jmolecules:org.jmolecules.ddd.annotation.ValueObject" .
+
+ddd:ReadModel a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Read Model"@en , "读模型"@zh ;
+    skos:definition "A data structure shaped for queries, kept separate from the write-side aggregates."@en .
+
+ddd:DomainEvent a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Domain Event"@en , "领域事件"@zh ;
+    skos:definition "Something that happened in the domain that domain experts care about. Name it in the past tense."@en ;
+    skos:exactMatch "cml:DomainEvent" , "jmolecules:org.jmolecules.event.annotation.DomainEvent" .
+
+ddd:Command a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Command"@en , "命令"@zh ;
+    skos:definition "A request for the domain to do something, which may result in domain events."@en ;
+    skos:exactMatch "cml:CommandEvent" .
+
+ddd:DomainService a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Domain Service"@en , "领域服务"@zh ;
+    skos:definition "Stateless domain behaviour that does not naturally belong to one entity or value object."@en ;
+    skos:exactMatch "cml:Service" , "jmolecules:org.jmolecules.ddd.annotation.Service" .
+
+ddd:ApplicationService a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Application Service"@en , "应用服务"@zh ;
+    skos:definition "A use-case entry point that coordinates domain objects and has no domain rules of its own."@en .
+
+ddd:Policy a owl:Class ; rdfs:subClassOf arch:Element ;
+    skos:prefLabel "Policy"@en , "策略"@zh ;
+    skos:definition "Reactive logic of the form 'whenever event X happens, issue command Y' (EventStorming)."@en .
+
+#################################################################
+# Qualified relationship classes (authors write these) + direct properties (generated by aisep build)
+#################################################################
+
+ddd:upstreamOf a owl:ObjectProperty ;
+    skos:prefLabel "upstream of"@en ;
+    skos:definition "Source bounded context is upstream of (its model influences) the target bounded context."@en .
+ddd:UpstreamDownstream a owl:Class ; rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm ddd:upstreamOf ;
+    skos:prefLabel "Upstream-Downstream"@en , "上下游关系"@zh ;
+    skos:definition "Context-map relationship; source = upstream context, target = downstream context. Roles in ddd:upstreamRole / ddd:downstreamRole."@en ;
+    skos:exactMatch "cml:UpstreamDownstreamRelationship" ;
+    # Spec v0.2 §6.4 "derived shortcut": AC->AC Serving is derivation-only in the am4 tables; AISEP accepts it
+    # drawn directly as a modelling convention (no L2 Warning, counted by impact). Inherited by CustomerSupplier.
+    aisep:assertedShortcut true .
+
+ddd:supplierOf a owl:ObjectProperty ; rdfs:subPropertyOf ddd:upstreamOf ;
+    skos:prefLabel "supplier of"@en .
+ddd:CustomerSupplier a owl:Class ; rdfs:subClassOf ddd:UpstreamDownstream ;
+    arch:unqualifiedForm ddd:supplierOf ;
+    skos:prefLabel "Customer-Supplier"@en , "客户-供应方关系"@zh ;
+    skos:definition "Upstream-downstream relationship in which the downstream (customer) priorities are negotiated into the upstream (supplier) planning; source = supplier."@en ;
+    skos:exactMatch "cml:CustomerSupplierRelationship" .
+
+ddd:partnerOf a owl:ObjectProperty ; skos:prefLabel "partner of"@en .
+ddd:Partnership a owl:Class ; rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm ddd:partnerOf ;
+    skos:prefLabel "Partnership"@en , "合作关系"@zh ;
+    skos:definition "Symmetric context-map relationship: two contexts succeed or fail together and coordinate their plans. Takes no roles."@en ;
+    skos:exactMatch "cml:Partnership" .
+
+ddd:sharesKernelWith a owl:ObjectProperty ; skos:prefLabel "shares kernel with"@en .
+ddd:SharedKernel a owl:Class ; rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm ddd:sharesKernelWith ;
+    skos:prefLabel "Shared Kernel"@en , "共享内核"@zh ;
+    skos:definition "Symmetric context-map relationship: two contexts share a jointly owned part of their model. Takes no roles."@en ;
+    skos:exactMatch "cml:SharedKernel" .
+
+ddd:owns a owl:ObjectProperty ; skos:prefLabel "owns"@en .
+ddd:Ownership a owl:Class ; rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm ddd:owns ;
+    skos:prefLabel "Ownership"@en , "拥有"@zh ;
+    skos:definition "A bounded context (source) owns an aggregate (target)."@en .
+
+ddd:contains a owl:ObjectProperty ; skos:prefLabel "contains"@en .
+ddd:Containment a owl:Class ; rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm ddd:contains ;
+    skos:prefLabel "Containment"@en , "包含"@zh ;
+    skos:definition "An aggregate (source) contains an entity or value object (target)."@en .
+
+ddd:hasRoot a owl:ObjectProperty ; rdfs:subPropertyOf ddd:contains ; skos:prefLabel "has root"@en .
+ddd:RootContainment a owl:Class ; rdfs:subClassOf ddd:Containment ;
+    arch:unqualifiedForm ddd:hasRoot ;
+    skos:prefLabel "Root Containment"@en , "聚合根"@zh ;
+    skos:definition "Containment whose target entity is the aggregate root."@en ;
+    skos:closeMatch "jmolecules:org.jmolecules.ddd.annotation.AggregateRoot" .
+
+ddd:implements a owl:ObjectProperty ; skos:prefLabel "implements"@en .
+ddd:SubdomainImplementation a owl:Class ; rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm ddd:implements ;
+    skos:prefLabel "Subdomain Implementation"@en , "实现子域"@zh ;
+    skos:definition "A bounded context (source) implements a subdomain (target)."@en ;
+    skos:exactMatch "cml:BoundedContext.implements" ;
+    # Spec v0.2 §6.4 / D2: AC->Capability Realization is derivation-only in the am4 tables; accepted as a shortcut.
+    aisep:assertedShortcut true .
+
+ddd:triggers a owl:ObjectProperty ; skos:prefLabel "triggers"@en .
+ddd:EventTriggering a owl:Class ; rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:unqualifiedForm ddd:triggers ;
+    skos:prefLabel "Event Triggering"@en , "触发"@zh ;
+    skos:definition "A domain service or policy (source) triggers a domain event or command (target)."@en .
+
+#################################################################
+# Attributes on elements / relationship resources
+#################################################################
+
+ddd:subdomainType a owl:ObjectProperty ;
+    skos:prefLabel "subdomain type"@en ; rdfs:domain ddd:Subdomain ; rdfs:range skos:Concept .
+ddd:contextType a owl:ObjectProperty ;
+    skos:prefLabel "context type"@en ; rdfs:domain ddd:BoundedContext ; rdfs:range skos:Concept .
+ddd:upstreamRole a owl:ObjectProperty ;
+    skos:prefLabel "upstream role"@en ; rdfs:domain ddd:UpstreamDownstream ; rdfs:range skos:Concept .
+ddd:downstreamRole a owl:ObjectProperty ;
+    skos:prefLabel "downstream role"@en ; rdfs:domain ddd:UpstreamDownstream ; rdfs:range skos:Concept .
+ddd:exposedAggregate a owl:ObjectProperty ;
+    skos:prefLabel "exposed aggregate"@en ; rdfs:domain ddd:UpstreamDownstream ; rdfs:range ddd:Aggregate ;
+    skos:definition "An aggregate of the upstream context that this relationship exposes to the downstream context."@en ;
+    skos:exactMatch "cml:UpstreamDownstreamRelationship.exposedAggregates" .
+
+ddd:payload a owl:ObjectProperty ;
+    skos:prefLabel "payload"@en , "载荷"@zh ; rdfs:domain ddd:Command ;
+    skos:definition "Optional: the data object carrying the command's data (spec v0.2 §6.4, D3). Value must be an am4:DataObject (e.g. a ddd:ValueObject); checked in shapes.ttl."@en ;
+    skos:closeMatch "cml:CommandEvent.attributes" .
+
+#################################################################
+# SKOS schemes
+#################################################################
+
+ddd:SubdomainTypeScheme a skos:ConceptScheme ; skos:prefLabel "Subdomain types"@en ;
+    skos:hasTopConcept ddd:Core , ddd:Supporting , ddd:Generic .
+ddd:Core a skos:Concept ; skos:inScheme ddd:SubdomainTypeScheme ; skos:prefLabel "Core"@en , "核心域"@zh ;
+    skos:exactMatch "cml:SubDomainType/CORE_DOMAIN" .
+ddd:Supporting a skos:Concept ; skos:inScheme ddd:SubdomainTypeScheme ; skos:prefLabel "Supporting"@en , "支撑域"@zh ;
+    skos:exactMatch "cml:SubDomainType/SUPPORTING_DOMAIN" .
+ddd:Generic a skos:Concept ; skos:inScheme ddd:SubdomainTypeScheme ; skos:prefLabel "Generic"@en , "通用域"@zh ;
+    skos:exactMatch "cml:SubDomainType/GENERIC_SUBDOMAIN" .
+
+ddd:ContextTypeScheme a skos:ConceptScheme ; skos:prefLabel "Bounded context types"@en ;
+    skos:hasTopConcept ddd:Feature , ddd:Application , ddd:System .
+ddd:Feature a skos:Concept ; skos:inScheme ddd:ContextTypeScheme ; skos:prefLabel "Feature"@en , "特性"@zh ;
+    skos:exactMatch "cml:BoundedContextType/FEATURE" .
+ddd:Application a skos:Concept ; skos:inScheme ddd:ContextTypeScheme ; skos:prefLabel "Application"@en , "应用"@zh ;
+    skos:exactMatch "cml:BoundedContextType/APPLICATION" .
+ddd:System a skos:Concept ; skos:inScheme ddd:ContextTypeScheme ; skos:prefLabel "System"@en , "系统"@zh ;
+    skos:exactMatch "cml:BoundedContextType/SYSTEM" .
+
+ddd:UpstreamRoleScheme a skos:ConceptScheme ; skos:prefLabel "Upstream roles"@en ;
+    skos:hasTopConcept ddd:OpenHost , ddd:PublishedLanguage .
+ddd:OpenHost a skos:Concept ; skos:inScheme ddd:UpstreamRoleScheme ; skos:notation "OHS" ;
+    skos:prefLabel "Open Host Service"@en , "开放主机服务"@zh ; skos:exactMatch "cml:UpstreamRole/OHS" .
+ddd:PublishedLanguage a skos:Concept ; skos:inScheme ddd:UpstreamRoleScheme ; skos:notation "PL" ;
+    skos:prefLabel "Published Language"@en , "发布语言"@zh ; skos:exactMatch "cml:UpstreamRole/PL" .
+
+ddd:DownstreamRoleScheme a skos:ConceptScheme ; skos:prefLabel "Downstream roles"@en ;
+    skos:hasTopConcept ddd:AntiCorruptionLayer , ddd:Conformist .
+ddd:AntiCorruptionLayer a skos:Concept ; skos:inScheme ddd:DownstreamRoleScheme ; skos:notation "ACL" ;
+    skos:prefLabel "Anti-Corruption Layer"@en , "防腐层"@zh ; skos:exactMatch "cml:DownstreamRole/ACL" .
+ddd:Conformist a skos:Concept ; skos:inScheme ddd:DownstreamRoleScheme ; skos:notation "CF" ;
+    skos:prefLabel "Conformist"@en , "遵奉者"@zh ; skos:exactMatch "cml:DownstreamRole/CF" .

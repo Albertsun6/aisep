@@ -1,0 +1,197 @@
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix bpmn:    <https://meta.linked.archi/bpmn/onto#> .
+@prefix bpmnl:   <https://meta.linked.archi/bpmn-lite/onto#> .
+@prefix am:      <https://meta.linked.archi/archimate3/onto#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+
+<https://meta.linked.archi/bpmn/crossmappings#>
+    a                owl:Ontology ;
+    owl:imports      <https://meta.linked.archi/bpmn/onto#> ;
+    cc:license       "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/crossmappings#" ;
+    vann:preferredNamespacePrefix "bpmnxm" ;
+    dcterms:creator  "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title    "Linked.Archi BPMN Cross-Language Mappings"@en ;
+    dcterms:description '''Cross-language SKOS mappings between BPMN 2.0.2 concepts and
+ArchiMate modeling language concepts, for both ArchiMate 3.2 and ArchiMate 4.0.
+
+These mappings are editorial. No official document maps BPMN to ArchiMate: the
+ArchiMate specification notes that BPMN can be used to detail business processes
+but defines no element-level correspondence, and the OMG BPMN specification does
+not mention ArchiMate. The assertions here express semantic proximity based on
+the concept definitions in the two specifications.
+
+The dominant predicate is deliberately skos:relatedMatch rather than
+skos:closeMatch, because the two notations model behaviour at different
+granularities and for different purposes. BPMN describes executable control
+flow — order, gateways, message exchange, exception paths. ArchiMate describes
+architectural behaviour and its relationship to structure, and its finest
+behavioural grain is coarser than a BPMN task. A mapping that claimed these
+coincide would overstate what a cross-notation query can conclude.
+
+BPMN Lite reaches these mappings through its own concept-level assertions: each
+bpmnl: class carries skos:exactMatch to its bpmn: counterpart, so a query that
+follows both hops resolves a BPMN Lite type onto the ArchiMate correspondences
+below.
+
+Not mapped, deliberately: bpmn:EventBasedGateway and bpmn:ComplexGateway (no
+ArchiMate construct expresses event-driven or condition-driven routing);
+bpmn:Gateway itself (abstract, with the routing semantics carried by its
+subclasses); and the BPMN serialization and extension machinery, which describes
+documents rather than architecture.'''@en ;
+    dcterms:issued   "2026-09-05"^^xsd:date ;
+    dcterms:modified "2026-09-05"^^xsd:date ;
+    owl:versionInfo  "0.1.0"@en ;
+    dcterms:source   <https://www.omg.org/spec/BPMN/2.0.2/>,
+                     <https://pubs.opengroup.org/architecture/archimate3-doc/>,
+                     <https://pubs.opengroup.org/architecture/archimate4-doc/> ;
+    rdfs:seeAlso     <https://www.omg.org/spec/BPMN/2.0.2/> ;
+.
+
+
+#################################################################
+# BPMN ↔ ArchiMate 3.2
+#################################################################
+#
+# Editorial mappings — no official cross-notation specification
+# exists. These express semantic proximity based on the concept
+# definitions in the BPMN 2.0.2 and ArchiMate 3.2 specifications.
+
+## Behaviour — process containers
+#  A BPMN process and an ArchiMate business process are the same idea: ordered
+#  behaviour achieving an outcome. closeMatch rather than exactMatch because a
+#  BPMN process is executable and scoped to one pool, while an ArchiMate business
+#  process is an architectural abstraction with no execution semantics.
+bpmn:Process                 skos:closeMatch    am:BusinessProcess .
+bpmn:SubProcess              skos:closeMatch    am:BusinessProcess .
+
+## Behaviour — activities
+#  relatedMatch throughout: a BPMN task is an atomic unit of work, and ArchiMate
+#  has no equivalent grain. Modelling a task as a business process is a common
+#  and defensible choice, but the concepts do not coincide.
+bpmn:Activity                skos:relatedMatch  am:BusinessProcess .
+bpmn:Task                    skos:relatedMatch  am:BusinessProcess .
+bpmn:UserTask                skos:relatedMatch  am:BusinessProcess .
+bpmn:ManualTask              skos:relatedMatch  am:BusinessProcess .
+bpmn:CallActivity            skos:relatedMatch  am:BusinessProcess .
+
+## Behaviour — automated activities
+#  These invoke something outside the process. The ArchiMate concept is the
+#  service being invoked, not the invocation, which is why the correspondence is
+#  related rather than close.
+bpmn:ServiceTask             skos:relatedMatch  am:ApplicationProcess .
+bpmn:ScriptTask              skos:relatedMatch  am:ApplicationProcess .
+bpmn:BusinessRuleTask        skos:relatedMatch  am:ApplicationProcess .
+
+## Behaviour — communication acts
+bpmn:SendTask                skos:relatedMatch  am:BusinessProcess .
+bpmn:ReceiveTask             skos:relatedMatch  am:BusinessProcess .
+
+## Events
+bpmn:Event                   skos:closeMatch    am:BusinessEvent .
+bpmn:StartEvent              skos:closeMatch    am:BusinessEvent .
+bpmn:EndEvent                skos:closeMatch    am:BusinessEvent .
+#  A boundary event is attached to an activity's boundary — a structural
+#  relationship ArchiMate does not model — so related rather than close.
+bpmn:BoundaryEvent           skos:relatedMatch  am:BusinessEvent .
+
+## Gateways
+#  An ArchiMate junction connects relationships; a BPMN gateway is a flow node
+#  with its own identity and routing conditions. The and/or distinction carries
+#  across, the rest does not.
+bpmn:ParallelGateway         skos:relatedMatch  am:Junction_And .
+bpmn:ExclusiveGateway        skos:relatedMatch  am:Junction_Or .
+bpmn:InclusiveGateway        skos:relatedMatch  am:Junction_Or .
+
+## Active structure
+#  A pool may stand for an organisation, a role, or a system, so it maps to both
+#  actor and role, weakly, and the modeller chooses per model.
+bpmn:Participant             skos:relatedMatch  am:BusinessActor .
+bpmn:Participant             skos:relatedMatch  am:BusinessRole .
+bpmn:Lane                    skos:relatedMatch  am:BusinessRole .
+bpmn:Collaboration           skos:closeMatch    am:BusinessCollaboration .
+
+## Passive structure
+#  BPMN data objects are process-level information, which is what an ArchiMate
+#  business object is; the application-layer data object is a weaker match.
+bpmn:DataObject              skos:closeMatch    am:BusinessObject .
+bpmn:DataObject              skos:relatedMatch  am:DataObject .
+bpmn:DataStore               skos:relatedMatch  am:DataObject .
+bpmn:Message                 skos:relatedMatch  am:BusinessObject .
+
+## Relationships
+#  A sequence flow orders behaviour, which is what triggering does. A message
+#  flow carries something between participants, which is what flow does.
+bpmn:SequenceFlow            skos:closeMatch    am:Triggering .
+bpmn:MessageFlow             skos:closeMatch    am:Flow .
+bpmn:Association             skos:relatedMatch  am:Association .
+
+
+#################################################################
+# BPMN ↔ ArchiMate 4.0
+#################################################################
+#
+# Editorial mappings, as above. ArchiMate 4.0's restructuring dropped the layer
+# prefix from behaviour and structure element names, so the targets differ from
+# the 3.2 block even where the correspondence is unchanged.
+#
+# One asymmetry: ArchiMate 4.0 has no Interaction concept, so the SendTask and
+# ReceiveTask mappings to am:BusinessInteraction above have no 4.0 counterpart.
+# They map to am4:Process instead, which is weaker but not misleading.
+
+## Behaviour — process containers
+bpmn:Process                 skos:closeMatch    am4:Process .
+bpmn:SubProcess              skos:closeMatch    am4:Process .
+
+## Behaviour — activities
+bpmn:Activity                skos:relatedMatch  am4:Process .
+bpmn:Task                    skos:relatedMatch  am4:Process .
+bpmn:UserTask                skos:relatedMatch  am4:Process .
+bpmn:ManualTask              skos:relatedMatch  am4:Process .
+bpmn:CallActivity            skos:relatedMatch  am4:Process .
+
+## Behaviour — automated activities
+bpmn:ServiceTask             skos:relatedMatch  am4:Process .
+bpmn:ScriptTask              skos:relatedMatch  am4:Process .
+bpmn:BusinessRuleTask        skos:relatedMatch  am4:Process .
+
+## Behaviour — communication acts
+bpmn:SendTask                skos:relatedMatch  am4:Process .
+bpmn:ReceiveTask             skos:relatedMatch  am4:Process .
+
+## Events
+bpmn:Event                   skos:closeMatch    am4:Event .
+bpmn:StartEvent              skos:closeMatch    am4:Event .
+bpmn:EndEvent                skos:closeMatch    am4:Event .
+bpmn:BoundaryEvent           skos:relatedMatch  am4:Event .
+
+## Gateways
+bpmn:ParallelGateway         skos:relatedMatch  am4:AndJunction .
+bpmn:ExclusiveGateway        skos:relatedMatch  am4:OrJunction .
+bpmn:InclusiveGateway        skos:relatedMatch  am4:OrJunction .
+
+## Active structure
+bpmn:Participant             skos:relatedMatch  am4:BusinessActor .
+bpmn:Participant             skos:relatedMatch  am4:Role .
+bpmn:Lane                    skos:relatedMatch  am4:Role .
+bpmn:Collaboration           skos:closeMatch    am4:Collaboration .
+
+## Passive structure
+bpmn:DataObject              skos:closeMatch    am4:BusinessObject .
+bpmn:DataObject              skos:relatedMatch  am4:DataObject .
+bpmn:DataStore               skos:relatedMatch  am4:DataObject .
+bpmn:Message                 skos:relatedMatch  am4:BusinessObject .
+
+## Relationships
+bpmn:SequenceFlow            skos:closeMatch    am4:Triggering .
+bpmn:MessageFlow             skos:closeMatch    am4:Flow .
+bpmn:Association             skos:relatedMatch  am4:Association .

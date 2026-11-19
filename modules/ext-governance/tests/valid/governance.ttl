@@ -1,0 +1,88 @@
+# Valid: architecture states from the closed set (EG2); approval expressed ONLY as aisep:ApprovalRecord
+# (EG11-EG16; spec v0.2 §6.6/D10 forbids hand-written arch:approvalState — the v0.1 fixture wrote
+# arch:Approved / aisep:Superseded here, now an approved and a rejected record instead);
+# a Proposed decision (vendored arch-decision shapes) linked to a component by ad:RelatedConcept (EG3, EG4);
+# an Option linked by ad:AffectsConcept (EG5); a fully populated quality measure (EG6-EG10) and a
+# measure with no number (EG8 implication not triggered).
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix ad:    <https://meta.linked.archi/arch-decision#> .
+@prefix iso:   <https://meta.linked.archi/iso25010#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/ext-governance-test/> .
+
+:model a arch:Model ;
+    skos:prefLabel "治理扩展测试模型"@zh .
+
+:quoteSvc a am4:ApplicationComponent ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务"@zh ;
+    arch:architectureState arch:Target ;
+    arch:hasQualityMeasure :qmLatency , :qmAvail .
+
+:legacySvc a am4:ApplicationComponent ;
+    arch:inModel :model ;
+    skos:prefLabel "旧报价服务"@zh ;
+    arch:architectureState arch:Baseline .
+
+:adrQueue a ad:Decision ;
+    arch:inModel :model ;
+    skos:prefLabel "报价审批改用消息队列"@zh ;
+    ad:decisionState ad:Proposed ;
+    ad:justification "解耦审批与报价，削峰"@zh .
+
+:optQueue a ad:Option ;
+    arch:inModel :model ;
+    skos:prefLabel "引入消息队列"@zh .
+
+:rel a ad:RelatedConcept ;
+    arch:inModel :model ;
+    arch:source :adrQueue ;
+    arch:target :quoteSvc .
+
+:aff a ad:AffectsConcept ;
+    arch:inModel :model ;
+    arch:source :optQueue ;
+    arch:target :quoteSvc .
+
+:qmLatency a arch:QualityMeasure ;
+    arch:inModel :model ;
+    skos:prefLabel "报价审批 P95 延迟"@zh ;
+    arch:measuredQualityAttribute iso:TimeBehaviour ;
+    aisep:value "180"^^xsd:decimal ;
+    aisep:unit "ms" ;
+    aisep:target "200"^^xsd:decimal ;
+    prov:generatedAtTime "2026-11-19T10:00:00Z"^^xsd:dateTime .
+
+:qmAvail a arch:QualityMeasure ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务可用性（待测）"@zh ;
+    arch:measuredQualityAttribute iso:Availability .
+
+# ── Approval records (EG11-EG16) ──
+:chiefArchitect a arch:Stakeholder ;
+    arch:inModel :model ;
+    skos:prefLabel "首席架构师"@zh .
+
+:approval-20261119-quote-svc a aisep:ApprovalRecord ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务架构批准"@zh ;
+    aisep:gate aisep:GateArchitecture ;
+    aisep:decision aisep:DecisionApproved ;
+    aisep:approvedBy :chiefArchitect ;
+    aisep:approves :quoteSvc , :adrQueue ;
+    aisep:evidence "3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e" ;
+    prov:generatedAtTime "2026-11-19T11:00:00Z"^^xsd:dateTime .
+
+# Evidence is required (v0.2.1, R3b); approves the whole model.
+:approval-20261119-legacy a aisep:ApprovalRecord ; aisep:evidence "3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e" ;
+    arch:inModel :model ;
+    skos:prefLabel "旧报价服务设计评审否决"@zh ;
+    aisep:gate aisep:GateDesign ;
+    aisep:decision aisep:DecisionRejected ;
+    aisep:approvedBy :chiefArchitect ;
+    aisep:approves :legacySvc , :model ;
+    prov:generatedAtTime "2026-11-19T12:00:00Z"^^xsd:dateTime .

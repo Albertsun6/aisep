@@ -1,0 +1,82 @@
+# Procurement example — ArchiMate 4.0 (hub) part.
+# The spike's procurement case (spike-result.md §4, round 1 task 4 / round 2 model) re-written in the AISEP
+# authoring profile: one type per element, arch:inModel once, @zh label, qualified relationships only.
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/procurement/> .
+
+<https://aisep.example/model/procurement/> a arch:Model ;
+    skos:prefLabel "采购"@zh ; skos:altLabel "Procurement"@en .
+
+# ── Elements ──────────────────────────────────────────────
+:supplier a am4:Role ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "供应商"@zh ; skos:altLabel "Supplier"@en .
+
+:procurementManager a am4:Role ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "采购经理"@zh ; skos:altLabel "Procurement Manager"@en .
+
+:quotation a am4:BusinessObject ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "报价单"@zh ; skos:altLabel "Quotation"@en .
+
+:submitQuotation a am4:Process ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "提交报价单"@zh ; skos:altLabel "Submit Quotation"@en .
+
+:quoteApproval a am4:Process ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "报价审批"@zh ; skos:altLabel "Quotation Approval"@en .
+
+:procurementSystem a am4:ApplicationComponent ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "采购系统"@zh ; skos:altLabel "Procurement System"@en .
+
+:quoteManagementService a am4:Service ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "报价管理"@zh ; skos:altLabel "Quotation Management"@en .
+
+:reqTwoLevelApproval a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "单笔超过10万需二级审批"@zh ; skos:altLabel "A single quotation over 100k needs two-level approval"@en ;
+    aisep:priority aisep:Must .   # MoSCoW (spec v0.2 §6.5): Must => an untested criterion is an L4 trace gap
+
+# ── Relationships (qualified only; `aisep build` generates the direct triples) ──
+:rel-supplier-assigned-submitQuotation a am4:Assignment ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :supplier ; arch:target :submitQuotation .
+
+:rel-supplier-assigned-quoteApproval a am4:Assignment ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :supplier ; arch:target :quoteApproval .
+
+:rel-procurementManager-assigned-quoteApproval a am4:Assignment ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :procurementManager ; arch:target :quoteApproval .
+
+:rel-submitQuotation-accesses-quotation a am4:Access ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :submitQuotation ; arch:target :quotation .
+
+:rel-quoteApproval-accesses-quotation a am4:Access ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :quoteApproval ; arch:target :quotation .
+
+:rel-submitQuotation-triggers-quoteApproval a am4:Triggering ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :submitQuotation ; arch:target :quoteApproval .
+
+:rel-procurementSystem-realizes-quoteManagementService a am4:Realization ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :procurementSystem ; arch:target :quoteManagementService .
+
+:rel-quoteManagementService-serves-quoteApproval a am4:Serving ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :quoteManagementService ; arch:target :quoteApproval .
+
+:rel-quoteApproval-realizes-reqTwoLevelApproval a am4:Realization ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :quoteApproval ; arch:target :reqTwoLevelApproval .

@@ -1,0 +1,202 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix uml:     <https://meta.linked.archi/uml/onto#> .
+@prefix umlsh:   <https://meta.linked.archi/uml/shapes#> .
+@prefix :        <https://meta.linked.archi/uml/publication-shapes#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/uml/publication-shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/uml/onto#>,
+                                  <https://meta.linked.archi/uml/shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uml/publication-shapes#" ;
+    vann:preferredNamespacePrefix "umlpubsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi UML Publication SHACL Shapes"@en ;
+    dcterms:description           '''Opt-in SHACL shapes for UML models that are going to be
+read by someone. Requires a language-tagged skos:prefLabel on the UML constructs a reader
+needs named — classifiers, packages, features, actors, use cases, lifelines — and leaves out
+the constructs UML draws rather than names.
+
+This document is deliberately NOT part of uml/shapes#. UML 2.5.1 §7.4 makes
+NamedElement::name [0..1], so nothing in UML must be named, and uml/shapes# says what UML is.
+A naming requirement is a publication policy: reasonable to hold, but not a fact about the
+language, and not something a conformance check should assert on a modeller's behalf. Load
+this only when unnamed elements really are a defect for your purpose — generating a document,
+building a palette, populating a catalogue.'''@en ;
+    dcterms:created               "2026-08-13"^^xsd:date ;
+    dcterms:modified              "2026-08-13"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/uml/publication-shapes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source                <https://www.omg.org/spec/UML/2.5.1/> ;
+    prov:wasDerivedFrom           <https://www.omg.org/spec/UML/2.5.1/> ;
+    rdfs:seeAlso                  <https://meta.linked.archi/uml/shapes#>,
+                                  <https://meta.linked.archi/core-shapes#> ;
+    skos:editorialNote            '''Targets concrete UML classes, never uml:NamedElement and
+never arch:Element. Targeting uml:NamedElement would catch transitions, pseudostates and
+relationship classes, which UML draws without naming.
+Targeting arch:Element would be worse — in a merged multi-notation graph it applies UML's
+naming policy to every other notation's elements (DD-24, P-8).
+
+uml:Classifier is not targetable for this purpose either. Since uml-onto 0.3.0 a
+uml:Association is a uml:Classifier, as UML 2.5.1 §11.5 says it is, and an unnamed
+association is ordinary. uml:BehavioredClassifier is used instead: it reaches uml:Class and
+its whole subtree (Component, Node, Device, ExecutionEnvironment, Stereotype, Behavior,
+Activity, StateMachine, Interaction, OpaqueBehavior, FunctionBehavior) plus Actor, UseCase and
+Collaboration, and no relationship class sits under it.'''@en ;
+.
+
+
+#################################################################
+# WHAT IS DELIBERATELY NOT HERE
+#
+# These constructs are left unconstrained because UML renders them
+# with a glyph, an arrow or a position rather than a name, and a
+# modeller leaving them unnamed has done nothing wrong:
+#
+#   uml:Transition              [*] --> Idle has no trigger and no name
+#   uml:Pseudostate             initial, choice, fork, join — glyphs
+#   uml:State / uml:FinalState   a final state is a bullseye
+#   uml:Region                  a compartment of a StateMachine
+#   uml:ActivityEdge            ControlFlow, ObjectFlow — arrows
+#   control nodes               InitialNode, DecisionNode, MergeNode,
+#                               ForkNode, JoinNode, FinalNode
+#   every relationship class    Association, Generalization, Dependency,
+#                               Realization, Include, Extend, Deployment,
+#                               PackageImport, PackageMerge
+#   interaction fragments       CombinedFragment, InteractionOperand,
+#                               OccurrenceSpecification, Gate, Continuation
+#   uml:Message                 a reply message is drawn, not named
+#   uml:Parameter               a return parameter has no name
+#   uml:Comment, uml:Constraint  carry body text, not a name
+#   uml:Trigger, uml:Event      identified by what they reference
+#
+# If your publication policy is stricter than this, add shapes in your
+# own namespace rather than editing this file — that keeps the reason
+# for each rule attached to whoever holds it.
+#################################################################
+
+
+#################################################################
+# Classifiers a reader navigates by name
+#
+# uml:BehavioredClassifier covers uml:Class and everything beneath it,
+# plus Actor, UseCase and Collaboration. The rest are the classifier
+# branches that sit outside it.
+#################################################################
+
+:ClassifierLabelShape
+    a              sh:NodeShape ;
+    rdfs:label     "Classifier label shape"@en ;
+    sh:targetClass uml:BehavioredClassifier,
+                   uml:Interface,
+                   uml:DataType,
+                   uml:Signal,
+                   uml:Artifact,
+                   uml:InformationItem ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  '''A classifier a reader navigates by name must carry exactly one
+language-tagged skos:prefLabel — "Order Service"@en, not "Order Service". Covers Class and
+its subtree (Component, Node, Device, ExecutionEnvironment, Stereotype, Behavior, Activity,
+StateMachine, Interaction), Actor, UseCase, Collaboration, Interface, DataType (and
+PrimitiveType, Enumeration), Signal, Artifact and InformationItem.'''@en ;
+    ] ;
+.
+
+
+#################################################################
+# Namespaces and literals
+#################################################################
+
+:PackageLabelShape
+    a              sh:NodeShape ;
+    rdfs:label     "Package label shape"@en ;
+    sh:targetClass uml:Package ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  '''A Package, Model or Profile must carry exactly one language-tagged
+skos:prefLabel: it is the namespace qualified names are built from, so an unnamed one cannot
+be referred to at all.'''@en ;
+    ] ;
+.
+
+:EnumerationLiteralLabelShape
+    a              sh:NodeShape ;
+    rdfs:label     "EnumerationLiteral label shape"@en ;
+    sh:targetClass uml:EnumerationLiteral ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  '''An EnumerationLiteral must carry exactly one language-tagged
+skos:prefLabel. The name is the value — an unnamed literal is an enumeration member nobody can
+select.'''@en ;
+    ] ;
+.
+
+
+#################################################################
+# Features
+#################################################################
+
+:FeatureLabelShape
+    a              sh:NodeShape ;
+    rdfs:label     "Feature label shape"@en ;
+    sh:targetClass uml:Property,
+                   uml:Operation ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  '''A Property or Operation must carry exactly one language-tagged
+skos:prefLabel — it is what appears in the classifier's attribute and operation compartments.
+Includes Port, which is a Property.'''@en ;
+    ] ;
+.
+
+
+#################################################################
+# Interactions — the participants, not the fragments
+#################################################################
+
+:LifelineLabelShape
+    a              sh:NodeShape ;
+    rdfs:label     "Lifeline label shape"@en ;
+    sh:targetClass uml:Lifeline ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  '''A Lifeline must carry exactly one language-tagged skos:prefLabel — the
+head of the lifeline is the only place a sequence diagram names its participant. Messages and
+fragments are not constrained: a reply message is drawn, not named.'''@en ;
+    ] ;
+.

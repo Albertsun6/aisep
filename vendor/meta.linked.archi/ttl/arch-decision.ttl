@@ -1,0 +1,1563 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <http://schema.org/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix refa:    <https://meta.linked.archi/ref-arch#> .
+@prefix :        <https://meta.linked.archi/arch-decision#> .
+
+<https://meta.linked.archi/arch-decision#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   arch: ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/arch-decision#" ;
+    vann:preferredNamespacePrefix "ad" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Architecture Decision Ontology"@en ;
+    dcterms:description                '''Extension ontology for modeling architecture decisions,
+the issues that trigger them, candidate options,
+influencing forces (requirements, constraints, trends),
+the rationale linking forces to chosen options,
+and the lifecycle state of the decision record itself.
+Use this extension when you need to capture decision records,
+trace forces to options, separate open deliberations from
+settled decisions, or integrate with ADD-style
+iterative decision processes.'''@en ;
+    dcterms:abstract              "Ontology for modeling architecture decisions, issues, options, forces, and their relationships."@en ;
+    rdfs:seeAlso                  <http://dx.doi.org/10.1109/WICSA.2014.32>,
+                                  <http://dx.doi.org/10.1007/978-3-540-87879-7_14>,
+                                  <http://dx.doi.org/10.1016/j.jss.2015.08.054>,
+                                  <https://resources.sei.cmu.edu/library/asset-view.cfm?assetID=8147>,
+                                  <https://github.com/adr/madr> ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-11-17"^^xsd:date ;
+    dcterms:publisher                  <https://linked.archi>,
+                                  "Linked.Archi"@en ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/arch-decision/0.0.9#> ;
+    owl:priorVersion              <https://meta.linked.archi/arch-decision/0.0.8#> ;
+    owl:versionInfo               "0.0.9"@en ;
+    schema:citation               "Linked.Archi Architecture Decision Ontology" ;
+    rdfs:seeAlso                  <http://dx.doi.org/10.1109/WICSA.2014.32>,
+                                  <http://dx.doi.org/10.1007/978-3-540-87879-7_14>,
+                                  <http://dx.doi.org/10.1016/j.jss.2015.08.054>,
+                                  <https://github.com/adr/madr> ;
+.
+
+:Decision
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    skos:prefLabel   "Decision"@en ;
+    skos:definition  '''An architecture decision that records a chosen course of action,
+its rationale, and the forces and options considered during
+the decision process.'''@en ;
+    skos:scopeNote '''Aligned with the MADR (Markdown Any Decision Records) template structure:
+Title, Status, Context, Decision, Consequences. Also compatible with Nygard-style ADRs
+and the Y-statement format (In the context of X, facing Y, we decided Z).'''@en ;
+    arch:mentionedIn <http://dx.doi.org/10.1007/978-3-540-87879-7_14>,
+                     <http://dx.doi.org/10.1109/WICSA.2014.32>,
+                     <http://dx.doi.org/10.1016/j.jss.2015.08.054>,
+                     <https://www.ifs.hsr.ch/index.php?id=13191&L=4>,
+                     <https://github.com/adr/madr>,
+                     <https://medium.com/olzzio/from-architectural-decisions-to-design-decisions-f05f6d57032b> ;
+    rdfs:seeAlso <https://adr.github.io/> ;
+    rdfs:seeAlso <https://iasa-global.github.io/btabok/decisions.html> ;
+    skos:example '''ex:ADR-042 a ad:Decision ;
+    skos:prefLabel "ADR-042: Use read replicas for Orders DB scaling"@en ;
+    ad:hasIssue ex:DBScalabilityIssue ;
+    ad:hasSelectedOption ex:ReadReplicas ;
+    ad:hasAlternative ex:VerticalScaling, ex:CQRSOption ;
+    ad:influencedByForce ex:AvailabilityReq, ex:PerformanceReq, ex:BudgetConstraint ;
+    ad:relatedConcept ex:OrdersDB ;
+    ad:justification "Read replicas provide horizontal scaling without downtime."@en .'''@en ;
+.
+
+:Issue
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    skos:prefLabel   "Issue"@en ;
+    skos:altLabel    "Problem"@en,
+                     "DecisionRequired"@en ;
+    skos:definition  '''A problem or concern that requires an architecture decision.
+An Issue can be associated with any model concept and is also
+referred to as a Problem or a Decision-Required statement.'''@en ;
+    skos:example '''ex:ScalabilityIssue a ad:Issue ;
+    skos:prefLabel "Database cannot handle peak load"@en ;
+    ad:problemStatement "Current PostgreSQL instance reaches 95% CPU during Black Friday sales"@en ;
+    ad:issueOwner ex:SolutionArchitect .'''@en ;
+    arch:rationale   '''Issue is any problem that needs a decision to be resolved.
+It can be mapped to an abstract component where a more concrete
+implementation needs to be provided, or when an actual issue
+occurs that needs to be tackled. An Issue can represent,
+for example, an issue inside your issue-tracking software.'''@en ;
+.
+
+:Option
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    skos:prefLabel   "Option"@en ;
+    skos:definition  '''A candidate solution considered during the architecture
+decision process. Each Option addresses one or more forces
+and may include elements, tactics, or patterns.'''@en ;
+    skos:example '''ex:Option1 a ad:Option ;
+    skos:prefLabel "Vertical scaling — upgrade to larger instance"@en ;
+    ad:addressesForce ex:PerformanceReq ;
+    ad:includesConcept ex:LargerDBInstance .
+ex:Option2 a ad:Option ;
+    skos:prefLabel "Horizontal scaling — read replicas"@en ;
+    ad:addressesForce ex:PerformanceReq, ex:AvailabilityReq ;
+    ad:addsConcept ex:ReadReplica1, ex:ReadReplica2 .'''@en ;
+    arch:mentionedIn <https://github.com/adr/madr> ;
+.
+
+:Force
+    a                owl:Class ;
+    rdfs:subClassOf  arch:Element ;
+    skos:prefLabel   "Force"@en ;
+    skos:definition  '''An architecture force — also referred to as an architecture
+driver (as in ADD) or motivation — that influences architecture
+decisions. The name Force is chosen as a more generic term that
+encompasses all factors influencing decisions, distinguishing it
+from the narrower meaning of Driver or Motivation.'''@en ;
+    skos:scopeNote '''The term "Force" comes from the software architecture literature
+(Bass, Clements, Kazman) where "architectural forces" is the established term
+for all influences on architecture decisions. See DD-19 in
+doc/guide/design-decisions.md.'''@en ;
+    arch:mentionedIn <http://dx.doi.org/10.1109/WICSA-ECSA.212.18> ;
+    rdfs:seeAlso     <https://iasa-global.github.io/btabok/decisions.html> ;
+    skos:example '''ex:BudgetConstraint a ad:BusinessConstraint ;
+    skos:prefLabel "Infrastructure Budget Limit"@en ;
+    skos:definition "Monthly infrastructure cost must not exceed €15,000."@en ;
+    ad:supportedByStakeholder ex:PlatformTeamLead ;
+    ad:hasImportanceMeasure "high" .'''@en ;
+.
+
+:Principle
+    a                owl:Class ;
+    rdfs:subClassOf  :Force ;
+    skos:prefLabel   "Principle"@en ;
+    skos:definition  '''A qualitative statement of intent that should be met by
+the architecture. It has at least a supporting rationale
+and a measure of importance.'''@en ;
+    rdfs:seeAlso     <https://iasa-global.github.io/btabok/principles.html>,
+                     <https://eaonapage.com/> ;
+.
+
+:Requirement
+    a                owl:Class ;
+    rdfs:subClassOf  :Force ;
+    skos:prefLabel   "Requirement"@en ;
+    skos:definition  "A statement of need that drives architecture decisions."@en ;
+.
+
+:FunctionalRequirement
+    a                owl:Class ;
+    rdfs:subClassOf  :Requirement ;
+    skos:prefLabel   "Functional Requirement"@en ;
+    skos:definition  "A requirement specifying a function the system must perform."@en ;
+.
+
+:QualityAttributeRequirement
+    a                owl:Class ;
+    rdfs:subClassOf  :Requirement ;
+    skos:prefLabel   "Quality Attribute Requirement"@en ;
+    skos:definition  '''
+A requirement on a specific [QualityAttribute](#QualityAttribute).
+Quality Attribute Requirements are described using Quality Attribute Scenarios.
+To model QAS use the properties:
+
+* [qasDescription](#qasDescription)
+* [qasSourceOfStimulus](#qasSourceOfStimulus)
+* [qasStimulus](#qasStimulus)
+* [qasEnvironment](#qasEnvironment)
+* [qasArtifact](#qasArtifact)
+* [qasResponse](#qasResponse)
+* [qasResponseMeasure](#qasResponseMeasure)
+
+Quality Attribute Requirements are tightly related to Technical Debt. Not addressing
+these software quality forces will increase the Technical Debt, which in turn will
+increase the force itself and also the cost to address that force later on.
+    '''@en ;
+    skos:scopeNote '''Based on the Quality Attribute Scenario (QAS) structure from
+Bass, Clements, Kazman "Software Architecture in Practice":
+Source of Stimulus → Stimulus → Environment → Artifact → Response → Response Measure.'''@en ;
+    rdfs:seeAlso <https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513807> ;
+    rdfs:seeAlso <https://iasa-global.github.io/btabok/quality_attributes.html> ;
+    rdfs:seeAlso <https://iasa-global.github.io/btabok/qatt_card.html> ;
+    rdfs:seeAlso <https://resources.sei.cmu.edu/asset_files/TechnicalReport/2000_005_001_13706.pdf> ;
+    skos:example '''ex:AvailabilityReq a ad:QualityAttributeRequirement ;
+    skos:prefLabel "Payment Service Availability Under Peak Load"@en ;
+    ad:onQualityAttribute iso25010:Availability ;
+    ad:qasSourceOfStimulus "External users"@en ;
+    ad:qasStimulus "Black Friday peak load (10x normal traffic)"@en ;
+    ad:qasEnvironment "Normal operation, all regions active"@en ;
+    ad:qasArtifact ex:PaymentService ;
+    ad:qasResponse "Service continues processing transactions"@en ;
+    ad:qasResponseMeasure "99.95% uptime, p99 latency < 500ms"@en .'''@en ;
+.
+
+:Trend
+    a                owl:Class ;
+    rdfs:subClassOf  :Force ;
+    skos:prefLabel   "Trend"@en ;
+    skos:definition  '''A general direction in which something is developing or
+changing. This can be a generic technology trend or specific
+to the domain of interest.'''@en ;
+    arch:rationale   '''Trend might not be an officially used architecture force,
+but often is the one that drives many decisions especially
+in young and less strict organizations.'''@en ;
+.
+
+:PersonalPreference
+    a                owl:Class ;
+    rdfs:subClassOf  :Force ;
+    skos:prefLabel   "Personal Preference"@en ;
+    skos:definition  '''Someone's personal preference. Often not mentioned,
+but important to take into consideration as a force
+influencing architecture decisions.'''@en ;
+    arch:rationale   '''PersonalPreference might not be an officially used
+architecture force, but often is the one that drives many
+decisions especially if that preference is held by a very
+important Stakeholder.'''@en ;
+.
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Decision State — Lifecycle of a Decision Record
+##
+## A decision record moves through a lifecycle: it is raised for
+## deliberation (Proposed), settled one way or another (Accepted,
+## Rejected), and eventually retired (Deprecated, Superseded).
+## The state is what separates an open deliberation — where several
+## Options are still live — from a settled decision, where one Option
+## is selected and the rest are retained as rejected alternatives.
+##
+## Individuals mirror the MADR status vocabulary and follow the same
+## enumerated-individual pattern as arch:ArchitectureState in the core
+## ontology: named individuals of a state class, attached with a plain
+## owl:ObjectProperty, with cardinality and value set enforced in SHACL
+## rather than with owl:FunctionalProperty or owl:oneOf. The rejected
+## alternatives are recorded in DD-23 in doc/guide/design-decisions.md.
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:DecisionState
+    a                owl:Class ;
+    skos:prefLabel   "Decision State"@en ;
+    skos:definition  '''The lifecycle state of an architecture decision,
+such as proposed, accepted, deprecated, or superseded.'''@en ;
+    skos:scopeNote   '''Decision state classifies the decision record, not the
+architecture it describes. A decision may be Accepted while the change it
+mandates is still unrealized in the baseline architecture — use
+arch:architectureState on the affected Model or Element for that.
+
+State also determines how hasSelectedOption should be read. While a decision
+is Proposed, alternatives are candidates under deliberation and a selected
+option may not yet exist. Once Accepted, hasSelectedOption names the chosen
+option and hasAlternative retains the options that were rejected.'''@en ;
+    skos:example '''ex:ADR-042 a ad:Decision ;
+    ad:decisionState ad:Accepted ;
+    ad:hasSelectedOption ex:ReadReplicas ;
+    ad:hasAlternative ex:VerticalScaling, ex:CQRSOption .'''@en ;
+    rdfs:seeAlso <https://adr.github.io/madr/> ;
+.
+
+:decisionState
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "decision state"@en ;
+    skos:definition  '''Links a Decision to its current lifecycle state —
+proposed, accepted, rejected, deprecated, or superseded.'''@en ;
+    skos:scopeNote   '''A Decision has at most one current state. Cardinality is
+deliberately not asserted with owl:FunctionalProperty: under the Open World
+Assumption a functional property does not constrain but entails, so two states
+on one Decision would make a reasoner infer owl:sameAs between the two state
+individuals and silently merge them. Enforce the cardinality in SHACL instead,
+with sh:maxCount 1 and
+sh:in ( ad:Proposed ad:Accepted ad:Rejected ad:Deprecated ad:Superseded ).
+See DD-23 in doc/guide/design-decisions.md.
+
+Record state transitions with prov:wasRevisionOf or dcterms:modified on the
+Decision if a full history is needed — decisionState carries only the
+current value.'''@en ;
+    skos:example     '''ex:ADR-051 a ad:Decision ;
+    skos:prefLabel "ADR-051: Event broker selection"@en ;
+    ad:decisionState ad:Proposed ;
+    ad:hasIssue ex:AsyncMessagingIssue ;
+    ad:hasAlternative ex:KafkaOption, ex:RabbitMQOption .'''@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       :DecisionState ;
+    arch:rationale   '''Without an explicit state property, an open deliberation
+is indistinguishable from a settled decision. Queries that gather "the
+decisions in force" would otherwise return proposals and superseded records
+alongside accepted ones.'''@en ;
+.
+
+:Proposed
+    a                :DecisionState ;
+    skos:prefLabel   "Proposed"@en ;
+    skos:altLabel    "Open"@en, "Under Deliberation"@en ;
+    skos:definition  '''The decision has been raised but not yet settled. Options
+remain open, and no option is binding.'''@en ;
+    skos:scopeNote   '''A Proposed decision may carry several hasAlternative
+options and no hasSelectedOption, or a provisional hasSelectedOption that is
+still subject to review.'''@en ;
+.
+
+:Accepted
+    a                :DecisionState ;
+    skos:prefLabel   "Accepted"@en ;
+    skos:altLabel    "Approved"@en, "Decided"@en ;
+    skos:definition  '''The decision is settled and binding. One option is
+selected; the remaining options are retained as rejected alternatives.'''@en ;
+.
+
+:Rejected
+    a                :DecisionState ;
+    skos:prefLabel   "Rejected"@en ;
+    skos:altLabel    "Declined"@en ;
+    skos:definition  '''The decision was deliberated and closed without adopting
+any of the options. The record is retained for its rationale.'''@en ;
+    skos:scopeNote   '''Rejected applies to the decision as a whole — the issue
+was closed without a change. Do not use it to mark individual options that
+lost; those stay attached via hasAlternative.'''@en ;
+.
+
+:Deprecated
+    a                :DecisionState ;
+    skos:prefLabel   "Deprecated"@en ;
+    skos:altLabel    "Retired"@en ;
+    skos:definition  '''The decision was accepted but no longer applies, and no
+replacement decision was made. The record is retained for traceability.'''@en ;
+.
+
+:Superseded
+    a                :DecisionState ;
+    skos:prefLabel   "Superseded"@en ;
+    skos:altLabel    "Replaced"@en ;
+    skos:definition  '''The decision was accepted but has been replaced by a later
+decision. Name the replacement with supersededBy, or equivalently point the
+later decision at this one with replaces.'''@en ;
+.
+
+:ForceInfluence
+    a                owl:Class ;
+    rdfs:subClassOf  arch:QualifiedRelationship ;
+    arch:isAbstractClass true ;
+    arch:unqualifiedForm :influencedByForce ;
+    skos:prefLabel   "Force Influence"@en ;
+    skos:definition  '''A qualified relationship that describes the influence of a
+Force onto a Decision. Used with the hasInfluence relationship.'''@en ;
+    skos:scopeNote   '''Abstract: an influence is one of its two kinds, impending or
+supporting. Its direct form is influencedByForce, from the Decision to the Force.'''@en ;
+.
+
+:ImpendingInfluence
+    a                owl:Class ;
+    rdfs:subClassOf  :ForceInfluence ;
+    arch:unqualifiedForm :influencedByForce ;
+    skos:prefLabel   "Impending Influence"@en ;
+    skos:definition  "An influence that opposes or hinders a decision option."@en ;
+.
+
+:SupportingInfluence
+    a                owl:Class ;
+    rdfs:subClassOf  :ForceInfluence ;
+    arch:unqualifiedForm :influencedByForce ;
+    skos:prefLabel   "Supporting Influence"@en ;
+    skos:definition  "An influence that supports or favors a decision option."@en ;
+.
+
+:Impact
+    a                owl:Class ;
+    skos:prefLabel   "Impact"@en ;
+    skos:definition  '''The effect that a decision or option has on model concepts.
+Used with the affects relationship in the core ontology when
+linking ModelConcepts.'''@en ;
+.
+
+:Iteration
+    a                owl:Class ;
+    skos:prefLabel   "Iteration"@en ;
+    skos:definition  '''An iteration in the Attribute-Driven Design (ADD) process,
+grouping a set of related decisions and their goals.'''@en ;
+    rdfs:seeAlso     <https://resources.sei.cmu.edu/library/asset-view.cfm?assetID=8147>,
+                     <https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513813> ;
+    skos:example     '''ex:ADDIteration1 a ad:Iteration ;
+    skos:prefLabel "ADD Iteration 1 — Establish Overall Structure"@en ;
+    ad:hasDecisionGoal ex:SelectReferenceArchitecture ;
+    ad:hasDecision ex:ADR-001, ex:ADR-002 .'''@en ;
+.
+
+:Constraint
+    a                owl:Class ;
+    rdfs:subClassOf  :Requirement ;
+    skos:prefLabel   "Constraint"@en ;
+    skos:definition  "A restriction that limits architecture options."@en ;
+.
+
+:TechnicalConstraint
+    a                owl:Class ;
+    rdfs:subClassOf  :Constraint ;
+    skos:prefLabel   "Technical Constraint"@en ;
+    skos:definition  '''A technical restriction on implementation choices, such as
+mandated technologies or platform limitations.'''@en ;
+.
+
+:BusinessConstraint
+    a                owl:Class ;
+    rdfs:subClassOf  :Constraint ;
+    skos:prefLabel   "Business Constraint"@en ;
+    skos:definition  '''A business restriction on architecture options, such as
+budget limits, regulatory compliance, or organizational
+policies.'''@en ;
+.
+
+:Policy
+    a                owl:Class ;
+    rdfs:subClassOf  :Force ;
+    skos:prefLabel   "Policy"@en ;
+    skos:definition  "An organizational policy that constrains architecture decisions."@en ;
+.
+
+### Properties
+
+:pertainsTo
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "pertains to"@en ;
+    skos:definition  '''Links a Decision to the architecture consideration
+(stakeholder perspective, aspect, or concern) that it
+addresses.'''@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       arch:Consideration ;
+    arch:rationale   '''This way we may relate any Architecture Documentation
+Consideration such as stakeholder perspectives (layers),
+architecture aspects and concerns that are addressed by
+specific viewpoints.'''@en ;
+.
+
+:relatedDecision
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "related decision"@en ;
+    skos:definition  '''Links a Decision to another related Decision,
+indicating a general relationship between the two.'''@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       :Decision ;
+.
+
+:justification
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "justification"@en ;
+    skos:definition  "Architecture rationale text that justifies the Decision."@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       xsd:string ;
+.
+
+:justificationDocument
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "justification document"@en ;
+    skos:definition  "An externally documented architecture rationale that justifies the Decision."@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       schema:CreativeWork ;
+.
+
+:influencedByForce
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "influenced by"@en ;
+    skos:definition  '''Links a Decision to the forces that actually influenced it.
+Note that for a chosen Option we already have the forces being
+addressed, but those are not quantified and we do not know what
+pushed for that particular option other than the rationale.'''@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       :Force ;
+.
+
+:influencingForce
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "influencing force"@en ;
+    skos:definition  '''Links an Issue to forces that potentially influence it.
+These may differ from the forces that actually drive
+the final decision.'''@en ;
+    arch:rationale   '''This is different from influencedByForce in that
+influencingForce captures potential forces recorded on an Issue
+before a decision is made, whereas influencedByForce captures
+the forces that actually drove the Decision.'''@en ;
+    rdfs:domain      :Issue ;
+    rdfs:range       :Force ;
+.
+
+:hasInfluence
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has influence"@en ;
+    skos:definition  '''Qualifies how a Force influenced a Decision,
+using an instance of ForceInfluence.'''@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       :ForceInfluence ;
+    arch:unqualifiedForm :influencedByForce ;
+.
+
+:hasInfluenceMeasure
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has influence measure"@en ;
+    skos:definition  '''Quantifies the influence of a Force onto a Decision
+via a ForceInfluence instance.'''@en ;
+    rdfs:domain      :ForceInfluence ;
+.
+
+:hasImpactMeasure
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has impact measure"@en ;
+    skos:definition  '''Quantifies the general impact of a Force.
+This impact results in a specific influence onto a decision.'''@en ;
+    rdfs:domain      :Force ;
+.
+
+:hasImpactFlexibility
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has impact flexibility"@en ;
+    skos:definition  '''Indicates the degree to which an architect could influence
+or change the impact of this force.'''@en ;
+    rdfs:domain      :Force ;
+.
+
+:hasImpactVolatility
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has impact volatility"@en ;
+    skos:definition  '''Indicates how much the impact of the force changes over time.
+This can be measured by capturing the resulting influence on
+concrete Issues and Decisions.'''@en ;
+    rdfs:domain      :Force ;
+.
+
+:relatedConcept
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "related concept"@en ;
+    skos:definition  '''Links a Decision to a ModelConcept that is related to
+or affected by the decision.'''@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       arch:ModelConcept ;
+.
+
+:hasSelectedOption
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has selected option"@en ;
+    skos:definition  '''Links a Decision to the Option that was ultimately selected
+as the chosen solution.'''@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       :Option ;
+.
+
+:hasAlternative
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has alternative"@en ;
+    skos:definition  '''Links a Decision to a candidate Option that was considered
+but not necessarily selected. Options can be any Element,
+and standard options can be modelled as part of a
+ReferenceArchitecture in the form of building blocks,
+tactics, or patterns.'''@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       :Option ;
+    rdfs:seeAlso     <https://meta.linked.archi/ref-arch#hasOption> ;
+.
+
+:problemStatement
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "problem statement"@en ;
+    skos:definition  "A textual description of the problem or concern that the Issue represents."@en ;
+    rdfs:domain      :Issue ;
+    rdfs:range       xsd:string ;
+.
+
+:associatedIssue
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "associated issue"@en ;
+    skos:definition  '''Links a ModelConcept directly to an Issue that needs to be
+addressed. These issues may relate to specific requirements
+or can map technical debt after a decision process.'''@en ;
+    rdfs:domain      arch:ModelConcept ;
+    rdfs:range       :Issue ;
+.
+
+:hasIssue
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :hasDecision ;
+    skos:prefLabel   "has issue"@en ;
+    skos:definition  "Links a Decision to the Issue that it is supposed to address."@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       :Issue ;
+.
+
+:hasDecisionGoal
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has decision goal"@en ;
+    skos:definition  '''Links a Decision to its goal, related to the ADD concept
+of iteration goal. The goal can also indicate the type of
+decision, such as choosing a reference architecture, tactic,
+or a combination of goals. Goals can be classified as concepts
+and referred to in the Architecture Metamodel.'''@en ;
+    rdfs:domain      :Decision ;
+    rdfs:range       skos:Concept ;
+.
+
+:hasDecision
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :hasIssue ;
+    skos:prefLabel   "has decision"@en ;
+    skos:definition  "Links an Issue to the Decision that addresses it."@en ;
+    rdfs:domain      :Issue ;
+    rdfs:range       :Decision ;
+.
+
+:issueCausedBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "issue caused by"@en ;
+    skos:definition      '''Links an Issue to the element that caused it. An Issue can
+be caused by another Issue, a Decision, or any internal or
+external Element such as a global environmental event or
+change of strategy.'''@en ;
+    rdfs:domain          :Issue ;
+    rdfs:range           arch:Element ;
+    schema:rangeIncludes :Issue,
+                         :Decision ;
+.
+
+:issueReportedBy
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "issue reported by"@en ;
+    skos:definition  '''Links an Issue to the entity that reported it. The reporter
+can be a Stakeholder or any other Element such as a monitoring
+system or audit process.'''@en ;
+    rdfs:domain      :Issue ;
+    rdfs:range       arch:Element ;
+.
+
+:issueOwner
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "issue owner"@en ;
+    skos:definition  '''Links an Issue to the Stakeholder who is responsible
+for resolving it.'''@en ;
+    rdfs:domain      :Issue ;
+    rdfs:range       arch:Stakeholder ;
+.
+
+### Decision Option properties
+
+:includesConcept
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf arch:hasPart ;
+    skos:prefLabel     "includes concept"@en ;
+    skos:definition    '''Specifies ModelConcepts such as Elements, Relationships,
+and Viewpoints that are part of the Option.'''@en ;
+    rdfs:domain        :Option ;
+    rdfs:range         arch:ModelConcept ;
+    skos:example       "An Option for Shared Repository DBMS includes MySQL; another may include PostgreSQL; another MongoDB."@en ;
+    arch:rationale     '''Options are composed of concrete model concepts that
+together form the candidate solution.'''@en ;
+.
+
+:affectsConcept
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "affects concept"@en ;
+    skos:definition  '''Links an Option to a ModelConcept that would be affected
+if the Option is selected.'''@en ;
+    rdfs:domain      :Option ;
+    rdfs:range       arch:ModelConcept ;
+    skos:example     "Selecting a microservices Option affects the existing monolithic Application Component."@en ;
+    arch:rationale   '''Tracking which concepts are affected by an Option enables
+impact analysis before a decision is made.'''@en ;
+.
+
+:makesUseConcept
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :affectsConcept ;
+    skos:prefLabel     "makes use of concept"@en ;
+    skos:definition    '''Links an Option to an existing ModelConcept that it reuses
+without significant changes.'''@en ;
+    rdfs:domain        :Option ;
+    rdfs:range         arch:ModelConcept ;
+    skos:example       "An Option reuses the existing API Gateway without modification."@en ;
+    arch:rationale     '''Distinguishes reuse from modification — the concept
+satisfies the option as-is with only minor configuration.'''@en ;
+.
+
+:addsConcept
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :affectsConcept ;
+    skos:prefLabel     "adds concept"@en ;
+    skos:definition    '''Links an Option to a new ModelConcept that would be
+introduced if the Option is selected.'''@en ;
+    rdfs:domain        :Option ;
+    rdfs:range         arch:ModelConcept ;
+    skos:example       "An Option adds a new Message Broker component to the architecture."@en ;
+    arch:rationale     "Captures new elements that an option would bring into the architecture."@en ;
+.
+
+:removesConcept
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :affectsConcept ;
+    skos:prefLabel     "removes concept"@en ;
+    skos:definition    '''Links an Option to a ModelConcept that would be removed
+from the architecture if the Option is selected.'''@en ;
+    rdfs:domain        :Option ;
+    rdfs:range         arch:ModelConcept ;
+    skos:example       "An Option removes the legacy batch-processing service."@en ;
+    arch:rationale     "Captures elements that an option would eliminate from the architecture."@en ;
+.
+
+:modifiesConcept
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :affectsConcept ;
+    skos:prefLabel     "modifies concept"@en ;
+    skos:definition    '''Links an Option to a ModelConcept that would be modified
+if the Option is selected.'''@en ;
+    rdfs:domain        :Option ;
+    rdfs:range         arch:ModelConcept ;
+    skos:example       "An Option modifies the existing Authentication Service to support OAuth 2.0."@en ;
+    arch:rationale     "Captures elements that an option would change rather than add or remove."@en ;
+.
+
+:addressesForce
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "addresses force"@en ;
+    skos:definition  "Links an Option to a Force that it directly addresses or satisfies."@en ;
+    rdfs:domain      :Option ;
+    rdfs:range       :Force ;
+    skos:example     "An Option for caching addresses the Performance force."@en ;
+    arch:rationale   "Explicitly connects candidate solutions to the forces they are designed to satisfy."@en ;
+.
+
+:opposingForce
+    a                owl:ObjectProperty, owl:SymmetricProperty ;
+    skos:prefLabel   "opposing force"@en ;
+    skos:definition  "Links a Force to another Force that opposes or conflicts with it."@en ;
+    rdfs:domain      :Force ;
+    rdfs:range       :Force ;
+    skos:example     "A Security force may oppose a Usability force when strict authentication hinders user experience."@en ;
+.
+
+:complementaryForce
+    a                owl:ObjectProperty, owl:SymmetricProperty ;
+    skos:prefLabel   "complementary force"@en ;
+    skos:definition  "Links a Force to another Force that complements or reinforces it."@en ;
+    rdfs:domain      :Force ;
+    rdfs:range       :Force ;
+    skos:example     "A Reliability force complements an Availability force since both aim at continuous service."@en ;
+.
+
+:hasRisk
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has risk"@en ;
+    skos:definition  '''Links an Option to a risk associated with selecting it.
+Risk is highly related to the level of uncertainty.'''@en ;
+    rdfs:domain      :Option ;
+    rdfs:range       schema:Thing ;
+    skos:example     "An Option for a novel technology carries a risk of insufficient community support."@en ;
+    arch:rationale   '''Capturing risks per option enables informed trade-off
+analysis during the decision process.'''@en ;
+.
+
+:supportedByStakeholder
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "supported by stakeholder"@en ;
+    skos:definition  "Links a Force to the Stakeholder who supports or champions it."@en ;
+    rdfs:domain      :Force ;
+    rdfs:range       arch:Stakeholder ;
+.
+
+:hasRequirement
+    a                owl:ObjectProperty ;
+    owl:inverseOf    :requestedByStakeholder ;
+    skos:prefLabel   "has requirement"@en ;
+    skos:definition  "Links a Stakeholder to a Requirement that they have requested."@en ;
+    rdfs:domain      arch:Stakeholder ;
+    rdfs:range       :Requirement ;
+.
+
+:requestedByStakeholder
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :supportedByStakeholder ;
+    owl:inverseOf      :hasRequirement ;
+    skos:prefLabel     "requested by stakeholder"@en ;
+    skos:definition    "Links a Requirement to the Stakeholder who requested it."@en ;
+    rdfs:domain        :Requirement ;
+    rdfs:range         arch:Stakeholder ;
+.
+
+:hasImportanceMeasure
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has importance measure"@en ;
+    skos:definition  '''Quantifies the importance of a Requirement, measured by the
+value it creates for the business, a particular Stakeholder,
+technology strategy, or Technical Debt reduction. The more
+important the Requirement, the more influence it might have
+on the overall solution.'''@en ;
+    rdfs:domain      :Requirement ;
+.
+
+:hasDifficultyMeasure
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has difficulty measure"@en ;
+    skos:definition  '''Quantifies the difficulty of realizing a Requirement,
+measured by the impact and effort required. This measure can
+be stated, but in reality it often depends on the available
+Options. The less difficult the Requirement, the more
+influence it might have on the overall solution.'''@en ;
+    rdfs:domain      :Requirement ;
+.
+
+:onQualityAttribute
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "on quality attribute"@en ;
+    skos:altLabel    "hasMeasure"@en ;
+    skos:definition  "Relates a QualityAttributeRequirement to the QualityAttribute it constrains."@en ;
+    rdfs:domain      :QualityAttributeRequirement ;
+    rdfs:range       arch:QualityAttribute ;
+.
+
+### Quality Attribute Scenario properties
+
+:qasDescription
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "QAS description"@en ;
+    skos:definition  '''Textual description of the Quality Attribute Scenario.
+To qualify and distinguish different elements use the specific
+QAS properties: [qasSourceOfStimulus](#qasSourceOfStimulus),
+[qasStimulus](#qasStimulus), [qasEnvironment](#qasEnvironment),
+[qasArtifact](#qasArtifact), [qasResponse](#qasResponse),
+and [qasResponseMeasure](#qasResponseMeasure).'''@en ;
+    rdfs:domain      :QualityAttributeRequirement ;
+    rdfs:range       xsd:string ;
+.
+
+:qasSourceOfStimulus
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "QAS source of stimulus"@en ;
+    skos:definition  '''The entity (a human, a computer system, or any other actuator)
+that generated the stimulus in a Quality Attribute Scenario.'''@en ;
+    rdfs:domain      :QualityAttributeRequirement ;
+.
+
+:qasStimulus
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "QAS stimulus"@en ;
+    skos:definition  '''The condition or event that triggers the Quality Attribute
+Scenario, such as a user request, a fault, or an attack.'''@en ;
+    rdfs:domain      :QualityAttributeRequirement ;
+.
+
+:qasEnvironment
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "QAS environment"@en ;
+    skos:definition  '''The conditions under which the stimulus occurs,
+such as normal operation, peak load, or degraded mode.'''@en ;
+    rdfs:domain      :QualityAttributeRequirement ;
+.
+
+:qasArtifact
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "QAS artifact"@en ;
+    skos:definition      '''The system artifact that is stimulated in the Quality
+Attribute Scenario, such as a service, component,
+or data store.'''@en ;
+    rdfs:domain          :QualityAttributeRequirement ;
+    schema:rangeIncludes arch:Element ;
+.
+
+:qasResponse
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "QAS response"@en ;
+    skos:definition  '''The activity or behavior the system exhibits in response to
+the stimulus in the Quality Attribute Scenario.'''@en ;
+    rdfs:domain      :QualityAttributeRequirement ;
+.
+
+:qasResponseMeasure
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "QAS response measure"@en ;
+    skos:definition      '''The measurable criterion used to determine whether the
+response satisfies the Quality Attribute Scenario.'''@en ;
+    rdfs:domain          :QualityAttributeRequirement ;
+    schema:rangeIncludes arch:QualityMeasure ;
+    skos:scopeNote       "Range includes arch:QualityMeasure but also simple text or other documentation."@en ;
+.
+
+:realizeRequirement
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "realize requirement"@en ;
+    skos:definition  "Links an Element to a Requirement that it realizes or fulfills."@en ;
+    rdfs:domain      arch:Element ;
+    rdfs:range       :Requirement ;
+.
+
+### Decision relationship sub-properties
+
+:causedBy
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :relatedDecision ;
+    skos:prefLabel     "caused by"@en ;
+    skos:definition    "Links a Decision to another Decision that caused or triggered it."@en ;
+    rdfs:domain        :Decision ;
+    rdfs:range         :Decision ;
+.
+
+:dependsOn
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :relatedDecision ;
+    skos:prefLabel     "depends on"@en ;
+    skos:definition    "Links a Decision to another Decision that it depends on or requires as a prerequisite."@en ;
+    rdfs:domain        :Decision ;
+    rdfs:range         :Decision ;
+.
+
+:replaces
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :relatedDecision ;
+    owl:inverseOf      :supersededBy ;
+    skos:prefLabel     "replaces"@en ;
+    skos:definition    "Links a Decision to a previous Decision that it supersedes."@en ;
+    rdfs:domain        :Decision ;
+    rdfs:range         :Decision ;
+.
+
+:supersededBy
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf :relatedDecision ;
+    owl:inverseOf      :replaces ;
+    skos:prefLabel     "superseded by"@en ;
+    skos:definition    "Links a Decision to the later Decision that replaces it."@en ;
+    skos:scopeNote     '''Pairs with the Superseded decision state. MADR records the
+replacement inline in the status line ("superseded by ADR-0005"); here the
+status and the replacement link are separate assertions.'''@en ;
+    skos:example       '''ex:ADR-017 a ad:Decision ;
+    ad:decisionState ad:Superseded ;
+    ad:supersededBy ex:ADR-042 .'''@en ;
+    rdfs:domain        :Decision ;
+    rdfs:range         :Decision ;
+.
+
+:conflictsWith
+    a                  owl:ObjectProperty, owl:SymmetricProperty ;
+    rdfs:subPropertyOf :relatedDecision ;
+    skos:prefLabel     "conflicts with"@en ;
+    skos:definition    "Links a Decision to another Decision that it conflicts with."@en ;
+    rdfs:domain        :Decision ;
+    rdfs:range         :Decision ;
+.
+
+:appliedInOption
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "applied in option"@en ;
+    skos:definition  '''Links a Tactic, Pattern, or Reference Architecture to a
+Decision Option in which it is applied.'''@en ;
+    rdfs:domain      refa:Tactic,
+                     refa:Pattern,
+                     refa:ReferenceArchitecture ;
+    rdfs:range       :Option ;
+.
+
+### Meta
+
+:qualityAttributeMatch
+    a                  owl:ObjectProperty ;
+    rdfs:subPropertyOf skos:broadMatch,
+                       skos:mappingRelation ;
+    skos:prefLabel     "quality attribute match"@en ;
+    skos:definition    "Maps ontology concepts between domains, for example between Tactics and Quality Attributes."@en ;
+.
+
+#################################################################
+# Relationship types — the links that are drawn
+#
+# For each link whose two ends can be placed on a view, a qualified
+# relationship class whose unqualified form is the predicate above, with
+# its qualified property: a tool that draws one writes the same triple a
+# tool that sets the property writes, with a relationship resource beside
+# it. The class is named after its predicate.
+#################################################################
+
+:AffectsConcept
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :affectsConcept ;
+    skos:prefLabel       "Affects"@en ;
+    skos:definition      "A drawn link from an Option to a model concept that would be affected if the Option is selected."@en ;
+.
+
+:qualifiedAffectsConcept
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified affects"@en ;
+    skos:definition      "Links the source of a drawn Affects link to its relationship resource."@en ;
+    rdfs:range           :AffectsConcept ;
+    arch:unqualifiedForm :affectsConcept ;
+.
+
+:AddsConcept
+    a                    owl:Class ;
+    rdfs:subClassOf      :AffectsConcept ;
+    arch:unqualifiedForm :addsConcept ;
+    skos:prefLabel       "Adds"@en ;
+    skos:definition      "A drawn link from an Option to a new model concept that would be introduced if the Option is selected."@en ;
+.
+
+:qualifiedAddsConcept
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified adds"@en ;
+    skos:definition      "Links the source of a drawn Adds link to its relationship resource."@en ;
+    rdfs:range           :AddsConcept ;
+    arch:unqualifiedForm :addsConcept ;
+.
+
+:RemovesConcept
+    a                    owl:Class ;
+    rdfs:subClassOf      :AffectsConcept ;
+    arch:unqualifiedForm :removesConcept ;
+    skos:prefLabel       "Removes"@en ;
+    skos:definition      "A drawn link from an Option to a model concept that would be removed from the architecture if the Option is selected."@en ;
+.
+
+:qualifiedRemovesConcept
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified removes"@en ;
+    skos:definition      "Links the source of a drawn Removes link to its relationship resource."@en ;
+    rdfs:range           :RemovesConcept ;
+    arch:unqualifiedForm :removesConcept ;
+.
+
+:ModifiesConcept
+    a                    owl:Class ;
+    rdfs:subClassOf      :AffectsConcept ;
+    arch:unqualifiedForm :modifiesConcept ;
+    skos:prefLabel       "Modifies"@en ;
+    skos:definition      "A drawn link from an Option to a model concept that would be modified if the Option is selected."@en ;
+.
+
+:qualifiedModifiesConcept
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified modifies"@en ;
+    skos:definition      "Links the source of a drawn Modifies link to its relationship resource."@en ;
+    rdfs:range           :ModifiesConcept ;
+    arch:unqualifiedForm :modifiesConcept ;
+.
+
+:MakesUseConcept
+    a                    owl:Class ;
+    rdfs:subClassOf      :AffectsConcept ;
+    arch:unqualifiedForm :makesUseConcept ;
+    skos:prefLabel       "Makes Use Of"@en ;
+    skos:definition      "A drawn link from an Option to an existing model concept that it reuses without significant changes."@en ;
+.
+
+:qualifiedMakesUseConcept
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified makes Use Of"@en ;
+    skos:definition      "Links the source of a drawn Makes Use Of link to its relationship resource."@en ;
+    rdfs:range           :MakesUseConcept ;
+    arch:unqualifiedForm :makesUseConcept ;
+.
+
+:IncludesConcept
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :includesConcept ;
+    skos:prefLabel       "Includes"@en ;
+    skos:definition      "A drawn link from an Option to a model concept that is part of the Option."@en ;
+.
+
+:qualifiedIncludesConcept
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified includes"@en ;
+    skos:definition      "Links the source of a drawn Includes link to its relationship resource."@en ;
+    rdfs:range           :IncludesConcept ;
+    arch:unqualifiedForm :includesConcept ;
+.
+
+:HasSelectedOption
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasSelectedOption ;
+    skos:prefLabel       "Selected Option"@en ;
+    skos:definition      "A drawn link from a Decision to the Option that was selected as the chosen solution."@en ;
+.
+
+:qualifiedHasSelectedOption
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified selected Option"@en ;
+    skos:definition      "Links the source of a drawn Selected Option link to its relationship resource."@en ;
+    rdfs:range           :HasSelectedOption ;
+    arch:unqualifiedForm :hasSelectedOption ;
+.
+
+:HasAlternative
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasAlternative ;
+    skos:prefLabel       "Alternative"@en ;
+    skos:definition      "A drawn link from a Decision to a candidate Option that was considered."@en ;
+.
+
+:qualifiedHasAlternative
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified alternative"@en ;
+    skos:definition      "Links the source of a drawn Alternative link to its relationship resource."@en ;
+    rdfs:range           :HasAlternative ;
+    arch:unqualifiedForm :hasAlternative ;
+.
+
+:HasIssue
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :hasIssue ;
+    skos:prefLabel       "Addresses Issue"@en ;
+    skos:definition      "A drawn link from a Decision to the Issue it is supposed to address."@en ;
+.
+
+:qualifiedHasIssue
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified addresses Issue"@en ;
+    skos:definition      "Links the source of a drawn Addresses Issue link to its relationship resource."@en ;
+    rdfs:range           :HasIssue ;
+    arch:unqualifiedForm :hasIssue ;
+.
+
+:RelatedConcept
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :relatedConcept ;
+    skos:prefLabel       "Related Concept"@en ;
+    skos:definition      "A drawn link from a Decision to a model concept that is related to or affected by the decision."@en ;
+.
+
+:qualifiedRelatedConcept
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified related Concept"@en ;
+    skos:definition      "Links the source of a drawn Related Concept link to its relationship resource."@en ;
+    rdfs:range           :RelatedConcept ;
+    arch:unqualifiedForm :relatedConcept ;
+.
+
+:AddressesForce
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :addressesForce ;
+    skos:prefLabel       "Addresses Force"@en ;
+    skos:definition      "A drawn link from an Option to a Force that it directly addresses or satisfies."@en ;
+.
+
+:qualifiedAddressesForce
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified addresses Force"@en ;
+    skos:definition      "Links the source of a drawn Addresses Force link to its relationship resource."@en ;
+    rdfs:range           :AddressesForce ;
+    arch:unqualifiedForm :addressesForce ;
+.
+
+:RelatedDecision
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :relatedDecision ;
+    skos:prefLabel       "Related Decision"@en ;
+    skos:definition      "A drawn link from a Decision to another Decision related to it."@en ;
+.
+
+:qualifiedRelatedDecision
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified related Decision"@en ;
+    skos:definition      "Links the source of a drawn Related Decision link to its relationship resource."@en ;
+    rdfs:range           :RelatedDecision ;
+    arch:unqualifiedForm :relatedDecision ;
+.
+
+:DependsOn
+    a                    owl:Class ;
+    rdfs:subClassOf      :RelatedDecision ;
+    arch:unqualifiedForm :dependsOn ;
+    skos:prefLabel       "Depends On"@en ;
+    skos:definition      "A drawn link from a Decision to another Decision it depends on or requires as a prerequisite."@en ;
+.
+
+:qualifiedDependsOn
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified depends On"@en ;
+    skos:definition      "Links the source of a drawn Depends On link to its relationship resource."@en ;
+    rdfs:range           :DependsOn ;
+    arch:unqualifiedForm :dependsOn ;
+.
+
+:ConflictsWith
+    a                    owl:Class ;
+    rdfs:subClassOf      :RelatedDecision ;
+    arch:unqualifiedForm :conflictsWith ;
+    skos:prefLabel       "Conflicts With"@en ;
+    skos:definition      "A drawn link between two Decisions that conflict with each other."@en ;
+.
+
+:qualifiedConflictsWith
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified conflicts With"@en ;
+    skos:definition      "Links the source of a drawn Conflicts With link to its relationship resource."@en ;
+    rdfs:range           :ConflictsWith ;
+    arch:unqualifiedForm :conflictsWith ;
+.
+
+:CausedBy
+    a                    owl:Class ;
+    rdfs:subClassOf      :RelatedDecision ;
+    arch:unqualifiedForm :causedBy ;
+    skos:prefLabel       "Caused By"@en ;
+    skos:definition      "A drawn link from a Decision to another Decision that caused or triggered it."@en ;
+.
+
+:qualifiedCausedBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified caused By"@en ;
+    skos:definition      "Links the source of a drawn Caused By link to its relationship resource."@en ;
+    rdfs:range           :CausedBy ;
+    arch:unqualifiedForm :causedBy ;
+.
+
+:SupersededBy
+    a                    owl:Class ;
+    rdfs:subClassOf      :RelatedDecision ;
+    arch:unqualifiedForm :supersededBy ;
+    skos:prefLabel       "Superseded By"@en ;
+    skos:definition      "A drawn link from a Decision to the later Decision that replaces it."@en ;
+.
+
+:qualifiedSupersededBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified superseded By"@en ;
+    skos:definition      "Links the source of a drawn Superseded By link to its relationship resource."@en ;
+    rdfs:range           :SupersededBy ;
+    arch:unqualifiedForm :supersededBy ;
+.
+
+:OpposingForce
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :opposingForce ;
+    skos:prefLabel       "Opposing Force"@en ;
+    skos:definition      "A drawn link between two Forces that oppose or conflict with each other."@en ;
+.
+
+:qualifiedOpposingForce
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified opposing Force"@en ;
+    skos:definition      "Links the source of a drawn Opposing Force link to its relationship resource."@en ;
+    rdfs:range           :OpposingForce ;
+    arch:unqualifiedForm :opposingForce ;
+.
+
+:ComplementaryForce
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :complementaryForce ;
+    skos:prefLabel       "Complementary Force"@en ;
+    skos:definition      "A drawn link between two Forces that complement or reinforce each other."@en ;
+.
+
+:qualifiedComplementaryForce
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified complementary Force"@en ;
+    skos:definition      "Links the source of a drawn Complementary Force link to its relationship resource."@en ;
+    rdfs:range           :ComplementaryForce ;
+    arch:unqualifiedForm :complementaryForce ;
+.
+
+:InfluencingForce
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :influencingForce ;
+    skos:prefLabel       "Influencing Force"@en ;
+    skos:definition      "A drawn link from an Issue to a Force that potentially influences it."@en ;
+.
+
+:qualifiedInfluencingForce
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified influencing Force"@en ;
+    skos:definition      "Links the source of a drawn Influencing Force link to its relationship resource."@en ;
+    rdfs:range           :InfluencingForce ;
+    arch:unqualifiedForm :influencingForce ;
+.
+
+:IssueOwner
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :issueOwner ;
+    skos:prefLabel       "Issue Owner"@en ;
+    skos:definition      "A drawn link from an Issue to the Stakeholder responsible for resolving it."@en ;
+.
+
+:qualifiedIssueOwner
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified issue Owner"@en ;
+    skos:definition      "Links the source of a drawn Issue Owner link to its relationship resource."@en ;
+    rdfs:range           :IssueOwner ;
+    arch:unqualifiedForm :issueOwner ;
+.
+
+:IssueReportedBy
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :issueReportedBy ;
+    skos:prefLabel       "Issue Reported By"@en ;
+    skos:definition      "A drawn link from an Issue to the element that reported it."@en ;
+.
+
+:qualifiedIssueReportedBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified issue Reported By"@en ;
+    skos:definition      "Links the source of a drawn Issue Reported By link to its relationship resource."@en ;
+    rdfs:range           :IssueReportedBy ;
+    arch:unqualifiedForm :issueReportedBy ;
+.
+
+:SupportedByStakeholder
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :supportedByStakeholder ;
+    skos:prefLabel       "Supported By"@en ;
+    skos:definition      "A drawn link from a Force to the Stakeholder who supports or champions it."@en ;
+.
+
+:qualifiedSupportedByStakeholder
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified supported By"@en ;
+    skos:definition      "Links the source of a drawn Supported By link to its relationship resource."@en ;
+    rdfs:range           :SupportedByStakeholder ;
+    arch:unqualifiedForm :supportedByStakeholder ;
+.
+
+:RequestedByStakeholder
+    a                    owl:Class ;
+    rdfs:subClassOf      :SupportedByStakeholder ;
+    arch:unqualifiedForm :requestedByStakeholder ;
+    skos:prefLabel       "Requested By"@en ;
+    skos:definition      "A drawn link from a Requirement to the Stakeholder who requested it."@en ;
+.
+
+:qualifiedRequestedByStakeholder
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified requested By"@en ;
+    skos:definition      "Links the source of a drawn Requested By link to its relationship resource."@en ;
+    rdfs:range           :RequestedByStakeholder ;
+    arch:unqualifiedForm :requestedByStakeholder ;
+.
+
+:IssueCausedBy
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :issueCausedBy ;
+    skos:prefLabel       "Issue Caused By"@en ;
+    skos:definition      "A drawn link from an Issue to the element that caused it: another Issue, a Decision, or any internal or external element."@en ;
+.
+
+:qualifiedIssueCausedBy
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified issue Caused By"@en ;
+    skos:definition      "Links the source of a drawn Issue Caused By link to its relationship resource."@en ;
+    rdfs:range           :IssueCausedBy ;
+    arch:unqualifiedForm :issueCausedBy ;
+.
+
+:AssociatedIssue
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :associatedIssue ;
+    skos:prefLabel       "Associated Issue"@en ;
+    skos:definition      "A drawn link from a model concept to an Issue that needs to be addressed about it."@en ;
+.
+
+:qualifiedAssociatedIssue
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified associated Issue"@en ;
+    skos:definition      "Links the source of a drawn Associated Issue link to its relationship resource."@en ;
+    rdfs:range           :AssociatedIssue ;
+    arch:unqualifiedForm :associatedIssue ;
+.
+
+:AppliedInOption
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :appliedInOption ;
+    skos:prefLabel       "Applied In Option"@en ;
+    skos:definition      "A drawn link from a Tactic, Pattern or Reference Architecture to an Option that applies it."@en ;
+.
+
+:qualifiedAppliedInOption
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified applied In Option"@en ;
+    skos:definition      "Links the source of a drawn Applied In Option link to its relationship resource."@en ;
+    rdfs:range           :AppliedInOption ;
+    arch:unqualifiedForm :appliedInOption ;
+.
+
+:RealizeRequirement
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :realizeRequirement ;
+    skos:prefLabel       "Realizes Requirement"@en ;
+    skos:definition      "A drawn link from an element to a Requirement it realizes or fulfils."@en ;
+.
+
+:qualifiedRealizeRequirement
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "qualified realizes Requirement"@en ;
+    skos:definition      "Links the source of a drawn Realizes Requirement link to its relationship resource."@en ;
+    rdfs:range           :RealizeRequirement ;
+    arch:unqualifiedForm :realizeRequirement ;
+.
+
+#################################################################
+# Typical ends of the predicates drawn
+#
+# Modelling-tool guidance (arch:domainIncludes, arch:rangeIncludes): where
+# a line of each kind usually starts and ends. An end that is no element —
+# a model, a metamodel, a quality attribute, a pattern — is not drawn, and
+# is not listed.
+#################################################################
+
+:affectsConcept
+    arch:domainIncludes  :Option ;
+    arch:rangeIncludes   arch:ModelConcept ;
+.
+
+:addsConcept
+    arch:domainIncludes  :Option ;
+    arch:rangeIncludes   arch:ModelConcept ;
+.
+
+:removesConcept
+    arch:domainIncludes  :Option ;
+    arch:rangeIncludes   arch:ModelConcept ;
+.
+
+:modifiesConcept
+    arch:domainIncludes  :Option ;
+    arch:rangeIncludes   arch:ModelConcept ;
+.
+
+:makesUseConcept
+    arch:domainIncludes  :Option ;
+    arch:rangeIncludes   arch:ModelConcept ;
+.
+
+:includesConcept
+    arch:domainIncludes  :Option ;
+    arch:rangeIncludes   arch:ModelConcept ;
+.
+
+:hasSelectedOption
+    arch:domainIncludes  :Decision ;
+    arch:rangeIncludes   :Option ;
+.
+
+:hasAlternative
+    arch:domainIncludes  :Decision ;
+    arch:rangeIncludes   :Option ;
+.
+
+:hasIssue
+    arch:domainIncludes  :Decision ;
+    arch:rangeIncludes   :Issue ;
+.
+
+:relatedConcept
+    arch:domainIncludes  :Decision ;
+    arch:rangeIncludes   arch:ModelConcept ;
+.
+
+:addressesForce
+    arch:domainIncludes  :Option ;
+    arch:rangeIncludes   :Force ;
+.
+
+:influencedByForce
+    arch:domainIncludes  :Decision ;
+    arch:rangeIncludes   :Force ;
+.
+
+:relatedDecision
+    arch:domainIncludes  :Decision ;
+    arch:rangeIncludes   :Decision ;
+.
+
+:dependsOn
+    arch:domainIncludes  :Decision ;
+    arch:rangeIncludes   :Decision ;
+.
+
+:conflictsWith
+    arch:domainIncludes  :Decision ;
+    arch:rangeIncludes   :Decision ;
+.
+
+:causedBy
+    arch:domainIncludes  :Decision ;
+    arch:rangeIncludes   :Decision ;
+.
+
+:supersededBy
+    arch:domainIncludes  :Decision ;
+    arch:rangeIncludes   :Decision ;
+.
+
+:opposingForce
+    arch:domainIncludes  :Force ;
+    arch:rangeIncludes   :Force ;
+.
+
+:complementaryForce
+    arch:domainIncludes  :Force ;
+    arch:rangeIncludes   :Force ;
+.
+
+:influencingForce
+    arch:domainIncludes  :Issue ;
+    arch:rangeIncludes   :Force ;
+.
+
+:issueOwner
+    arch:domainIncludes  :Issue ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.
+
+:issueReportedBy
+    arch:domainIncludes  :Issue ;
+    arch:rangeIncludes   arch:Element ;
+.
+
+:supportedByStakeholder
+    arch:domainIncludes  :Force ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.
+
+:requestedByStakeholder
+    arch:domainIncludes  :Requirement ;
+    arch:rangeIncludes   arch:Stakeholder ;
+.
+
+:issueCausedBy
+    arch:domainIncludes  :Issue ;
+    arch:rangeIncludes   :Issue, :Decision, arch:Element ;
+.
+
+:associatedIssue
+    arch:domainIncludes  arch:ModelConcept ;
+    arch:rangeIncludes   :Issue ;
+.
+
+:appliedInOption
+    arch:domainIncludes  refa:Tactic, refa:Pattern, refa:ReferenceArchitecture ;
+    arch:rangeIncludes   :Option ;
+.
+
+:realizeRequirement
+    arch:domainIncludes  arch:Element ;
+    arch:rangeIncludes   :Requirement ;
+.

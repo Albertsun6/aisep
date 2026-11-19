@@ -1,0 +1,60 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix am4not:  <https://meta.linked.archi/archimate4/notation#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix :        <https://meta.linked.archi/archimate4/presentation-contexts#> .
+
+:ArchiMatePresentationContexts
+    a                skos:ConceptScheme ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate4/presentation-contexts#" ;
+    vann:preferredNamespacePrefix "am4pc" ;
+    dcterms:title                 "Linked.Archi ArchiMate 4.0 Presentation Contexts"@en ;
+    owl:versionInfo               "4.0"@en ;
+    skos:prefLabel   "ArchiMate 4.0 Presentation Contexts"@en ;
+    dcterms:description  "Stakeholder-specific presentation themes for ArchiMate 4.0 views."@en ;
+    dcterms:description   "Stakeholder-specific presentation contexts for ArchiMate 4.0 architecture views."@en ;
+    dcterms:creator  "Kalin Maldzhanski"^^xsd:string ;
+    skos:hasTopConcept :ExecutiveContext, :ArchitectContext,
+                       :DeveloperContext, :OperationsContext, :GovernanceContext ;
+.
+
+:ExecutiveContext
+    a skos:Concept ; skos:topConceptOf :ArchiMatePresentationContexts ;
+    skos:prefLabel "Executive / C-Level"@en ;
+    skos:definition "High-level overview with minimal technical detail. Focus on business capabilities, strategic alignment, cost, and risk."@en ;
+    skos:scopeNote "Uses the standard notation set by default. Organizations may define a simplified notation set and link it here via arch:usesNotationSet for executive-level views with reduced visual complexity."@en ;
+    arch:usesNotationSet am4not:ArchiMate40StandardNotation ;
+    skos:inScheme :ArchiMatePresentationContexts .
+
+:ArchitectContext
+    a skos:Concept ; skos:topConceptOf :ArchiMatePresentationContexts ;
+    skos:prefLabel "Architect"@en ;
+    skos:definition "Full ArchiMate notation with all domains visible. Detailed element properties, relationship types, and cross-domain dependencies."@en ;
+    arch:usesNotationSet am4not:ArchiMate40StandardNotation ;
+    skos:inScheme :ArchiMatePresentationContexts .
+
+:DeveloperContext
+    a skos:Concept ; skos:topConceptOf :ArchiMatePresentationContexts ;
+    skos:prefLabel "Developer / Engineering"@en ;
+    skos:definition "Focus on application and technology domains. Detailed interfaces, data flows, deployment topology."@en ;
+    arch:usesNotationSet am4not:ArchiMate40StandardNotation ;
+    skos:inScheme :ArchiMatePresentationContexts .
+
+:OperationsContext
+    a skos:Concept ; skos:topConceptOf :ArchiMatePresentationContexts ;
+    skos:prefLabel "Operations / Infrastructure"@en ;
+    skos:definition "Focus on technology domain and deployment. Nodes, devices, networks, environments."@en ;
+    arch:usesNotationSet am4not:ArchiMate40StandardNotation ;
+    skos:inScheme :ArchiMatePresentationContexts .
+
+:GovernanceContext
+    a skos:Concept ; skos:topConceptOf :ArchiMatePresentationContexts ;
+    skos:prefLabel "Governance / Compliance"@en ;
+    skos:definition "Focus on standards compliance, lifecycle states, ownership, and change management."@en ;
+    arch:usesNotationSet am4not:ArchiMate40StandardNotation ;
+    skos:inScheme :ArchiMatePresentationContexts .

@@ -1,0 +1,279 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix timefw:  <https://meta.linked.archi/time-framework/onto#> .
+@prefix :        <https://meta.linked.archi/time-framework/shapes#> .
+
+<https://meta.linked.archi/time-framework/shapes#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core-shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/time-framework/shapes#" ;
+    vann:preferredNamespacePrefix "timesh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi TIME Framework SHACL Shapes"@en ;
+    dcterms:description                '''SHACL shapes for validating TIME framework model data.
+Ensures applications have required metadata, fit assessments are complete,
+and controlled vocabulary values are valid. Includes a SPARQL-based consistency
+guard that verifies timeDisposition matches the implied quadrant when both
+functionalFitRating and technicalFitRating are present.
+
+This is the SHACL layer of the TIME framework. Use together with:
+* time-onto.ttl (OWL) — defines classes, properties, and OWL reasoning rules
+* time-tax.ttl (SKOS) — organizes controlled vocabularies for navigation'''@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/time-framework/shapes/0.2.0#> ;
+    owl:versionInfo               "0.2.0"@en ;
+    sh:declare [
+        sh:prefix    "timefw" ;
+        sh:namespace "https://meta.linked.archi/time-framework/onto#"^^xsd:anyURI ;
+    ] ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Application shapes
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ApplicationShape
+    a               sh:NodeShape ;
+    sh:targetClass  timefw:Application ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:message  "Every Application must have a skos:prefLabel."@en ;
+    ] ;
+    sh:property [
+        sh:path     timefw:hasFitAssessment ;
+        sh:minCount 1 ;
+        sh:message  "Every Application should have at least one FitAssessment."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+    sh:property [
+        sh:path     timefw:businessOwner ;
+        sh:maxCount 1 ;
+        sh:class    timefw:Person ;
+        sh:message  "businessOwner must be a Person."@en ;
+    ] ;
+    sh:property [
+        sh:path     timefw:itOwner ;
+        sh:maxCount 1 ;
+        sh:class    timefw:Person ;
+        sh:message  "itOwner must be a Person."@en ;
+    ] ;
+    sh:property [
+        sh:path     timefw:lifecycleState ;
+        sh:maxCount 1 ;
+        sh:in       ( timefw:Plan timefw:Build timefw:Run timefw:Retire ) ;
+        sh:message  "lifecycleState must be one of: Plan, Build, Run, Retire."@en ;
+    ] ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## FitAssessment shapes
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:FitAssessmentShape
+    a               sh:NodeShape ;
+    sh:targetClass  timefw:FitAssessment ;
+
+    ## Required fields
+    sh:property [
+        sh:path     timefw:assessedApplication ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    timefw:Application ;
+        sh:message  "Every FitAssessment must reference exactly one Application."@en ;
+    ] ;
+    sh:property [
+        sh:path     timefw:assessmentDate ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:message  "Every FitAssessment must have an assessmentDate (xsd:date)."@en ;
+    ] ;
+
+    ## TIME disposition — required, constrained to valid values
+    sh:property [
+        sh:path     timefw:timeDisposition ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in       ( timefw:Tolerate timefw:Invest timefw:Migrate timefw:Eliminate ) ;
+        sh:message  "Every FitAssessment must have a timeDisposition: Tolerate, Invest, Migrate, or Eliminate."@en ;
+    ] ;
+
+    ## Fit scores — optional but if present must be integers 1-5
+    sh:property [
+        sh:path     timefw:functionalFitScore ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 5 ;
+        sh:message  "functionalFitScore must be an integer between 1 and 5."@en ;
+    ] ;
+    sh:property [
+        sh:path     timefw:technicalFitScore ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 5 ;
+        sh:message  "technicalFitScore must be an integer between 1 and 5."@en ;
+    ] ;
+    sh:property [
+        sh:path     timefw:costFitScore ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 5 ;
+        sh:message  "costFitScore must be an integer between 1 and 5."@en ;
+    ] ;
+
+    ## Fit ratings — constrained to High/Low
+    sh:property [
+        sh:path     timefw:functionalFitRating ;
+        sh:maxCount 1 ;
+        sh:in       ( timefw:High timefw:Low ) ;
+        sh:message  "functionalFitRating must be High or Low."@en ;
+    ] ;
+    sh:property [
+        sh:path     timefw:technicalFitRating ;
+        sh:maxCount 1 ;
+        sh:in       ( timefw:High timefw:Low ) ;
+        sh:message  "technicalFitRating must be High or Low."@en ;
+    ] ;
+    sh:property [
+        sh:path     timefw:costFitRating ;
+        sh:maxCount 1 ;
+        sh:in       ( timefw:High timefw:Low ) ;
+        sh:message  "costFitRating must be High or Low."@en ;
+    ] ;
+
+    ## Assessment status — constrained to valid values
+    sh:property [
+        sh:path     timefw:assessmentStatus ;
+        sh:maxCount 1 ;
+        sh:in       ( timefw:Draft timefw:Approved timefw:Superseded timefw:Rejected ) ;
+        sh:message  "assessmentStatus must be one of: Draft, Approved, Superseded, Rejected."@en ;
+    ] ;
+
+    ## Rationale — recommended
+    sh:property [
+        sh:path     timefw:rationale ;
+        sh:minCount 1 ;
+        sh:message  "Every FitAssessment should have a rationale explaining the disposition."@en ;
+        sh:severity sh:Warning ;
+    ] ;
+
+    ## Disposition–rating consistency guard
+    ## When both functionalFitRating and technicalFitRating are present,
+    ## timeDisposition MUST match the implied TIME quadrant.
+    ## Fires only when both ratings are asserted — no false positives on
+    ## assessments that state disposition without ratings.
+    sh:sparql [
+        a              sh:SPARQLConstraint ;
+        sh:message     "timeDisposition is inconsistent with fit ratings: High/High must be Invest, High/Low must be Migrate, Low/High must be Tolerate, Low/Low must be Eliminate."@en ;
+        sh:prefixes    <https://meta.linked.archi/time-framework/shapes#> ;
+        sh:select """
+            SELECT $this ?funcRating ?techRating ?disposition
+            WHERE {
+                $this timefw:functionalFitRating ?funcRating ;
+                      timefw:technicalFitRating  ?techRating ;
+                      timefw:timeDisposition     ?disposition .
+                BIND(
+                    IF(?funcRating = timefw:High && ?techRating = timefw:High, timefw:Invest,
+                    IF(?funcRating = timefw:High && ?techRating = timefw:Low,  timefw:Migrate,
+                    IF(?funcRating = timefw:Low  && ?techRating = timefw:High, timefw:Tolerate,
+                    IF(?funcRating = timefw:Low  && ?techRating = timefw:Low,  timefw:Eliminate,
+                    "UNKNOWN"))))
+                    AS ?expected)
+                FILTER (?disposition != ?expected)
+            }
+        """ ;
+    ] ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Evidence shapes
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:EvidenceShape
+    a               sh:NodeShape ;
+    sh:targetClass  timefw:Evidence ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:message  "Every Evidence item must have a skos:prefLabel."@en ;
+    ] ;
+    sh:property [
+        sh:path     timefw:evidenceType ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in       ( timefw:ArchitectureReview timefw:SecurityAssessment
+                      timefw:OperationsMetrics timefw:CostAnalysis
+                      timefw:BusinessStakeholderInput timefw:VendorRoadmap
+                      timefw:TechnicalDebtRegister timefw:OtherEvidence ) ;
+        sh:message  "Every Evidence item must have a valid evidenceType."@en ;
+    ] ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## FitCriterionScore shapes
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:FitCriterionScoreShape
+    a               sh:NodeShape ;
+    sh:targetClass  timefw:FitCriterionScore ;
+    sh:property [
+        sh:path     timefw:criterion ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class    timefw:FitCriterion ;
+        sh:message  "Every FitCriterionScore must reference exactly one FitCriterion."@en ;
+    ] ;
+    sh:property [
+        sh:path     timefw:criterionScoreValue ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 5 ;
+        sh:message  "criterionScoreValue must be an integer between 1 and 5."@en ;
+    ] ;
+.
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## FitCriterion shapes
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:FitCriterionShape
+    a               sh:NodeShape ;
+    sh:targetClass  timefw:FitCriterion ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:message  "Every FitCriterion must have a skos:prefLabel."@en ;
+    ] ;
+    sh:property [
+        sh:path     timefw:dimension ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in       ( timefw:Functional timefw:Technical timefw:Cost ) ;
+        sh:message  "Every FitCriterion must specify its dimension: Functional, Technical, or Cost."@en ;
+    ] ;
+.
+
+

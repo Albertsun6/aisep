@@ -1,0 +1,16 @@
+# expect: Aggregation relationship has an invalid source/target combination
+# BC -> Aggregate as am4:Composition (AC may not compose a DataObject)
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix ddd:   <https://aisep.example/ont/ddd#> .
+@prefix :      <https://aisep.example/model/ddd-bc-composes-aggregate/> .
+
+:model a arch:Model ; skos:prefLabel "DDD 非法样例"@zh .
+:upBC a ddd:BoundedContext ; arch:inModel :model ; skos:prefLabel "上游上下文"@zh .
+:downBC a ddd:BoundedContext ; arch:inModel :model ; skos:prefLabel "下游上下文"@zh .
+:agg a ddd:Aggregate ; arch:inModel :model ; skos:prefLabel "聚合"@zh .
+:root a ddd:Entity ; arch:inModel :model ; skos:prefLabel "根实体"@zh .
+:rel-own a ddd:Ownership ; arch:inModel :model ; arch:source :upBC ; arch:target :agg .
+:rel-root a ddd:RootContainment ; arch:inModel :model ; arch:source :agg ; arch:target :root .
+:rel-comp a am4:Composition ; arch:inModel :model ; arch:source :downBC ; arch:target :agg .

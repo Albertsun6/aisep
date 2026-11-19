@@ -1,0 +1,286 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix archq:   <https://meta.linked.archi/core-questions#> .
+@prefix :        <https://meta.linked.archi/core-deliverable-templates#> .
+
+#################################################################
+# Core Deliverable Templates
+#
+# Framework-agnostic documents, produced from a model in any
+# language. Each section presents a core viewpoint, names the
+# concerns it answers and asks the core questions (archq:) that
+# inform them, in reading order. Core questions answer what a model
+# holds, how its elements depend on each other and how sound the
+# description is; what a language's elements mean — stakeholders,
+# processes, interfaces, deployment — is for that language's
+# questions. A section none of them answers presents the model's
+# views of its viewpoint.
+#
+# The presentation formats below are those every template renders
+# in, whatever its language.
+#################################################################
+
+# ── Shared template parameter ────────────────────────────────────
+
+:ModelParameter
+    a               sh:Parameter ;
+    sh:path         arch:model ;
+    sh:name         "model" ;
+    sh:class        arch:Model ;
+    sh:optional     false ;
+    sh:order        1 ;
+    sh:description  "The model the document is produced from. Pre-bound into every question that declares ?model."@en ;
+.
+
+
+#################################################################
+# Architecture Overview Document
+#################################################################
+
+:ArchitectureOverviewDocument
+    a                             arch:DeliverableTemplate ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/core-deliverable-templates#" ;
+    vann:preferredNamespacePrefix "archdt" ;
+    dcterms:title                 "Linked.Archi Core Deliverable Templates"@en ;
+    dcterms:description           '''Framework-agnostic deliverable templates of common architecture documents,
+produced from a model in any language: each section answers the concerns it names by asking the
+core model questions. Also the presentation formats every deliverable template renders in.
+Language- and framework-specific templates (e.g., the ArchiMate Architecture Definition Document)
+are defined with their language or framework.'''@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-04-15"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en ;
+    skos:prefLabel                "Architecture Overview Document"@en ;
+    skos:definition               '''A high-level architecture document providing stakeholders with
+an overview of the architecture landscape, component inventory, dependencies,
+and standards compliance. Suitable for governance reviews and onboarding.'''@en ;
+    arch:templateRequiresViewpoint archvp:LandscapeOverview, archvp:StakeholderMap,
+                                   archvp:ComponentCatalog, archvp:DependencyMatrix,
+                                   archvp:StandardsCompliance ;
+    arch:templateHasSection       :AOD-S1, :AOD-S2, :AOD-S3, :AOD-S4, :AOD-S5 ;
+    arch:templateTargetsPurpose   archvp:Informing, archvp:Governing ;
+    arch:templateHasFormat        :MarkdownFormat, :HTMLFormat, :PDFFormat ;
+    arch:templateParameter        :ModelParameter ;
+    rdfs:seeAlso                  <https://www.iso.org/standard/74393.html>,
+                                  <https://pubs.opengroup.org/togaf-standard/> ;
+.
+
+:AOD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Architecture Landscape"@en ;
+    skos:definition "What does the architecture consist of, and what of it is baseline, target or awaiting approval?"@en ;
+    arch:sectionViewpoint archvp:LandscapeOverview ;
+    arch:sectionAddressesConcern archvp:StructureConcern, archvp:EvolutionConcern ;
+    arch:sectionAsks ( archq:model-inventory archq:architecture-state ) ;
+    arch:sectionResultKey "landscape" .
+
+:AOD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Stakeholder Analysis"@en ;
+    skos:definition "Who are the stakeholders, and which views address their concerns?"@en ;
+    arch:sectionViewpoint archvp:StakeholderMap ;
+    arch:sectionAddressesConcern archvp:StakeholderConcern ;
+    arch:sectionResultKey "stakeholders" .
+
+:AOD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Component Inventory"@en ;
+    skos:definition "Is every component defined, and named once?"@en ;
+    arch:sectionViewpoint archvp:ComponentCatalog ;
+    arch:sectionAddressesConcern archvp:StructureConcern, archvp:QualityConcern ;
+    arch:sectionAsks ( archq:missing-definitions archq:duplicate-labels ) ;
+    arch:sectionResultKey "components" .
+
+:AOD-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    skos:prefLabel "4. Dependency Analysis"@en ;
+    skos:definition "Does every element take part in the architecture's dependencies?"@en ;
+    arch:sectionViewpoint archvp:DependencyMatrix ;
+    arch:sectionAddressesConcern archvp:DependencyConcern, archvp:QualityConcern ;
+    arch:sectionAsks ( archq:orphans ) ;
+    arch:sectionResultKey "dependencies" .
+
+:AOD-S5 a arch:TemplateSection ; arch:sectionOrder 5 ;
+    skos:prefLabel "5. Standards Compliance"@en ;
+    skos:definition "Does the description follow defined viewpoints, present every element, and keep its relationships whole?"@en ;
+    arch:sectionViewpoint archvp:StandardsCompliance ;
+    arch:sectionAddressesConcern archvp:GovernanceConcern, archvp:QualityConcern ;
+    arch:sectionAsks ( archq:views-with-unknown-viewpoint archq:not-in-any-view archq:relationship-integrity ) ;
+    arch:sectionResultKey "standardsCompliance" .
+
+
+#################################################################
+# Solution Design Document
+#
+# Process, interface, deployment and decision design are what a
+# language's elements describe; here those sections present the
+# model's views of their viewpoints.
+#################################################################
+
+:SolutionDesignDocument
+    a                             arch:DeliverableTemplate ;
+    skos:prefLabel                "Solution Design Document"@en ;
+    skos:definition               '''A solution-level architecture document covering process design,
+interface design, deployment topology, and architecture decisions. Used by
+solution architects and development teams during design and implementation.'''@en ;
+    arch:templateRequiresViewpoint archvp:LandscapeOverview, archvp:ProcessFlow,
+                                   archvp:InterfaceMap, archvp:DeploymentMap,
+                                   archvp:DecisionLog ;
+    arch:templateHasSection       :SDD-S1, :SDD-S2, :SDD-S3, :SDD-S4, :SDD-S5 ;
+    arch:templateTargetsPurpose   archvp:Designing ;
+    arch:templateHasFormat        :MarkdownFormat, :HTMLFormat ;
+    arch:templateParameter        :ModelParameter ;
+.
+
+:SDD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Solution Context"@en ;
+    skos:definition "What does the model of the solution contain?"@en ;
+    arch:sectionViewpoint archvp:LandscapeOverview ;
+    arch:sectionAddressesConcern archvp:StructureConcern ;
+    arch:sectionAsks ( archq:model-inventory ) ;
+    arch:sectionResultKey "solutionContext" .
+
+:SDD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Process Design"@en ;
+    skos:definition "Process flows showing activities, decision points, and handoffs."@en ;
+    arch:sectionViewpoint archvp:ProcessFlow ;
+    arch:sectionAddressesConcern archvp:BehaviorConcern ;
+    arch:sectionResultKey "processDesign" .
+
+:SDD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Interface Design"@en ;
+    skos:definition "Interface map showing component connections, protocols, and data flows."@en ;
+    arch:sectionViewpoint archvp:InterfaceMap ;
+    arch:sectionAddressesConcern archvp:IntegrationConcern, archvp:DependencyConcern ;
+    arch:sectionResultKey "interfaceDesign" .
+
+:SDD-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    skos:prefLabel "4. Deployment Design"@en ;
+    skos:definition "Deployment map showing where components run and hosting relationships."@en ;
+    arch:sectionViewpoint archvp:DeploymentMap ;
+    arch:sectionAddressesConcern archvp:DeploymentConcern ;
+    arch:sectionResultKey "deploymentDesign" .
+
+:SDD-S5 a arch:TemplateSection ; arch:sectionOrder 5 ;
+    skos:prefLabel "5. Architecture Decisions"@en ;
+    skos:definition "Log of architecture decisions with context, rationale, and status."@en ;
+    arch:sectionViewpoint archvp:DecisionLog ;
+    arch:sectionAddressesConcern archvp:GovernanceConcern ;
+    arch:sectionResultKey "architectureDecisions" .
+
+
+#################################################################
+# Change Impact Assessment
+#
+# Produced for one element under change: the sections that ask
+# questions ask about that element. Language-specific assessments
+# (e.g., am4dt:ChangeImpactAssessment) also compare plateaus.
+#################################################################
+
+:ChangeImpactAssessment
+    a                             arch:DeliverableTemplate ;
+    skos:prefLabel                "Change Impact Assessment"@en ;
+    skos:definition               '''An assessment document for evaluating the impact of a proposed
+architecture change to one element. Covers impact propagation, the views that present the element,
+the architecture states involved, and migration planning. Used for change governance and
+decision-making.'''@en ;
+    arch:templateRequiresViewpoint archvp:ImpactAnalysis, archvp:DependencyMatrix,
+                                   archvp:GapAnalysis, archvp:Roadmap ;
+    arch:templateHasSection       :CIA-S1, :CIA-S2, :CIA-S3, :CIA-S4 ;
+    arch:templateTargetsPurpose   archvp:Deciding, archvp:Governing ;
+    arch:templateHasFormat        :MarkdownFormat, :PDFFormat, :SlideFormat ;
+    arch:templateParameter        :ModelParameter,
+        [ a sh:Parameter ; sh:path arch:focus ; sh:name "focus" ; sh:nodeKind sh:IRI ;
+          sh:optional false ; sh:order 2 ;
+          sh:description "The element under change."@en ] ;
+.
+
+:CIA-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Impact Analysis"@en ;
+    skos:definition "What is the element related to, and what reaches it within two steps — what is affected if it changes?"@en ;
+    arch:sectionViewpoint archvp:ImpactAnalysis ;
+    arch:sectionAddressesConcern archvp:DependencyConcern, archvp:EvolutionConcern ;
+    arch:sectionAsks ( archq:neighbours archq:reaches-in-two-hops ) ;
+    arch:sectionResultKey "impact" .
+
+:CIA-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Dependency Assessment"@en ;
+    skos:definition "Which views present the element and its dependencies, and need revising with the change?"@en ;
+    arch:sectionViewpoint archvp:DependencyMatrix ;
+    arch:sectionAddressesConcern archvp:DependencyConcern ;
+    arch:sectionAsks ( archq:views-showing ) ;
+    arch:sectionResultKey "dependencyAssessment" .
+
+:CIA-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Gap Analysis"@en ;
+    skos:definition "What in the model is baseline, target or still awaiting approval?"@en ;
+    arch:sectionViewpoint archvp:GapAnalysis ;
+    arch:sectionAddressesConcern archvp:EvolutionConcern ;
+    arch:sectionAsks ( archq:architecture-state ) ;
+    arch:sectionResultKey "gapAnalysis" .
+
+:CIA-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    skos:prefLabel "4. Migration Roadmap"@en ;
+    skos:definition "Planned evolution steps to implement the change."@en ;
+    arch:sectionViewpoint archvp:Roadmap ;
+    arch:sectionAddressesConcern archvp:EvolutionConcern ;
+    arch:sectionResultKey "migrationRoadmap" .
+
+
+#################################################################
+# Presentation Formats
+#
+# Instances of arch:PresentationFormat — the output formats a
+# deliverable renders in. DeliverableTemplates of every language
+# name the formats they support via arch:templateHasFormat.
+#################################################################
+
+:MarkdownFormat
+    a               arch:PresentationFormat ;
+    skos:prefLabel  "Markdown Document"@en ;
+    skos:definition '''Renders the deliverable as a Markdown document with headings per
+section, embedded diagrams as images, and tables for catalogs and matrices.
+Suitable for Git-based documentation workflows (MkDocs, Docusaurus, Jekyll).'''@en ;
+.
+
+:HTMLFormat
+    a               arch:PresentationFormat ;
+    skos:prefLabel  "HTML Report"@en ;
+    skos:definition '''Renders the deliverable as a standalone HTML page with interactive
+navigation, collapsible sections, and embedded SVG diagrams. Suitable for
+intranet publishing and stakeholder portals.'''@en ;
+.
+
+:PDFFormat
+    a               arch:PresentationFormat ;
+    skos:prefLabel  "PDF Document"@en ;
+    skos:definition '''Renders the deliverable as a paginated PDF with formal layout,
+headers/footers, table of contents, and print-ready diagrams. Suitable for
+governance submissions, audits, and formal sign-off.'''@en ;
+.
+
+:SlideFormat
+    a               arch:PresentationFormat ;
+    skos:prefLabel  "Slide Deck"@en ;
+    skos:definition '''Renders the deliverable as a presentation slide deck with one
+section per slide or slide group. Diagrams are simplified for projection.
+Suitable for architecture review boards and stakeholder briefings.'''@en ;
+.
+
+:DashboardFormat
+    a               arch:PresentationFormat ;
+    skos:prefLabel  "Interactive Dashboard"@en ;
+    skos:definition '''Renders the deliverable as an interactive web dashboard with
+filterable views, drill-down navigation, and live data from the knowledge
+graph. Suitable for continuous architecture monitoring and portfolio management.'''@en ;
+.

@@ -1,0 +1,176 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix c4:      <https://meta.linked.archi/c4/onto#> .
+@prefix structurizr: <https://meta.linked.archi/c4/structurizr#> .
+@prefix :        <https://meta.linked.archi/c4/viewpoints#> .
+
+<https://meta.linked.archi/c4/viewpoints#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/c4/viewpoints#" ;
+    vann:preferredNamespacePrefix "c4vp" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi C4 Model Viewpoints"@en ;
+    dcterms:description                '''C4 model viewpoints corresponding to the four abstraction levels
+defined by Simon Brown. Each level zooms into the previous one, providing
+progressively more detail. The Deployment diagram is an additional
+cross-cutting viewpoint.'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-10-10"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/c4/viewpoints/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://c4model.com/> ;
+    prov:wasDerivedFrom <https://c4model.com/> ;
+    rdfs:seeAlso                  <https://c4model.com/> ;
+.
+
+
+#################################################################
+# Viewpoint Catalog
+#################################################################
+
+:ViewpointCatalog
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "C4 Model Viewpoint Catalog"@en ;
+    dcterms:description  '''The four C4 abstraction levels plus the Deployment diagram,
+as defined by Simon Brown at c4model.com.'''@en ;
+    skos:scopeNote   '''The C4 model defines a fixed set of four hierarchical abstraction
+levels (Context, Container, Component, Code) plus supplementary diagrams
+(Deployment, Dynamic, System Landscape). This is a notation-specific
+grouping — ArchiMate and TOGAF use different organizations.'''@en ;
+    skos:hasTopConcept :CoreLevels, :SupplementaryDiagrams ;
+.
+
+:CoreLevels
+    a skos:Concept ; skos:prefLabel "Core Levels"@en ;
+    skos:definition "The four hierarchical abstraction levels of the C4 model."@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+
+:SupplementaryDiagrams
+    a skos:Concept ; skos:prefLabel "Supplementary Diagrams"@en ;
+    skos:definition "Additional C4 diagrams that cut across the four core levels."@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+
+
+#################################################################
+# Core C4 Levels (Viewpoints)
+#################################################################
+
+:SystemContext
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "System Context Diagram (Level 1)"@en ;
+    skos:definition         '''The highest abstraction level. Shows the software system in
+scope and its relationships with users and other systems. Answers:
+"What is the system and who uses it?"'''@en ;
+    arch:includesConcept    c4:Person, c4:ExternalPerson, c4:SoftwareSystem, c4:ExternalSoftwareSystem ;
+    arch:viewpointHasPurpose archvp:Informing ;
+    arch:viewpointFramesConcern archvp:StructureConcern, archvp:StakeholderConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :CoreLevels ;
+.
+
+:ContainerDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Container Diagram (Level 2)"@en ;
+    skos:definition         '''Zooms into a single software system showing its containers
+(applications, services, databases) and their interactions. Answers:
+"What are the major technical building blocks and how do they communicate?"'''@en ;
+    arch:includesConcept    c4:Person, c4:ExternalPerson, c4:SoftwareSystem, c4:ExternalSoftwareSystem, c4:Container, c4:Database, c4:MobileApp, c4:ClientSideWebApp ;
+    arch:viewpointHasPurpose archvp:Designing, archvp:Informing ;
+    arch:viewpointFramesConcern archvp:StructureConcern, archvp:IntegrationConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :CoreLevels ;
+.
+
+:ComponentDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Component Diagram (Level 3)"@en ;
+    skos:definition         '''Zooms into a single container showing its internal components
+and their relationships. Answers: "What are the major structural
+building blocks inside this container?"'''@en ;
+    arch:includesConcept    c4:Container, c4:Database, c4:MobileApp, c4:ClientSideWebApp, c4:Component ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:StructureConcern, archvp:DependencyConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :CoreLevels ;
+.
+
+:CodeDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Code Diagram (Level 4)"@en ;
+    skos:definition         '''Zooms into a single component showing its internal structure
+at the code level (classes, interfaces, modules). Typically auto-generated
+from source code. Answers: "How is this component implemented?"'''@en ;
+    arch:includesConcept    c4:Component ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:StructureConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:scopeNote          "Often auto-generated from IDE or source code analysis tools."@en ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :CoreLevels ;
+.
+
+
+#################################################################
+# Supplementary Diagrams
+#################################################################
+
+:C4Deployment
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Deployment Diagram"@en ;
+    skos:definition         '''Shows how containers are mapped to infrastructure — servers,
+cloud services, containers, and their hosting relationships. Can be
+created for each environment (dev, staging, production).'''@en ;
+    arch:includesConcept    c4:Container, c4:Database, c4:MobileApp, c4:ClientSideWebApp, structurizr:DeploymentNode, structurizr:InfrastructureNode ;
+    arch:viewpointHasPurpose archvp:Designing, archvp:Informing ;
+    arch:viewpointFramesConcern archvp:DeploymentConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :SupplementaryDiagrams ;
+.
+
+:SystemLandscape
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "System Landscape Diagram"@en ;
+    skos:definition         '''Shows all software systems and people across the enterprise,
+not just a single system in scope. A "zoomed out" version of the
+System Context diagram.'''@en ;
+    arch:includesConcept    c4:Person, c4:ExternalPerson, c4:SoftwareSystem, c4:ExternalSoftwareSystem ;
+    arch:viewpointHasPurpose archvp:Informing ;
+    arch:viewpointFramesConcern archvp:StructureConcern, archvp:DependencyConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :SupplementaryDiagrams ;
+.
+
+:DynamicDiagram
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Dynamic Diagram"@en ;
+    skos:definition         '''Shows how elements collaborate at runtime for a specific
+use case or scenario — a sequence of interactions between
+containers or components.'''@en ;
+    arch:includesConcept    c4:Person, c4:ExternalPerson, c4:SoftwareSystem, c4:ExternalSoftwareSystem, c4:Container, c4:Database, c4:MobileApp, c4:ClientSideWebApp, c4:Component ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:BehaviorConcern, archvp:IntegrationConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:inScheme           :ViewpointCatalog ;
+    skos:broader            :SupplementaryDiagrams ;
+.

@@ -1,0 +1,131 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+
+@prefix c4:           <https://meta.linked.archi/c4/onto#> .
+@prefix structurizr:  <https://meta.linked.archi/c4/structurizr#> .
+@prefix :             <https://meta.linked.archi/c4/tax#> .
+
+
+<https://meta.linked.archi/c4/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "C4 Model Concept Scheme"@en ;
+    dcterms:description  "Classification of C4 model elements by abstraction level."@en ;
+    skos:hasTopConcept :C4Element, :C4Relationship ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/c4/tax#" ;
+    vann:preferredNamespacePrefix "c4tax" ;
+    dcterms:title                      "Linked.Archi C4 Model Taxonomy"@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en ;
+    dcterms:source  <https://c4model.com/> ;
+    prov:wasDerivedFrom <https://c4model.com/> ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+
+## Elements by abstraction level
+##
+## Each level concept carries skos:narrower to the ontology classes it groups, which is the
+## repo convention consumers query - .scripts/queries/palette-groups.rq reads
+## `?group skos:narrower ?class` and filters `?class a owl:Class`, so concept children and
+## class children coexist safely under it. This file previously stated the link only as
+## rdfs:seeAlso on the per-class concepts, which cannot be queried the same way: seeAlso
+## also holds c4model.com pages and JSON schema URLs, so a reader cannot tell a class from
+## further reading without guessing at namespaces.
+##
+## Deployment classes are structurizr:, not c4:. C4 itself does not standardise deployment
+## nodes - Structurizr adds them - and c4-onto.ttl declares no such class. The seeAlso
+## values here said c4:DeploymentNode and c4:InfrastructureNode, which resolve to nothing.
+
+:C4Element
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/c4/tax#> ;
+    skos:prefLabel "C4 Element"@en ;
+    skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+.
+
+:ContextLevel
+    a skos:Concept ; skos:broader :C4Element ;
+    skos:narrower c4:Person, c4:SoftwareSystem, c4:ExternalPerson, c4:ExternalSoftwareSystem ;
+    skos:prefLabel "Context Level (L1)"@en ;
+    skos:definition "Highest abstraction — people and software systems."@en ;
+    skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+.
+:PersonConcept       a skos:Concept ; skos:prefLabel "Person"@en ;
+    skos:broader :ContextLevel ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    rdfs:seeAlso c4:Person .
+:SoftwareSystemConcept a skos:Concept ; skos:prefLabel "Software System"@en ;
+    skos:broader :ContextLevel ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    rdfs:seeAlso c4:SoftwareSystem .
+:ExternalPersonConcept a skos:Concept ; skos:prefLabel "External Person"@en ;
+    skos:broader :ContextLevel ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    rdfs:seeAlso c4:ExternalPerson .
+:ExternalSoftwareSystemConcept a skos:Concept ; skos:prefLabel "External Software System"@en ;
+    skos:broader :ContextLevel ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    rdfs:seeAlso c4:ExternalSoftwareSystem .
+
+:ContainerLevel
+    a skos:Concept ; skos:broader :C4Element ;
+    skos:narrower c4:Container, c4:Database, c4:MobileApp, c4:ClientSideWebApp ;
+    skos:prefLabel "Container Level (L2)"@en ;
+    skos:definition "Applications, services, databases within a system."@en ;
+    skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+.
+:ContainerConcept    a skos:Concept ; skos:prefLabel "Container"@en ;
+    skos:broader :ContainerLevel ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    rdfs:seeAlso c4:Container .
+:DatabaseConcept     a skos:Concept ; skos:prefLabel "Database"@en ;
+    skos:broader :ContainerLevel ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    rdfs:seeAlso c4:Database .
+:MobileAppConcept    a skos:Concept ; skos:prefLabel "Mobile App"@en ;
+    skos:broader :ContainerLevel ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    rdfs:seeAlso c4:MobileApp .
+:ClientSideWebAppConcept a skos:Concept ; skos:prefLabel "Client-side Web Application"@en ;
+    skos:broader :ContainerLevel ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    rdfs:seeAlso c4:ClientSideWebApp .
+
+:ComponentLevel
+    a skos:Concept ; skos:broader :C4Element ;
+    skos:narrower c4:Component ;
+    skos:prefLabel "Component Level (L3)"@en ;
+    skos:definition "Code-level modules within a container."@en ;
+    skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+.
+:ComponentConcept    a skos:Concept ; skos:prefLabel "Component"@en ;
+    skos:broader :ComponentLevel ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    rdfs:seeAlso c4:Component .
+
+:InfrastructureLevel
+    a skos:Concept ; skos:broader :C4Element ;
+    skos:narrower structurizr:DeploymentNode, structurizr:InfrastructureNode ;
+    skos:prefLabel "Infrastructure"@en ;
+    skos:definition "Deployment nodes and infrastructure."@en ;
+    skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+.
+:DeploymentNodeConcept    a skos:Concept ; skos:prefLabel "Deployment Node"@en ;
+    skos:broader :InfrastructureLevel ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    rdfs:seeAlso structurizr:DeploymentNode .
+:InfrastructureNodeConcept a skos:Concept ; skos:prefLabel "Infrastructure Node"@en ;
+    skos:broader :InfrastructureLevel ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    rdfs:seeAlso structurizr:InfrastructureNode .
+
+## Relationships
+
+:C4Relationship
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/c4/tax#> ;
+    skos:prefLabel "C4 Relationship"@en ;
+    skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+.
+:UsingConcept        a skos:Concept ; skos:prefLabel "Uses"@en ;
+    skos:broader :C4Relationship ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    skos:narrower c4:Using .
+:ContainmentConcept  a skos:Concept ; skos:prefLabel "Containment"@en ;
+    skos:broader :C4Relationship ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    skos:narrower c4:ContainerContainment, c4:ComponentContainment .
+:DeploymentConcept   a skos:Concept ; skos:prefLabel "Deployment"@en ;
+    skos:broader :C4Relationship ; skos:inScheme <https://meta.linked.archi/c4/tax#> ;
+    skos:narrower structurizr:Deployment .

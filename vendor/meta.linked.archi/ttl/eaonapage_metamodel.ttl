@@ -1,0 +1,103 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix schema:  <http://schema.org/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix eaop:    <https://meta.linked.archi/eaonapage/onto#> .
+@prefix eaoptax: <https://meta.linked.archi/eaonapage/tax#> .
+@prefix eaopvp:  <https://meta.linked.archi/eaonapage/viewpoints#> .
+@prefix eaopdt:  <https://meta.linked.archi/eaonapage/deliverable-templates#> .
+@prefix :        <https://meta.linked.archi/eaonapage/metamodel#> .
+
+<https://meta.linked.archi/eaonapage/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/eaonapage/metamodel#" ;
+    vann:preferredNamespacePrefix "eaopmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EA on a Page Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for EA on a Page. Ties together the CSVLOD
+ontology, artifact taxonomy, classification dimension facets (nature, focus,
+scope, lifecycle, frequency), maturity model, governance classification,
+viewpoints, deliverable templates, and SHACL validation shapes into a single
+discoverable resource.'''@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-06-15"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/eaonapage/metamodel/0.3.0#> ;
+    owl:versionInfo               "0.3.0"@en ;
+    dcterms:source  <https://eaonapage.com/> ;
+.
+
+:EAOnAPageFramework
+    a               arch:Framework ;
+    skos:prefLabel  "EA on a Page"@en ;
+    skos:definition '''Enterprise Architecture on a Page — an evidence-based EA framework
+by Svyatoslav Kotusev that describes how EA practices actually work based on
+empirical research across 27+ organizations. Classifies EA artifacts into six
+types (CSVLOD) and EA processes into three core activities.'''@en ;
+    dcterms:publisher    "Svyatoslav Kotusev"@en ;
+    schema:creator  "Svyatoslav Kotusev" ;
+    dcterms:source  <https://eaonapage.com/>, eaop:Kotusev2021, eaop:Kotusev2024 ;
+    prov:wasDerivedFrom <https://eaonapage.com/>, eaop:Kotusev2021, eaop:Kotusev2024 ;
+    rdfs:seeAlso    <https://eaonapage.com/>,
+                    <http://kotusev.com/> ;
+.
+
+:EAOnAPage
+    a                             arch:Metamodel ;
+    skos:prefLabel                "EA on a Page Metamodel"@en ;
+    dcterms:description               '''The complete EA on a Page metamodel definition, aggregating the
+CSVLOD ontology (artifact types, processes, participants, governance model),
+the artifact taxonomy (24 specific artifacts classified by type and usage
+frequency), the maturity model (Stage Zero through Stage Three), the governance
+classification (architecture tiers, governance bodies, activities), viewpoints,
+deliverable templates, and SHACL validation shapes.'''@en ;
+
+    ## Foundation
+    arch:basedOnFramework         :EAOnAPageFramework ;
+
+    ## Model concepts — artifact types, processes, participants, governance
+    ## File: eaonapage-onto.ttl
+    arch:modelConcepts            <https://meta.linked.archi/eaonapage/onto#> ;
+
+    ## Concept classification — unified SKOS taxonomy: 24 artifacts, maturity
+    ## stages, governance model, and classification dimensions
+    ## File: eaonapage-tax.ttl
+    arch:conceptClassification    <https://meta.linked.archi/eaonapage/tax#>,
+                                  <https://meta.linked.archi/arch-processes/tax#> ;
+    arch:paletteGrouping          <https://meta.linked.archi/eaonapage/tax#PaletteGrouping> ;
+
+    ## Viewpoints — viewpoint individuals and their properties
+    ## File: eaonapage-viewpoints.ttl
+    arch:architectureViewpoints   <https://meta.linked.archi/eaonapage/viewpoints#> ;
+
+    ## Viewpoint library — SKOS scheme grouping viewpoints
+    ## File: eaonapage-viewpoints.ttl
+    arch:viewpointLibrary         eaopvp:ViewpointCatalog ;
+
+    ## Deliverable templates
+    ## File: eaonapage-deliverable-templates.ttl
+    arch:hasDeliverableTemplate   eaopdt:ArchitectureStrategy,
+                                  eaopdt:TechnologyStrategy,
+                                  eaopdt:TechnologyReferenceModelDocument,
+                                  eaopdt:SolutionBrief,
+                                  eaopdt:SolutionOverviewDocument,
+                                  eaopdt:SolutionDesignDocument,
+                                  eaopdt:ArchitecturePrinciplesDocument,
+                                  eaopdt:RoadmapDocument ;
+
+    ## Formal rules — SHACL shapes for artifact validation
+    ## File: eaonapage-shapes.ttl
+    arch:formalRules              <https://meta.linked.archi/eaonapage/shapes#> ;
+.
+

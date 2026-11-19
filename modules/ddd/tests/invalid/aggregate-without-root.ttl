@@ -1,0 +1,15 @@
+# expect: must have exactly one root entity
+# aggregate with an ordinary containment but no root
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix ddd:   <https://aisep.example/ont/ddd#> .
+@prefix :      <https://aisep.example/model/ddd-aggregate-without-root/> .
+
+:model a arch:Model ; skos:prefLabel "DDD 非法样例"@zh .
+:upBC a ddd:BoundedContext ; arch:inModel :model ; skos:prefLabel "上游上下文"@zh .
+:downBC a ddd:BoundedContext ; arch:inModel :model ; skos:prefLabel "下游上下文"@zh .
+:agg a ddd:Aggregate ; arch:inModel :model ; skos:prefLabel "聚合"@zh .
+:root a ddd:Entity ; arch:inModel :model ; skos:prefLabel "根实体"@zh .
+:rel-own a ddd:Ownership ; arch:inModel :model ; arch:source :upBC ; arch:target :agg .
+:rel-c a ddd:Containment ; arch:inModel :model ; arch:source :agg ; arch:target :root .

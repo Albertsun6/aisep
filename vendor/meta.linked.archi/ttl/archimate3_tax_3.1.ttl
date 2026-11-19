@@ -1,0 +1,393 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+@prefix iso-thes: <http://purl.org/iso25964/skos-thes#> .
+
+@prefix amate:    <https://meta.linked.archi/archimate3/onto#> .
+@prefix :         <https://meta.linked.archi/archimate3/tax/3.1#> .
+
+
+<https://meta.linked.archi/archimate3/tax/3.1#>
+    a                             skos:ConceptScheme ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate3/tax/3.1#" ;
+    vann:preferredNamespacePrefix "amtax31" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ArchiMate 3.1 Taxonomy"@en ;
+    dcterms:description                '''SKOS taxonomy classifying ArchiMate 3.1 elements by layer and aspect,
+and relationship types by category. Adds ValueStream to the Strategy layer (introduced in 3.1).'''@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2020-07-27"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionInfo               "3.1"@en ;
+    owl:priorVersion              <https://meta.linked.archi/archimate3/tax/3.0#> ;
+    skos:prefLabel                "ArchiMate 3.1 Concept Scheme"@en ;
+    skos:hasTopConcept            :ArchimateConcept ;
+.
+
+#################################################################
+# Top-level concepts
+#################################################################
+
+:ArchimateConcept a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Archimate Concept"@en ;
+.
+
+:ArchimateElement a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "ArchimateElement"@en ;
+    skos:broader   :ArchimateConcept ;
+.
+
+:ArchimateRelationship a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "ArchimateRelationship"@en ;
+    skos:broader   :ArchimateConcept ;
+.
+
+#################################################################
+# Relationship categories
+#################################################################
+
+:StructuralRelationship a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Structural Relationship"@en ;
+    skos:broader   :ArchimateRelationship ;
+    skos:narrower  amate:Realization ;
+    skos:narrower  amate:Assignment ;
+    skos:narrower  amate:Aggregation ;
+    skos:narrower  amate:Composition ;
+.
+
+:DependencyRelationship a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Dependency Relationship"@en ;
+    skos:broader   :ArchimateRelationship ;
+    skos:narrower  amate:Influence ;
+    skos:narrower  amate:Access ;
+    skos:narrower  amate:Serving ;
+.
+
+:DynamicRelationship a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Dynamic Relationship"@en ;
+    skos:broader   :ArchimateRelationship ;
+    skos:narrower  amate:Triggering ;
+    skos:narrower  amate:Flow ;
+.
+
+:OtherRelationship a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Other Relationship"@en ;
+    skos:broader   :ArchimateRelationship ;
+    skos:narrower  amate:Specialization ;
+    skos:narrower  amate:Association ;
+.
+
+:ArchimateRelationshipConnector a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Relationship Connector"@en ;
+    skos:broader   :ArchimateConcept ;
+    skos:narrower  amate:Junction_And ;
+    skos:narrower  amate:Junction_Or ;
+.
+
+#################################################################
+# Classification by Layer
+#################################################################
+
+:ArchimateElementByLayer a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "ArchiMate Element by Layer"@en ;
+    skos:broader   :ArchimateElement ;
+.
+
+:LayerOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    skos:prefLabel         "Layers in Order"@en ;
+    skos:definition        "The layers of ArchiMate 3.1 in order: business, application, technology, physical, strategy, and implementation and migration."@en ;
+    skos:scopeNote         "Linked.Archi modelling guidance, not the specification. A tool that lists the layers, as a palette lists its sections, lists them in this order."@en ;
+    skos:editorialNote     '''An ISO 25964 thesaurus array (http://purl.org/iso25964/skos-thes#): the order of the
+layers, kept apart from their classification.
+• A collection is not a concept. A skos:Collection or skos:OrderedCollection groups concepts and can put them in
+  order, but it has no place in the concept hierarchy: it takes no skos:broader, is no top concept of a scheme,
+  and SKOS has no property that says whose narrower concepts it lists.
+• The array gives it that place. iso-thes:ThesaurusArray, a kind of skos:Collection, is a group of sibling
+  concepts, and iso-thes:superOrdinate attaches it under the concept they are narrower than, here :ArchimateElementByLayer.
+• Each keeps one job. The classification stays in skos:broader, each layer narrower than :ArchimateElementByLayer, and
+  holds for a tool that never reads this array. The array adds only the order, in skos:memberList:
+  iso-thes:ThesaurusArray is unordered, so the order comes from skos:OrderedCollection.
+• The two stay in step. The array lists each concept narrower than :ArchimateElementByLayer once and nothing else; the CI
+  run checks it.'''@en ;
+    iso-thes:superOrdinate :ArchimateElementByLayer ;
+    skos:memberList        ( :BusinessLayer :ApplicationLayer :TechnologyLayer :PhysicalLayer
+                             :StrategyLayer :ImplementationAndMigrationLayer ) ;
+.
+
+:StrategyLayer a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Strategy Layer"@en ;
+    skos:broader   :ArchimateElementByLayer ;
+    skos:narrower  amate:Resource ;
+    skos:narrower  amate:Capability ;
+    skos:narrower  amate:ValueStream ;
+    skos:narrower  amate:CourseOfAction ;
+.
+
+:BusinessLayer a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Business Layer"@en ;
+    skos:broader   :ArchimateElementByLayer ;
+    skos:narrower  amate:BusinessActor ;
+    skos:narrower  amate:BusinessRole ;
+    skos:narrower  amate:BusinessCollaboration ;
+    skos:narrower  amate:BusinessInterface ;
+    skos:narrower  amate:BusinessProcess ;
+    skos:narrower  amate:BusinessFunction ;
+    skos:narrower  amate:BusinessInteraction ;
+    skos:narrower  amate:BusinessEvent ;
+    skos:narrower  amate:BusinessService ;
+    skos:narrower  amate:BusinessObject ;
+    skos:narrower  amate:Contract ;
+    skos:narrower  amate:Representation ;
+    skos:narrower  amate:Product ;
+.
+
+:ApplicationLayer a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Application Layer"@en ;
+    skos:broader   :ArchimateElementByLayer ;
+    skos:narrower  amate:ApplicationComponent ;
+    skos:narrower  amate:ApplicationCollaboration ;
+    skos:narrower  amate:ApplicationInterface ;
+    skos:narrower  amate:ApplicationFunction ;
+    skos:narrower  amate:ApplicationInteraction ;
+    skos:narrower  amate:ApplicationProcess ;
+    skos:narrower  amate:ApplicationEvent ;
+    skos:narrower  amate:ApplicationService ;
+    skos:narrower  amate:DataObject ;
+.
+
+:TechnologyLayer a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Technology Layer"@en ;
+    skos:broader   :ArchimateElementByLayer ;
+    skos:narrower  amate:Node ;
+    skos:narrower  amate:Device ;
+    skos:narrower  amate:SystemSoftware ;
+    skos:narrower  amate:TechnologyCollaboration ;
+    skos:narrower  amate:TechnologyInterface ;
+    skos:narrower  amate:Path ;
+    skos:narrower  amate:CommunicationNetwork ;
+    skos:narrower  amate:TechnologyFunction ;
+    skos:narrower  amate:TechnologyProcess ;
+    skos:narrower  amate:TechnologyInteraction ;
+    skos:narrower  amate:TechnologyEvent ;
+    skos:narrower  amate:TechnologyService ;
+    skos:narrower  amate:Artifact ;
+.
+
+:PhysicalLayer a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Physical Layer"@en ;
+    skos:broader   :ArchimateElementByLayer ;
+    skos:narrower  amate:Equipment ;
+    skos:narrower  amate:Facility ;
+    skos:narrower  amate:DistributionNetwork ;
+    skos:narrower  amate:Material ;
+.
+
+:ImplementationAndMigrationLayer a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Implementation and Migration Layer"@en ;
+    skos:broader   :ArchimateElementByLayer ;
+    skos:narrower  amate:WorkPackage ;
+    skos:narrower  amate:Deliverable ;
+    skos:narrower  amate:ImplementationEvent ;
+    skos:narrower  amate:Plateau ;
+    skos:narrower  amate:Gap ;
+.
+
+#################################################################
+# Classification by Aspect
+#################################################################
+
+:ArchimateElementByAspect a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "ArchiMate Element by Aspect"@en ;
+    skos:broader   :ArchimateElement ;
+.
+
+:AspectOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    skos:prefLabel         "Aspects in Order"@en ;
+    skos:definition        "The aspects of ArchiMate 3.1 in order: structure, behaviour, motivation and composite."@en ;
+    skos:scopeNote         "Linked.Archi modelling guidance, not the specification. A tool that lists the aspects, as a palette lists the element types of a section, lists them in this order."@en ;
+    skos:editorialNote     '''An ISO 25964 thesaurus array (http://purl.org/iso25964/skos-thes#): the order of the
+aspects, kept apart from their classification.
+• A collection is not a concept. A skos:Collection or skos:OrderedCollection groups concepts and can put them in
+  order, but it has no place in the concept hierarchy: it takes no skos:broader, is no top concept of a scheme,
+  and SKOS has no property that says whose narrower concepts it lists.
+• The array gives it that place. iso-thes:ThesaurusArray, a kind of skos:Collection, is a group of sibling
+  concepts, and iso-thes:superOrdinate attaches it under the concept they are narrower than, here :ArchimateElementByAspect.
+• Each keeps one job. The classification stays in skos:broader, each aspect narrower than :ArchimateElementByAspect, and
+  holds for a tool that never reads this array. The array adds only the order, in skos:memberList:
+  iso-thes:ThesaurusArray is unordered, so the order comes from skos:OrderedCollection.
+• The two stay in step. The array lists each concept narrower than :ArchimateElementByAspect once and nothing else; the CI
+  run checks it.'''@en ;
+    iso-thes:superOrdinate :ArchimateElementByAspect ;
+    skos:memberList        ( :StructureElement :BehaviorElement :MotivationElement :CompositeElement ) ;
+.
+
+:MotivationElement a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Motivation Element"@en ;
+    skos:broader   :ArchimateElementByAspect ;
+    skos:narrower  amate:Stakeholder ;
+    skos:narrower  amate:Driver ;
+    skos:narrower  amate:Assessment ;
+    skos:narrower  amate:Goal ;
+    skos:narrower  amate:Outcome ;
+    skos:narrower  amate:Principle ;
+    skos:narrower  amate:Requirement ;
+    skos:narrower  amate:Constraint ;
+    skos:narrower  amate:Meaning ;
+    skos:narrower  amate:Value ;
+.
+
+:StructureElement a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Structure Element"@en ;
+    skos:broader   :ArchimateElementByAspect ;
+    skos:narrower  amate:Resource ;
+.
+
+:ActiveStructureElement a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Active Structure Element"@en ;
+    skos:broader   :StructureElement ;
+    skos:narrower  amate:Stakeholder ;
+    skos:narrower  amate:Path ;
+    skos:narrower  amate:Location ;
+    skos:narrower  amate:CommunicationNetwork ;
+    skos:narrower  amate:Node ;
+    skos:narrower  amate:SystemSoftware ;
+    skos:narrower  amate:Device ;
+    skos:narrower  amate:Equipment ;
+    skos:narrower  amate:Facility ;
+    skos:narrower  amate:DistributionNetwork ;
+.
+
+:ExternalActiveStructureElement a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "External Active Structure Element"@en ;
+    skos:broader   :ActiveStructureElement ;
+    skos:narrower  amate:BusinessInterface ;
+    skos:narrower  amate:ApplicationInterface ;
+    skos:narrower  amate:InfrastructureInterface ;
+.
+
+:InternalActiveStructureElement a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Internal Active Structure Element"@en ;
+    skos:broader   :ActiveStructureElement ;
+    skos:narrower  amate:BusinessRole ;
+    skos:narrower  amate:BusinessActor ;
+    skos:narrower  amate:BusinessCollaboration ;
+    skos:narrower  amate:ApplicationComponent ;
+    skos:narrower  amate:ApplicationCollaboration ;
+.
+
+:PassiveStructureElement a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Passive Structure Element"@en ;
+    skos:broader   :StructureElement ;
+    skos:narrower  amate:BusinessObject ;
+    skos:narrower  amate:Contract ;
+    skos:narrower  amate:Representation ;
+    skos:narrower  amate:DataObject ;
+    skos:narrower  amate:Meaning ;
+    skos:narrower  amate:Artifact ;
+    skos:narrower  amate:Value ;
+    skos:narrower  amate:Material ;
+.
+
+:BehaviorElement a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Behavior Element"@en ;
+    skos:broader   :ArchimateElementByAspect ;
+    skos:narrower  amate:Capability ;
+    skos:narrower  amate:ValueStream ;
+    skos:narrower  amate:CourseOfAction ;
+.
+
+:ExternalBehaviorElement a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "External Behavior Element"@en ;
+    skos:broader   :BehaviorElement ;
+    skos:narrower  amate:BusinessService ;
+    skos:narrower  amate:ApplicationService ;
+    skos:narrower  amate:InfrastructureService ;
+.
+
+:InternalBehaviorElement a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Internal Behavior Element"@en ;
+    skos:broader   :BehaviorElement ;
+    skos:narrower  amate:BusinessFunction ;
+    skos:narrower  amate:BusinessInteraction ;
+    skos:narrower  amate:BusinessProcess ;
+    skos:narrower  amate:ApplicationFunction ;
+    skos:narrower  amate:ApplicationInteraction ;
+    skos:narrower  amate:ApplicationProcess ;
+    skos:narrower  amate:InfrastructureFunction ;
+.
+
+:Event a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Event"@en ;
+    skos:broader   :BehaviorElement ;
+    skos:narrower  amate:BusinessEvent ;
+    skos:narrower  amate:ApplicationEvent ;
+    skos:narrower  amate:TechnologyEvent ;
+.
+
+:CompositeElement a skos:Concept ;
+    skos:inScheme  <https://meta.linked.archi/archimate3/tax/3.1#> ;
+    skos:prefLabel "Composite Element"@en ;
+    skos:broader   :ArchimateElementByAspect ;
+    skos:narrower  amate:Product ;
+    skos:narrower  amate:Grouping ;
+    skos:narrower  amate:Location ;
+.
+
+#################################################################
+# Palette grouping and diagram group order
+#
+# Linked.Archi modelling guidance, not the specification: the
+# classification dimensions a palette groups element types by, and
+# the groups a diagram keeps in bands, top band first. A metamodel
+# manifest points to them (arch:paletteGrouping,
+# arch:diagramGroupOrder).
+#################################################################
+
+:PaletteGrouping
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Palette Grouping"@en ;
+    skos:definition "The classification dimensions a palette groups element types by: a section for each layer, in the order of :LayerOrder, its element types in the order of their aspects, :AspectOrder; motivation elements, grouping and location, of no layer, in the section of their aspect."@en ;
+    skos:memberList ( :ArchimateElementByLayer :ArchimateElementByAspect ) ;
+.
+
+:DiagramGroupOrder
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Diagram Group Order"@en ;
+    skos:definition "The groups a diagram keeps in bands, top band first: motivation, strategy, business, application, technology, physical, and implementation and migration."@en ;
+    skos:scopeNote  "Motivation is an aspect in ArchiMate 3.1, not a layer; its group is listed first so that motivation elements are drawn above the layers."@en ;
+    skos:memberList ( :MotivationElement :StrategyLayer :BusinessLayer :ApplicationLayer :TechnologyLayer
+                      :PhysicalLayer :ImplementationAndMigrationLayer ) ;
+.

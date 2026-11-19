@@ -1,0 +1,76 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix fina:    <https://meta.linked.archi/financial-architecture/onto#> .
+@prefix finatax: <https://meta.linked.archi/financial-architecture/tax#> .
+@prefix :        <https://meta.linked.archi/financial-architecture/metamodel#> .
+
+<https://meta.linked.archi/financial-architecture/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/financial-architecture/metamodel#" ;
+    vann:preferredNamespacePrefix "finamm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi Financial Architecture Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for the Financial Architecture extension.
+Ties together the financial architecture ontology, SKOS taxonomy, SHACL shapes,
+and reference data into a single discoverable resource.
+
+This is the entry point for tools that need to discover all resources that
+make up the Financial Architecture modeling vocabulary.
+
+Designed to compose with the TIME framework for cost-aware portfolio
+rationalization, and with the Architecture Decisions extension for
+cost-informed decision making.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/financial-architecture/metamodel/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    rdfs:seeAlso                  <https://www.finops.org/framework/>,
+                                  <https://www.iso.org/standard/55088.html> ;
+.
+
+
+#################################################################
+# Metamodel Instance
+#################################################################
+
+:FinancialArchitecture
+    a                             arch:Metamodel ;
+    skos:prefLabel                "Financial Architecture Metamodel"@en ;
+    dcterms:description               '''The Financial Architecture metamodel definition, aggregating the
+financial architecture ontology, SKOS taxonomy, SHACL shapes, and reference data.
+Designed to be composed with any other metamodel (ArchiMate, C4, Backstage) and
+with the TIME framework and Architecture Decisions extensions.
+
+Addresses the gap identified by Gartner 2025 Leadership Vision: EA teams lack
+financial acumen. Provides formal ontology resources for TCO modeling, investment
+case tracking, cost-benefit analysis, and FinOps cloud cost management.'''@en ;
+
+    ## Model concepts — financial architecture elements, properties, viewpoints
+    arch:modelConcepts            <https://meta.linked.archi/financial-architecture/onto#> ;
+
+    ## Concept classification — SKOS taxonomy
+    arch:conceptClassification    <https://meta.linked.archi/financial-architecture/tax#> ;
+
+    ## Formal rules — SHACL shapes for financial governance validation
+    arch:formalRules              <https://meta.linked.archi/financial-architecture/shapes#> ;
+
+    ## Reference data — cost categories, investment types, cost periods
+    arch:referenceData            <https://meta.linked.archi/financial-architecture/reference-data#> ;
+
+    ## Concerns identified by this metamodel
+    arch:metamodelIdentifiesConsideration
+        fina:TotalCostOfOwnershipConcern, fina:InvestmentPrioritizationConcern,
+        fina:TechnicalDebtVisibilityConcern, fina:CloudCostOptimizationConcern ;
+.

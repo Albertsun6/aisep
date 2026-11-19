@@ -1,0 +1,42 @@
+# modules: bpmn uml
+# Spec §7.1-§7.3 satisfied: BPMN flows stay inside BPMN (incl. a gateway), am4 relationships stay in the hub, and the
+# notations meet only through arch:Refines going up a level (BPMN design -> am4 hub, UML code -> am4 hub), one anchor each.
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix am4vp: <https://meta.linked.archi/archimate4/viewpoints#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:quoteApproval a am4:Process ; arch:inModel :t ; skos:prefLabel "报价审批"@zh .
+:quotation a am4:BusinessObject ; arch:inModel :t ; skos:prefLabel "报价单"@zh .
+:rel-quoteApproval-accesses-quotation a am4:Access ; arch:inModel :t ; arch:source :quoteApproval ; arch:target :quotation .
+
+:proc a bpmn:Process ; arch:inModel :t ; skos:prefLabel "报价审批流程"@zh ;
+    bpmn:processType "Private" ; bpmn:isExecutable false ;
+    bpmn:flowElements :start , :review , :gw , :approve , :reject , :end , :sf1 , :sf2 , :sf3 , :sf4 , :sf5 , :sf6 .
+:start a bpmn:StartEvent ; arch:inModel :t ; skos:prefLabel "收到报价"@zh ; bpmn:isInterrupting true .
+:review a bpmn:UserTask ; arch:inModel :t ; skos:prefLabel "审核报价"@zh .
+:gw a bpmn:ExclusiveGateway ; arch:inModel :t ; bpmn:gatewayDirection "Diverging" ; bpmn:default :sf4 .
+:approve a bpmn:UserTask ; arch:inModel :t ; skos:prefLabel "批准报价"@zh .
+:reject a bpmn:UserTask ; arch:inModel :t ; skos:prefLabel "驳回报价"@zh .
+:end a bpmn:EndEvent ; arch:inModel :t ; skos:prefLabel "审批结束"@zh .
+:sf1 a bpmn:SequenceFlow ; arch:inModel :t ; arch:source :start   ; arch:target :review .
+:sf2 a bpmn:SequenceFlow ; arch:inModel :t ; arch:source :review  ; arch:target :gw .
+:sf3 a bpmn:SequenceFlow ; arch:inModel :t ; arch:source :gw      ; arch:target :approve .
+:sf4 a bpmn:SequenceFlow ; arch:inModel :t ; arch:source :gw      ; arch:target :reject .
+:sf5 a bpmn:SequenceFlow ; arch:inModel :t ; arch:source :approve ; arch:target :end .
+:sf6 a bpmn:SequenceFlow ; arch:inModel :t ; arch:source :reject  ; arch:target :end .
+:rel-proc-refines-quoteApproval a arch:Refines ; arch:inModel :t ; arch:source :proc ; arch:target :quoteApproval .
+
+:QuotationClass a uml:Class ; arch:inModel :t ; skos:prefLabel "报价单类"@zh .
+:rel-QuotationClass-refines-quotation a arch:Refines ; arch:inModel :t ; arch:source :QuotationClass ; arch:target :quotation .

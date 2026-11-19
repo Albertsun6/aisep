@@ -1,0 +1,98 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix togaf:   <https://meta.linked.archi/togaf9/onto#> .
+@prefix :        <https://meta.linked.archi/togaf9/tax#> .
+
+
+<https://meta.linked.archi/togaf9/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "TOGAF Content Metamodel Taxonomy"@en ;
+    dcterms:description  "Classification of TOGAF entities by architecture domain."@en ;
+    skos:hasTopConcept :ByDomain, :ByADMPhase ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/togaf9/tax#" ;
+    vann:preferredNamespacePrefix "togaf9tax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi TOGAF 9.2 Taxonomy"@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-04-24"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "9.2"@en ;
+    dcterms:source  <https://pubs.opengroup.org/togaf-standard/> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/togaf-standard/> .
+
+
+## ── By Domain ────────────────────────────────────────────────
+
+:ByDomain a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/togaf9/tax#> ;
+    skos:prefLabel "Entity by Domain"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .
+
+:PrinciplesVisionRequirements a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Principles, Vision & Requirements"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> ;
+    rdfs:seeAlso togaf:MotivationElement ;
+    skos:narrower togaf:Principle, togaf:Vision, togaf:Requirement, togaf:Constraint,
+                  togaf:Assumption, togaf:Gap, togaf:Driver, togaf:Goal, togaf:Objective,
+                  togaf:Measure .
+
+:BusinessDomain a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Business Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> ;
+    rdfs:seeAlso togaf:BusinessArchitectureElement ;
+    skos:narrower togaf:Organization, togaf:Actor, togaf:Role, togaf:BusinessService,
+                 togaf:BusinessFunction, togaf:BusinessProcess, togaf:BusinessEvent,
+                 togaf:Product, togaf:Contract, togaf:Location .
+
+:DataDomain a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Data Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> ;
+    rdfs:seeAlso togaf:DataArchitectureElement ;
+    skos:narrower togaf:DataEntity, togaf:LogicalDataComponent, togaf:PhysicalDataComponent .
+
+:ApplicationDomain a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Application Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> ;
+    rdfs:seeAlso togaf:ApplicationArchitectureElement ;
+    skos:narrower togaf:LogicalApplicationComponent, togaf:PhysicalApplicationComponent,
+                 togaf:InformationSystemService, togaf:ApplicationInterface .
+
+:TechnologyDomain a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Technology Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> ;
+    rdfs:seeAlso togaf:TechnologyArchitectureElement ;
+    skos:narrower togaf:LogicalTechnologyComponent, togaf:PhysicalTechnologyComponent,
+                 togaf:TechnologyService, togaf:TechnologyInterface, togaf:Platform .
+
+:ImplementationDomain a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Implementation & Migration"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> ;
+    rdfs:seeAlso togaf:ImplementationElement ;
+    skos:narrower togaf:WorkPackage, togaf:Deliverable, togaf:Plateau, togaf:Capability .
+
+## ── By ADM Phase ─────────────────────────────────────────────
+
+:ByADMPhase a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/togaf9/tax#> ;
+    skos:prefLabel "Entity by ADM Phase"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .
+
+:PreliminaryPhase a skos:Concept ; skos:broader :ByADMPhase ;
+    skos:prefLabel "Preliminary"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .
+:PhaseA a skos:Concept ; skos:broader :ByADMPhase ;
+    skos:prefLabel "Phase A: Architecture Vision"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .
+:PhaseB a skos:Concept ; skos:broader :ByADMPhase ;
+    skos:prefLabel "Phase B: Business Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .
+:PhaseCData a skos:Concept ; skos:broader :ByADMPhase ;
+    skos:prefLabel "Phase C: Data Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .
+:PhaseCApp a skos:Concept ; skos:broader :ByADMPhase ;
+    skos:prefLabel "Phase C: Application Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .
+:PhaseD a skos:Concept ; skos:broader :ByADMPhase ;
+    skos:prefLabel "Phase D: Technology Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .
+:PhaseE a skos:Concept ; skos:broader :ByADMPhase ;
+    skos:prefLabel "Phase E: Opportunities & Solutions"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .
+:PhaseF a skos:Concept ; skos:broader :ByADMPhase ;
+    skos:prefLabel "Phase F: Migration Planning"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .
+:PhaseG a skos:Concept ; skos:broader :ByADMPhase ;
+    skos:prefLabel "Phase G: Implementation Governance"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .
+:PhaseH a skos:Concept ; skos:broader :ByADMPhase ;
+    skos:prefLabel "Phase H: Architecture Change Management"@en ; skos:inScheme <https://meta.linked.archi/togaf9/tax#> .

@@ -1,0 +1,172 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix archvis: <https://meta.linked.archi/core-vis#> .
+@prefix infra: <https://meta.linked.archi/bpmn/infra#> .
+@prefix :      <https://meta.linked.archi/bpmn/infra#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix bpmndi: <https://meta.linked.archi/bpmn/di#> .
+@prefix di: <https://meta.linked.archi/bpmn/di-core#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+
+
+<https://meta.linked.archi/bpmn/infra#>
+    a owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn/infra#" ;
+    vann:preferredNamespacePrefix "infra" ;
+    dcterms:title "Linked.Archi BPMN Infrastructure Ontology"@en ;
+    dcterms:description               '''OWL mapping of the BPMN 2.0.2 infrastructure package (Definitions, Import).'''@en ;
+    dcterms:issued "2026-01-27"^^xsd:date ;
+    dcterms:modified              "2026-05-06"^^xsd:date ;
+    dcterms:publisher                 "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source <https://www.omg.org/spec/BPMN/2.0.2/About-BPMN/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/BPMN/2.0.2/About-BPMN/> ;
+    rdfs:seeAlso <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    dcterms:references <https://www.omg.org/spec/BPMN/2.0.2/PDF> ;
+    rdfs:comment """Validated against:
+  • Infrastructure.cmof — Definitions (extends BaseElement), Import
+Source: BPMN 2.0.2 (OMG formal/13-12-09), https://www.omg.org/spec/BPMN/20100502/Infrastructure.cmof"""@en ;
+    owl:imports <https://meta.linked.archi/core-vis#> ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    owl:versionInfo "2.0.2"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+infra:Definitions a owl:Class ;
+    skos:prefLabel "Definitions"@en ;
+    skos:definition "The top-level container for BPMN model elements, diagrams, imports, and extensions."@en ;
+    rdfs:subClassOf bpmn:BaseElement ;
+    rdfs:seeAlso <https://www.omg.org/spec/BPMN/2.0.2/> ;
+.
+
+infra:Import a owl:Class ;
+    skos:prefLabel "Import"@en ;
+    skos:definition "An Import identifies an external resource (schema, process, etc.) used by the Definitions."@en ;
+    skos:scopeNote '''How one BPMN model spans several files (BPMN 2.0.2 §15.3.1–15.3.2). Each file
+declares a targetNamespace and imports, by namespace, every file whose elements it uses. A reference
+typed xsd:QName then names an element of an imported file by a prefix bound to that namespace and the
+element's id: processRef="fulfil:Process_Fulfilment". A reference typed xsd:IDREF — a sequence
+flow's sourceRef, a lane's flowNodeRef — can only name an element of its own file.'''@en ;
+    skos:editorialNote '''CONVERTER CONTRACT — a reference into an imported file is a link, not a defect.
+
+  1. Emit it as the IRI of the imported namespace joined to the id: the namespace, then "#" unless it
+     already ends in "#" or "/", then the id. A namespace that is not an absolute IRI is resolved
+     against the conversion's base IRI.
+       <https://example.org/bpmn/order-fulfilment#Process_Fulfilment>
+  2. Do not check it, drop it or describe its target: what it names is the other file's to state, and
+     whether it conforms is for the join to decide.
+  3. Record the import (infra:imports, infra:namespace, infra:location) and the file's own
+     infra:targetNamespace, which is what a join matches the link against.
+  4. Where the run converts the imported file too, replace the link with that element's IRI.
+
+An xsd:IDREF reference, and a QName whose prefix no Import declares, are checked as references within
+the file.'''@en ;
+    rdfs:seeAlso <https://www.omg.org/spec/BPMN/2.0.2/> ;
+.
+
+infra:diagrams a owl:ObjectProperty ;
+    skos:prefLabel "diagrams"@en ;
+    skos:definition "The BPMN diagrams contained in a Definitions element."@en ;
+    rdfs:domain infra:Definitions ;
+.
+
+infra:exporter a owl:DatatypeProperty ;
+    skos:prefLabel "exporter"@en ;
+    skos:definition "The name of the tool that exported the BPMN model."@en ;
+    rdfs:domain infra:Definitions ;
+    rdfs:range xsd:string ;
+.
+
+infra:exporterVersion a owl:DatatypeProperty ;
+    skos:prefLabel "exporterVersion"@en ;
+    skos:definition "The version of the tool that exported the BPMN model."@en ;
+    rdfs:domain infra:Definitions ;
+    rdfs:range xsd:string ;
+.
+
+infra:expressionLanguage a owl:DatatypeProperty ;
+    skos:prefLabel "expressionLanguage"@en ;
+    skos:definition "The default expression language for the Definitions (default: XPath)."@en ;
+    rdfs:domain infra:Definitions ;
+    rdfs:range xsd:anyURI ;
+.
+
+infra:extensions a owl:ObjectProperty ;
+    skos:prefLabel "extensions"@en ;
+    skos:definition "The extensions contained in a Definitions element."@en ;
+    rdfs:domain infra:Definitions ;
+.
+
+infra:importType a owl:DatatypeProperty ;
+    skos:prefLabel "importType"@en ;
+    skos:definition "The type of the imported resource (e.g., XML Schema, WSDL, BPMN)."@en ;
+    rdfs:domain infra:Import ;
+    rdfs:range xsd:anyURI ;
+.
+
+infra:imports a owl:ObjectProperty ;
+    skos:prefLabel "imports"@en ;
+    skos:definition "The imports of external resources in a Definitions element."@en ;
+    rdfs:domain infra:Definitions ;
+    rdfs:range infra:Import ;
+.
+
+infra:location a owl:DatatypeProperty ;
+    skos:prefLabel "location"@en ;
+    skos:definition "The location URI of the imported resource."@en ;
+    rdfs:domain infra:Import ;
+    rdfs:range xsd:string ;
+.
+
+infra:name a owl:DatatypeProperty ;
+    skos:prefLabel "name"@en ;
+    skos:definition "The name of the Definitions element."@en ;
+    rdfs:domain infra:Definitions ;
+    rdfs:range xsd:string ;
+.
+
+infra:namespace a owl:DatatypeProperty ;
+    skos:prefLabel "namespace"@en ;
+    skos:definition "The namespace URI of the imported resource."@en ;
+    rdfs:domain infra:Import ;
+    rdfs:range xsd:anyURI ;
+.
+
+infra:relationships a owl:ObjectProperty ;
+    skos:prefLabel "relationships"@en ;
+    skos:definition "The relationships contained in a Definitions element."@en ;
+    rdfs:domain infra:Definitions ;
+.
+
+infra:rootElements a owl:ObjectProperty ;
+    skos:prefLabel "rootElements"@en ;
+    skos:definition "The root elements (processes, collaborations, etc.) in a Definitions element."@en ;
+    rdfs:domain infra:Definitions ;
+.
+
+infra:targetNamespace a owl:DatatypeProperty ;
+    skos:prefLabel "targetNamespace"@en ;
+    skos:definition "The target namespace URI of the Definitions element."@en ;
+    skos:scopeNote '''The namespace another file imports this one by, and names its elements under: a
+link to one of this file's elements from another file's conversion is this namespace joined to the
+element's id — see infra:Import. Files of one model may share a namespace or not.'''@en ;
+    rdfs:domain infra:Definitions ;
+    rdfs:range xsd:anyURI ;
+.
+
+infra:typeLanguage a owl:DatatypeProperty ;
+    skos:prefLabel "typeLanguage"@en ;
+    skos:definition "The default type language for the Definitions (default: XML Schema)."@en ;
+    rdfs:domain infra:Definitions ;
+    rdfs:range xsd:anyURI ;
+.

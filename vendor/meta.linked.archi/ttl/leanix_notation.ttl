@@ -1,0 +1,751 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix arch-vis: <https://meta.linked.archi/core-vis#> .
+@prefix lmm:      <https://meta.linked.archi/leanix/onto#> .
+@prefix :         <https://meta.linked.archi/leanix/notation#> .
+
+<https://meta.linked.archi/leanix/notation#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/core-vis#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/leanix/notation#" ;
+    vann:preferredNamespacePrefix "lmmnot" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi LeanIX Visual Notation Set"@en ;
+    dcterms:description           "Visual notation descriptors for LeanIX Meta Model v4 fact sheet types."@en ;
+    dcterms:created               "2026-06-05"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionInfo               "0.2.0"@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    prov:wasDerivedFrom <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    rdfs:seeAlso    <https://help.sap.com/docs/leanix/ea/meta-model>,
+                    <https://help.sap.com/docs/leanix/ea/fact-sheets>,
+                    <https://help.sap.com/docs/leanix/ea/general-modeling-guidelines> ;
+    skos:editorialNote '''SAP LeanIX does not publish a formal visual notation specification.
+Colours in this notation set follow a layer convention: indigo for Strategy &
+Transformation, yellow for Business Architecture, green for Application & Data,
+and blue for Technical Architecture — inspired by the LeanIX UI colour palette.
+Fact sheet types follow the Meta Model v4 documentation.'''@en .
+
+
+#################################################################
+# Notation Set
+#################################################################
+
+:LeanIXStandardNotation
+    a               arch-vis:NotationSet ;
+    skos:prefLabel  "LeanIX Standard Notation"@en ;
+    skos:definition "Standard visual notation for LeanIX Meta Model v4 fact sheet types."@en .
+
+
+#################################################################
+# Strategy & Transformation Layer
+#################################################################
+
+:ObjectiveNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Objective ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Octagon ;
+        arch-vis:fillColor     "#E8EAF6" ;
+        arch-vis:lineColor     "#283593" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/objective.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:PlatformNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Platform ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8EAF6" ;
+        arch-vis:lineColor     "#283593" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/platform.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "140.0"^^xsd:double ;
+        arch-vis:defaultHeight "60.0"^^xsd:double ;
+    ] .
+
+:InitiativeNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Initiative ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8EAF6" ;
+        arch-vis:lineColor     "#283593" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/initiative.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+
+#################################################################
+# Business Architecture Layer
+#################################################################
+
+:BusinessCapabilityNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:BusinessCapability ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/business-capability.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "130.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:OrganizationNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Organization ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/organization.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:BusinessContextNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:BusinessContext ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/business-context.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+
+#################################################################
+# Application & Data Layer
+#################################################################
+
+:ApplicationNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Application ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#2E7D32" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/application.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:InterfaceNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Interface ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#2E7D32" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/interface.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:DataObjectNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:DataObject ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#2E7D32" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/data-object.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+
+#################################################################
+# Technical Architecture Layer
+#################################################################
+
+:ITComponentNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:ITComponent ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E3F2FD" ;
+        arch-vis:lineColor     "#1565C0" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/it-component.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:TechCategoryNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:TechCategory ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E3F2FD" ;
+        arch-vis:lineColor     "#1565C0" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/tech-category.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+
+:ProviderNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Provider ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#ECEFF1" ;
+        arch-vis:lineColor     "#37474F" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/provider.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:AIAgentNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:AIAgent ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#2E7D32" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/application.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:BusinessApplicationNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:BusinessApplication ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#2E7D32" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/application.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:ExtensionNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Extension ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#2E7D32" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/application.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:MicroserviceNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Microservice ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#2E7D32" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/application.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:CustomerJourneyNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:CustomerJourney ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/business-context.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:ESGCapabilityNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:ESGCapability ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/business-context.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:ProcessNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Process ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/business-context.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:ProductNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Product ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/business-context.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:ValueStreamNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:ValueStream ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/business-context.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:AIModelNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:AIModel ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E3F2FD" ;
+        arch-vis:lineColor     "#1565C0" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/it-component.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:HardwareNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Hardware ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E3F2FD" ;
+        arch-vis:lineColor     "#1565C0" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/it-component.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:IaaSNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:IaaS ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E3F2FD" ;
+        arch-vis:lineColor     "#1565C0" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/it-component.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:PaaSNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:PaaS ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E3F2FD" ;
+        arch-vis:lineColor     "#1565C0" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/it-component.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:SaaSNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:SaaS ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E3F2FD" ;
+        arch-vis:lineColor     "#1565C0" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/it-component.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:ServiceNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Service ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E3F2FD" ;
+        arch-vis:lineColor     "#1565C0" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/it-component.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:SoftwareNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Software ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:Rectangle ;
+        arch-vis:fillColor     "#E3F2FD" ;
+        arch-vis:lineColor     "#1565C0" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/it-component.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:EpicNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Epic ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8EAF6" ;
+        arch-vis:lineColor     "#283593" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/initiative.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:IdeaNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Idea ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8EAF6" ;
+        arch-vis:lineColor     "#283593" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/initiative.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:ProgramNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Program ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8EAF6" ;
+        arch-vis:lineColor     "#283593" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/initiative.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:ProjectNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Project ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8EAF6" ;
+        arch-vis:lineColor     "#283593" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/initiative.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:APINotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:API ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#2E7D32" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/interface.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:LogicalInterfaceNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:LogicalInterface ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#2E7D32" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/interface.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:MCPServerNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:MCPServer ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#E8F5E9" ;
+        arch-vis:lineColor     "#2E7D32" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/interface.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:BusinessUnitNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:BusinessUnit ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/organization.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:CustomerNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Customer ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/organization.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:LegalEntityNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:LegalEntity ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/organization.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:RegionNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Region ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/organization.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:TeamNotation
+    a                    arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Team ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#FFF9C4" ;
+        arch-vis:lineColor     "#F57F17" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/leanix/icons/glyphs/organization.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:SystemNotation
+    a arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:System ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    skos:prefLabel "System notation"@en ;
+    arch-vis:defaultStyle [
+        a arch-vis:Style ;
+        arch-vis:shapeType arch-vis:RoundedRectangle ;
+        arch-vis:fillColor "#E3F2FD" ;
+        arch-vis:lineColor "#1565C0" ;
+        arch-vis:defaultWidth "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:DataProductNotation
+    a arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:DataProduct ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    skos:prefLabel "Data Product notation"@en ;
+    arch-vis:defaultStyle [
+        a arch-vis:Style ;
+        arch-vis:shapeType arch-vis:RoundedRectangle ;
+        arch-vis:fillColor "#E8F5E9" ;
+        arch-vis:lineColor "#2E7D32" ;
+        arch-vis:defaultWidth "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:ContractNotation
+    a arch-vis:VisualNotation ;
+    arch-vis:notationFor lmm:Contract ;
+    arch-vis:inNotationSet :LeanIXStandardNotation ;
+    skos:prefLabel "Contract notation"@en ;
+    arch-vis:defaultStyle [
+        a arch-vis:Style ;
+        arch-vis:shapeType arch-vis:RoundedRectangle ;
+        arch-vis:fillColor "#E8F5E9" ;
+        arch-vis:lineColor "#2E7D32" ;
+        arch-vis:defaultWidth "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .

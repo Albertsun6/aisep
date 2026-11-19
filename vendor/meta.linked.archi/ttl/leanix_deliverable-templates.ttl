@@ -1,0 +1,210 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix lmmvp:   <https://meta.linked.archi/leanix/viewpoints#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix archdt:  <https://meta.linked.archi/core-deliverable-templates#> .
+@prefix lmm:     <https://meta.linked.archi/leanix/onto#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix :        <https://meta.linked.archi/leanix/deliverable-templates#> .
+
+#################################################################
+# LeanIX Deliverable Templates
+#################################################################
+
+:ApplicationPortfolioReport
+    a                       arch:DeliverableTemplate ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/leanix/deliverable-templates#" ;
+    vann:preferredNamespacePrefix "leanixdt" ;
+    dcterms:title                 "Linked.Archi LeanIX Deliverable Templates"@en ;
+    owl:versionInfo               "0.1.0"@en ;
+    skos:prefLabel          "Application Portfolio Report"@en ;
+    dcterms:description          "Deliverable template definitions for generating architecture documents from LeanIX models."@en ;
+    dcterms:creator         "Kalin Maldzhanski"^^xsd:string ;
+    skos:definition         '''A LeanIX-based application portfolio report covering the application
+landscape, technology dependencies, and interface analysis. Suitable for
+portfolio rationalization, technology lifecycle reviews, and integration planning.'''@en ;
+    arch:templateResource   "templates/application-portfolio-report.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        lmmvp:ApplicationPortfolio, lmmvp:TechnologyLandscape, lmmvp:InterfaceMap ;
+    arch:templateHasSection :APR-S1, :APR-S2, :APR-S3 ;
+    arch:templateTargetsPurpose archvp:Deciding, archvp:Informing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:HTMLFormat, archdt:PDFFormat ;
+.
+
+:APR-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint lmmvp:ApplicationPortfolio ;
+    arch:sectionResultKey "applicationPortfolio" ;
+    skos:prefLabel "1. Application Portfolio"@en ;
+    skos:definition "Catalog of applications with business capability alignment and ownership."@en ;
+    arch:sectionQuery """
+PREFIX lmm:  <https://meta.linked.archi/leanix/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description ?capability ?organization WHERE {
+    ?element a ?type ;
+             skos:prefLabel ?label .
+    VALUES ?type { lmm:Application lmm:BusinessApplication lmm:Microservice lmm:AIAgent lmm:Extension }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element lmm:supports ?cap .
+        ?cap skos:prefLabel ?capability .
+        FILTER(lang(?capability) = "en")
+    }
+    OPTIONAL {
+        ## lmm:uses runs Organization -> Application, not the reverse
+        ?org lmm:uses ?element .
+        ?org skos:prefLabel ?organization .
+        FILTER(lang(?organization) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+:APR-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint lmmvp:TechnologyLandscape ;
+    arch:sectionResultKey "technologyLandscape" ;
+    skos:prefLabel "2. Technology Landscape"@en ;
+    skos:definition "IT components, technology categories, platforms, and providers."@en ;
+    arch:sectionQuery """
+PREFIX lmm:  <https://meta.linked.archi/leanix/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?element ?label ?type ?description ?category ?provider WHERE {
+    ?element a ?type ;
+             skos:prefLabel ?label .
+    VALUES ?type { lmm:ITComponent lmm:Platform lmm:TechCategory lmm:Provider }
+    OPTIONAL { ?element skos:definition ?description }
+    OPTIONAL {
+        ?element lmm:belongsTo ?cat .
+        ?cat skos:prefLabel ?category .
+        FILTER(lang(?category) = "en")
+    }
+    OPTIONAL {
+        ?prov lmm:offers ?element .
+        ?prov skos:prefLabel ?provider .
+        FILTER(lang(?provider) = "en")
+    }
+    FILTER(lang(?label) = "en")
+} ORDER BY ?type ?label
+"""^^xsd:string .
+
+:APR-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    arch:sectionViewpoint lmmvp:InterfaceMap ;
+    arch:sectionResultKey "interfaceMap" ;
+    skos:prefLabel "3. Interface Map"@en ;
+    skos:definition "Application interfaces and data object exchanges."@en ;
+    skos:editorialNote '''Provider and consumer are read from lmm:provides and
+lmm:consumes respectively. Data exchange is
+read from the interface itself, with lmm:transfers
+alongside Application.'''@en ;
+    arch:sectionQuery """
+PREFIX lmm:  <https://meta.linked.archi/leanix/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?interface ?interfaceLabel ?description ?provider ?providerLabel ?consumer ?consumerLabel ?dataObject WHERE {
+    ?interface a lmm:Interface ;
+               skos:prefLabel ?interfaceLabel .
+    OPTIONAL { ?interface skos:definition ?description }
+    OPTIONAL {
+        ?provider lmm:provides ?interface .
+        ?provider skos:prefLabel ?providerLabel .
+        FILTER(lang(?providerLabel) = "en")
+    }
+    OPTIONAL {
+        ?consumer lmm:consumes ?interface .
+        ?consumer skos:prefLabel ?consumerLabel .
+        FILTER(lang(?consumerLabel) = "en")
+    }
+    OPTIONAL {
+        ?interface lmm:transfers ?do .
+        ?do skos:prefLabel ?dataObject .
+        FILTER(lang(?dataObject) = "en")
+    }
+    FILTER(lang(?interfaceLabel) = "en")
+} ORDER BY ?interfaceLabel
+"""^^xsd:string .
+
+:TransformationPlanDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Transformation Plan Document"@en ;
+    skos:definition         '''A LeanIX-based transformation plan covering capability mapping,
+strategic objectives, and initiative roadmaps. Suitable for transformation
+governance, investment decisions, and executive briefings.'''@en ;
+    arch:templateResource   "templates/transformation-plan-document.md.hbs"^^xsd:anyURI ;
+    arch:templateRequiresViewpoint
+        lmmvp:CapabilityMap, lmmvp:TransformationRoadmap ;
+    arch:templateHasSection :TPD-S1, :TPD-S2 ;
+    arch:templateTargetsPurpose archvp:Deciding, archvp:Governing ;
+    arch:templateHasFormat archdt:MarkdownFormat, archdt:PDFFormat ;
+.
+
+:TPD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    arch:sectionViewpoint lmmvp:CapabilityMap ;
+    arch:sectionResultKey "capabilityMap" ;
+    skos:prefLabel "1. Capability Map"@en ;
+    skos:definition "Business capabilities and their supporting applications."@en ;
+    arch:sectionQuery """
+PREFIX lmm:  <https://meta.linked.archi/leanix/onto#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?capability ?capabilityLabel ?description ?application ?applicationLabel ?organization ?orgLabel WHERE {
+    ?capability a lmm:BusinessCapability ;
+                skos:prefLabel ?capabilityLabel .
+    OPTIONAL { ?capability skos:definition ?description }
+    OPTIONAL {
+        ?application lmm:supports ?capability .
+        ?application skos:prefLabel ?applicationLabel .
+        FILTER(lang(?applicationLabel) = "en")
+    }
+    OPTIONAL {
+        ## lmm:uses runs Organization -> Application, not the reverse
+        ?organization lmm:uses ?application .
+        ?organization skos:prefLabel ?orgLabel .
+        FILTER(lang(?orgLabel) = "en")
+    }
+    FILTER(lang(?capabilityLabel) = "en")
+} ORDER BY ?capabilityLabel ?applicationLabel
+"""^^xsd:string .
+
+:TPD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    arch:sectionViewpoint lmmvp:TransformationRoadmap ;
+    arch:sectionResultKey "transformationRoadmap" ;
+    skos:prefLabel "2. Transformation Roadmap"@en ;
+    skos:definition "Strategic objectives, initiatives, and their impact on applications."@en ;
+    arch:sectionQuery """
+PREFIX lmm:     <https://meta.linked.archi/leanix/onto#>
+PREFIX skos:    <http://www.w3.org/2004/02/skos/core#>
+PREFIX arch:    <https://meta.linked.archi/core#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+SELECT ?objective ?objectiveLabel ?initiative ?initiativeLabel ?application ?applicationLabel ?impactType WHERE {
+    ?objective a lmm:Objective ;
+               skos:prefLabel ?objectiveLabel .
+    OPTIONAL {
+        ?initiative lmm:supports ?objective .
+        ?initiative a lmm:Initiative ;
+                    skos:prefLabel ?initiativeLabel .
+        FILTER(lang(?initiativeLabel) = "en")
+        OPTIONAL {
+            ?initiative lmm:affects ?application .
+            ?application skos:prefLabel ?applicationLabel .
+            FILTER(lang(?applicationLabel) = "en")
+            ## The workspace's own name for the relation, off the qualified
+            ## resource where one was emitted. Unbound otherwise — the direct
+            ## triple above is what the row depends on.
+            OPTIONAL {
+                ?rel a lmm:Affects ;
+                     arch:source ?initiative ;
+                     arch:target ?application ;
+                     dcterms:type ?impactType .
+            }
+        }
+    }
+    FILTER(lang(?objectiveLabel) = "en")
+} ORDER BY ?objectiveLabel ?initiativeLabel ?applicationLabel
+"""^^xsd:string .

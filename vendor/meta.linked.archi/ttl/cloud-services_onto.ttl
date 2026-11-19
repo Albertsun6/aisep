@@ -1,0 +1,60 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix cstax:   <https://meta.linked.archi/cloud-services/tax#> .
+@prefix :        <https://meta.linked.archi/cloud-services/onto#> .
+
+<https://meta.linked.archi/cloud-services/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/cloud-services/onto#" ;
+    vann:preferredNamespacePrefix "cs" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Cloud Services Extension"@en ;
+    dcterms:description           '''Classifies the elements of any model that stand for concrete cloud products and
+services — a managed database, an object store, a container platform — by a classification common to the
+cloud providers, so that products of Microsoft Azure, Amazon Web Services, Google Cloud and others can be
+compared and queried together. Two properties tag an element with a concept of the cloud services
+taxonomy: its service category (compute, storage, databases…) and its service model (IaaS, PaaS,
+SaaS). Trademarked names referenced herein are property of their respective owners.'''@en ;
+    dcterms:created               "2026-11-14"^^xsd:date ;
+    dcterms:modified              "2026-11-14"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/cloud-services/onto/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+#################################################################
+# Classification of an element
+#################################################################
+
+:serviceCategory
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "service category"@en ;
+    skos:definition     "The kind of cloud service an element is or stands for — compute, storage, databases and so on: a concept of cstax:ServiceCategory."@en ;
+    skos:scopeNote      "For an element, in any modelling language, that models a concrete cloud product or service — Amazon RDS, Azure SQL Database, Cloud SQL — so that the products of different providers can be found and compared by what they are for. An element may be in more than one category."@en ;
+    skos:example        "ex:OrdersDatabase cs:serviceCategory cstax:Databases ; cs:serviceModel cstax:PaaS ."@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  skos:Concept ;
+    rdfs:seeAlso        cstax:ServiceCategory ;
+.
+
+:serviceModel
+    a                   owl:ObjectProperty ;
+    skos:prefLabel      "service model"@en ;
+    skos:definition     "The cloud service model an element is delivered in — infrastructure, platform or software as a service: a concept of cstax:ServiceModel."@en ;
+    skos:scopeNote      "Says how much of the stack the provider manages, whatever the service category: a managed database is platform as a service, a virtual machine infrastructure as a service."@en ;
+    arch:domainIncludes arch:Element ;
+    arch:rangeIncludes  skos:Concept ;
+    rdfs:seeAlso        cstax:ServiceModel ;
+.

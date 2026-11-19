@@ -1,0 +1,101 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix dodaf:   <https://meta.linked.archi/dodaf/onto#> .
+@prefix :        <https://meta.linked.archi/dodaf/shapes#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/dodaf/shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/dodaf/onto#>,
+                                  <https://meta.linked.archi/core-shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/dodaf/shapes#" ;
+    vann:preferredNamespacePrefix "dodafsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi DoDAF SHACL Shapes"@en ;
+    dcterms:description           '''SHACL shapes for validating DoDAF 2.02 model data.
+
+This is not an official U.S. Department of Defense document.'''@en ;
+    dcterms:created               "2026-08-04"^^xsd:date ;
+    dcterms:modified              "2026-08-04"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/dodaf/shapes/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/> ;
+    prov:wasDerivedFrom <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/> ;
+.
+
+#################################################################
+# Element instance requirements — the authoritative DoDAF naming rule
+#
+# core-shapes carries no label shape. arch:Element means "a node in a model", and
+# some notations have nodes that are legitimately unnamed (BPMN gateways and
+# events, ArchiMate junctions), so naming policy is owned by each metamodel.
+# See DD-24 in doc/guide/design-decisions.md.
+#
+# DoDAF's 25 element classes are all direct subclasses of arch:Element with no
+# abstract intermediate root, so each is listed explicitly. There is no concise
+# root to target — if an abstract dodaf:DoDAFElement root is introduced later,
+# collapse this list to it.
+#
+# DoDAF entities populate the Integrated Dictionary (AV-2) and are referenced by
+# name across every viewpoint, so all of them are required to carry one.
+#
+# Targets DoDAF classes, never arch:Element. In a merged multi-notation graph,
+# targeting arch:Element would impose DoDAF's naming policy on every other
+# notation's elements.
+#################################################################
+
+:DodafElementLabelShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''Requires a language-tagged skos:prefLabel on every DoDAF element. All 25
+element classes are listed explicitly because DoDAF has no abstract element root to target.'''@en ;
+    sh:targetClass dodaf:Capability ,
+                   dodaf:CapabilityIncrement ,
+                   dodaf:ConceptualDataEntity ,
+                   dodaf:Condition ,
+                   dodaf:DesiredEffect ,
+                   dodaf:Location ,
+                   dodaf:LogicalDataEntity ,
+                   dodaf:Measure ,
+                   dodaf:Milestone ,
+                   dodaf:OperationalActivity ,
+                   dodaf:OperationalNode ,
+                   dodaf:OperationalRule ,
+                   dodaf:Organization ,
+                   dodaf:Performer ,
+                   dodaf:PhysicalDataEntity ,
+                   dodaf:Project ,
+                   dodaf:ResourceFlow ,
+                   dodaf:Service ,
+                   dodaf:ServiceFunction ,
+                   dodaf:ServiceInterface ,
+                   dodaf:Standard ,
+                   dodaf:StandardsForecast ,
+                   dodaf:System ,
+                   dodaf:SystemFunction ,
+                   dodaf:SystemInterface ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  '''Every DoDAF element must have at least one skos:prefLabel, and it must be
+language-tagged (rdf:langString), e.g. "Joint Fires"@en.'''@en ;
+    ] ;
+.

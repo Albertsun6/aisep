@@ -1,0 +1,142 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archdt:  <https://meta.linked.archi/core-deliverable-templates#> .
+@prefix cpvp:    <https://meta.linked.archi/examples/cloudplatform/viewpoints#> .
+@prefix :        <https://meta.linked.archi/examples/cloudplatform/deliverable-templates#> .
+
+<https://meta.linked.archi/examples/cloudplatform/deliverable-templates#>
+    a owl:Ontology ;
+    owl:imports <https://meta.linked.archi/core#> ;
+    cc:license "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri "https://meta.linked.archi/examples/cloudplatform/deliverable-templates#" ;
+    vann:preferredNamespacePrefix "cpdt" ;
+    dcterms:title "Cloud Platform Deliverable Templates"@en ;
+    dcterms:created "2026-05-03"^^xsd:date ;
+    owl:versionInfo "0.1.0"@en ;
+    dcterms:description                "Deliverable template definitions for generating architecture documents from Custom Metamodel models."@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Service Catalog
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:ServiceCatalog
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Service Catalog"@en ;
+    skos:definition         "Inventory of all microservices with their properties, dependencies, and deployment status."@en ;
+    arch:templateResource   "templates/service-catalog.md.hbs"^^xsd:anyURI ;
+    arch:templateHasFormat  archdt:MarkdownFormat ;
+    arch:templateTargetsPurpose cpvp:Informing ;
+    arch:templateHasSection :SC-S1, :SC-S2, :SC-S3 .
+
+:SC-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "Service Inventory"@en ;
+    arch:sectionViewpoint cpvp:ServiceDependencyViewpoint ;
+    arch:sectionResultKey "services" ;
+    arch:sectionQuery """
+        PREFIX cp: <https://meta.linked.archi/examples/cloudplatform/onto#>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+        SELECT ?service ?label ?resilience ?tier ?strategy WHERE {
+            ?service a cp:Microservice ;
+                     skos:prefLabel ?label .
+            OPTIONAL { ?service cp:resilienceLevel ?resilience }
+            OPTIONAL { ?service cp:serviceTier ?tier }
+            OPTIONAL { ?service cp:deploymentStrategy ?strategy }
+        } ORDER BY ?label
+    """^^xsd:string .
+
+:SC-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "Event-Driven Dependencies"@en ;
+    arch:sectionViewpoint cpvp:DataFlowViewpoint ;
+    arch:sectionResultKey "eventDependencies" ;
+    arch:sectionQuery """
+        PREFIX cp: <https://meta.linked.archi/examples/cloudplatform/onto#>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+        SELECT ?publisher ?publisherLabel ?topic ?topicLabel ?subscriber ?subscriberLabel WHERE {
+            ?publisher cp:publishesTo ?topic ;
+                       skos:prefLabel ?publisherLabel .
+            ?topic skos:prefLabel ?topicLabel .
+            ?subscriber cp:subscribesTo ?topic ;
+                        skos:prefLabel ?subscriberLabel .
+        } ORDER BY ?topicLabel
+    """^^xsd:string .
+
+:SC-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "Deployment Status"@en ;
+    arch:sectionViewpoint cpvp:DeploymentViewpoint ;
+    arch:sectionResultKey "deployments" ;
+    arch:sectionQuery """
+        PREFIX cp: <https://meta.linked.archi/examples/cloudplatform/onto#>
+        PREFIX am4: <https://meta.linked.archi/archimate4/onto#>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+        SELECT ?service ?serviceLabel ?container ?image ?replicas ?cluster ?clusterLabel WHERE {
+            ?container am4:assignedTo ?service ;
+                       a cp:Container .
+            ?service skos:prefLabel ?serviceLabel .
+            OPTIONAL { ?container cp:containerImage ?image }
+            OPTIONAL { ?container cp:replicaCount ?replicas }
+            OPTIONAL {
+                ?container cp:deployedIn ?cluster .
+                ?cluster skos:prefLabel ?clusterLabel .
+            }
+        } ORDER BY ?serviceLabel
+    """^^xsd:string .
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## Deployment Guide
+## ═══════════════════════════════════════════════════════════════════════════════
+
+:DeploymentGuide
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Deployment Guide"@en ;
+    skos:definition         "Infrastructure and deployment documentation for the platform."@en ;
+    arch:templateResource   "templates/deployment-guide.md.hbs"^^xsd:anyURI ;
+    arch:templateHasFormat  archdt:MarkdownFormat ;
+    arch:templateTargetsPurpose cpvp:Designing ;
+    arch:templateHasSection :DG-S1, :DG-S2 .
+
+:DG-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "Kubernetes Clusters"@en ;
+    arch:sectionViewpoint cpvp:DeploymentViewpoint ;
+    arch:sectionResultKey "clusters" ;
+    arch:sectionQuery """
+        PREFIX cp: <https://meta.linked.archi/examples/cloudplatform/onto#>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+        SELECT ?cluster ?label (COUNT(?container) AS ?containerCount) WHERE {
+            ?cluster a cp:KubernetesCluster ;
+                     skos:prefLabel ?label .
+            OPTIONAL { ?container cp:deployedIn ?cluster }
+        }
+        GROUP BY ?cluster ?label
+        ORDER BY ?label
+    """^^xsd:string .
+
+:DG-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "Container Inventory"@en ;
+    arch:sectionViewpoint cpvp:DeploymentViewpoint ;
+    arch:sectionResultKey "containers" ;
+    arch:sectionQuery """
+        PREFIX cp: <https://meta.linked.archi/examples/cloudplatform/onto#>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+        SELECT ?container ?image ?replicas ?cluster ?clusterLabel WHERE {
+            ?container a cp:Container .
+            OPTIONAL { ?container cp:containerImage ?image }
+            OPTIONAL { ?container cp:replicaCount ?replicas }
+            OPTIONAL {
+                ?container cp:deployedIn ?cluster .
+                ?cluster skos:prefLabel ?clusterLabel .
+            }
+        } ORDER BY ?image
+    """^^xsd:string .
+

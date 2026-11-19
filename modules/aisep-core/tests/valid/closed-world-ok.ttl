@@ -1,0 +1,40 @@
+# Every aisep-core rule satisfied: model-declared subclass, redundant asserted superclass (D6), @zh prefLabel +
+# @en altLabel, view+viewpoint, architectureState, approval records instead of a hand-written approvalState (D10).
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix am4vp: <https://meta.linked.archi/archimate4/viewpoints#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:crm a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "客户关系系统"@zh .
+:billing a am4:ApplicationComponent , am4:ActiveStructureElement , arch:Element ; arch:inModel :t ;
+    skos:prefLabel "计费系统"@zh ; skos:altLabel "Billing"@en .
+:CloudServer rdfs:subClassOf am4:Device .
+:srv1 a :CloudServer ; arch:inModel :t ; skos:prefLabel "云服务器一号"@zh ; skos:altLabel "Cloud server 1"@en ;
+    arch:architectureState arch:Baseline .
+:crmV2 a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "客户关系系统 V2"@zh .
+:crm dcterms:isReplacedBy :crmV2 .
+:rel-crm-serving-billing a am4:Serving ; arch:source :crm ; arch:target :billing ; arch:inModel :t ;
+    arch:inView :view-apps .
+:view-apps a arch:Diagram ; arch:inModel :t ; skos:prefLabel "应用协作视图"@zh ;
+    arch:viewConformsToViewpoint am4vp:ApplicationCooperationViewpoint .
+:crm arch:inView :view-apps . :billing arch:inView :view-apps .
+:alice a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "张架构师"@zh .
+:approval-20261101-crm a aisep:ApprovalRecord ; arch:inModel :t ; skos:prefLabel "客户关系系统架构评审"@zh ;
+    aisep:gate aisep:GateArchitecture ; aisep:decision aisep:DecisionRejected ; aisep:approvedBy :alice ;
+    prov:generatedAtTime "2026-11-01T10:00:00Z"^^xsd:dateTime ; aisep:approves :crm , :srv1 ;
+    aisep:evidence "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d" .
+:approval-20261115-srv1 a aisep:ApprovalRecord ; arch:inModel :t ; skos:prefLabel "云服务器复审"@zh ;
+    aisep:gate aisep:GateArchitecture ; aisep:decision aisep:DecisionApproved ; aisep:approvedBy :alice ;
+    prov:generatedAtTime "2026-11-15T10:00:00+08:00"^^xsd:dateTime ; aisep:approves :srv1 ;
+    aisep:evidence "8d4e2f10a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4" .

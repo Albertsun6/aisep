@@ -1,0 +1,27 @@
+# Procurement example — code & delivery extension (spec §6.7): the code location implementing the bounded
+# context 'Quotation', and the deployable package realizing it (Artifact -> ApplicationComponent Realization).
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix arch:   <https://meta.linked.archi/core#> .
+@prefix am4:    <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep:  <https://aisep.example/ont/aisep#> .
+@prefix :       <https://aisep.example/model/procurement/> .
+
+:quotationCode a aisep:CodeLocation ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "报价上下文代码"@zh ;
+    schema:codeRepository <https://git.example.com/acme/procurement> ;
+    aisep:path "services/quotation/" .
+
+:rel-quotationCode-implements-quotationBC a aisep:Implementation ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :quotationCode ; arch:target :quotationBC .
+
+:quotationPackage a aisep:Deployable ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    skos:prefLabel "报价服务发布包"@zh ;
+    aisep:packageUrl "pkg:maven/com.acme.procurement/quotation-service@1.0.0" .
+
+:rel-quotationPackage-realizes-quotationBC a am4:Realization ;
+    arch:inModel <https://aisep.example/model/procurement/> ;
+    arch:source :quotationPackage ; arch:target :quotationBC .

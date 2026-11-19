@@ -1,0 +1,76 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix togaf:   <https://meta.linked.archi/togaf/onto#> .
+@prefix :        <https://meta.linked.archi/togaf/tax#> .
+
+
+<https://meta.linked.archi/togaf/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "TOGAF 10 Enterprise Metamodel Taxonomy"@en ;
+    dcterms:description  "Classification of TOGAF 10 entities by architecture domain."@en ;
+    skos:hasTopConcept :ByDomain ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/togaf/tax#" ;
+    vann:preferredNamespacePrefix "togaftax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi TOGAF 10 Taxonomy"@en ;
+    dcterms:created               "2026-05-11"^^xsd:date ;
+    dcterms:modified              "2026-05-11"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "10.0"@en ;
+    dcterms:source  <https://pubs.opengroup.org/togaf-standard/architecture-content/chap02.html> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/togaf-standard/architecture-content/chap02.html> .
+
+
+## ── By Domain ────────────────────────────────────────────────
+
+:ByDomain a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/togaf/tax#> ;
+    skos:prefLabel "Entity by Domain"@en ; skos:inScheme <https://meta.linked.archi/togaf/tax#> .
+
+:MotivationDomain a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Motivation (Principles, Requirements & Governance)"@en ;
+    skos:inScheme <https://meta.linked.archi/togaf/tax#> ;
+    rdfs:seeAlso togaf:MotivationElement ;
+    skos:narrower togaf:Principle, togaf:Requirement, togaf:Constraint,
+                  togaf:Assumption, togaf:Gap, togaf:Driver, togaf:Goal,
+                  togaf:Objective, togaf:Measure, togaf:CourseOfAction .
+
+:BusinessDomain a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Business Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf/tax#> ;
+    rdfs:seeAlso togaf:BusinessArchitectureElement ;
+    skos:narrower togaf:OrganizationUnit, togaf:Actor, togaf:Role, togaf:Function,
+                 togaf:Process, togaf:Event, togaf:BusinessService,
+                 togaf:BusinessCapability, togaf:BusinessInformation,
+                 togaf:Product, togaf:Contract, togaf:Control,
+                 togaf:ServiceQuality, togaf:Location .
+
+:DataDomain a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Data Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf/tax#> ;
+    rdfs:seeAlso togaf:DataArchitectureElement ;
+    skos:narrower togaf:DataEntity, togaf:LogicalDataComponent,
+                 togaf:PhysicalDataComponent .
+
+:ApplicationDomain a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Application Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf/tax#> ;
+    rdfs:seeAlso togaf:ApplicationArchitectureElement ;
+    skos:narrower togaf:LogicalApplicationComponent,
+                 togaf:PhysicalApplicationComponent, togaf:ApplicationService .
+
+:TechnologyDomain a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Technology Architecture"@en ; skos:inScheme <https://meta.linked.archi/togaf/tax#> ;
+    rdfs:seeAlso togaf:TechnologyArchitectureElement ;
+    skos:narrower togaf:LogicalTechnologyComponent,
+                 togaf:PhysicalTechnologyComponent, togaf:TechnologyService .
+
+:ImplementationDomain a skos:Concept ; skos:broader :ByDomain ;
+    skos:prefLabel "Implementation & Migration"@en ; skos:inScheme <https://meta.linked.archi/togaf/tax#> ;
+    rdfs:seeAlso togaf:ImplementationElement ;
+    skos:narrower togaf:WorkPackage, togaf:Capability, togaf:ValueStream .

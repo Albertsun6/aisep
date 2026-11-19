@@ -1,0 +1,165 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix uaf:     <https://meta.linked.archi/uaf/onto#> .
+@prefix togaf:   <https://meta.linked.archi/togaf/onto#> .
+@prefix am:      <https://meta.linked.archi/archimate3/onto#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+@prefix dodaf:   <https://meta.linked.archi/dodaf/onto#> .
+
+<https://meta.linked.archi/uaf/crossmappings#>
+    a                owl:Ontology ;
+    owl:imports      <https://meta.linked.archi/uaf/onto#> ;
+    cc:license       "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uaf/crossmappings#" ;
+    vann:preferredNamespacePrefix "uafxm" ;
+    dcterms:creator  "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title    "Linked.Archi UAF Cross-Language Mappings"@en ;
+    dcterms:description '''Cross-language SKOS mappings between UAF 1.2 concepts and
+other modeling languages in the Linked.Archi knowledge graph.
+
+UAF ↔ DoDAF mappings are derived from the OMG UAF 1.2 Specification,
+Appendix A — Traceability (https://www.omg.org/spec/UAF/1.2/).
+
+UAF ↔ ArchiMate mappings are editorial — no official OMG or Open Group
+document formally maps UAF to ArchiMate. These express semantic proximity
+based on concept definitions. Mappings are provided for both ArchiMate 3.2
+and ArchiMate 4.0.'''@en ;
+    dcterms:issued   "2025-12-01"^^xsd:date ;
+    dcterms:modified "2026-05-05"^^xsd:date ;
+    owl:versionInfo  "0.2.0"@en ;
+    dcterms:source  <https://www.omg.org/spec/UAF/1.2/>,
+                     <https://pubs.opengroup.org/architecture/archimate4-doc/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UAF/1.2/>,
+                     <https://pubs.opengroup.org/architecture/archimate4-doc/> ;
+    rdfs:seeAlso     <https://www.omg.org/spec/UAF/1.2/>,
+                     <https://www.omg.org/spec/UAF/> ;
+.
+
+
+#################################################################
+# UAF ↔ ArchiMate 3.2
+#################################################################
+#
+# Editorial mappings — no official cross-framework specification
+# exists. These express semantic proximity based on concept
+# definitions in the UAF 1.2 and ArchiMate 3.2 specifications.
+
+uaf:Capability               skos:relatedMatch  am:Capability .
+uaf:Service                  skos:relatedMatch  am:ApplicationService .
+uaf:Organization             skos:relatedMatch  am:BusinessActor .
+uaf:OperationalActivity      skos:relatedMatch  am:BusinessProcess .
+uaf:ResourcePerformer        skos:relatedMatch  am:ApplicationComponent .
+uaf:Driver                   skos:relatedMatch  am:Driver .
+uaf:EnterpriseGoal           skos:relatedMatch  am:Goal .
+uaf:OperationalConstraint    skos:relatedMatch  am:Constraint .
+uaf:ServiceInterface         skos:relatedMatch  am:ApplicationInterface .
+uaf:Standard                 skos:relatedMatch  am:Constraint .
+
+
+#################################################################
+# UAF ↔ ArchiMate 4.0
+#################################################################
+#
+# Editorial mappings — no official cross-framework specification
+# exists. These express semantic proximity based on concept
+# definitions in the UAF 1.2 and ArchiMate 4.0 specifications.
+# All use skos:relatedMatch (weaker assertion).
+
+## Strategy
+uaf:Capability               skos:relatedMatch  am4:Capability .
+uaf:EnterpriseGoal           skos:relatedMatch  am4:Goal .
+uaf:EnterpriseVision         skos:relatedMatch  am4:Goal .
+uaf:EnterpriseObjective      skos:relatedMatch  am4:Outcome .
+uaf:Driver                   skos:relatedMatch  am4:Driver .
+uaf:Mission                  skos:relatedMatch  am4:CourseOfAction .
+
+## Operational → Common Domain behavior
+uaf:OperationalActivity      skos:relatedMatch  am4:Process .
+uaf:Service                  skos:relatedMatch  am4:Service .
+uaf:ServiceFunction          skos:relatedMatch  am4:Function .
+
+## Structure
+uaf:Organization             skos:relatedMatch  am4:BusinessActor .
+uaf:Person                   skos:relatedMatch  am4:BusinessActor .
+uaf:Post                     skos:relatedMatch  am4:Role .
+uaf:Responsibility           skos:relatedMatch  am4:Role .
+uaf:ResourcePerformer        skos:relatedMatch  am4:ApplicationComponent .
+uaf:ServiceInterface         skos:relatedMatch  am4:ApplicationInterface .
+
+## Resources & Standards
+uaf:NaturalResource          skos:relatedMatch  am4:Resource .
+uaf:KnownResource            skos:relatedMatch  am4:Resource .
+uaf:Standard                 skos:relatedMatch  am4:Requirement .
+uaf:OperationalConstraint    skos:relatedMatch  am4:Requirement .
+
+## Projects
+uaf:Project                  skos:relatedMatch  am4:WorkPackage .
+uaf:ProjectMilestone         skos:relatedMatch  am4:Event .
+
+
+#################################################################
+# UAF ↔ DoDAF 2.02
+#################################################################
+#
+# UAF supersedes DoDAF. These mappings are derived from:
+#   OMG UAF 1.2 Specification, Appendix A — Traceability
+#   https://www.omg.org/spec/UAF/1.2/
+# Appendix A provides traceability tables mapping UAF grid cells
+# and domain model elements to their DoDAF, MODAF, and NAF
+# equivalents.
+
+uaf:Capability               skos:closeMatch   dodaf:Capability .
+uaf:OperationalActivity      skos:closeMatch   dodaf:OperationalActivity .
+uaf:OperationalPerformer     skos:closeMatch   dodaf:Performer .
+uaf:Service                  skos:closeMatch   dodaf:Service .
+uaf:ServiceFunction          skos:closeMatch   dodaf:ServiceFunction .
+uaf:ServiceInterface         skos:closeMatch   dodaf:ServiceInterface .
+uaf:Organization             skos:closeMatch   dodaf:Organization .
+uaf:Project                  skos:closeMatch   dodaf:Project .
+uaf:Standard                 skos:closeMatch   dodaf:Standard .
+uaf:ResourcePerformer        skos:relatedMatch  dodaf:System .
+
+
+#################################################################
+# UAF ↔ TOGAF Content Metamodel
+#################################################################
+#
+# Editorial mappings — no official OMG or Open Group document
+# formally maps UAF to TOGAF. These express semantic proximity
+# based on concept definitions in both frameworks.
+
+## Strategy & Motivation
+uaf:Capability               skos:relatedMatch  togaf:Capability .
+uaf:EnterpriseGoal           skos:relatedMatch  togaf:Goal .
+uaf:EnterpriseObjective      skos:relatedMatch  togaf:Objective .
+uaf:EnterpriseVision         skos:relatedMatch  togaf:Vision .
+uaf:Driver                   skos:relatedMatch  togaf:Driver .
+uaf:Standard                 skos:relatedMatch  togaf:Constraint .
+uaf:OperationalConstraint    skos:relatedMatch  togaf:Constraint .
+
+## Operational → Business
+uaf:OperationalActivity      skos:relatedMatch  togaf:BusinessProcess .
+uaf:Service                  skos:relatedMatch  togaf:BusinessService .
+uaf:ServiceFunction          skos:relatedMatch  togaf:BusinessFunction .
+
+## Structure
+uaf:Organization             skos:relatedMatch  togaf:Organization .
+uaf:Person                   skos:relatedMatch  togaf:Actor .
+uaf:Post                     skos:relatedMatch  togaf:Role .
+uaf:Responsibility           skos:relatedMatch  togaf:Role .
+
+## Resources → Technology
+uaf:ResourcePerformer        skos:relatedMatch  togaf:PhysicalApplicationComponent .
+uaf:ServiceInterface         skos:relatedMatch  togaf:ApplicationInterface .
+
+## Projects
+uaf:Project                  skos:relatedMatch  togaf:WorkPackage .

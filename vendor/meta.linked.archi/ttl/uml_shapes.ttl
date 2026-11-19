@@ -1,0 +1,657 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix uml:     <https://meta.linked.archi/uml/onto#> .
+@prefix :        <https://meta.linked.archi/uml/shapes#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/uml/shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/uml/onto#>,
+                                  <https://meta.linked.archi/core-shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uml/shapes#" ;
+    vann:preferredNamespacePrefix "umlsh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi UML 2.5.1 SHACL Shapes"@en ;
+    dcterms:description                '''SHACL shapes for validating UML model data in the Linked.Archi
+knowledge graph. Covers relationship domain/range constraints, required properties,
+and structural integrity rules derived from the UML 2.5.1 specification.'''@en ;
+    dcterms:created               "2025-12-01"^^xsd:date ;
+    dcterms:modified              "2026-08-13"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en,
+                                  <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/uml/shapes/0.3.0#> ;
+    owl:versionInfo               "0.3.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/uml/shapes/0.2.0#> ;
+    dcterms:source  <https://www.omg.org/spec/UML/2.5.1/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UML/2.5.1/> ;
+    rdfs:seeAlso    <https://meta.linked.archi/uml/publication-shapes#> ;
+    skos:editorialNote '''Contains no naming requirement by design. UML 2.5.1 §7.4 makes
+NamedElement::name [0..1], so nothing in UML must be named, and a shape in this document must
+not be stricter than the specification it describes. The opt-in companion
+uml/publication-shapes# holds the pragmatic rule for models that are going to be
+published.'''@en ;
+    skos:historyNote '''0.3.0: :NamedElementShape checks what a label must look like (sh:maxCount 1,
+sh:datatype rdf:langString), not that one exists — an unlabelled transition is how state diagrams
+are written, and UML requires a name nowhere. The naming requirement is in the opt-in
+uml/publication-shapes#. See UML-DD-14.
+
+0.2.0: Enumeration-valued attributes constrained with sh:class + sh:nodeKind sh:IRI against
+the named individuals introduced in uml-onto 0.2.0 (UML-DD-12).
+
+0.1.0: Initial version.'''@en ;
+.
+
+
+#################################################################
+# Relationship Shapes — Domain/Range Constraints
+#################################################################
+
+## Association
+:AssociationShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Association ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uml:Classifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Association source must be a Classifier."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uml:Classifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Association target must be a Classifier."@en ;
+    ] ;
+.
+
+## Aggregation
+:AggregationShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Aggregation ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uml:Classifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Aggregation source (whole) must be a Classifier."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uml:Classifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Aggregation target (part) must be a Classifier."@en ;
+    ] ;
+.
+
+## Composition
+:CompositionShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Composition ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uml:Classifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Composition source (whole) must be a Classifier."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uml:Classifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Composition target (part) must be a Classifier."@en ;
+    ] ;
+.
+
+## Generalization
+:GeneralizationShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Generalization ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uml:Classifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Generalization source (specific) must be a Classifier."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uml:Classifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Generalization target (general) must be a Classifier."@en ;
+    ] ;
+.
+
+## Realization
+:RealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Realization ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uml:Classifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Realization source must be a Classifier."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uml:Classifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Realization target must be a Classifier."@en ;
+    ] ;
+.
+
+## InterfaceRealization
+:InterfaceRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:InterfaceRealization ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uml:BehavioredClassifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "InterfaceRealization source must be a BehavioredClassifier."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uml:Interface ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "InterfaceRealization target must be an Interface."@en ;
+    ] ;
+.
+
+## Dependency
+:DependencyShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Dependency ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uml:NamedElement ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Dependency source (client) must be a NamedElement."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uml:NamedElement ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Dependency target (supplier) must be a NamedElement."@en ;
+    ] ;
+.
+
+## Include
+:IncludeShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Include ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uml:UseCase ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Include source must be a UseCase."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uml:UseCase ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Include target must be a UseCase."@en ;
+    ] ;
+.
+
+## Extend
+:ExtendShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Extend ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uml:UseCase ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Extend source must be a UseCase."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uml:UseCase ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Extend target must be a UseCase."@en ;
+    ] ;
+.
+
+## Deployment
+:DeploymentShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Deployment ;
+    sh:property [
+        sh:path     arch:source ;
+        sh:class    uml:Artifact ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Deployment source must be an Artifact."@en ;
+    ] ;
+    sh:property [
+        sh:path     arch:target ;
+        sh:class    uml:DeploymentTarget ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "Deployment target must be a DeploymentTarget (Node, Device, ExecutionEnvironment)."@en ;
+    ] ;
+.
+
+
+#################################################################
+# Element Shapes — Required Properties
+#
+# WHY THERE IS NO NAMING REQUIREMENT HERE
+#
+# UML 2.5.1 §7.4 declares NamedElement::name as [0..1]. Not one
+# metaclass in the specification requires a name. So no shape in this
+# document may require one: these shapes say what UML *is*, and a shape
+# stricter than the specification reports conforming models as broken.
+#
+# Until 0.3.0 :NamedElementShape carried sh:minCount 1 on skos:prefLabel.
+# The cost was not hypothetical. An unlabelled transition is the normal
+# way to write a state diagram — `[*] --> Idle` has no trigger and needs
+# no name — and every one was reported. A converter cannot fix this by
+# inventing a label, because a fabricated skos:prefLabel is worse than an
+# absent one: it looks like something the author wrote. This is the same
+# objection that kept a label shape out of core-shapes (DD-24), and it
+# reaches the same conclusion.
+#
+# If you want a naming requirement for publication — and for a document
+# generator or a palette you probably do — load the opt-in companion:
+#
+#   https://meta.linked.archi/uml/publication-shapes#
+#
+# It requires a language-tagged label on the classes a reader needs named
+# (classifiers, packages, features, actors, use cases) and deliberately
+# leaves out the constructs UML draws rather than names: transitions,
+# pseudostates, control nodes, activity edges and the relationship
+# classes. See UML-DD-14.
+#################################################################
+
+## NamedElement — at most one label, and it must carry a language tag
+:NamedElementShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:NamedElement ;
+    sh:property [
+        sh:path     skos:prefLabel ;
+        sh:maxCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message  '''A NamedElement carries at most one skos:prefLabel, and the literal must
+have a language tag: "Order"@en passes, "Order" does not. UML permits no name at all
+(NamedElement::name is [0..1]), so absence is not an error here — see
+uml/publication-shapes# if you need a naming requirement.'''@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:visibility ;
+        sh:class    uml:VisibilityKind ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:message  '''visibility must be a single member of the VisibilityKind enumeration
+(uml:Public, uml:Private, uml:Protected, uml:PackageVisibility). The string form
+(uml:visibility "private") is no longer valid — see uml-onto.ttl 0.2.0.'''@en ;
+    ] ;
+.
+
+## Classifier may declare isAbstract
+:ClassifierShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Classifier ;
+    sh:property [
+        sh:path     uml:isAbstract ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:message  "isAbstract must be a single boolean value."@en ;
+    ] ;
+.
+
+## Property multiplicity
+:PropertyShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Property ;
+    sh:property [
+        sh:path     uml:lower ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:message  "lower must be a single integer."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:upper ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:message  "upper must be a single integer (-1 for unlimited)."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:aggregationKind ;
+        sh:class    uml:AggregationKind ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:message  '''aggregationKind must be a single member of the AggregationKind
+enumeration (uml:None, uml:Shared, uml:Composite).'''@en ;
+    ] ;
+.
+
+## Parameter direction
+:ParameterShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Parameter ;
+    sh:property [
+        sh:path     uml:parameterDirection ;
+        sh:class    uml:ParameterDirectionKind ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:message  '''parameterDirection must be a single member of the
+ParameterDirectionKind enumeration (uml:In, uml:Out, uml:InOut,
+uml:Return).'''@en ;
+    ] ;
+.
+
+## Pseudostate kind
+:PseudostateShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Pseudostate ;
+    sh:property [
+        sh:path     uml:pseudostateKind ;
+        sh:class    uml:PseudostateKind ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  '''A Pseudostate must have exactly one pseudostateKind, and it must be a
+member of the PseudostateKind enumeration (initial, deepHistory, shallowHistory,
+join, fork, junction, choice, entryPoint, exitPoint, terminate).'''@en ;
+    ] ;
+.
+
+## Transition kind
+:TransitionShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Transition ;
+    sh:property [
+        sh:path     uml:transitionKind ;
+        sh:class    uml:TransitionKind ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:message  '''transitionKind must be a single member of the TransitionKind
+enumeration (uml:ExternalTransition, uml:InternalTransition,
+uml:LocalTransition).'''@en ;
+    ] ;
+.
+
+## Connector kind
+:ConnectorShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Connector ;
+    sh:property [
+        sh:path     uml:connectorKind ;
+        sh:class    uml:ConnectorKind ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:message  '''connectorKind must be a single member of the ConnectorKind
+enumeration (uml:AssemblyConnector, uml:DelegationConnector).'''@en ;
+    ] ;
+.
+
+## Port boolean flags
+:PortShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Port ;
+    sh:property [
+        sh:path     uml:isBehavior ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path     uml:isService ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+    sh:property [
+        sh:path     uml:isConjugated ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+.
+
+
+#################################################################
+# Interaction Shapes — Sequence Diagram Validation
+# UML 2.5.1 Chapter 17
+#################################################################
+
+## Interaction
+:InteractionShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Interaction ;
+    sh:property [
+        sh:path     uml:hasFragment ;
+        sh:class    uml:InteractionFragment ;
+        sh:message  "Interaction fragments must be InteractionFragment instances."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:hasLifeline ;
+        sh:class    uml:Lifeline ;
+        sh:message  "Interaction lifelines must be Lifeline instances."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:hasMessage ;
+        sh:class    uml:Message ;
+        sh:message  "Interaction messages must be Message instances."@en ;
+    ] ;
+.
+
+## Lifeline
+:LifelineShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Lifeline ;
+    sh:property [
+        sh:path     uml:represents ;
+        sh:maxCount 1 ;
+        sh:message  "A Lifeline may represent at most one ConnectableElement."@en ;
+    ] ;
+.
+
+## OccurrenceSpecification
+:OccurrenceSpecificationShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:OccurrenceSpecification ;
+    sh:property [
+        sh:path     uml:covered ;
+        sh:class    uml:Lifeline ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "An OccurrenceSpecification must cover exactly one Lifeline."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:sequenceNumber ;
+        sh:datatype xsd:integer ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "An OccurrenceSpecification must have exactly one sequenceNumber."@en ;
+    ] ;
+.
+
+## Message
+:MessageShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:Message ;
+    sh:property [
+        sh:path     uml:messageSort ;
+        sh:class    uml:MessageSort ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  '''A Message must have exactly one messageSort, and it must be a
+member of the MessageSort enumeration (uml:SynchCall, uml:AsynchCall,
+uml:AsynchSignal, uml:CreateMessage, uml:DeleteMessage, uml:Reply).'''@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:sendEvent ;
+        sh:class    uml:MessageEnd ;
+        sh:maxCount 1 ;
+        sh:message  "A Message may have at most one sendEvent (absent = found message)."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:receiveEvent ;
+        sh:class    uml:MessageEnd ;
+        sh:maxCount 1 ;
+        sh:message  "A Message may have at most one receiveEvent (absent = lost message)."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:messageKind ;
+        sh:class    uml:MessageKind ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:message  '''A Message may have at most one messageKind, and it must be a member
+of the MessageKind enumeration (uml:Complete, uml:Lost, uml:Found,
+uml:Unknown).'''@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:signature ;
+        sh:maxCount 1 ;
+        sh:message  "A Message may have at most one signature (Operation or Signal)."@en ;
+    ] ;
+.
+
+## MessageOccurrenceSpecification
+:MessageOccurrenceSpecificationShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:MessageOccurrenceSpecification ;
+    sh:property [
+        sh:path     uml:message ;
+        sh:class    uml:Message ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "A MessageOccurrenceSpecification must reference exactly one Message."@en ;
+    ] ;
+.
+
+## CombinedFragment
+:CombinedFragmentShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:CombinedFragment ;
+    sh:property [
+        sh:path     uml:interactionOperator ;
+        sh:class    uml:InteractionOperatorKind ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  '''A CombinedFragment must have exactly one interactionOperator, and it
+must be a member of the InteractionOperatorKind enumeration (alt, opt, loop, break,
+par, seq, strict, critical, neg, assert, ignore, consider).'''@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:hasOperand ;
+        sh:class    uml:InteractionOperand ;
+        sh:minCount 1 ;
+        sh:message  "A CombinedFragment must have at least one InteractionOperand."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:sequenceNumber ;
+        sh:datatype xsd:integer ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "A CombinedFragment must have a sequenceNumber within its container."@en ;
+    ] ;
+.
+
+## InteractionOperand
+:InteractionOperandShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:InteractionOperand ;
+    sh:property [
+        sh:path     uml:hasFragment ;
+        sh:class    uml:InteractionFragment ;
+        sh:message  "InteractionOperand fragments must be InteractionFragment instances."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:guard ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message  "An InteractionOperand may have at most one guard string."@en ;
+    ] ;
+.
+
+## ExecutionSpecification
+:ExecutionSpecificationShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:ExecutionSpecification ;
+    sh:property [
+        sh:path     uml:executionStart ;
+        sh:class    uml:OccurrenceSpecification ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "An ExecutionSpecification must have exactly one start OccurrenceSpecification."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:executionFinish ;
+        sh:class    uml:OccurrenceSpecification ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "An ExecutionSpecification must have exactly one finish OccurrenceSpecification."@en ;
+    ] ;
+.
+
+## GeneralOrdering
+:GeneralOrderingShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:GeneralOrdering ;
+    sh:property [
+        sh:path     uml:orderingBefore ;
+        sh:class    uml:OccurrenceSpecification ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "A GeneralOrdering must reference exactly one 'before' OccurrenceSpecification."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:orderingAfter ;
+        sh:class    uml:OccurrenceSpecification ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "A GeneralOrdering must reference exactly one 'after' OccurrenceSpecification."@en ;
+    ] ;
+.
+
+## InteractionUse
+:InteractionUseShape
+    a              sh:NodeShape ;
+    sh:targetClass uml:InteractionUse ;
+    sh:property [
+        sh:path     uml:refersTo ;
+        sh:class    uml:Interaction ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "An InteractionUse must reference exactly one Interaction."@en ;
+    ] ;
+    sh:property [
+        sh:path     uml:sequenceNumber ;
+        sh:datatype xsd:integer ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message  "An InteractionUse must have a sequenceNumber within its container."@en ;
+    ] ;
+.

@@ -1,0 +1,585 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <http://schema.org/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ad:      <https://meta.linked.archi/arch-decision#> .
+@prefix :        <https://meta.linked.archi/ml-systems/onto#> .
+
+<https://meta.linked.archi/ml-systems/onto#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/ml-systems/onto#" ;
+    vann:preferredNamespacePrefix "mlsys" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ML-Enabled Systems Extension"@en ;
+    dcterms:description                '''Extension ontology for modeling ML-enabled system architectures.
+Provides element types, relationship types, stakeholders, concerns, and viewpoints
+for describing the ML aspects of software systems — training pipelines, model serving,
+feature engineering, data lineage, and the integration boundary between ML and non-ML
+components.
+
+Motivated by the gap identified in Moin et al. (2023): existing architecture frameworks
+lack stakeholders, viewpoints, and model kinds for data scientists, data engineers, and
+ML engineers. This extension addresses that gap within the Linked.Archi ecosystem.
+Trademarked names referenced herein are property of their respective owners.'''@en ;
+    dcterms:abstract              "Ontology for modeling ML-enabled system architectures within the Linked.Archi ecosystem."@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/ml-systems/onto/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://arxiv.org/abs/2308.05239> ;
+    prov:wasDerivedFrom <https://arxiv.org/abs/2308.05239> ;
+    rdfs:seeAlso                  <https://arxiv.org/abs/2308.05239>,
+                                  <https://doi.org/10.1109/WAIN52551.2021.00026>,
+                                  <https://ml-ops.org/> ;
+    schema:citation               "Linked.Archi ML-Enabled Systems Extension" ;
+.
+
+
+#################################################################
+# Stakeholders
+#################################################################
+
+:DataScientist
+    a               arch:Stakeholder ;
+    skos:prefLabel  "Data Scientist"@en ;
+    skos:definition '''Responsible for analytics modeling — selecting algorithms, engineering
+features, training ML models, and evaluating model performance using metrics such as
+accuracy, precision, recall, and F1 score. Data scientists work primarily with
+mathematical formalisms, statistical models, and computational graphs.'''@en ;
+    skos:scopeNote  '''Identified by Moin et al. (2023) as a missing stakeholder in existing
+architecture frameworks. Their concerns include ML model accuracy, feature quality,
+algorithm selection, and model interpretability.'''@en ;
+.
+
+:DataEngineer
+    a               arch:Stakeholder ;
+    skos:prefLabel  "Data Engineer"@en ;
+    skos:definition '''Responsible for analytics operations — building and maintaining data
+pipelines, ensuring scalable data processing, deploying trained models into production,
+and managing the infrastructure for model serving and monitoring.'''@en ;
+    skos:scopeNote  '''Identified by Moin et al. (2023) as a missing stakeholder. Their concerns
+include data pipeline reliability, model deployment automation, serving latency,
+and infrastructure scalability.'''@en ;
+.
+
+:MLEngineer
+    a               arch:Stakeholder ;
+    skos:prefLabel  "ML Engineer"@en ;
+    skos:definition '''Bridges data science and software engineering — productionizing ML models,
+managing model serving infrastructure, implementing monitoring and retraining pipelines,
+and ensuring ML components integrate correctly with non-ML system components.'''@en ;
+    skos:scopeNote  '''Recognized by Muccini & Vaidhyanathan (2021) and Lewis et al. (2021)
+as a distinct role in ML-enabled system development.'''@en ;
+    dcterms:source  <https://doi.org/10.1109/WAIN52551.2021.00026> ;
+.
+
+:EthicsOfficer
+    a               arch:Stakeholder ;
+    skos:prefLabel  "Ethics Committee / Officer"@en ;
+    skos:definition '''Responsible for evaluating the ethical, legal, and social implications
+(ELSI) of ML-enabled systems — including fairness, bias, explainability,
+privacy, and trustworthiness of ML components.'''@en ;
+    skos:scopeNote  '''Identified by Moin et al. (2023) as a stakeholder whose concerns
+are not addressed by existing architecture frameworks.'''@en ;
+.
+
+
+#################################################################
+# Concerns (ML-specific)
+#################################################################
+
+:ModelPerformanceConcern
+    a               arch:Concern ;
+    skos:prefLabel  "ML Model Performance"@en ;
+    skos:definition '''ML-specific performance metrics — accuracy, precision, recall, F1 score,
+AUC-ROC, mean squared error, and other evaluation metrics that measure how well
+an ML model performs its inference task on unseen data.'''@en ;
+    skos:scopeNote  '''Distinct from system performance (latency, throughput). A model may have
+excellent ML performance but introduce unacceptable latency, or vice versa.'''@en ;
+.
+
+:DataQualityConcern
+    a               arch:Concern ;
+    skos:prefLabel  "Data Quality"@en ;
+    skos:definition '''Completeness, correctness, timeliness, representativeness, and consistency
+of data used for training, validation, and inference. Poor data quality directly
+degrades model performance and can introduce bias.'''@en ;
+.
+
+:ModelDriftConcern
+    a               arch:Concern ;
+    skos:prefLabel  "Model Drift"@en ;
+    skos:definition '''Degradation of model performance over time due to changes in the
+underlying data distribution (data drift) or changes in the relationship between
+features and targets (concept drift). Requires monitoring and retraining strategies.'''@en ;
+.
+
+:ExplainabilityConcern
+    a               arch:Concern ;
+    skos:prefLabel  "Explainability"@en ;
+    skos:definition '''The ability to understand, interpret, and communicate why an ML model
+produces specific predictions. Critical for regulatory compliance (e.g., GDPR
+right to explanation), stakeholder trust, and debugging.'''@en ;
+.
+
+:FairnessConcern
+    a               arch:Concern ;
+    skos:prefLabel  "Fairness & Bias"@en ;
+    skos:definition '''Ensuring ML models do not systematically discriminate against individuals
+or groups based on protected attributes (race, gender, age, etc.). Includes
+detection and mitigation of bias in training data and model outputs.'''@en ;
+.
+
+:AdversarialRobustnessConcern
+    a               arch:Concern ;
+    skos:prefLabel  "Adversarial Robustness"@en ;
+    skos:definition '''Resilience of ML models against adversarial attacks — deliberate
+manipulation of inputs or training data to cause incorrect predictions.
+Includes evasion attacks, data poisoning, and model extraction.'''@en ;
+    skos:scopeNote  '''Moin et al. (2023) note that software engineers often underestimate
+the vulnerability of ML-enabled systems through adversarial attacks.'''@en ;
+.
+
+:MLArtifactVersioningConcern
+    a               arch:Concern ;
+    skos:prefLabel  "ML Artifact Versioning"@en ;
+    skos:definition '''Tracking versions of ML artifacts — trained models, model parameters
+and hyperparameters, training datasets, feature definitions, and pipeline
+configurations. Essential for reproducibility and auditability.'''@en ;
+.
+
+:MLMonitorabilityConcern
+    a               arch:Concern ;
+    skos:prefLabel  "ML Monitorability"@en ;
+    skos:definition '''Runtime monitoring of ML components — prediction distributions,
+feature distributions, serving latency, model staleness, and data pipeline
+health. Enables detection of drift, degradation, and anomalies.'''@en ;
+    skos:scopeNote  '''Lewis et al. (2021) identify monitorability as a new quality attribute
+concern specific to ML-enabled systems.'''@en ;
+.
+
+:MLPrivacyConcern
+    a               arch:Concern ;
+    skos:prefLabel  "ML Privacy"@en ;
+    skos:definition '''Privacy challenges specific to ML — training data memorization,
+model inversion attacks, membership inference, and compliance with data
+protection regulations (GDPR, CCPA) in the context of ML pipelines.'''@en ;
+.
+
+:MLSECollaborationConcern
+    a               arch:Concern ;
+    skos:prefLabel  "ML–SE Collaboration"@en ;
+    skos:definition '''The challenge of coordinating work between data science and software
+engineering teams — different vocabularies, tools, workflows, and quality
+metrics. The "ML Mismatch" problem identified by Lewis et al. (2021).'''@en ;
+    dcterms:source  <https://doi.org/10.1109/WAIN52551.2021.00026> ;
+.
+
+
+#################################################################
+# Elements — ML Component Types
+#################################################################
+
+:MLComponent
+    a               owl:Class ;
+    arch:isAbstractClass true ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "ML Component"@en ;
+    skos:definition '''An abstract base class for all ML-specific architectural elements.
+ML components are software artifacts with special characteristics: their behavior
+is inferred from data rather than specified at design time, they require retraining,
+and they have distinct lifecycle and versioning needs.'''@en ;
+    skos:scopeNote  '''Moin et al. (2023) argue that ML artifacts deserve separate identity,
+distinguished from software source code and raw data.'''@en ;
+.
+
+:MLModel
+    a               owl:Class ;
+    rdfs:subClassOf :MLComponent ;
+    skos:prefLabel  "ML Model"@en ;
+    skos:definition '''A trained machine learning model — the core artifact produced by the
+data science workflow. Includes the model architecture (e.g., neural network topology,
+decision tree structure), trained parameters, and associated metadata (training date,
+dataset version, performance metrics).'''@en ;
+    skos:scopeNote  '''Not to be confused with arch:Model (an architecture description) or
+data models (database schemas). An MLModel is a computational artifact that performs
+inference on data.'''@en ;
+.
+
+:TrainingPipeline
+    a               owl:Class ;
+    rdfs:subClassOf :MLComponent ;
+    skos:prefLabel  "Training Pipeline"@en ;
+    skos:definition '''The end-to-end automated process for training an ML model — from data
+ingestion and preprocessing through feature engineering, model training, evaluation,
+and model registration. Typically orchestrated by tools like Kubeflow, MLflow,
+or Airflow.'''@en ;
+.
+
+:ServingInfrastructure
+    a               owl:Class ;
+    rdfs:subClassOf :MLComponent ;
+    skos:prefLabel  "Serving Infrastructure"@en ;
+    skos:definition '''Infrastructure for serving ML model predictions at runtime — model
+servers (TensorFlow Serving, Triton, Seldon), API endpoints, batch prediction
+jobs, and edge deployment runtimes.'''@en ;
+.
+
+:FeatureStore
+    a               owl:Class ;
+    rdfs:subClassOf :MLComponent ;
+    skos:prefLabel  "Feature Store"@en ;
+    skos:definition '''A centralized repository for storing, managing, and serving ML features.
+Provides consistent feature definitions across training and serving, feature
+versioning, and point-in-time correctness for training data.'''@en ;
+.
+
+:Dataset
+    a               owl:Class ;
+    rdfs:subClassOf :MLComponent ;
+    skos:prefLabel  "Dataset"@en ;
+    skos:definition '''A versioned collection of data used for training, validation, or
+evaluation of ML models. Carries metadata about provenance, schema,
+quality metrics, and applicable data governance policies.'''@en ;
+    skos:scopeNote  '''Distinct from database entities (data models). A Dataset is a
+curated, versioned snapshot used in the ML lifecycle.'''@en ;
+.
+
+:MonitoringComponent
+    a               owl:Class ;
+    rdfs:subClassOf :MLComponent ;
+    skos:prefLabel  "ML Monitoring Component"@en ;
+    skos:definition '''A component responsible for monitoring ML model behavior in production —
+tracking prediction distributions, detecting data drift and concept drift,
+alerting on performance degradation, and triggering retraining workflows.'''@en ;
+.
+
+:ExperimentTracker
+    a               owl:Class ;
+    rdfs:subClassOf :MLComponent ;
+    skos:prefLabel  "Experiment Tracker"@en ;
+    skos:definition '''A component for tracking ML experiments — recording hyperparameters,
+metrics, artifacts, and code versions for each training run. Enables
+reproducibility and comparison across experiments.'''@en ;
+.
+
+:ModelRegistry
+    a               owl:Class ;
+    rdfs:subClassOf :MLComponent ;
+    skos:prefLabel  "Model Registry"@en ;
+    skos:definition '''A versioned catalog of trained ML models with their metadata,
+lineage, performance metrics, and deployment status. The single source
+of truth for which models are approved for production.'''@en ;
+.
+
+:DataPipeline
+    a               owl:Class ;
+    rdfs:subClassOf :MLComponent ;
+    skos:prefLabel  "Data Pipeline"@en ;
+    skos:definition '''An automated workflow for ingesting, transforming, validating, and
+delivering data to downstream consumers (training pipelines, feature stores,
+analytics systems). Distinct from TrainingPipeline in that it handles
+raw data processing rather than model training.'''@en ;
+.
+
+
+#################################################################
+# Relationships — Unqualified Predicates
+#################################################################
+
+:trainedOn
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "trained on"@en ;
+    skos:definition      "Links an ML model to the dataset it was trained on."@en ;
+    arch:domainIncludes  :MLModel ;
+    arch:rangeIncludes   :Dataset ;
+.
+
+:producesModel
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "produces model"@en ;
+    skos:definition      "Links a training pipeline to the ML model it produces."@en ;
+    arch:domainIncludes  :TrainingPipeline ;
+    arch:rangeIncludes   :MLModel ;
+.
+
+:serves
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "serves"@en ;
+    skos:definition      "Links serving infrastructure to the ML model it serves for inference."@en ;
+    arch:domainIncludes  :ServingInfrastructure ;
+    arch:rangeIncludes   :MLModel ;
+.
+
+:monitors
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "monitors"@en ;
+    skos:definition      "Links a monitoring component to the ML component it monitors."@en ;
+    arch:domainIncludes  :MonitoringComponent ;
+    arch:rangeIncludes   :MLComponent ;
+.
+
+:feedsFeatures
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "feeds features"@en ;
+    skos:definition      "Links a feature store to the training pipeline or serving infrastructure it provides features to."@en ;
+    arch:domainIncludes  :FeatureStore ;
+    arch:rangeIncludes   :TrainingPipeline, :ServingInfrastructure ;
+.
+
+:registeredIn
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "registered in"@en ;
+    skos:definition      "Links an ML model to the model registry where it is cataloged."@en ;
+    arch:domainIncludes  :MLModel ;
+    arch:rangeIncludes   :ModelRegistry ;
+.
+
+:consumesData
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "consumes data"@en ;
+    skos:definition      "Links a data pipeline to the data source it ingests from."@en ;
+    arch:domainIncludes  :DataPipeline ;
+    arch:rangeIncludes   arch:Element ;
+.
+
+:producesDataset
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "produces dataset"@en ;
+    skos:definition      "Links a data pipeline to the dataset it produces."@en ;
+    arch:domainIncludes  :DataPipeline ;
+    arch:rangeIncludes   :Dataset ;
+.
+
+:integratesWith
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "integrates with"@en ;
+    skos:definition      '''Links an ML component to a non-ML component it integrates with.
+This is the critical boundary identified by Moin et al. — the interface between
+ML and traditional software components.'''@en ;
+    arch:domainIncludes  :MLComponent ;
+    arch:rangeIncludes   arch:Element ;
+.
+
+:triggersRetraining
+    a                    owl:ObjectProperty ;
+    skos:prefLabel       "triggers retraining"@en ;
+    skos:definition      "Links a monitoring component to the training pipeline it triggers when drift is detected."@en ;
+    arch:domainIncludes  :MonitoringComponent ;
+    arch:rangeIncludes   :TrainingPipeline ;
+.
+
+
+#################################################################
+# Relationships — Qualified Classes
+#################################################################
+
+:TrainedOn
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :trainedOn ;
+    skos:prefLabel       "Trained On"@en ;
+    skos:definition      "A qualified training relationship — carries metadata about training run, date, hyperparameters."@en ;
+.
+
+:qualifiedTrainedOn
+    a                    owl:ObjectProperty ;
+    rdfs:range           :TrainedOn ;
+    arch:unqualifiedForm :trainedOn ;
+.
+
+:ProducesModel
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :producesModel ;
+    skos:prefLabel       "Produces Model"@en ;
+    skos:definition      "A qualified model production relationship — carries pipeline run metadata."@en ;
+.
+
+:qualifiedProducesModel
+    a                    owl:ObjectProperty ;
+    rdfs:range           :ProducesModel ;
+    arch:unqualifiedForm :producesModel ;
+.
+
+:IntegratesWith
+    a                    owl:Class ;
+    rdfs:subClassOf      arch:QualifiedRelationship ;
+    arch:unqualifiedForm :integratesWith ;
+    skos:prefLabel       "Integrates With"@en ;
+    skos:definition      '''A qualified integration relationship between ML and non-ML components.
+Carries metadata about the integration contract: API format, latency SLA,
+data schema, and responsible team.'''@en ;
+.
+
+:qualifiedIntegratesWith
+    a                    owl:ObjectProperty ;
+    rdfs:range           :IntegratesWith ;
+    arch:unqualifiedForm :integratesWith ;
+.
+
+
+#################################################################
+# Viewpoints
+#################################################################
+
+:AnalyticsModelingViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "Analytics Modeling"@en ;
+    skos:definition             '''Frames the concerns of data scientists — model architecture,
+training pipelines, feature engineering, evaluation metrics, and algorithm selection.
+Views governed by this viewpoint show the ML model landscape: which models exist,
+what data they consume, how they are trained, and how they perform.'''@en ;
+    arch:targetsStakeholder     :DataScientist, :MLEngineer ;
+    arch:viewpointFramesConcern :ModelPerformanceConcern, :DataQualityConcern,
+                                :ExplainabilityConcern, :FairnessConcern ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Designing> ;
+    arch:includesConcept        :MLModel, :TrainingPipeline, :Dataset,
+                                :FeatureStore, :ExperimentTracker ;
+    arch:viewType               arch:Diagram ;
+.
+
+:AnalyticsOperationsViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "Analytics Operations"@en ;
+    skos:definition             '''Frames the concerns of data engineers and ML engineers — model
+deployment, serving infrastructure, monitoring, retraining pipelines, and
+operational health. Views governed by this viewpoint show the MLOps landscape:
+how models move from training to production and how they are maintained.'''@en ;
+    arch:targetsStakeholder     :DataEngineer, :MLEngineer ;
+    arch:viewpointFramesConcern :ModelDriftConcern, :MLMonitorabilityConcern,
+                                :MLArtifactVersioningConcern ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Designing>,
+                                <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:includesConcept        :ServingInfrastructure, :MonitoringComponent,
+                                :ModelRegistry, :DataPipeline, :TrainingPipeline ;
+    arch:viewType               arch:Diagram ;
+.
+
+:MLSystemIntegrationViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "ML System Integration"@en ;
+    skos:definition             '''Shows how ML components integrate with non-ML components — the
+boundary that Moin et al. identify as the key collaboration challenge. Views
+governed by this viewpoint show integration contracts, data flows, latency
+budgets, and team responsibilities at the ML/SE boundary.'''@en ;
+    arch:targetsStakeholder     :DataScientist, :DataEngineer, :MLEngineer ;
+    arch:viewpointFramesConcern :MLSECollaborationConcern ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Designing>,
+                                <https://meta.linked.archi/core-viewpoints#Informing> ;
+    arch:includesConcept        :MLComponent, :IntegratesWith ;
+    arch:viewType               arch:Diagram, arch:Matrix ;
+.
+
+:MLEthicsViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "ML Ethics & Compliance"@en ;
+    skos:definition             '''Frames fairness, explainability, privacy, and regulatory compliance
+concerns for ML-enabled systems. Views governed by this viewpoint show which
+models handle sensitive data, what bias mitigation measures are in place,
+and compliance status with applicable regulations.'''@en ;
+    arch:targetsStakeholder     :EthicsOfficer ;
+    arch:viewpointFramesConcern :FairnessConcern, :ExplainabilityConcern,
+                                :MLPrivacyConcern, :AdversarialRobustnessConcern ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:includesConcept        :MLModel, :Dataset ;
+    arch:viewType               arch:Matrix, arch:Catalog ;
+.
+
+:MLModelCatalogViewpoint
+    a                           arch:Viewpoint ;
+    skos:prefLabel              "ML Model Catalog"@en ;
+    skos:definition             '''Inventory of all ML models with key attributes — owner, status,
+performance metrics, dataset lineage, deployment target, and monitoring status.
+The ML equivalent of a component catalog.'''@en ;
+    arch:targetsStakeholder     :DataScientist, :DataEngineer, :MLEngineer ;
+    arch:viewpointFramesConcern :MLArtifactVersioningConcern, :ModelPerformanceConcern ;
+    arch:viewpointHasPurpose    <https://meta.linked.archi/core-viewpoints#Informing>,
+                                <https://meta.linked.archi/core-viewpoints#Governing> ;
+    arch:includesConcept        :MLModel, :ModelRegistry ;
+    arch:viewType               arch:Catalog ;
+.
+
+
+#################################################################
+# ML-Specific Properties
+#################################################################
+
+:hasModelVersion
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has model version"@en ;
+    skos:definition  "The version identifier of a trained ML model."@en ;
+    rdfs:domain      :MLModel ;
+    rdfs:range       xsd:string ;
+.
+
+:hasPerformanceMetric
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has performance metric"@en ;
+    skos:definition  "A key performance metric value for an ML model (e.g., accuracy=0.94)."@en ;
+    rdfs:domain      :MLModel ;
+    rdfs:range       xsd:string ;
+.
+
+:hasModelArchitecture
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has model architecture"@en ;
+    skos:definition  '''Description of the ML model architecture — e.g., 'ResNet-50',
+'3-layer LSTM', 'XGBoost with 500 trees'. This is the structural specification
+that data scientists use to communicate model design.'''@en ;
+    rdfs:domain      :MLModel ;
+    rdfs:range       xsd:string ;
+.
+
+:hasFramework
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has framework"@en ;
+    skos:definition  "The ML framework used to build the model (e.g., TensorFlow, PyTorch, scikit-learn)."@en ;
+    rdfs:domain      :MLModel ;
+    rdfs:range       xsd:string ;
+.
+
+:hasRetrainingSchedule
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has retraining schedule"@en ;
+    skos:definition  "The schedule or trigger for retraining the model (e.g., 'weekly', 'on drift detection')."@en ;
+    rdfs:domain      :MLModel ;
+    rdfs:range       xsd:string ;
+.
+
+:hasServingLatencySLA
+    a                owl:DatatypeProperty ;
+    skos:prefLabel   "has serving latency SLA"@en ;
+    skos:definition  "The maximum acceptable latency for model inference (e.g., 'p99 < 100ms')."@en ;
+    rdfs:domain      :ServingInfrastructure ;
+    rdfs:range       xsd:string ;
+.
+
+:hasDataLineage
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has data lineage"@en ;
+    skos:definition  "Links a dataset to its upstream data sources for provenance tracking."@en ;
+    rdfs:domain      :Dataset ;
+    rdfs:range       arch:Element ;
+.
+
+:hasMonitoringPlan
+    a                owl:ObjectProperty ;
+    skos:prefLabel   "has monitoring plan"@en ;
+    skos:definition  "Links an ML model to the monitoring component responsible for tracking its production behavior."@en ;
+    rdfs:domain      :MLModel ;
+    rdfs:range       :MonitoringComponent ;
+.

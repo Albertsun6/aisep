@@ -1,0 +1,139 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix lmm:     <https://meta.linked.archi/leanix/onto#> .
+@prefix :        <https://meta.linked.archi/leanix/viewpoints#> .
+
+<https://meta.linked.archi/leanix/viewpoints#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/leanix/viewpoints#" ;
+    vann:preferredNamespacePrefix "lmmvp" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi LeanIX Viewpoints"@en ;
+    dcterms:description                '''Viewpoints for the SAP LeanIX Meta Model v4, covering application
+portfolio management, technology landscape, interface mapping, capability
+mapping, and transformation roadmaps.'''@en ;
+    dcterms:created               "2026-04-16"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/leanix/viewpoints/0.2.0#> ;
+    owl:versionInfo               "0.2.0"@en ;
+    dcterms:source  <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    prov:wasDerivedFrom <https://help.sap.com/docs/leanix/ea/meta-model> ;
+    rdfs:seeAlso                  <https://help.sap.com/docs/leanix/ea/meta-model> ;
+.
+
+
+#################################################################
+# Viewpoint Catalog
+#################################################################
+
+:ViewpointCatalog
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "LeanIX Viewpoint Catalog"@en ;
+    dcterms:description  '''Viewpoints for the SAP LeanIX Meta Model v4, organized around
+the typical EA management activities: portfolio management, technology
+oversight, interface analysis, capability mapping, and transformation planning.'''@en ;
+    skos:scopeNote   '''These viewpoints reflect common LeanIX report types and dashboard
+perspectives. They map LeanIX fact sheet types to architecture concerns
+and purposes.'''@en ;
+    skos:hasTopConcept :ApplicationPortfolio, :TechnologyLandscape,
+                       :InterfaceMap, :CapabilityMap, :TransformationRoadmap ;
+.
+
+
+#################################################################
+# LeanIX Viewpoints
+#################################################################
+
+:ApplicationPortfolio
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Application Portfolio"@en ;
+    skos:definition         '''Catalog of all applications with their business capability
+alignment and organizational ownership. The foundation for application
+rationalization and portfolio management. Answers: "What applications do
+we have and how do they support our business?"'''@en ;
+    arch:includesConcept    lmm:Application, lmm:AIAgent, lmm:BusinessApplication, lmm:Extension,
+                        lmm:Microservice, lmm:BusinessCapability, lmm:Organization, lmm:BusinessUnit,
+                        lmm:Customer, lmm:LegalEntity, lmm:Region, lmm:Team ;
+    arch:viewpointHasPurpose archvp:Deciding ;
+    arch:viewpointFramesConcern archvp:StructureConcern, archvp:GovernanceConcern ;
+    arch:viewType           arch:Catalog ;
+    skos:topConceptOf       :ViewpointCatalog ;
+    skos:inScheme           :ViewpointCatalog ;
+.
+
+:TechnologyLandscape
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Technology Landscape"@en ;
+    skos:definition         '''Catalog of IT components, technology categories, platforms, and
+providers. Supports technology standardization and lifecycle management.
+Answers: "What technologies do we use and who provides them?"'''@en ;
+    arch:includesConcept    lmm:ITComponent, lmm:AIModel, lmm:Hardware, lmm:IaaS, lmm:PaaS, lmm:SaaS,
+                        lmm:Service, lmm:Software, lmm:TechCategory, lmm:Platform, lmm:Provider ;
+    arch:viewpointHasPurpose archvp:Informing ;
+    arch:viewpointFramesConcern archvp:StructureConcern, archvp:DependencyConcern ;
+    arch:viewType           arch:Catalog ;
+    skos:topConceptOf       :ViewpointCatalog ;
+    skos:inScheme           :ViewpointCatalog ;
+.
+
+:InterfaceMap
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Interface Map"@en ;
+    skos:definition         '''Shows the interfaces between applications and the data objects
+they exchange. Supports integration analysis and API management.
+Answers: "How do our applications connect and what data do they share?"'''@en ;
+    arch:includesConcept    lmm:Application, lmm:AIAgent, lmm:BusinessApplication, lmm:Extension,
+                        lmm:Microservice, lmm:Interface, lmm:API, lmm:LogicalInterface, lmm:MCPServer,
+                        lmm:DataObject ;
+    arch:viewpointHasPurpose archvp:Designing ;
+    arch:viewpointFramesConcern archvp:IntegrationConcern, archvp:DependencyConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:topConceptOf       :ViewpointCatalog ;
+    skos:inScheme           :ViewpointCatalog ;
+.
+
+:CapabilityMap
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Capability Map"@en ;
+    skos:definition         '''Shows business capabilities and their supporting applications
+and organizational units. Supports capability-based planning and gap analysis.
+Answers: "Which capabilities are supported and by whom?"'''@en ;
+    arch:includesConcept    lmm:BusinessCapability, lmm:Application, lmm:AIAgent, lmm:BusinessApplication,
+                        lmm:Extension, lmm:Microservice, lmm:Organization, lmm:BusinessUnit, lmm:Customer,
+                        lmm:LegalEntity, lmm:Region, lmm:Team ;
+    arch:viewpointHasPurpose archvp:Informing ;
+    arch:viewpointFramesConcern archvp:StructureConcern, archvp:GovernanceConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:topConceptOf       :ViewpointCatalog ;
+    skos:inScheme           :ViewpointCatalog ;
+.
+
+:TransformationRoadmap
+    a                       arch:Viewpoint ;
+    skos:prefLabel          "Transformation Roadmap"@en ;
+    skos:definition         '''Shows strategic objectives, initiatives, and their impact on
+applications and platforms over time. Supports transformation planning
+and investment decisions. Answers: "What are we changing, why, and when?"'''@en ;
+    arch:includesConcept    lmm:Objective, lmm:Initiative, lmm:Epic, lmm:Idea, lmm:Program, lmm:Project,
+                        lmm:Application, lmm:AIAgent, lmm:BusinessApplication, lmm:Extension, lmm:Microservice,
+                        lmm:Platform ;
+    arch:viewpointHasPurpose archvp:Deciding ;
+    arch:viewpointFramesConcern archvp:EvolutionConcern, archvp:GovernanceConcern ;
+    arch:viewType           arch:Diagram ;
+    skos:topConceptOf       :ViewpointCatalog ;
+    skos:inScheme           :ViewpointCatalog ;
+.

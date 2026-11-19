@@ -1,0 +1,128 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix archvp:  <https://meta.linked.archi/core-viewpoints#> .
+@prefix bpmnmm:  <https://meta.linked.archi/bpmn/metamodel#> .
+@prefix :        <https://meta.linked.archi/bpmn-lite/metamodel#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/bpmn-lite/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn-lite/metamodel#" ;
+    vann:preferredNamespacePrefix "bpmnlmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi BPMN Lite Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for BPMN Lite — a simplified BPMN profile
+for enterprise architecture reasoning. Covers the EA-relevant subset of BPMN 2.0.2:
+processes, tasks, events, gateways, participants, data objects, and message flows.
+
+Choose BPMN Lite when:
+  • The goal is cross-model reasoning (BPMN ↔ ArchiMate ↔ C4), not BPMN execution.
+  • You want a "thin lift" — only constructs with EA-level semantic value.
+  • Layout and notation detail stays in the original .bpmn file, referenced by URI.
+
+Choose the full BPMN 2.0.2 suite (modelingLanguages/bpmn/) when:
+  • You need full spec fidelity (144 classes, diagram interchange, correlation).
+  • You are building BPMN tooling, round-tripping, or execution engines.
+  • You need SHACL validation against the complete BPMN metamodel.'''@en ;
+    dcterms:created               "2026-05-06"^^xsd:date ;
+    dcterms:modified              "2026-05-06"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionIRI                <https://meta.linked.archi/bpmn-lite/metamodel/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source  <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    rdfs:seeAlso                  <https://www.omg.org/spec/BPMN/2.0.2/> ;
+.
+
+
+#################################################################
+# Framework Individual — DEPRECATED, use BPMN's
+#
+# BPMN Lite is a profile of BPMN, not a different language, so it shares
+# BPMN's framework identity: bpmnmm:BPMNFramework, declared in
+# modelingLanguages/bpmn/bpmn-metamodel.ttl.
+#
+# Minting a second :BPMNFramework here meant "BPMN, the language" had two
+# unrelated IRIs, so a consumer asking
+# arch:modelConformsToMetamodel/arch:basedOnFramework which BPMN models
+# exist got either the full-suite ones or the Lite ones, never both,
+# depending on which IRI they happened to pick.
+#
+# Retained, owl:deprecated, with owl:sameAs to BPMN's, and no longer typed
+# arch:Framework so `?fw a arch:Framework` yields one BPMN framework.
+#################################################################
+
+:BPMNFramework
+    owl:deprecated     true ;
+    owl:sameAs         bpmnmm:BPMNFramework ;
+    rdfs:seeAlso       bpmnmm:BPMNFramework ;
+    skos:editorialNote '''Deprecated. Use bpmnmm:BPMNFramework
+(https://meta.linked.archi/bpmn/metamodel#BPMNFramework). BPMN Lite is a profile of the same
+language; what distinguishes it from the full suite belongs on :BPMNLite, not on a second
+framework individual.'''@en ;
+.
+
+
+#################################################################
+# Metamodel Instance
+#################################################################
+
+:BPMNLite
+    a                             arch:Metamodel ;
+    skos:prefLabel                "BPMN Lite Metamodel"@en ;
+    dcterms:description               '''Simplified BPMN metamodel for EA-level reasoning. Covers processes,
+tasks (7 types), events (4 types), gateways (4 types), participants, lanes,
+data objects, data stores, messages, and 3 relationship types (sequence flow,
+message flow, data association). Omits diagram interchange, correlation,
+loop characteristics, I/O specifications, and the extension mechanism.'''@en ;
+
+    ## Foundation — BPMN's framework, shared, because Lite is a profile of it
+    ## File: ../bpmn/bpmn-metamodel.ttl
+    ##
+    ## Pointing at bpmnmm:BPMNFramework rather than a local individual is what makes
+    ## arch:modelConformsToMetamodel/arch:basedOnFramework return BPMN models of both
+    ## readings — full suite and Lite — from one IRI. Choose between them with the
+    ## metamodel IRI (:BPMNLite vs bpmnmm:BPMN2), which is the question that actually
+    ## differs.
+    arch:basedOnFramework         bpmnmm:BPMNFramework ;
+
+    ## Model concepts
+    arch:modelConcepts            <https://meta.linked.archi/bpmn-lite/onto#> ;
+
+    ## Formal rules — SHACL shapes
+    arch:formalRules              <https://meta.linked.archi/bpmn-lite/shapes#> ;
+
+    ## Concept classification — SKOS taxonomy (by BPMN category)
+    ## File: bpmn-lite-tax.ttl
+    arch:conceptClassification    <https://meta.linked.archi/bpmn-lite/tax#> ;
+    arch:paletteGrouping          <https://meta.linked.archi/bpmn-lite/tax#PaletteGrouping> ;
+
+    ## Visual notation set — default element/relationship appearance
+    ## File: bpmn-lite-notation.ttl
+    arch:notationSet              <https://meta.linked.archi/bpmn-lite/notation#BPMNLiteStandardNotation> ;
+
+    ## Stakeholders
+    arch:metamodelIdentifiesStakeholder
+        archvp:ProcessOwner,
+        archvp:BusinessArchitect,
+        archvp:SolutionArchitect ;
+
+    ## Concerns
+    arch:metamodelIdentifiesConsideration
+        archvp:BehaviorConcern,
+        archvp:IntegrationConcern ;
+.
+

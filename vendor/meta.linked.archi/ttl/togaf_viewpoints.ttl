@@ -1,0 +1,861 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix togaf:   <https://meta.linked.archi/togaf/onto#> .
+@prefix :        <https://meta.linked.archi/togaf/viewpoints#> .
+
+<https://meta.linked.archi/togaf/viewpoints#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/togaf/viewpoints#" ;
+    vann:preferredNamespacePrefix "togvp" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "TOGAF Architecture Viewpoints (Catalogs, Matrices, Diagrams)"@en ;
+    dcterms:description                '''TOGAF architecture viewpoints organized by ADM phase. Each viewpoint
+corresponds to a catalog, matrix, or diagram defined in the TOGAF Architecture
+Content Framework. Consistent across TOGAF 9.2 (Chapter 31) and TOGAF 10
+(Architecture Content, Chapter 3).'''@en ;
+    dcterms:created               "2019-03-17"^^xsd:date ;
+    dcterms:modified              "2026-04-24"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    dcterms:source  <https://pubs.opengroup.org/togaf-standard/architecture-content/chap03.html> ;
+    prov:wasDerivedFrom <https://pubs.opengroup.org/togaf-standard/architecture-content/chap03.html> ;
+    owl:versionIRI                <https://meta.linked.archi/togaf/viewpoints/10.0#> ;
+    owl:versionInfo               "10.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/togaf/viewpoints/9.2.0#> ;
+.
+
+
+#################################################################
+# Viewpoint Catalog (SKOS)
+#################################################################
+
+:ViewpointCatalog
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "TOGAF Viewpoint Catalog"@en ;
+    dcterms:description  '''Classification of TOGAF architecture viewpoints by ADM phase.
+Each phase produces specific catalogs, matrices, and diagrams as defined in the
+TOGAF Architecture Content Framework.'''@en ;
+    skos:scopeNote   '''This grouping follows the TOGAF ADM phase structure. ArchiMate
+uses a different grouping (Composition/Support/Cooperation/Realization).
+ISO/IEC/IEEE 42010 does not prescribe a specific grouping.'''@en ;
+    skos:hasTopConcept :PreliminaryPhaseVPs, :PhaseAVPs, :PhaseBVPs,
+                       :PhaseCDataVPs, :PhaseCAppVPs, :PhaseDVPs, :PhaseEVPs,
+                       :PhaseFVPs, :PhaseGVPs, :PhaseHVPs,
+                       :RequirementsManagementVPs ;
+.
+
+:PreliminaryPhaseVPs
+    a skos:Concept ; skos:prefLabel "Preliminary Phase"@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+:PhaseAVPs
+    a skos:Concept ; skos:prefLabel "Phase A: Architecture Vision"@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+:PhaseBVPs
+    a skos:Concept ; skos:prefLabel "Phase B: Business Architecture"@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+:PhaseCDataVPs
+    a skos:Concept ; skos:prefLabel "Phase C: Data Architecture"@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+:PhaseCAppVPs
+    a skos:Concept ; skos:prefLabel "Phase C: Application Architecture"@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+:PhaseDVPs
+    a skos:Concept ; skos:prefLabel "Phase D: Technology Architecture"@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+:PhaseEVPs
+    a skos:Concept ; skos:prefLabel "Phase E: Opportunities & Solutions"@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+:PhaseFVPs
+    a skos:Concept ; skos:prefLabel "Phase F: Migration Planning"@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+:PhaseGVPs
+    a skos:Concept ; skos:prefLabel "Phase G: Implementation Governance"@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+:PhaseHVPs
+    a skos:Concept ; skos:prefLabel "Phase H: Architecture Change Management"@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+:RequirementsManagementVPs
+    a skos:Concept ; skos:prefLabel "Requirements Management"@en ;
+    skos:topConceptOf :ViewpointCatalog ; skos:inScheme :ViewpointCatalog ;
+.
+
+
+#################################################################
+# Stakeholder Individuals
+#################################################################
+
+:EnterpriseArchitect   a arch:Stakeholder ; skos:prefLabel "Enterprise Architect"@en .
+:BusinessArchitect     a arch:Stakeholder ; skos:prefLabel "Business Architect"@en .
+:DataArchitect         a arch:Stakeholder ; skos:prefLabel "Data Architect"@en .
+:ApplicationArchitect  a arch:Stakeholder ; skos:prefLabel "Application Architect"@en .
+:TechnologyArchitect   a arch:Stakeholder ; skos:prefLabel "Technology Architect"@en .
+:CIO                   a arch:Stakeholder ; skos:prefLabel "CIO"@en .
+:ProjectManager        a arch:Stakeholder ; skos:prefLabel "Project Manager"@en .
+:BusinessOwner         a arch:Stakeholder ; skos:prefLabel "Business Owner"@en .
+
+
+#################################################################
+# Preliminary Phase
+#################################################################
+
+:PrinciplesCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Principles Catalog"@en ;
+    skos:definition "Captures architecture principles that describe what a good solution should look like."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Governing ;
+    arch:includesConcept togaf:Principle ;
+    arch:targetsStakeholder :EnterpriseArchitect, :CIO ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PreliminaryPhaseVPs ;
+.
+
+
+#################################################################
+# Phase A: Architecture Vision
+#################################################################
+
+:StakeholderMapMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Stakeholder Map Matrix"@en ;
+    skos:definition "Maps stakeholders to their concerns, influence, and engagement approach."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:Actor, togaf:Organization, togaf:Role,
+                         togaf:Driver, togaf:Goal ;
+    arch:targetsStakeholder :EnterpriseArchitect, :BusinessArchitect, :CIO ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseAVPs ;
+.
+
+:SolutionConceptDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Solution Concept Diagram"@en ;
+    skos:definition "High-level overview of the proposed solution showing key components and their interactions."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing, :Informing ;
+    arch:includesConcept togaf:LogicalApplicationComponent, togaf:LogicalTechnologyComponent,
+                         togaf:BusinessService, togaf:Platform, togaf:Vision ;
+    arch:targetsStakeholder :EnterpriseArchitect, :CIO, :BusinessOwner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseAVPs ;
+.
+
+:ValueChainDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Value Chain Diagram"@en ;
+    skos:definition "Shows the key business functions and their contribution to value creation."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:BusinessFunction, togaf:BusinessService ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner, :CIO ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseAVPs ;
+.
+
+
+#################################################################
+# Phase B: Business Architecture
+#################################################################
+
+:OrganizationActorCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Organization/Actor Catalog"@en ;
+    skos:definition "Inventory of organizations and actors within the enterprise."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:Organization, togaf:Actor ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:DriverGoalObjectiveCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Driver/Goal/Objective Catalog"@en ;
+    skos:definition "Lists business drivers, goals, and objectives that shape the architecture."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:Driver, togaf:Goal, togaf:Objective ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner, :CIO ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:RoleCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Role Catalog"@en ;
+    skos:definition "Inventory of business roles and their responsibilities."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:Role ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:BusinessServiceFunctionCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Business Service/Function Catalog"@en ;
+    skos:definition "Inventory of business services and functions provided by the enterprise."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Informing, :Deciding ;
+    arch:includesConcept togaf:BusinessService, togaf:BusinessFunction ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:LocationCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Location Catalog"@en ;
+    skos:definition "Inventory of business locations and their characteristics."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:Location ;
+    arch:targetsStakeholder :BusinessArchitect, :EnterpriseArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:ProcessEventControlProductCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Process/Event/Control/Product Catalog"@en ;
+    skos:definition "Inventory of business processes, events, controls, and products."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:BusinessProcess, togaf:BusinessEvent, togaf:Product ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:ContractMeasureCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Contract/Measure Catalog"@en ;
+    skos:definition "Inventory of contracts and service-level measures."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Governing ;
+    arch:includesConcept togaf:Contract, togaf:Measure ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:BusinessInteractionMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Business Interaction Matrix"@en ;
+    skos:definition "Shows interactions between organizations and business functions."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:Organization, togaf:BusinessFunction ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:ActorRoleMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Actor/Role Matrix"@en ;
+    skos:definition "Maps actors to the roles they fulfill."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:Actor, togaf:Role ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:BusinessFootprintDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Business Footprint Diagram"@en ;
+    skos:definition "Shows the links between business goals, functions, services, and organizational units."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:Goal, togaf:BusinessFunction, togaf:BusinessService,
+                         togaf:Organization ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner, :CIO ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:BusinessServiceInformationDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Business Service/Information Diagram"@en ;
+    skos:definition "Shows the information needed by business services."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:BusinessService, togaf:DataEntity ;
+    arch:targetsStakeholder :BusinessArchitect, :DataArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:FunctionalDecompositionDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Functional Decomposition Diagram"@en ;
+    skos:definition "Shows the hierarchical decomposition of business functions."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:BusinessFunction ;
+    arch:targetsStakeholder :BusinessArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:GoalObjectiveServiceDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Goal/Objective/Service Diagram"@en ;
+    skos:definition "Shows how services contribute to goals and objectives."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:Goal, togaf:Objective, togaf:BusinessService ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner, :CIO ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:BusinessUseCaseDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Business Use-Case Diagram"@en ;
+    skos:definition "Shows the relationships between actors and business processes."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:Actor, togaf:BusinessProcess ;
+    arch:targetsStakeholder :BusinessArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:OrganizationDecompositionDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Organization Decomposition Diagram"@en ;
+    skos:definition "Shows the hierarchical structure of the organization."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:Organization ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:ProcessFlowDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Process Flow Diagram"@en ;
+    skos:definition "Shows the sequence of activities in a business process."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:BusinessProcess, togaf:BusinessEvent ;
+    arch:targetsStakeholder :BusinessArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:EventDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Event Diagram"@en ;
+    skos:definition "Shows the relationships between events, processes, and states."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:BusinessEvent, togaf:BusinessProcess ;
+    arch:targetsStakeholder :BusinessArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+:ProductLifecycleDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Product Lifecycle Diagram"@en ;
+    skos:definition "Shows the lifecycle stages of a product."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:Product ;
+    arch:targetsStakeholder :BusinessArchitect, :BusinessOwner ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseBVPs ;
+.
+
+
+#################################################################
+# Phase C: Data Architecture
+#################################################################
+
+:DataEntityComponentCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Data Entity/Data Component Catalog"@en ;
+    skos:definition "Inventory of data entities and their mapping to data components."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:DataEntity, togaf:LogicalDataComponent,
+                         togaf:PhysicalDataComponent ;
+    arch:targetsStakeholder :DataArchitect, :ApplicationArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCDataVPs ;
+.
+
+:DataEntityBusinessFunctionMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Data Entity/Business Function Matrix"@en ;
+    skos:definition "Maps data entities to the business functions that create, read, update, or delete them."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:DataEntity, togaf:BusinessFunction ;
+    arch:targetsStakeholder :DataArchitect, :BusinessArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCDataVPs ;
+.
+
+:ApplicationDataMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Application/Data Matrix"@en ;
+    skos:definition "Maps applications to the data entities they access."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:LogicalApplicationComponent, togaf:PhysicalApplicationComponent,
+                         togaf:DataEntity ;
+    arch:targetsStakeholder :DataArchitect, :ApplicationArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCDataVPs ;
+.
+
+:ConceptualDataDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Conceptual Data Diagram"@en ;
+    skos:definition "High-level view of key data concepts and their relationships across the enterprise."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Informing, :Designing ;
+    arch:includesConcept togaf:DataEntity ;
+    arch:targetsStakeholder :DataArchitect, :BusinessArchitect, :EnterpriseArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCDataVPs ;
+.
+
+:LogicalDataDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Logical Data Diagram"@en ;
+    skos:definition "Shows the logical structure of data entities and their relationships."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:DataEntity, togaf:LogicalDataComponent ;
+    arch:targetsStakeholder :DataArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCDataVPs ;
+.
+
+:DataDisseminationDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Data Dissemination Diagram"@en ;
+    skos:definition "Shows how data flows between applications and business services."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:DataEntity, togaf:LogicalApplicationComponent ;
+    arch:targetsStakeholder :DataArchitect, :ApplicationArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCDataVPs ;
+.
+
+:DataSecurityDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Data Security Diagram"@en ;
+    skos:definition "Shows data security classifications and access controls."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Governing ;
+    arch:includesConcept togaf:DataEntity ;
+    arch:targetsStakeholder :DataArchitect, :EnterpriseArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCDataVPs ;
+.
+
+:DataMigrationDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Data Migration Diagram"@en ;
+    skos:definition "Shows the migration of data from source to target systems."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:DataEntity, togaf:PhysicalDataComponent ;
+    arch:targetsStakeholder :DataArchitect, :ApplicationArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCDataVPs ;
+.
+
+:DataLifecycleDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Data Lifecycle Diagram"@en ;
+    skos:definition "Shows the lifecycle stages of data entities."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Governing ;
+    arch:includesConcept togaf:DataEntity ;
+    arch:targetsStakeholder :DataArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCDataVPs ;
+.
+
+
+#################################################################
+# Phase C: Application Architecture
+#################################################################
+
+:ApplicationPortfolioCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Application Portfolio Catalog"@en ;
+    skos:definition "Inventory of all applications with key attributes."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Deciding, :Informing ;
+    arch:includesConcept togaf:LogicalApplicationComponent,
+                         togaf:PhysicalApplicationComponent ;
+    arch:targetsStakeholder :ApplicationArchitect, :EnterpriseArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCAppVPs ;
+.
+
+:InterfaceCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Interface Catalog"@en ;
+    skos:definition "Inventory of application interfaces and their characteristics."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:ApplicationInterface ;
+    arch:targetsStakeholder :ApplicationArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCAppVPs ;
+.
+
+:ApplicationOrganizationMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Application/Organization Matrix"@en ;
+    skos:definition "Maps applications to the organizations that use them."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:LogicalApplicationComponent, togaf:PhysicalApplicationComponent,
+                         togaf:Organization ;
+    arch:targetsStakeholder :ApplicationArchitect, :BusinessArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCAppVPs ;
+.
+
+:RoleApplicationMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Role/Application Matrix"@en ;
+    skos:definition "Maps roles to the applications they use."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:Role, togaf:LogicalApplicationComponent,
+                         togaf:PhysicalApplicationComponent ;
+    arch:targetsStakeholder :ApplicationArchitect, :BusinessArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCAppVPs ;
+.
+
+:ApplicationFunctionMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Application/Function Matrix"@en ;
+    skos:definition "Maps applications to the business functions they support."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:LogicalApplicationComponent, togaf:PhysicalApplicationComponent,
+                         togaf:BusinessFunction ;
+    arch:targetsStakeholder :ApplicationArchitect, :BusinessArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCAppVPs ;
+.
+
+:TOGAFApplicationInteractionMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Application Interaction Matrix"@en ;
+    skos:definition "Maps application-to-application interactions and dependencies."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:LogicalApplicationComponent,
+                         togaf:PhysicalApplicationComponent ;
+    arch:targetsStakeholder :ApplicationArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCAppVPs ;
+.
+
+:ApplicationCommunicationDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Application Communication Diagram"@en ;
+    skos:definition "Shows communication flows between applications."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:LogicalApplicationComponent, togaf:PhysicalApplicationComponent,
+                         togaf:ApplicationInterface ;
+    arch:targetsStakeholder :ApplicationArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCAppVPs ;
+.
+
+:ApplicationUserLocationDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Application and User Location Diagram"@en ;
+    skos:definition "Shows the geographic distribution of applications and their users."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:PhysicalApplicationComponent, togaf:Location ;
+    arch:targetsStakeholder :ApplicationArchitect, :TechnologyArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCAppVPs ;
+.
+
+:ApplicationUseCaseDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Application Use-Case Diagram"@en ;
+    skos:definition "Shows the relationships between actors and application functions."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:Actor, togaf:LogicalApplicationComponent ;
+    arch:targetsStakeholder :ApplicationArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCAppVPs ;
+.
+
+:ProcessApplicationRealizationDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Process/Application Realization Diagram"@en ;
+    skos:definition "Shows how applications realize business processes."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:BusinessProcess, togaf:LogicalApplicationComponent,
+                         togaf:PhysicalApplicationComponent ;
+    arch:targetsStakeholder :ApplicationArchitect, :BusinessArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCAppVPs ;
+.
+
+:ApplicationMigrationDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Application Migration Diagram"@en ;
+    skos:definition "Shows the migration path from baseline to target application landscape."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Deciding, :Governing ;
+    arch:includesConcept togaf:PhysicalApplicationComponent, togaf:Plateau ;
+    arch:targetsStakeholder :ApplicationArchitect, :EnterpriseArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseCAppVPs ;
+.
+
+
+#################################################################
+# Phase D: Technology Architecture
+#################################################################
+
+:TechnologyStandardsCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Technology Standards Catalog"@en ;
+    skos:definition "Inventory of technology standards and their lifecycle status."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Governing ;
+    arch:includesConcept togaf:LogicalTechnologyComponent ;
+    arch:targetsStakeholder :TechnologyArchitect, :EnterpriseArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseDVPs ;
+.
+
+:TechnologyPortfolioCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Technology Portfolio Catalog"@en ;
+    skos:definition "Inventory of technology products and platforms."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Deciding, :Informing ;
+    arch:includesConcept togaf:LogicalTechnologyComponent, togaf:PhysicalTechnologyComponent,
+                         togaf:Platform ;
+    arch:targetsStakeholder :TechnologyArchitect, :EnterpriseArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseDVPs ;
+.
+
+:ApplicationTechnologyMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Application/Technology Matrix"@en ;
+    skos:definition "Maps applications to the technology components that support them."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:PhysicalApplicationComponent, togaf:PhysicalTechnologyComponent ;
+    arch:targetsStakeholder :TechnologyArchitect, :ApplicationArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseDVPs ;
+.
+
+:SystemTechnologyMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "System/Technology Matrix"@en ;
+    skos:definition "Maps systems to the technology platforms they depend on."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:PhysicalApplicationComponent,
+                         togaf:PhysicalTechnologyComponent ;
+    arch:targetsStakeholder :TechnologyArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseDVPs ;
+.
+
+:EnvironmentsLocationsDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Environments and Locations Diagram"@en ;
+    skos:definition "Shows the distribution of technology across environments and locations."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Informing ;
+    arch:includesConcept togaf:PhysicalTechnologyComponent, togaf:Location ;
+    arch:targetsStakeholder :TechnologyArchitect, :EnterpriseArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseDVPs ;
+.
+
+:PlatformDecompositionDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Platform Decomposition Diagram"@en ;
+    skos:definition "Shows the decomposition of technology platforms into components."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:Platform, togaf:LogicalTechnologyComponent,
+                         togaf:PhysicalTechnologyComponent ;
+    arch:targetsStakeholder :TechnologyArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseDVPs ;
+.
+
+:NetworkedComputingDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Networked Computing/Hardware Diagram"@en ;
+    skos:definition "Shows the physical hardware and network topology."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:PhysicalTechnologyComponent ;
+    arch:targetsStakeholder :TechnologyArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseDVPs ;
+.
+
+:CommunicationsEngineeringDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Communications Engineering Diagram"@en ;
+    skos:definition "Shows the detailed communications infrastructure."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Designing ;
+    arch:includesConcept togaf:PhysicalTechnologyComponent, togaf:TechnologyInterface ;
+    arch:targetsStakeholder :TechnologyArchitect ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseDVPs ;
+.
+
+
+#################################################################
+# Phase E: Opportunities & Solutions
+#################################################################
+
+:ProjectContextDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Project Context Diagram"@en ;
+    skos:definition "Shows the scope and context of implementation projects."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:WorkPackage, togaf:Capability, togaf:Gap ;
+    arch:targetsStakeholder :EnterpriseArchitect, :ProjectManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseEVPs ;
+.
+
+:BenefitsDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Benefits Diagram"@en ;
+    skos:definition "Shows the expected benefits and their relationships to architecture changes."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Deciding, :Informing ;
+    arch:includesConcept togaf:Goal, togaf:Objective, togaf:WorkPackage ;
+    arch:targetsStakeholder :EnterpriseArchitect, :BusinessOwner, :CIO ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseEVPs ;
+.
+
+
+#################################################################
+# Phase F: Migration Planning
+#################################################################
+
+:ImplementationFactorMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Implementation Factor Matrix"@en ;
+    skos:definition "Captures factors affecting migration including risks, costs, and business value for each work package."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:WorkPackage, togaf:Gap, togaf:Capability ;
+    arch:targetsStakeholder :EnterpriseArchitect, :ProjectManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseFVPs ;
+.
+
+:ConsolidatedGapMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Consolidated Gap Matrix"@en ;
+    skos:definition "Consolidates all gaps identified across business, data, application, and technology domains."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Deciding ;
+    arch:includesConcept togaf:Gap, togaf:Plateau ;
+    arch:targetsStakeholder :EnterpriseArchitect, :ProjectManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseFVPs ;
+.
+
+:ArchitectureRoadmapDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Architecture Roadmap Diagram"@en ;
+    skos:definition "Shows the timeline of transition architectures from baseline to target state."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Deciding, :Informing ;
+    arch:includesConcept togaf:Plateau, togaf:WorkPackage, togaf:Capability ;
+    arch:targetsStakeholder :EnterpriseArchitect, :CIO, :ProjectManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseFVPs ;
+.
+
+
+#################################################################
+# Phase G: Implementation Governance
+#################################################################
+
+:ImplementationGovernanceDiagram
+    a arch:Viewpoint ;
+    skos:prefLabel "Implementation Governance Diagram"@en ;
+    skos:definition "Shows governance checkpoints, compliance criteria, and oversight responsibilities during implementation."@en ;
+    arch:viewType arch:Diagram ;
+    arch:viewpointHasPurpose :Governing ;
+    arch:includesConcept togaf:WorkPackage, togaf:Deliverable, togaf:Plateau ;
+    arch:targetsStakeholder :EnterpriseArchitect, :ProjectManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseGVPs ;
+.
+
+:ArchitectureContractDocument
+    a arch:Viewpoint ;
+    skos:prefLabel "Architecture Contract"@en ;
+    skos:definition "Formal agreement on deliverables, quality criteria, and fitness-for-purpose between architecture and implementation teams."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Governing ;
+    arch:includesConcept togaf:Deliverable, togaf:WorkPackage, togaf:Contract ;
+    arch:targetsStakeholder :EnterpriseArchitect, :ProjectManager, :CIO ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseGVPs ;
+.
+
+
+#################################################################
+# Phase H: Architecture Change Management
+#################################################################
+
+:ChangeRequestMatrix
+    a arch:Viewpoint ;
+    skos:prefLabel "Change Request Matrix"@en ;
+    skos:definition "Tracks change requests, their impact on the architecture, and disposition status."@en ;
+    arch:viewType arch:Matrix ;
+    arch:viewpointHasPurpose :Governing, :Deciding ;
+    arch:includesConcept togaf:Gap, togaf:Requirement, togaf:Capability ;
+    arch:targetsStakeholder :EnterpriseArchitect, :ProjectManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseHVPs ;
+.
+
+:ArchitectureComplianceReview
+    a arch:Viewpoint ;
+    skos:prefLabel "Architecture Compliance Review"@en ;
+    skos:definition "Assesses compliance of the implemented architecture against the target architecture and architecture contracts."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Governing ;
+    arch:includesConcept togaf:Deliverable, togaf:Contract, togaf:Gap ;
+    arch:targetsStakeholder :EnterpriseArchitect, :CIO ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :PhaseHVPs ;
+.
+
+
+#################################################################
+# Requirements Management
+#################################################################
+
+:RequirementsCatalog
+    a arch:Viewpoint ;
+    skos:prefLabel "Requirements Catalog"@en ;
+    skos:definition "Comprehensive list of all architecture requirements, constraints, and assumptions across ADM phases."@en ;
+    arch:viewType arch:Catalog ;
+    arch:viewpointHasPurpose :Informing, :Governing ;
+    arch:includesConcept togaf:Requirement, togaf:Constraint, togaf:Assumption ;
+    arch:targetsStakeholder :EnterpriseArchitect, :BusinessArchitect, :ProjectManager ;
+    skos:inScheme :ViewpointCatalog ; skos:broader :RequirementsManagementVPs ;
+.
+
+
+#################################################################
+# Purpose Individuals (shared with ArchiMate viewpoints)
+# These reference the same arch:Purpose class but are defined
+# locally if the ArchiMate viewpoints file is not loaded.
+#################################################################
+
+:Deciding    a arch:Purpose ; skos:prefLabel "Deciding"@en ;
+    skos:definition "Evaluating options, portfolio rationalization, lifecycle planning."@en .
+:Designing   a arch:Purpose ; skos:prefLabel "Designing"@en ;
+    skos:definition "Creating or refining architecture structure and integration."@en .
+:Informing   a arch:Purpose ; skos:prefLabel "Informing"@en ;
+    skos:definition "Communicating architecture to stakeholders."@en .
+:Governing   a arch:Purpose ; skos:prefLabel "Governing"@en ;
+    skos:definition "Compliance checking, standards enforcement."@en .

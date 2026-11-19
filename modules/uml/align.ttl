@@ -1,0 +1,22 @@
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix uml:   <https://meta.linked.archi/uml/onto#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+
+# AISEP alignment UML -> ArchiMate 4.0 hub (spec §6.3): only semantically unambiguous classes.
+# Upstream has NO UML->ArchiMate mapping at all (not even SKOS), so every axiom here is an AISEP decision.
+# uml:Class and uml:Component are deliberately NOT aligned (polysemous): connect them with arch:Refines.
+# Lives only in AISEP's graph (spec §5); excluded from the am4-shapes data graph (§10.2, inheritsHubRules false).
+
+<https://aisep.example/module/uml/align>
+    a owl:Ontology ;
+    owl:versionInfo "0.1.0" .
+
+uml:Interface            rdfs:subClassOf am4:ApplicationInterface .
+uml:Activity             rdfs:subClassOf am4:Process .
+uml:Generalization       rdfs:subClassOf am4:Specialization .
+# "uml:Node/Device/Artifact/ExecutionEnvironment ⊑ the corresponding technology classes":
+uml:Node                 rdfs:subClassOf am4:Node .
+uml:Device               rdfs:subClassOf am4:Device .
+uml:Artifact             rdfs:subClassOf am4:Artifact .
+uml:ExecutionEnvironment rdfs:subClassOf am4:SystemSoftware .

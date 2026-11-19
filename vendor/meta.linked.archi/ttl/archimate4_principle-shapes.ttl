@@ -1,0 +1,823 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+@prefix :        <https://meta.linked.archi/archimate4/principle-shapes#> .
+
+<https://meta.linked.archi/archimate4/principle-shapes#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/core-shapes#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/archimate4/principle-shapes#" ;
+    vann:preferredNamespacePrefix "am4psh" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi ArchiMate 4.0 Architecture Principle Shapes"@en ;
+    dcterms:description                '''SHACL shapes encoding common enterprise architecture principles
+as executable constraints. Adapted from 3.2 principle shapes for ArchiMate 4.0
+domain-based structure.'''@en ;
+    dcterms:created               "2026-04-19"^^xsd:date ;
+    skos:historyNote              '''2026-11-06: OrphanedElementShape written with MINUS rather than
+FILTER NOT EXISTS — the same results, without testing every element against every other one; and
+targeted at ArchiMate 4.0's elements and junctions rather than arch:Element, so that it judges no other
+notation's elements and, with ArchiMate 3.2 loaded too, does not report an element twice.'''@en ;
+    dcterms:modified              "2026-11-06"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/archimate4/principle-shapes/4.0#> ;
+    owl:versionInfo               "4.0"@en ;
+    sh:declare [
+        sh:prefix "am4" ;
+        sh:namespace "https://meta.linked.archi/archimate4/onto#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "arch" ;
+        sh:namespace "https://meta.linked.archi/core#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdf" ;
+        sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdfs" ;
+        sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ;
+    ] ;
+.
+
+## Redundancy avoidance — warn if multiple components serve the same service
+:RedundancyAvoidanceShape
+    a sh:NodeShape ;
+    sh:targetClass am4:Service ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message "Multiple components realize the same service — potential redundancy."@en ;
+        sh:select """
+            SELECT $this (COUNT(DISTINCT ?comp) AS ?count) WHERE {
+                ?comp am4:realizes $this .
+                ?comp rdf:type/rdfs:subClassOf* am4:InternalActiveStructureElement .
+            }
+            GROUP BY $this
+            HAVING (COUNT(DISTINCT ?comp) > 1)
+        """ ;
+    ] ;
+.
+
+#################################################################
+#
+#  CATEGORY 1 (continued): REDUNDANCY AVOIDANCE
+#
+#  Principle: Avoid redundant application support for the same
+#  business capability or process. Multiple applications serving
+#  the same process for the same purpose indicate duplication
+#  that increases cost and complexity.
+#
+#  Reference: Montecchiari & Hinkelmann (2026), Section 5.6,
+#  Listing 3 — "RedundancyAvoidanceShape"
+#
+#  Note: In ArchiMate 4.0, per-layer behavior elements are merged
+#  into Common Domain elements (Process, Function, Service), so a
+#  process, function or service belongs to no business or application
+#  domain; the rules below apply to every one. Active and passive
+#  structure keep their domains (BusinessDomainElement,
+#  ApplicationDomainElement, TechnologyDomainElement).
+#
+#################################################################
+
+:RedundantApplicationRealizingServiceShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Service ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Redundant Application Realizing Service"@en ;
+    skos:definition
+        '''Detects services realized by more than one application
+        component. Multiple components realizing the same service
+        may indicate duplication in the application landscape.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Service {$this} is realized by multiple application components ({?app1} and {?app2})."@en ;
+        sh:select """
+            SELECT $this ?app1 ?app2
+            WHERE {
+                $this a am4:Service .
+                ?app1 a am4:ApplicationComponent ;
+                      am4:realizes $this .
+                ?app2 a am4:ApplicationComponent ;
+                      am4:realizes $this .
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+:RedundantFunctionRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Function ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Redundant Function Support"@en ;
+    skos:definition
+        '''Detects functions served by more than one application
+        component. Consolidation candidates for application rationalization.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Function {$this} is served by multiple application components ({?app1} and {?app2})."@en ;
+        sh:select """
+            SELECT $this ?app1 ?app2
+            WHERE {
+                $this a am4:Function .
+                ?app1 a am4:ApplicationComponent ;
+                      am4:serves $this .
+                ?app2 a am4:ApplicationComponent ;
+                      am4:serves $this .
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 2: SINGLE AUTHORITATIVE SOURCE
+#
+#  Principle: Each data object should be owned/updated by exactly
+#  one application component. Multiple writers to the same data
+#  create consistency risks and governance gaps.
+#
+#  Reference: Montecchiari & Hinkelmann (2026), Section 6.3–6.4,
+#  Table 1 — "Single authoritative update source for data objects"
+#
+#################################################################
+
+:SingleDataWriterShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:DataObject ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Single Authoritative Data Writer"@en ;
+    skos:definition
+        '''Detects data objects accessed with write by more than one
+        application component. Each data object should have a single
+        authoritative source of updates to ensure consistency.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Data object {$this} is written by multiple application components ({?app1} and {?app2}). Designate a single authoritative source."@en ;
+        sh:select """
+            SELECT DISTINCT $this ?app1 ?app2
+            WHERE {
+                $this a am4:DataObject .
+                # A writer: write or read/write access, or an access not stated to be a read.
+                ?app1 a am4:ApplicationComponent .
+                {
+                    ?app1 am4:accesses $this .
+                    FILTER NOT EXISTS { ?read1 a am4:ReadAccess ; arch:source ?app1 ; arch:target $this . }
+                } UNION {
+                    ?write1 a ?kind1 ; arch:source ?app1 ; arch:target $this .
+                    FILTER(?kind1 IN (am4:WriteAccess, am4:ReadWriteAccess))
+                }
+                ?app2 a am4:ApplicationComponent .
+                {
+                    ?app2 am4:accesses $this .
+                    FILTER NOT EXISTS { ?read2 a am4:ReadAccess ; arch:source ?app2 ; arch:target $this . }
+                } UNION {
+                    ?write2 a ?kind2 ; arch:source ?app2 ; arch:target $this .
+                    FILTER(?kind2 IN (am4:WriteAccess, am4:ReadWriteAccess))
+                }
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+:SingleBusinessObjectOwnerShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:BusinessObject ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Single Business Object Owner"@en ;
+    skos:definition
+        '''Detects business objects accessed by more than one application
+        component. Shared access without clear ownership creates
+        governance ambiguity.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Business object {$this} is accessed by multiple application components ({?app1} and {?app2}). Clarify ownership."@en ;
+        sh:select """
+            SELECT $this ?app1 ?app2
+            WHERE {
+                $this a am4:BusinessObject .
+                ?app1 a am4:ApplicationComponent ;
+                      am4:accesses $this .
+                ?app2 a am4:ApplicationComponent ;
+                      am4:accesses $this .
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 3: STEWARDSHIP AND GOVERNANCE
+#
+#  Principle: Critical architecture elements must have assigned
+#  ownership and governance. Unowned elements create accountability
+#  gaps.
+#
+#  Reference: Montecchiari & Hinkelmann (2026), Section 6.2 —
+#  "MDM governance for critical business objects"
+#
+#  Note: In ArchiMate 4.0, Role is a Common Domain element.
+#  BusinessActor remains in the Business Domain.
+#
+#################################################################
+
+:ApplicationComponentOwnershipShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:ApplicationComponent ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Application Component Ownership"@en ;
+    skos:definition
+        '''Every application component should have a business actor or
+        role that owns it, associated with the component.'''@en ;
+    skos:scopeNote
+        '''ArchiMate has no ownership relationship, and its relationship
+        tables do not let a business actor or role be assigned to an
+        application component; an association between the two, in
+        either direction, is read as ownership.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Application component {$this} has no business actor or role associated with it as its owner."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am4:ApplicationComponent .
+                FILTER NOT EXISTS {
+                    { ?owner am4:associatedWith $this . } UNION { $this am4:associatedWith ?owner . }
+                    { ?owner a am4:BusinessActor . } UNION { ?owner a am4:Role . }
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:ProcessPerformerShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Process ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Process Performer"@en ;
+    skos:definition
+        '''Every process should have something assigned to perform it — a business actor, a role,
+        an application component, a node, … — that is responsible for it.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Process {$this} has nothing assigned to perform it (an actor, a role or a component)."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am4:Process .
+                FILTER NOT EXISTS {
+                    ?performer am4:assignedTo $this .
+                    ?performer rdf:type/rdfs:subClassOf* am4:ActiveStructureElement .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:DataObjectStewardshipShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:DataObject ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Data Object Stewardship"@en ;
+    skos:definition
+        '''Critical data objects should have at least one application
+        component assigned to them (their system of record) or accessing
+        them.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Data object {$this} has no application component assigned to it or accessing it. Assign a system of record."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am4:DataObject .
+                FILTER NOT EXISTS {
+                    ?app a am4:ApplicationComponent .
+                    {
+                        ?app am4:accesses $this .
+                    } UNION {
+                        ?app am4:assignedTo $this .
+                    }
+                }
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 4: SEPARATION OF CONCERNS
+#
+#  Principle: Architecture domains should maintain clear boundaries.
+#  Business logic should not leak into technology, and technology
+#  concerns should not pollute business processes.
+#
+#  Note: In ArchiMate 4.0, "layers" are replaced by "domains"
+#  (BusinessDomainElement, TechnologyDomainElement, etc.). Behaviour
+#  is common to all of them: a business process is one a business
+#  actor performs, directly or through a role.
+#
+#################################################################
+
+:BusinessProcessDirectTechnologyDependencyShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Process ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Business Process Direct Technology Dependency"@en ;
+    skos:definition
+        '''Business processes — processes a business actor performs, directly or through a role —
+        should not directly depend on technology domain elements. An application domain should
+        mediate between business and technology.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Business process {$this} has a direct serving/realization dependency on technology element {?tech}. Introduce an application domain mediator."@en ;
+        sh:select """
+            SELECT $this ?tech
+            WHERE {
+                $this a am4:Process .
+                # Business: performed by a business actor, directly or through a role.
+                FILTER EXISTS {
+                    ?actor a am4:BusinessActor .
+                    { ?actor am4:assignedTo $this . }
+                    UNION
+                    { ?actor am4:assignedTo ?role . ?role a am4:Role ; am4:assignedTo $this . }
+                }
+                {
+                    ?tech am4:serves $this .
+                } UNION {
+                    ?tech am4:realizes $this .
+                }
+                ?tech rdf:type/rdfs:subClassOf* am4:TechnologyDomainElement .
+            }
+        """ ;
+    ] ;
+.
+
+:TechnologyServingBusinessDirectlyShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Node ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Technology Serving Business Directly"@en ;
+    skos:definition
+        '''Technology nodes should not directly serve business domain
+        elements. Services should be exposed through the application
+        domain.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Technology node {$this} directly serves business element {?biz}. Route through the application domain."@en ;
+        sh:select """
+            SELECT $this ?biz
+            WHERE {
+                $this a am4:Node .
+                $this am4:serves ?biz .
+                ?biz rdf:type/rdfs:subClassOf* am4:BusinessDomainElement .
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 5: SERVICE ORIENTATION
+#
+#  Principle: Application components should expose their
+#  functionality through services. Direct component-to-component
+#  dependencies create tight coupling.
+#
+#  Note: In ArchiMate 4.0, Service is a single Common Domain
+#  element replacing the per-layer ApplicationService,
+#  BusinessService, and TechnologyService.
+#
+#################################################################
+
+:ApplicationComponentWithoutServiceShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:ApplicationComponent ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Application Component Without Service"@en ;
+    skos:definition
+        '''Application components should expose at least one service.
+        Components without services may indicate missing service
+        definitions or tightly coupled integrations.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Application component {$this} does not expose any service."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am4:ApplicationComponent .
+                FILTER NOT EXISTS {
+                    $this am4:realizes ?svc .
+                    ?svc a am4:Service .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:DirectComponentToComponentServingShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:ApplicationComponent ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Direct Component-to-Component Serving"@en ;
+    skos:definition
+        '''Application components should serve other components through
+        services, not directly. Direct serving creates tight coupling
+        that hinders independent evolution.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Application component {$this} directly serves another application component {?target} without an intermediary service."@en ;
+        sh:select """
+            SELECT $this ?target
+            WHERE {
+                $this a am4:ApplicationComponent .
+                $this am4:serves ?target .
+                ?target a am4:ApplicationComponent .
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 6: TECHNOLOGY STANDARDIZATION
+#
+#  Principle: Technology choices should be standardized. Excessive
+#  technology diversity increases operational cost and risk.
+#
+#################################################################
+
+:ExcessiveTechnologyDiversityPerServiceShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Service ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Excessive Technology Diversity Per Service"@en ;
+    skos:definition
+        '''Services realized by components deployed on many different
+        technology nodes may indicate excessive technology
+        diversity.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Service {$this} depends on {?nodeCount} distinct technology nodes. Consider standardizing."@en ;
+        sh:select """
+            SELECT $this (COUNT(DISTINCT ?node) AS ?nodeCount)
+            WHERE {
+                $this a am4:Service .
+                ?app am4:realizes $this .
+                ?app a am4:ApplicationComponent .
+                # Technology it depends on: serving or realizing the component, or hosting
+                # what realizes it (a node assigned to an artifact or system software).
+                ?node (am4:serves|am4:realizes|am4:assignedTo/am4:realizes) ?app .
+                ?node rdf:type/rdfs:subClassOf* am4:TechnologyDomainElement ,
+                                              am4:ActiveStructureElement .
+            }
+            GROUP BY $this
+            HAVING (COUNT(DISTINCT ?node) > 3)
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 7: SINGLE POINT OF FAILURE
+#
+#  Principle: Critical business services should not depend on a
+#  single application component without redundancy. Single points
+#  of failure threaten business continuity.
+#
+#  Note: In ArchiMate 4.0, Service is a Common Domain element.
+#  We filter for business-domain services where applicable.
+#
+#################################################################
+
+:SinglePointOfFailureShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Service ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Single Point of Failure"@en ;
+    skos:definition
+        '''Services realized by exactly one application
+        component with no redundancy may represent a single point
+        of failure.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Service {$this} is realized by only one application component ({?app}). Consider redundancy for critical services."@en ;
+        sh:select """
+            SELECT $this ?app
+            WHERE {
+                $this a am4:Service .
+                ?app am4:realizes $this .
+                ?app a am4:ApplicationComponent .
+                FILTER NOT EXISTS {
+                    ?app2 am4:realizes $this .
+                    ?app2 a am4:ApplicationComponent .
+                    FILTER(?app2 != ?app)
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:CriticalNodeSingleDeploymentShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:ApplicationComponent ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Single Deployment Node"@en ;
+    skos:definition
+        '''Application components deployed on only one technology node
+        may lack resilience. Critical components should be deployed
+        across multiple nodes.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Application component {$this} is deployed on only one node ({?node}). Consider multi-node deployment for resilience."@en ;
+        sh:select """
+            SELECT $this ?node
+            WHERE {
+                $this a am4:ApplicationComponent .
+                # Deployed on a node: the node realizes the component, or is assigned to an
+                # artifact or system software that does.
+                ?node (am4:realizes|am4:assignedTo/am4:realizes) $this .
+                ?node a am4:Node .
+                FILTER NOT EXISTS {
+                    ?node2 (am4:realizes|am4:assignedTo/am4:realizes) $this .
+                    ?node2 a am4:Node .
+                    FILTER(?node2 != ?node)
+                }
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 8: COMPLETENESS AND TRACEABILITY
+#
+#  Principle: Architecture models should be complete enough to
+#  support governance. Key elements should have required
+#  relationships and documentation.
+#
+#  Note: In ArchiMate 4.0, BusinessService and ApplicationService
+#  are merged into the single Service element. We use domain
+#  membership to distinguish business-domain vs application-domain
+#  services.
+#
+#################################################################
+
+:ServiceWithoutRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Service ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Service Without Realization"@en ;
+    skos:definition
+        '''Every service should be realized by something — a process, a function, an application
+        component, … Unrealized services indicate incomplete modelling.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Service {$this} is not realized by anything."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am4:Service .
+                FILTER NOT EXISTS {
+                    ?realizer am4:realizes $this .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:CapabilityWithoutBehaviorRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Capability ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Capability Without Behaviour Realization"@en ;
+    skos:definition
+        '''Capabilities should be realized by at least one behaviour
+        element (process, function, or interaction). A
+        capability without realization is aspirational only and
+        cannot be assessed for operational readiness.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Capability {$this} is not realized by any process, function, or interaction."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am4:Capability .
+                FILTER NOT EXISTS {
+                    ?behavior am4:realizes $this .
+                    ?behavior rdf:type/rdfs:subClassOf* am4:BehaviorElement .
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:ProcessAutomatedByMultipleApplicationsShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Process ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Process Automated by Multiple Application Components"@en ;
+    skos:definition
+        '''Detects processes assigned to more than one application component. Several
+        components automating the same process may indicate redundant automation or unclear
+        application ownership of it.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Process {$this} is automated by multiple application components ({?app1} and {?app2}). Clarify which component is authoritative."@en ;
+        sh:select """
+            SELECT $this ?app1 ?app2
+            WHERE {
+                $this a am4:Process .
+                ?app1 a am4:ApplicationComponent ;
+                      am4:assignedTo $this .
+                ?app2 a am4:ApplicationComponent ;
+                      am4:assignedTo $this .
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+:FunctionAutomatedByMultipleApplicationsShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Function ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Function Automated by Multiple Application Components"@en ;
+    skos:definition
+        '''Detects functions assigned to more than one application component. Several
+        components automating the same function may indicate redundant automation or unclear
+        application ownership of it.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Function {$this} is automated by multiple application components ({?app1} and {?app2}). Clarify which component is authoritative."@en ;
+        sh:select """
+            SELECT $this ?app1 ?app2
+            WHERE {
+                $this a am4:Function .
+                ?app1 a am4:ApplicationComponent ;
+                      am4:assignedTo $this .
+                ?app2 a am4:ApplicationComponent ;
+                      am4:assignedTo $this .
+                FILTER(STR(?app1) < STR(?app2))
+            }
+        """ ;
+    ] ;
+.
+
+:OrphanedElementShape
+    a              sh:NodeShape ;
+    # ArchiMate 4.0's elements only — the roots am4elsh:ArchiMateElementShape targets, and
+    # the junctions — not arch:Element: in a graph holding other notations' models, or
+    # ArchiMate 3.2's beside 4.0's, this rule would judge their elements too, and an
+    # element would be reported once for each ArchiMate version loaded.
+    sh:targetClass am4:BusinessDomainElement ,
+                   am4:ApplicationDomainElement ,
+                   am4:TechnologyDomainElement ,
+                   am4:ImplementationAndMigrationDomainElement ,
+                   am4:CommonDomainElement ,
+                   am4:StrategyElement ,
+                   am4:MotivationElement ,
+                   am4:BehaviorElement ,
+                   am4:StructureElement ,
+                   am4:CompositeElement ,
+                   am4:AndJunction ,
+                   am4:OrJunction ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Orphaned Element"@en ;
+    skos:definition
+        '''Elements with no relationships to other elements may be
+        orphaned or incompletely modeled. Every element should
+        participate in at least one relationship.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Element {$this} has no relationships to any other element."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a/rdfs:subClassOf* arch:Element .
+                # MINUS, not FILTER NOT EXISTS: the same results, without testing every
+                # element against every other one — which grows with the square of the model.
+                MINUS { $this ?p ?other . ?other a ?otherType . ?otherType rdfs:subClassOf* arch:Element . }
+                MINUS { ?other ?p $this . ?other a ?otherType . ?otherType rdfs:subClassOf* arch:Element . }
+            }
+        """ ;
+    ] ;
+.
+
+
+#################################################################
+#
+#  CATEGORY 9: MOTIVATION ALIGNMENT
+#
+#  Principle: Architecture elements should be traceable to business
+#  goals and requirements. Untraceable elements may lack business
+#  justification.
+#
+#################################################################
+
+:CapabilityWithoutGoalShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Capability ;
+    sh:severity    sh:Info ;
+    skos:prefLabel "Capability Without Goal"@en ;
+    skos:definition
+        '''Capabilities should be linked to at least one goal or
+        outcome to establish business justification.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Capability {$this} is not linked to any goal or outcome."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am4:Capability .
+                FILTER NOT EXISTS {
+                    {
+                        $this am4:realizes ?goal .
+                        { ?goal a am4:Goal . } UNION { ?goal a am4:Outcome . }
+                    } UNION {
+                        ?goal am4:serves $this .
+                        { ?goal a am4:Goal . } UNION { ?goal a am4:Outcome . }
+                    } UNION {
+                        $this am4:associatedWith ?goal .
+                        { ?goal a am4:Goal . } UNION { ?goal a am4:Outcome . }
+                    }
+                }
+            }
+        """ ;
+    ] ;
+.
+
+:RequirementWithoutRealizationShape
+    a              sh:NodeShape ;
+    sh:targetClass am4:Requirement ;
+    sh:severity    sh:Warning ;
+    skos:prefLabel "Requirement Without Realization"@en ;
+    skos:definition
+        '''Requirements should be realized by at least one core element.
+        Unrealized requirements indicate gaps in the architecture.'''@en ;
+    sh:sparql [
+        sh:prefixes <https://meta.linked.archi/archimate4/principle-shapes#> ;
+        sh:message  "Requirement {$this} is not realized by any architecture element."@en ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this a am4:Requirement .
+                FILTER NOT EXISTS {
+                    ?element am4:realizes $this .
+                    FILTER NOT EXISTS {
+                        ?element rdf:type/rdfs:subClassOf* am4:MotivationElement .
+                    }
+                }
+            }
+        """ ;
+    ] ;
+.
+
+
+## ─── Composition: multiple-parent warning ────────────────────────────────
+## ArchiMate 4 §5.1.2 defines composition as expressing an existence
+## dependency ("if a composite is deleted, its parts are deleted as well").
+## This logically implies a part should belong to at most one composite —
+## otherwise deleting one composite would destroy parts still needed by
+## another. The spec does not explicitly enforce exclusivity, but the
+## existence dependency semantics make multiple-parent composition
+## logically inconsistent. This shape emits a warning when an element
+## is the target of composition from multiple sources.
+
+:CompositionMultipleParentWarning
+ a sh:NodeShape ;
+ sh:targetObjectsOf am4:composedOf ;
+ sh:severity sh:Warning ;
+ sh:sparql [
+  sh:message "Element {$this} is composed into multiple parents via am4:composedOf. Composition implies existence dependency — a part with multiple composites may indicate a modelling issue (ArchiMate 4 §5.1.2)."@en ;
+  sh:select """
+   PREFIX am4: <https://meta.linked.archi/archimate4/onto#>
+   SELECT $this (COUNT(?parent) AS ?parentCount)
+   WHERE {
+    ?parent am4:composedOf $this .
+   }
+   GROUP BY $this
+   HAVING (COUNT(?parent) > 1)
+  """ ;
+ ] ;
+.

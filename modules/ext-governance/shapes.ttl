@@ -1,0 +1,259 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix ad:    <https://meta.linked.archi/arch-decision#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/shapes/ext-governance#> .
+
+# L3 shapes for governance, decisions and quality (spec §6.6, §6.7). SHACL Core only, except EG24 (see there).
+# Run together with the vendored arch-decision-shapes.ttl (decision state, selected option, rationale).
+# Each message starts with a rule id (EG1..EG26); every rule has a valid and an invalid fixture in tests/.
+# v0.2 (§6.6, D10): authors never write arch:approvalState (L1 rejects it); EG1 stays as a guard on the
+# value `aisep build` derives from aisep:ApprovalRecord (EG11..EG16).
+
+:ApprovalStateShape a sh:NodeShape ;
+    sh:targetSubjectsOf arch:approvalState ;
+    sh:property [
+        sh:path arch:approvalState ;
+        sh:maxCount 1 ;
+        sh:in ( arch:Proposed arch:Approved aisep:Rejected aisep:Superseded ) ;
+        sh:message "EG1: arch:approvalState takes at most one value from {arch:Proposed, arch:Approved, aisep:Rejected, aisep:Superseded}." ;
+        sh:severity sh:Violation ;
+    ] .
+
+:ArchitectureStateShape a sh:NodeShape ;
+    sh:targetSubjectsOf arch:architectureState ;
+    sh:property [
+        sh:path arch:architectureState ;
+        sh:maxCount 1 ;
+        sh:in ( arch:Baseline arch:Target arch:Transitional ) ;
+        sh:message "EG2: arch:architectureState takes at most one value from {arch:Baseline, arch:Target, arch:Transitional}." ;
+        sh:severity sh:Violation ;
+    ] .
+
+:RelatedConceptShape a sh:NodeShape ;
+    sh:targetClass ad:RelatedConcept ;
+    sh:property [
+        sh:path arch:source ;
+        sh:class ad:Decision ;
+        sh:message "EG3: the source of an ad:RelatedConcept must be an ad:Decision." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path arch:target ;
+        sh:class arch:ModelConcept ;
+        sh:message "EG4: the target of an ad:RelatedConcept must be a model concept (typed by a class under arch:ModelConcept)." ;
+        sh:severity sh:Violation ;
+    ] .
+
+:AffectsConceptShape a sh:NodeShape ;
+    sh:targetClass ad:AffectsConcept ;
+    sh:property [
+        sh:path arch:source ;
+        sh:class ad:Option ;
+        sh:message "EG5: ad:AffectsConcept must start at an ad:Option; link a Decision to a concept with ad:RelatedConcept instead." ;
+        sh:severity sh:Violation ;
+    ] .
+
+:QualityMeasureShape a sh:NodeShape ;
+    sh:targetClass arch:QualityMeasure ;
+    sh:property [
+        sh:path arch:measuredQualityAttribute ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:class arch:QualityAttribute ;
+        sh:message "EG6: a QualityMeasure must name exactly one arch:measuredQualityAttribute, a quality attribute such as an ISO 25010 characteristic." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:value ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:message "EG7: aisep:value is at most one xsd:decimal." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:unit ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "EG8: aisep:unit is at most one xsd:string (UCUM code)." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:target ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:message "EG9: aisep:target is at most one xsd:decimal." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path prov:generatedAtTime ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:dateTime ;
+        sh:message "EG10: prov:generatedAtTime on a QualityMeasure is at most one xsd:dateTime." ;
+        sh:severity sh:Violation ;
+    ] .
+
+# A number without a unit is meaningless: value or target present => unit present.
+:QualityMeasureUnitShape a sh:NodeShape ;
+    sh:targetClass arch:QualityMeasure ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path aisep:value  ; sh:maxCount 0 ] ]
+            [ sh:property [ sh:path aisep:target ; sh:maxCount 0 ] ]
+        ) ]
+        [ sh:property [ sh:path aisep:unit ; sh:minCount 1 ] ]
+    ) ;
+    sh:message "EG8: a QualityMeasure with aisep:value or aisep:target must state aisep:unit." ;
+    sh:severity sh:Violation .
+
+# ---- Approval records (spec v0.2 §6.6, ADR-009) ----
+:ApprovalRecordShape a sh:NodeShape ;
+    sh:targetClass aisep:ApprovalRecord ;
+    sh:property [
+        sh:path aisep:gate ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( aisep:GateRequirements aisep:GateArchitecture aisep:GateDesign aisep:GateMerge aisep:GateRelease ) ;
+        sh:message "EG11: an ApprovalRecord has exactly one aisep:gate from aisep:Gates (GateRequirements|GateArchitecture|GateDesign|GateMerge|GateRelease)." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:decision ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( aisep:DecisionApproved aisep:DecisionRejected ) ;
+        sh:message "EG12: an ApprovalRecord has exactly one aisep:decision, aisep:DecisionApproved or aisep:DecisionRejected (not an approvalState value such as arch:Approved)." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:approvedBy ;
+        sh:minCount 1 ;
+        sh:or ( [ sh:class arch:Stakeholder ] [ sh:class prov:Agent ] ) ;
+        sh:message "EG13: an ApprovalRecord needs at least one aisep:approvedBy, an arch:Stakeholder or prov:Agent." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:approves ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "EG14: an ApprovalRecord must aisep:approves at least one element, model or ADR (by IRI)." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path prov:generatedAtTime ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:dateTime ;
+        # same lexical regex as tools/aisep.py XSD_DATETIME_RE (L1 + derivation); impossible instants (2026-02-30,
+        # 24:00) are ill-typed for sh:datatype
+        sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-](0[0-9]|1[0-3]):[0-5][0-9]|[+-]14:00)?$" ;
+        sh:message "EG15: an ApprovalRecord has exactly one prov:generatedAtTime, a well-formed xsd:dateTime (real calendar instant, hour < 24)." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:evidence ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^[0-9a-f]{40}$|^sha256:[0-9a-f]{64}$" ;   # same regex as the aisep-core ApprovalRecordShape (L1)
+        sh:message "EG16: an ApprovalRecord has exactly one aisep:evidence, an xsd:string: a 40-hex git commit id or sha256:<64 hex> report hash of the approved version (required since v0.2.1)." ;
+        sh:severity sh:Violation ;
+    ] .
+
+# ---- Completed AI activity (spec v0.4 §6.6/§6.7, ADR-013; draft) — the same rules as the aisep-core L1 checks
+#      (AgentActivityShape, ApprovalRecordShape and tools/aisep.py activity_problems / approval_problems) ----
+:AgentActivityShape a sh:NodeShape ;
+    sh:targetClass aisep:AgentActivity ;
+    sh:property [
+        sh:path prov:wasAssociatedWith ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:or ( [ sh:class arch:Stakeholder ] [ sh:class prov:Agent ] ) ;
+        sh:message "EG17: an AgentActivity has exactly one prov:wasAssociatedWith, an arch:Stakeholder or prov:Agent." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path prov:startedAtTime ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:dateTime ;
+        sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-](0[0-9]|1[0-3]):[0-5][0-9]|[+-]14:00)?$" ;
+        sh:message "EG18: an AgentActivity has exactly one prov:startedAtTime, a well-formed xsd:dateTime." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path prov:endedAtTime ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:dateTime ;
+        sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-](0[0-9]|1[0-3]):[0-5][0-9]|[+-]14:00)?$" ;
+        sh:message "EG19: an AgentActivity has exactly one prov:endedAtTime, a well-formed xsd:dateTime." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:sessionRef ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "[^ \\t\\n\\r]" ;
+        sh:message "EG20: an AgentActivity has exactly one aisep:sessionRef, a non-empty xsd:string." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:branch ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "[^ \\t\\n\\r]" ;
+        sh:message "EG21: an AgentActivity has exactly one aisep:branch, a non-empty xsd:string." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:baseCommit ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^[0-9a-f]{40}$" ;
+        sh:message "EG22: an AgentActivity has exactly one aisep:baseCommit, a 40-hex git commit id (the merge-base)." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:headCommit ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^[0-9a-f]{40}$" ;
+        sh:message "EG23: an AgentActivity has exactly one aisep:headCommit, a 40-hex git commit id." ;
+        sh:severity sh:Violation ;
+    ] .
+
+# EG24 is the one SHACL-SPARQL rule of this file: pyshacl's sh:lessThanOrEquals raises on an ill-typed xsd:dateTime
+# (e.g. 2026-02-30) instead of reporting; in SPARQL an incomparable pair is simply not a hit (EG18/EG19 report it).
+:prefixes a owl:Ontology ;
+    sh:declare [ sh:prefix "prov" ; sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ] ,
+               [ sh:prefix "xsd" ; sh:namespace "http://www.w3.org/2001/XMLSchema#"^^xsd:anyURI ] .
+:AgentActivityOrderShape a sh:NodeShape ;
+    sh:targetClass aisep:AgentActivity ;
+    sh:sparql [
+        sh:message "EG24: an AgentActivity's prov:startedAtTime is not later than its prov:endedAtTime." ;
+        sh:prefixes :prefixes ;
+        # a timezone-less value is read as UTC, as L1 parse_xsd_datetime does (else a mixed pair is incomparable here);
+        # the zone is tested on the lexical form, since TZ() raises on an ill-typed value such as 2026-02-30
+        sh:select """SELECT $this WHERE { $this prov:startedAtTime ?s ; prov:endedAtTime ?e .
+            BIND(IF(REGEX(STR(?s), "(Z|[+-][0-9][0-9]:[0-9][0-9])$"), ?s, STRDT(CONCAT(STR(?s), "Z"), xsd:dateTime)) AS ?su)
+            BIND(IF(REGEX(STR(?e), "(Z|[+-][0-9][0-9]:[0-9][0-9])$"), ?e, STRDT(CONCAT(STR(?e), "Z"), xsd:dateTime)) AS ?eu)
+            FILTER(?eu < ?su) }""" ] .
+
+:ApprovalActivityShape a sh:NodeShape ;
+    sh:targetClass aisep:ApprovalRecord ;
+    sh:property [
+        sh:path aisep:activity ;
+        sh:maxCount 1 ;
+        sh:class aisep:AgentActivity ;
+        sh:nodeKind sh:IRI ;
+        sh:message "EG25: an ApprovalRecord has at most one aisep:activity, an aisep:AgentActivity model element (an IRI)." ;
+        sh:severity sh:Violation ;
+    ] .
+
+# evidence that is a git commit must be the linked activity's head commit (the approved version)
+:ApprovalEvidenceHeadShape a sh:NodeShape ;
+    sh:targetClass aisep:ApprovalRecord ;
+    sh:or (
+        [ sh:property [ sh:path aisep:activity ; sh:maxCount 0 ] ]
+        [ sh:property [ sh:path aisep:evidence ; sh:pattern "^sha256:" ] ]
+        [ sh:property [ sh:path ( aisep:activity aisep:headCommit ) ; sh:equals aisep:evidence ] ]
+    ) ;
+    sh:message "EG26: an ApprovalRecord whose aisep:evidence is a git commit equals the aisep:headCommit of its aisep:activity." ;
+    sh:severity sh:Violation .

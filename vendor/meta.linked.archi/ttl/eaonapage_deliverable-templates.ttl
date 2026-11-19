@@ -1,0 +1,356 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix eaop:    <https://meta.linked.archi/eaonapage/onto#> .
+@prefix eaopvp:  <https://meta.linked.archi/eaonapage/viewpoints#> .
+@prefix :        <https://meta.linked.archi/eaonapage/deliverable-templates#> .
+
+<https://meta.linked.archi/eaonapage/deliverable-templates#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/eaonapage/deliverable-templates#" ;
+    vann:preferredNamespacePrefix "eaopdt" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi EA on a Page Deliverable Templates"@en ;
+    dcterms:description                '''Deliverable templates for the EA on a Page framework. Each template
+defines the structure and required viewpoints for a common EA deliverable.
+Based on the artifact types and typical structures described by Kotusev.
+
+EA on a Page explicitly says templates should be adapted rather than copied.
+These templates capture the typical structure observed across organizations
+and should be customized to local context.'''@en ;
+    dcterms:created               "2026-05-03"^^xsd:date ;
+    dcterms:modified              "2026-05-03"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/eaonapage/deliverable-templates/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    prov:wasDerivedFrom           "EA on a Page (Svyatoslav Kotusev, 2017)" ;
+    rdfs:seeAlso                  <https://eaonapage.com/> ;
+.
+
+
+#################################################################
+# Strategic Planning Deliverables
+#################################################################
+
+:ArchitectureStrategy
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Architecture Strategy"@en ;
+    skos:definition         '''A strategic document that captures the organization's architecture
+principles, policies, and high-level direction. Combines Considerations (governance
+rules) with Visions (future-state descriptions) to articulate how IT investments
+should be guided. Typically produced annually or when business strategy changes
+significantly.'''@en ;
+    arch:templateRequiresViewpoint
+        eaopvp:BusinessCapabilityVP, eaopvp:RoadmapVP ;
+    arch:templateTargetsPurpose eaopvp:Deciding, eaopvp:Informing ;
+    arch:templateHasSection :AS-S1, :AS-S2, :AS-S3, :AS-S4 ;
+.
+
+:AS-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Architecture Principles & Policies"@en ;
+    skos:definition "Governing rules and constraints for IT-related decisions."@en ;
+    arch:sectionViewpoint eaopvp:BusinessCapabilityVP ;
+.
+
+:AS-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Business Capability Assessment"@en ;
+    skos:definition "Current business capabilities and their IT support maturity."@en ;
+    arch:sectionViewpoint eaopvp:BusinessCapabilityVP ;
+.
+
+:AS-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Target State Architecture"@en ;
+    skos:definition "Desired future state of the IT landscape aligned with business strategy."@en ;
+    arch:sectionViewpoint eaopvp:RoadmapVP ;
+.
+
+:AS-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    skos:prefLabel "4. Strategic Roadmap"@en ;
+    skos:definition "Sequenced transition plan from current state to target state."@en ;
+    arch:sectionViewpoint eaopvp:RoadmapVP ;
+.
+
+
+#################################################################
+# Technology Optimization Deliverables
+#################################################################
+
+:TechnologyStrategy
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Technology Strategy"@en ;
+    skos:definition         '''A document that defines the organization's technology standards,
+approved technology stack, and rationalization roadmap. Combines Standards
+(approved technologies) with Landscapes (current state) to identify optimization
+opportunities and plan technology evolution.'''@en ;
+    arch:templateRequiresViewpoint
+        eaopvp:StandardsComplianceVP, eaopvp:LandscapeVP ;
+    arch:templateTargetsPurpose eaopvp:Governing, eaopvp:Deciding ;
+    arch:templateHasSection :TS-S1, :TS-S2, :TS-S3, :TS-S4 ;
+.
+
+:TS-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Technology Reference Model"@en ;
+    skos:definition "Approved technologies organized by functional area with lifecycle status."@en ;
+    arch:sectionViewpoint eaopvp:StandardsComplianceVP ;
+.
+
+:TS-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Current Technology Landscape"@en ;
+    skos:definition "Inventory and assessment of the current technology estate."@en ;
+    arch:sectionViewpoint eaopvp:LandscapeVP ;
+.
+
+:TS-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Compliance Assessment"@en ;
+    skos:definition "Gap analysis between current landscape and approved standards."@en ;
+    arch:sectionViewpoint eaopvp:StandardsComplianceVP ;
+.
+
+:TS-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    skos:prefLabel "4. Rationalization Roadmap"@en ;
+    skos:definition "Sequenced plan for technology consolidation and modernization."@en ;
+    arch:sectionViewpoint eaopvp:LandscapeVP ;
+.
+
+
+:TechnologyReferenceModelDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Technology Reference Model"@en ;
+    skos:definition         '''A structured catalog of approved technologies organized by functional
+area. Each technology entry includes lifecycle status (invest, maintain, contain,
+retire), ownership, and usage guidelines. The primary Standards artifact.'''@en ;
+    arch:templateRequiresViewpoint
+        eaopvp:StandardsComplianceVP ;
+    arch:templateTargetsPurpose eaopvp:Governing ;
+    arch:templateHasSection :TRM-S1, :TRM-S2, :TRM-S3 ;
+.
+
+:TRM-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Technology Categories"@en ;
+    skos:definition "Functional areas and their approved technology options."@en ;
+    arch:sectionViewpoint eaopvp:StandardsComplianceVP ;
+.
+
+:TRM-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Lifecycle Status"@en ;
+    skos:definition "Current lifecycle status of each technology (invest, maintain, contain, retire)."@en ;
+    arch:sectionViewpoint eaopvp:StandardsComplianceVP ;
+.
+
+:TRM-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Migration Guidance"@en ;
+    skos:definition "Guidance for transitioning from deprecated to approved technologies."@en ;
+    arch:sectionViewpoint eaopvp:StandardsComplianceVP ;
+.
+
+
+#################################################################
+# Initiative Delivery Deliverables — Initiation Phase
+#################################################################
+
+:SolutionBrief
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Solution Brief"@en ;
+    skos:definition         '''A concise document produced during the Initiation phase that
+describes a proposed initiative at a high level — business context, proposed
+approach, key assumptions, and estimated effort. Used to secure initial
+approval and funding for further architecture work.'''@en ;
+    arch:templateRequiresViewpoint
+        eaopvp:OptionsAssessmentVP ;
+    arch:templateTargetsPurpose eaopvp:Deciding ;
+    arch:templateHasSection :SB-S1, :SB-S2, :SB-S3 ;
+.
+
+:SB-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Business Context & Drivers"@en ;
+    skos:definition "Business need, strategic alignment, and key stakeholders."@en ;
+.
+
+:SB-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Proposed Approach"@en ;
+    skos:definition "High-level solution concept and key architectural decisions."@en ;
+    arch:sectionViewpoint eaopvp:OptionsAssessmentVP ;
+.
+
+:SB-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Estimates & Assumptions"@en ;
+    skos:definition "Effort estimates, key assumptions, risks, and dependencies."@en ;
+.
+
+
+:SolutionOverviewDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Solution Overview"@en ;
+    skos:definition         '''A document produced during the Initiation phase that describes
+the proposed solution at a level sufficient for investment decisions. Includes
+the solution concept, options assessment, standards compliance check, and
+recommended approach. The primary Outline artifact.'''@en ;
+    arch:templateRequiresViewpoint
+        eaopvp:OptionsAssessmentVP, eaopvp:StandardsComplianceVP ;
+    arch:templateTargetsPurpose eaopvp:Deciding ;
+    arch:templateHasSection :SO-S1, :SO-S2, :SO-S3, :SO-S4, :SO-S5 ;
+.
+
+:SO-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Business Context"@en ;
+    skos:definition "Business need, strategic alignment, scope, and stakeholders."@en ;
+.
+
+:SO-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Solution Options"@en ;
+    skos:definition "Alternative approaches with pros, cons, costs, and risks."@en ;
+    arch:sectionViewpoint eaopvp:OptionsAssessmentVP ;
+.
+
+:SO-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Standards Compliance"@en ;
+    skos:definition "Assessment of each option against approved standards and principles."@en ;
+    arch:sectionViewpoint eaopvp:StandardsComplianceVP ;
+.
+
+:SO-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    skos:prefLabel "4. Recommended Approach"@en ;
+    skos:definition "Selected option with rationale, trade-offs, and conditions."@en ;
+    arch:sectionViewpoint eaopvp:OptionsAssessmentVP ;
+.
+
+:SO-S5 a arch:TemplateSection ; arch:sectionOrder 5 ;
+    skos:prefLabel "5. Implementation Roadmap"@en ;
+    skos:definition "High-level delivery plan, milestones, and dependencies."@en ;
+.
+
+
+#################################################################
+# Initiative Delivery Deliverables — Realization Phase
+#################################################################
+
+:SolutionDesignDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Solution Design"@en ;
+    skos:definition         '''A detailed document produced during the Realization phase that
+specifies the solution architecture at a level sufficient for implementation.
+Includes component design, interface contracts, data models, deployment
+topology, and non-functional requirements. The primary Design artifact.'''@en ;
+    arch:templateRequiresViewpoint
+        eaopvp:SolutionDesignVP, eaopvp:StandardsComplianceVP ;
+    arch:templateTargetsPurpose eaopvp:Designing ;
+    arch:templateHasSection :SD-S1, :SD-S2, :SD-S3, :SD-S4, :SD-S5, :SD-S6 ;
+.
+
+:SD-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Solution Context"@en ;
+    skos:definition "Business context, scope, constraints, and reference to the approved Solution Overview."@en ;
+.
+
+:SD-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Component Architecture"@en ;
+    skos:definition "Solution components, their responsibilities, and interactions."@en ;
+    arch:sectionViewpoint eaopvp:SolutionDesignVP ;
+.
+
+:SD-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Interface Contracts"@en ;
+    skos:definition "APIs, message formats, protocols, and integration patterns."@en ;
+    arch:sectionViewpoint eaopvp:SolutionDesignVP ;
+.
+
+:SD-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    skos:prefLabel "4. Data Architecture"@en ;
+    skos:definition "Data models, data flows, storage, and data governance."@en ;
+    arch:sectionViewpoint eaopvp:SolutionDesignVP ;
+.
+
+:SD-S5 a arch:TemplateSection ; arch:sectionOrder 5 ;
+    skos:prefLabel "5. Deployment Architecture"@en ;
+    skos:definition "Infrastructure topology, environments, scaling, and resilience."@en ;
+    arch:sectionViewpoint eaopvp:SolutionDesignVP ;
+.
+
+:SD-S6 a arch:TemplateSection ; arch:sectionOrder 6 ;
+    skos:prefLabel "6. Standards Compliance & Exemptions"@en ;
+    skos:definition "Compliance with approved standards, any exemptions requested, and remediation plans."@en ;
+    arch:sectionViewpoint eaopvp:StandardsComplianceVP ;
+.
+
+
+#################################################################
+# Governance Deliverables
+#################################################################
+
+:ArchitecturePrinciplesDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Architecture Principles Document"@en ;
+    skos:definition         '''A document that captures the organization's architecture principles
+and policies — the Considerations artifacts. Principles are high-level governance
+rules that guide all IT-related decisions. Policies are specific mandatory rules.
+Typically maintained by enterprise architects and approved by the steering
+committee.'''@en ;
+    arch:templateRequiresViewpoint
+        eaopvp:BusinessCapabilityVP ;
+    arch:templateTargetsPurpose eaopvp:Governing ;
+    arch:templateHasSection :AP-S1, :AP-S2, :AP-S3 ;
+.
+
+:AP-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Architecture Principles"@en ;
+    skos:definition "High-level principles with rationale, implications, and examples."@en ;
+.
+
+:AP-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Architecture Policies"@en ;
+    skos:definition "Mandatory rules with scope, enforcement mechanism, and exceptions process."@en ;
+.
+
+:AP-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Governance & Compliance"@en ;
+    skos:definition "How principles and policies are governed, reviewed, and enforced."@en ;
+    arch:sectionViewpoint eaopvp:GovernanceOverviewVP ;
+.
+
+
+:RoadmapDocument
+    a                       arch:DeliverableTemplate ;
+    skos:prefLabel          "Roadmap"@en ;
+    skos:definition         '''A time-sequenced plan showing the transition from current state to
+target state. Combines strategic direction (Visions) with current reality
+(Landscapes) to produce a phased investment plan. Typically maintained
+quarterly and presented to business and IT leadership.'''@en ;
+    arch:templateRequiresViewpoint
+        eaopvp:RoadmapVP, eaopvp:LandscapeVP ;
+    arch:templateTargetsPurpose eaopvp:Deciding, eaopvp:Informing ;
+    arch:templateHasSection :RM-S1, :RM-S2, :RM-S3, :RM-S4 ;
+.
+
+:RM-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
+    skos:prefLabel "1. Current State Summary"@en ;
+    skos:definition "Key aspects of the current IT landscape relevant to the roadmap scope."@en ;
+    arch:sectionViewpoint eaopvp:LandscapeVP ;
+.
+
+:RM-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;
+    skos:prefLabel "2. Target State"@en ;
+    skos:definition "Desired future state aligned with business strategy."@en ;
+    arch:sectionViewpoint eaopvp:RoadmapVP ;
+.
+
+:RM-S3 a arch:TemplateSection ; arch:sectionOrder 3 ;
+    skos:prefLabel "3. Transition Phases"@en ;
+    skos:definition "Sequenced phases with initiatives, dependencies, and milestones."@en ;
+    arch:sectionViewpoint eaopvp:RoadmapVP ;
+.
+
+:RM-S4 a arch:TemplateSection ; arch:sectionOrder 4 ;
+    skos:prefLabel "4. Investment Priorities"@en ;
+    skos:definition "Prioritized initiatives with estimated costs, benefits, and risks."@en ;
+.

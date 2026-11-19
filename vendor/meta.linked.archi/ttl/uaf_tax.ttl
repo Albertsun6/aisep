@@ -1,0 +1,189 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix uaf:     <https://meta.linked.archi/uaf/onto#> .
+@prefix :        <https://meta.linked.archi/uaf/tax#> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/uaf/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "UAF Concept Scheme"@en ;
+    dcterms:description  "Classification of UAF 1.2 metaclasses by viewpoint and aspect."@en ;
+    skos:hasTopConcept :ByViewpoint, :ByAspect ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uaf/tax#" ;
+    vann:preferredNamespacePrefix "uaftax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi UAF Taxonomy"@en ;
+    dcterms:created               "2025-12-01"^^xsd:date ;
+    dcterms:modified              "2026-02-01"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "1.2"@en ;
+    dcterms:source  <https://www.omg.org/spec/UAF/1.2/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UAF/1.2/> .
+
+
+
+#################################################################
+# Dimension 1: By Viewpoint (10 viewpoints)
+#################################################################
+
+:ByViewpoint
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/uaf/tax#> ;
+    skos:prefLabel       "Entity by Viewpoint"@en ;
+    skos:inScheme        <https://meta.linked.archi/uaf/tax#> ;
+.
+
+:ArchitectureManagementViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Architecture Management Viewpoint (Am)"@en ;
+    skos:definition "Overarching aspects of architecture governance, stakeholders, and architectural descriptions."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> ;
+    rdfs:seeAlso uaf:Architecture, uaf:ArchitecturalDescription, uaf:Stakeholder,
+                 uaf:View, uaf:Viewpoint, uaf:WholeLifeEnterprise .
+
+:StrategicViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Strategic Viewpoint (St)"@en ;
+    skos:definition "Enterprise vision, goals, objectives, capabilities, and strategic drivers."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> ;
+    rdfs:seeAlso uaf:Capability, uaf:CapabilityConfiguration, uaf:EnterpriseGoal,
+                 uaf:EnterpriseObjective, uaf:EnterpriseVision, uaf:Mission,
+                 uaf:Opportunity, uaf:Challenge, uaf:Driver .
+
+:OperationalViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Operational Viewpoint (Op)"@en ;
+    skos:definition "Operational activities, performers, exchanges, and constraints independent of implementation."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> ;
+    rdfs:seeAlso uaf:OperationalActivity, uaf:OperationalPerformer, uaf:OperationalExchange,
+                 uaf:OperationalAgent, uaf:OperationalConnector, uaf:OperationalConstraint,
+                 uaf:HighLevelOperationalConcept, uaf:OperationalArchitecture .
+
+:ServicesViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Services Viewpoint (Sv)"@en ;
+    skos:definition "Service-oriented architecture including services, interfaces, contracts, and exchanges."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> ;
+    rdfs:seeAlso uaf:Service, uaf:ServiceFunction, uaf:ServiceInterface,
+                 uaf:ServiceContract, uaf:ServiceExchange, uaf:ServiceArchitecture .
+
+:PersonnelViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Personnel Viewpoint (Pr)"@en ;
+    skos:definition "Organizations, persons, posts, responsibilities, and organizational resources."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> ;
+    rdfs:seeAlso uaf:Organization, uaf:Person, uaf:Post, uaf:Responsibility,
+                 uaf:OrganizationalResource .
+
+:ResourcesViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Resources Viewpoint (Rs)"@en ;
+    skos:definition "Resource performers, functions, connectors, and exchanges that realize operational concepts."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> ;
+    rdfs:seeAlso uaf:ResourcePerformer, uaf:Function, uaf:ResourceArchitecture,
+                 uaf:NaturalResource, uaf:KnownResource, uaf:ResourceConnector,
+                 uaf:ResourceExchange .
+
+:SecurityViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Security Viewpoint (Sc)"@en ;
+    skos:definition "Security assets, controls, enclaves, and constraints protecting the enterprise."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> ;
+    rdfs:seeAlso uaf:SecurityAsset, uaf:SecurityControl, uaf:SecurityControlFamily,
+                 uaf:SecurityEnclave, uaf:SecurityConstraint .
+
+:ProjectsViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Projects Viewpoint (Pj)"@en ;
+    skos:definition "Projects, milestones, and phases that deliver capability increments."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> ;
+    rdfs:seeAlso uaf:Project, uaf:ProjectMilestone, uaf:ProjectPhase .
+
+:StandardsViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Standards Viewpoint (Sd)"@en ;
+    skos:definition "Applicable standards, profiles, and protocols governing solution elements."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> ;
+    rdfs:seeAlso uaf:Standard, uaf:StandardProfile, uaf:Protocol .
+
+:ActualResourcesViewpoint a skos:Concept ; skos:broader :ByViewpoint ;
+    skos:prefLabel "Actual Resources Viewpoint (Ar)"@en ;
+    skos:definition "Specific named instances of organizations, resources, persons, posts, and services."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> ;
+    rdfs:seeAlso uaf:ActualOrganization, uaf:ActualResource, uaf:ActualPerson,
+                 uaf:ActualPost, uaf:ActualService .
+
+
+#################################################################
+# Dimension 2: By Aspect (11 aspects)
+#################################################################
+
+:ByAspect
+    a                    skos:Concept ;
+    skos:topConceptOf    <https://meta.linked.archi/uaf/tax#> ;
+    skos:prefLabel       "Entity by Aspect"@en ;
+    skos:inScheme        <https://meta.linked.archi/uaf/tax#> ;
+.
+
+:MotivationAspect a skos:Concept ; skos:broader :ByAspect ;
+    skos:prefLabel "Motivation Aspect"@en ;
+    skos:definition "Why the architecture exists — vision, goals, objectives, drivers, and challenges."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> .
+
+:TaxonomyAspect a skos:Concept ; skos:broader :ByAspect ;
+    skos:prefLabel "Taxonomy Aspect"@en ;
+    skos:definition "Hierarchical classification and decomposition of architectural elements."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> .
+
+:StructureAspect a skos:Concept ; skos:broader :ByAspect ;
+    skos:prefLabel "Structure Aspect"@en ;
+    skos:definition "Internal composition and configuration of architectural elements."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> .
+
+:ConnectivityAspect a skos:Concept ; skos:broader :ByAspect ;
+    skos:prefLabel "Connectivity Aspect"@en ;
+    skos:definition "Connections, interfaces, and exchange paths between elements."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> .
+
+:ProcessesAspect a skos:Concept ; skos:broader :ByAspect ;
+    skos:prefLabel "Processes Aspect"@en ;
+    skos:definition "Activities, functions, and behavioral flows performed by elements."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> .
+
+:StatesAspect a skos:Concept ; skos:broader :ByAspect ;
+    skos:prefLabel "States Aspect"@en ;
+    skos:definition "State machines and transitions describing element lifecycle behavior."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> .
+
+:SequencesAspect a skos:Concept ; skos:broader :ByAspect ;
+    skos:prefLabel "Sequences Aspect"@en ;
+    skos:definition "Ordered interactions and event traces between elements over time."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> .
+
+:InformationAspect a skos:Concept ; skos:broader :ByAspect ;
+    skos:prefLabel "Information Aspect"@en ;
+    skos:definition "Data entities, information flows, and data models."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> .
+
+:ConstraintsAspect a skos:Concept ; skos:broader :ByAspect ;
+    skos:prefLabel "Constraints Aspect"@en ;
+    skos:definition "Rules, policies, and constraints governing architectural elements."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> .
+
+:RoadmapAspect a skos:Concept ; skos:broader :ByAspect ;
+    skos:prefLabel "Roadmap Aspect"@en ;
+    skos:definition "Temporal evolution, phasing, and migration planning of elements."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> .
+
+:TraceabilityAspect a skos:Concept ; skos:broader :ByAspect ;
+    skos:prefLabel "Traceability Aspect"@en ;
+    skos:definition "Cross-viewpoint mappings and traceability links between elements."@en ;
+    skos:inScheme <https://meta.linked.archi/uaf/tax#> ;
+    rdfs:seeAlso uaf:CapabilityDependency, uaf:Consumes, uaf:Exhibits, uaf:Implements, uaf:Performs,
+                 uaf:Provides, uaf:Realizes .

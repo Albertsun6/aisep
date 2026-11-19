@@ -1,0 +1,157 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix archvp:   <https://meta.linked.archi/core-viewpoints#> .
+@prefix uaftax:   <https://meta.linked.archi/uaf/tax#> .
+@prefix uafvp:    <https://meta.linked.archi/uaf/viewpoints#> .
+@prefix dodafmm:  <https://meta.linked.archi/dodaf/metamodel#> .
+@prefix :         <https://meta.linked.archi/uaf/metamodel#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/uaf/metamodel#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/uaf/metamodel#" ;
+    vann:preferredNamespacePrefix "uafmm" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                      "Linked.Archi UAF Metamodel Definition"@en ;
+    dcterms:description                '''Metamodel manifest for the Unified Architecture Framework (UAF) 1.2.
+Ties together the UAF entity ontology, SHACL shapes, SKOS taxonomy, viewpoint
+definitions, and alignment axioms into a single discoverable resource.
+
+UAF supersedes DoDAF, MODAF, and NAF, providing a unified framework that
+organizes architectural data across 10 viewpoints and 11 aspects.
+
+This is not an official OMG document.'''@en ;
+    dcterms:created               "2025-12-01"^^xsd:date ;
+    dcterms:modified              "2026-02-01"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/uaf/metamodel/1.2#> ;
+    owl:versionInfo               "1.2"@en ;
+    dcterms:source  <https://www.omg.org/spec/UAF/1.2/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/UAF/1.2/> ;
+    prov:wasDerivedFrom           "UAF 1.2 (Object Management Group, 2025)" ;
+.
+
+
+#################################################################
+# UAF Framework Individual
+#################################################################
+
+:UAFFramework
+    a               arch:Framework ;
+    skos:prefLabel  "Unified Architecture Framework (UAF)"@en ;
+    skos:definition '''The Unified Architecture Framework (UAF), an OMG standard
+(formal/2025-10-01 through formal/2025-10-07). UAF provides a unified
+architecture framework superseding DoDAF, MODAF, and NAF. It organizes
+architectural data across 10 viewpoints (Architecture Management, Strategic,
+Operational, Services, Personnel, Resources, Security, Projects, Standards,
+Actual Resources) and 11 aspects (Motivation, Taxonomy, Structure, Connectivity,
+Processes, States, Sequences, Information, Constraints, Roadmap, Traceability).
+
+UAF defines approximately 288 metaclasses organized into domains and supports
+capability-based planning, service-oriented architecture, and enterprise-wide
+architecture governance.'''@en ;
+    dcterms:publisher    "Object Management Group (OMG)"@en ;
+    rdfs:seeAlso    <https://www.omg.org/spec/UAF/1.2/>,
+                    <https://www.omg.org/spec/UAF/> ;
+.
+
+
+#################################################################
+# Predecessor Frameworks
+#################################################################
+
+:DoDAFPredecessor
+    a               arch:Framework ;
+    skos:prefLabel  "DoDAF (predecessor)"@en ;
+    skos:definition '''The U.S. Department of Defense Architecture Framework, a predecessor
+to UAF. UAF incorporates and extends DoDAF concepts.'''@en ;
+    dcterms:source  <https://dodcio.defense.gov/Library/DoD-Architecture-Framework/> ;
+    rdfs:seeAlso    dodafmm:DoDAFFramework ;
+.
+
+:MODAFPredecessor
+    a               arch:Framework ;
+    skos:prefLabel  "MODAF (predecessor)"@en ;
+    skos:definition '''The UK Ministry of Defence Architecture Framework, a predecessor
+to UAF. UAF incorporates and extends MODAF concepts.'''@en ;
+    dcterms:source  <https://www.gov.uk/guidance/mod-architecture-framework> ;
+.
+
+:NAFPredecessor
+    a               arch:Framework ;
+    skos:prefLabel  "NAF (predecessor)"@en ;
+    skos:definition '''The NATO Architecture Framework, a predecessor to UAF. UAF
+incorporates and extends NAF concepts for multinational interoperability.'''@en ;
+    dcterms:source  <https://www.nato.int/cps/en/natohq/topics_157575.htm> ;
+.
+
+
+#################################################################
+# Metamodel Instance
+#################################################################
+
+:UAF1
+    a                             arch:Metamodel ;
+    skos:prefLabel                "UAF 1.2 Metamodel"@en ;
+    dcterms:description               '''The complete UAF 1.2 metamodel definition, aggregating the
+entity ontology, SHACL shapes, SKOS taxonomy, viewpoint definitions,
+and alignment axioms.'''@en ;
+
+    ## Foundation
+    arch:basedOnFramework         :UAFFramework ;
+
+    ## Predecessor frameworks
+    prov:wasDerivedFrom           :DoDAFPredecessor, :MODAFPredecessor, :NAFPredecessor ;
+
+    ## Model concepts — entity types and relationships
+    ## File: uaf-onto.ttl
+    arch:modelConcepts            <https://meta.linked.archi/uaf/onto#> ;
+
+    ## Viewpoints — UAF viewpoint definitions
+    ## File: uaf-viewpoints.ttl
+    arch:architectureViewpoints   <https://meta.linked.archi/uaf/viewpoints#> ;
+
+    ## Concept classification — SKOS taxonomy by viewpoint and aspect
+    ## File: uaf-tax.ttl
+    arch:conceptClassification    <https://meta.linked.archi/uaf/tax#> ;
+
+    ## Viewpoint library
+    arch:viewpointLibrary         uafvp:ViewpointCatalog ;
+
+    ## SHACL shapes — element naming plus domain/range constraints
+    ## File: uaf-shapes.ttl
+    arch:formalRules              <https://meta.linked.archi/uaf/shapes#> ;
+
+    ## Cross-language mappings — UAF ↔ ArchiMate 4.0, UAF ↔ DoDAF 2.02
+    ## File: uaf-crossmappings.ttl
+    arch:crossLanguageMappings    <https://meta.linked.archi/uaf/crossmappings#> ;
+
+    ## Stakeholders
+    arch:metamodelIdentifiesStakeholder
+        uafvp:EnterpriseArchitect, uafvp:CapabilityPlanner,
+        uafvp:SystemEngineer, uafvp:ServiceArchitect,
+        uafvp:SecurityArchitect, uafvp:ProgramManager,
+        uafvp:OperationalPlanner, uafvp:ResourceManager ;
+
+    ## Concerns
+    arch:metamodelIdentifiesConsideration
+        archvp:StructureConcern, archvp:BehaviorConcern,
+        archvp:DeploymentConcern, archvp:DependencyConcern,
+        archvp:GovernanceConcern, archvp:EvolutionConcern,
+        archvp:IntegrationConcern ;
+.

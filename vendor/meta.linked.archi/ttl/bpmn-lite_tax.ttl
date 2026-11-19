@@ -1,0 +1,173 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix bpmnl:   <https://meta.linked.archi/bpmn-lite/onto#> .
+@prefix :        <https://meta.linked.archi/bpmn-lite/tax#> .
+
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/bpmn-lite/tax#>
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "BPMN Lite Concept Scheme"@en ;
+    dcterms:description  "Classification of BPMN Lite elements by BPMN category — flow objects, connecting objects, swim lanes, and data."@en ;
+    skos:hasTopConcept :FlowObjects, :ConnectingObjects, :SwimLanes, :DataElements ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/bpmn-lite/tax#" ;
+    vann:preferredNamespacePrefix "bpmnltax" ;
+    dcterms:title                 "Linked.Archi BPMN Lite Taxonomy"@en ;
+    dcterms:created               "2026-06-05"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:source  <https://www.omg.org/spec/BPMN/2.0.2/> ;
+    prov:wasDerivedFrom <https://www.omg.org/spec/BPMN/2.0.2/> .
+
+
+#################################################################
+# Top-Level Concepts
+#################################################################
+
+:FlowObjects
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:prefLabel "Flow Objects"@en ;
+    skos:definition "The main graphical elements defining process behaviour: events, activities, and gateways."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> .
+
+:ConnectingObjects
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:prefLabel "Connecting Objects"@en ;
+    skos:definition "Flow connectors linking flow objects: sequence flows, message flows, data associations."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> .
+
+:SwimLanes
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:prefLabel "Swim Lanes"@en ;
+    skos:definition "Organizational partitions: pools (participants) and lanes."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> .
+
+:DataElements
+    a skos:Concept ; skos:topConceptOf <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:prefLabel "Data"@en ;
+    skos:definition "Data artifacts: data objects, data stores, and messages."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> .
+
+
+#################################################################
+# Flow Objects — Activities
+#################################################################
+
+:Activities
+    a skos:Concept ; skos:broader :FlowObjects ;
+    skos:prefLabel "Activities"@en ;
+    skos:definition "Work performed within a process — tasks and sub-processes."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:narrower bpmnl:Process, bpmnl:SubProcess, bpmnl:Task, bpmnl:UserTask,
+                  bpmnl:ServiceTask, bpmnl:SendTask, bpmnl:ReceiveTask,
+                  bpmnl:ScriptTask, bpmnl:BusinessRuleTask, bpmnl:ManualTask,
+                  bpmnl:CallActivity .
+
+#################################################################
+# Flow Objects — Events
+#################################################################
+
+:Events
+    a skos:Concept ; skos:broader :FlowObjects ;
+    skos:prefLabel "Events"@en ;
+    skos:definition "Things that happen during a process — start, intermediate, boundary, and end."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:narrower bpmnl:StartEvent, bpmnl:EndEvent, bpmnl:IntermediateEvent, bpmnl:BoundaryEvent .
+
+#################################################################
+# Flow Objects — Gateways
+#################################################################
+
+:Gateways
+    a skos:Concept ; skos:broader :FlowObjects ;
+    skos:prefLabel "Gateways"@en ;
+    skos:definition "Control flow divergence and convergence."@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:narrower bpmnl:ExclusiveGateway, bpmnl:ParallelGateway,
+                  bpmnl:InclusiveGateway, bpmnl:EventBasedGateway .
+
+#################################################################
+# Connecting Objects
+#################################################################
+
+:SequenceFlowConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Sequence Flow"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> ;
+    rdfs:seeAlso bpmnl:SequenceFlow .
+
+:MessageFlowConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Message Flow"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> ;
+    rdfs:seeAlso bpmnl:MessageFlow .
+
+:DataAssociationConcept
+    a skos:Concept ; skos:broader :ConnectingObjects ;
+    skos:prefLabel "Data Association"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> ;
+    rdfs:seeAlso bpmnl:DataAssociation .
+
+#################################################################
+# Swim Lanes
+#################################################################
+
+:ParticipantConcept
+    a skos:Concept ; skos:broader :SwimLanes ;
+    skos:prefLabel "Participant"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:narrower bpmnl:Participant .
+
+:LaneConcept
+    a skos:Concept ; skos:broader :SwimLanes ;
+    skos:prefLabel "Lane"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:narrower bpmnl:Lane .
+
+#################################################################
+# Data
+#################################################################
+
+:DataObjectConcept
+    a skos:Concept ; skos:broader :DataElements ;
+    skos:prefLabel "Data Object"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:narrower bpmnl:DataObject .
+
+:DataStoreConcept
+    a skos:Concept ; skos:broader :DataElements ;
+    skos:prefLabel "Data Store"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:narrower bpmnl:DataStore .
+
+:MessageConcept
+    a skos:Concept ; skos:broader :DataElements ;
+    skos:prefLabel "Message"@en ;
+    skos:inScheme <https://meta.linked.archi/bpmn-lite/tax#> ;
+    skos:narrower bpmnl:Message .
+
+#################################################################
+# Palette grouping
+#
+# Linked.Archi modelling guidance, not the specification: the
+# classification dimensions a palette groups element types by. The
+# metamodel manifest points to it (arch:paletteGrouping).
+#################################################################
+
+:PaletteGrouping
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Palette Grouping"@en ;
+    skos:definition "The classification dimensions a palette groups element types by: a section for each group of flow objects — activities, events, gateways — then the swim lanes and the data elements."@en ;
+    skos:memberList ( :FlowObjects :SwimLanes :DataElements ) ;
+.

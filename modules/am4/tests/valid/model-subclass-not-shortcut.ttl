@@ -1,0 +1,25 @@
+# expect-warning: derived-only relationship asserted
+# R1 valid: a model may specialise am4:Realization (single parent, chained), but the subclass inherits no shortcut
+# exemption from the model: the derived-only Realization still warns (exemptions come from module files only).
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix ddd:  <https://aisep.example/ont/ddd#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:CapabilityImplementation rdfs:subClassOf am4:Realization ; skos:prefLabel "能力实现"@zh .
+:ContextImplementation rdfs:subClassOf :CapabilityImplementation .
+:crm a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "客户关系系统"@zh .
+:custMgmt a am4:Capability ; arch:inModel :t ; skos:prefLabel "客户管理能力"@zh .
+:rel-crm-realizes-custMgmt a :ContextImplementation ; arch:source :crm ; arch:target :custMgmt ; arch:inModel :t .

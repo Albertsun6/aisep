@@ -1,0 +1,15 @@
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# AISEP core module: manifest vocabulary, closed-world rules (spec §4), approval records + derived approvalState (§6.6),
+# impact defaults (§9). Extension module: no aisep:notationLevel (it is not a notation, spec §7.2). Paths are relative to metamodel-prototype/ (vendor/..., modules/...) or to this directory.
+<https://aisep.example/module/aisep-core> a arch:Metamodel ;
+    skos:prefLabel "AISEP 核心"@zh , "AISEP core"@en ;
+    aisep:moduleKind aisep:Extension ;
+    owl:versionInfo "0.2.0" ;
+    aisep:loads "modules/aisep-core/onto.ttl" ;
+    aisep:impactFile "modules/aisep-core/impact.ttl" ;
+    aisep:shapesFile "modules/aisep-core/shapes.ttl" ;
+    aisep:ownsNamespace "https://aisep.example/ont/aisep#" , "https://meta.linked.archi/core#" .

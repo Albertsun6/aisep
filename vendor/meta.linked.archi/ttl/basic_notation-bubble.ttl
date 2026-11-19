@@ -1,0 +1,175 @@
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix bibo:     <http://purl.org/ontology/bibo/> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix cc:       <http://creativecommons.org/ns#> .
+
+@prefix arch:     <https://meta.linked.archi/core#> .
+@prefix arch-vis: <https://meta.linked.archi/core-vis#> .
+@prefix basic:    <https://meta.linked.archi/basic#> .
+@prefix :         <https://meta.linked.archi/basic/notation-bubble#> .
+
+<https://meta.linked.archi/basic/notation-bubble#>
+    rdf:type                      owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#>,
+                                  <https://meta.linked.archi/core-vis#> ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/basic/notation-bubble#" ;
+    vann:preferredNamespacePrefix "basicnotbubble" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Basic Visual Notation Set (bubble)"@en ;
+    dcterms:description           '''Alternative, circle-based (bubble) visual notation set of the
+Linked.Archi Basic asset set. The manifest https://meta.linked.archi/basic/metamodel#Basic does
+not name it: the Workshop participant context in
+https://meta.linked.archi/basic/presentation-contexts# selects it with arch:usesNotationSet. It
+has generic descriptors for the two core palette classes, arch:Element and
+arch:QualifiedRelationship, so a renderer has something to draw for any element or relationship
+class without a language-specific notation, and descriptors for Basic's own relationship
+classes, basic:Association and basic:Aggregation. Elements are very light grey-green circles
+with a centred label and no icon. Relationships carry no colour: renderers draw them black, and
+they differ by line style and end decorations only. The default, rectangle-based set is
+published at https://meta.linked.archi/basic/notation# and differs only in element
+geometry.'''@en ;
+    dcterms:created               "2026-10-03"^^xsd:date ;
+    dcterms:modified              "2026-10-06"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/basic/notation-bubble/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    dcterms:source                <https://meta.linked.archi/core-vis#>,
+                                  <https://meta.linked.archi/core#> ;
+    prov:wasDerivedFrom           <https://meta.linked.archi/core-vis#>,
+                                  <https://meta.linked.archi/core#> ;
+    rdfs:seeAlso                  <https://meta.linked.archi/basic/notation#> ;
+.
+
+
+#################################################################
+# Notation Set
+#################################################################
+
+:BasicBubbleNotation
+    a               arch-vis:NotationSet ;
+    skos:prefLabel  "Basic Bubble Notation"@en ;
+    skos:definition '''Alternative notation set of the Basic language, and a generic fallback for
+any subclass of arch:Element or arch:QualifiedRelationship that lacks a language-specific
+notation. Elements are drawn as very light grey-green circles (bubbles) with a centred label and
+no icon. Relationships are drawn black: basic:Association as a plain solid line,
+basic:Aggregation as a solid line with a hollow diamond at the source end, and any other
+relationship that falls back to this set as a solid line with an open arrowhead at the target
+end.'''@en ;
+    skos:scopeNote  '''The element descriptor and the generic relationship descriptor target the
+core classes themselves, not a language class. Anything published for a class itself comes
+first: a descriptor for the class in the active set or in a loaded metamodel's default set, or
+the class's own arch:prefVisNotation. Only then does a renderer take the descriptor of the
+class's nearest superclass that has one, in the active set or in a default set. arch:Element and
+arch:QualifiedRelationship are the farthest superclasses a renderer walks to, so these two
+descriptors apply only when no nearer superclass has a descriptor in any loaded set. Basic's
+Node, SpecialNode and GroupNode have no descriptor of their own and resolve to the arch:Element
+descriptor; Association and Aggregation have their own, and Connection, the generic
+relationship, resolves to the arch:QualifiedRelationship descriptor. The Basic manifest does not name this
+set: it is selected by the Workshop participant presentation context, and the manifest's single
+arch:notationSet stays the rectangle set.'''@en ;
+.
+
+## ─────────────────────────────────────────────────────────────────
+## Icon URIs (arch:prefVisNotation, arch:altVisNotation) reference
+## the published site at https://meta.linked.archi/basic/notation-bubble/icons/...
+## The source SVG files live in modelingLanguages/basic/notation-bubble/icons/
+## and are deployed to those URLs by the CI pipeline (pages job,
+## .scripts/copy-icon-assets.sh). For local/offline use, resolve
+## https://meta.linked.archi/basic/notation-bubble/icons/ to
+## modelingLanguages/basic/notation-bubble/icons/.
+##
+## Palette (shared with the rectangle set; the two sets differ only in
+## element geometry):
+##   element fill #E8F0EA (very light grey-green, HSL 135° 21% 93%)
+##   element outline #424242   font #212121
+##   font on fill 13.87:1, element outline on fill 8.65:1,
+##   element outline on a white canvas 10.05:1 (WCAG 2.x)
+##   relationships: no lineColor; renderers draw them #000000 and
+##   they differ by line style and end decorations only
+## ─────────────────────────────────────────────────────────────────
+
+
+#################################################################
+# Element Visual Notation
+#################################################################
+
+:ElementNotation
+    a                      arch-vis:VisualNotation ;
+    skos:prefLabel         "Element notation"@en ;
+    skos:definition        '''Very light grey-green circle with a centred label and no icon, for
+any arch:Element subclass without a language-specific notation.'''@en ;
+    arch-vis:notationFor   arch:Element ;
+    arch-vis:inNotationSet :BasicBubbleNotation ;
+    arch:prefVisNotation   <https://meta.linked.archi/basic/notation-bubble/icons/element.svg> ;
+    arch:altVisNotation    <https://meta.linked.archi/basic/notation-bubble/icons/glyphs/element.svg> ;
+    arch-vis:defaultStyle  :ElementStyle ;
+.
+
+:ElementStyle
+    a                      arch-vis:Style ;
+    skos:prefLabel         "Element style"@en ;
+    arch-vis:shapeType     arch-vis:Circle ;
+    arch-vis:renderingMode arch-vis:ShapeOnly ;
+    arch-vis:fillColor     "#E8F0EA" ;
+    arch-vis:lineColor     "#424242" ;
+    arch-vis:fontColor     "#212121" ;
+    arch-vis:defaultWidth  "80.0"^^xsd:double ;
+    arch-vis:defaultHeight "80.0"^^xsd:double ;
+.
+
+
+#################################################################
+# Relationship Visual Notation
+#################################################################
+
+:QualifiedRelationshipNotation
+    a                      arch-vis:VisualNotation ;
+    skos:prefLabel         "Relationship notation"@en ;
+    skos:definition        '''Solid line with no decoration at the source end and an open
+arrowhead at the target end, for any arch:QualifiedRelationship subclass without a
+language-specific notation.'''@en ;
+    arch-vis:notationFor   arch:QualifiedRelationship ;
+    arch-vis:inNotationSet :BasicBubbleNotation ;
+    arch:prefVisNotation   <https://meta.linked.archi/basic/notation-bubble/icons/relationship.svg> ;
+    arch:altVisNotation    <https://meta.linked.archi/basic/notation-bubble/icons/glyphs/relationship.svg> ;
+    arch-vis:lineStyle     arch-vis:SolidLine ;
+    arch-vis:sourceDecor   arch-vis:NoDecoration ;
+    arch-vis:targetDecor   arch-vis:OpenArrowhead ;
+.
+
+:AssociationNotation
+    a                      arch-vis:VisualNotation ;
+    skos:prefLabel         "Association notation"@en ;
+    skos:definition        '''Solid line with no decoration at either end, for basic:Association.
+An association is undirected, so neither end carries a marker.'''@en ;
+    arch-vis:notationFor   basic:Association ;
+    arch-vis:inNotationSet :BasicBubbleNotation ;
+    arch:prefVisNotation   <https://meta.linked.archi/basic/notation-bubble/icons/association.svg> ;
+    arch:altVisNotation    <https://meta.linked.archi/basic/notation-bubble/icons/glyphs/association.svg> ;
+    arch-vis:lineStyle     arch-vis:SolidLine ;
+    arch-vis:sourceDecor   arch-vis:NoDecoration ;
+    arch-vis:targetDecor   arch-vis:NoDecoration ;
+.
+
+:AggregationNotation
+    a                      arch-vis:VisualNotation ;
+    skos:prefLabel         "Aggregation notation"@en ;
+    skos:definition        '''Solid line with a hollow diamond at the source end and no decoration
+at the target end, for basic:Aggregation. The source is the whole, the GroupNode, so the diamond
+sits next to it.'''@en ;
+    arch-vis:notationFor   basic:Aggregation ;
+    arch-vis:inNotationSet :BasicBubbleNotation ;
+    arch:prefVisNotation   <https://meta.linked.archi/basic/notation-bubble/icons/aggregation.svg> ;
+    arch:altVisNotation    <https://meta.linked.archi/basic/notation-bubble/icons/glyphs/aggregation.svg> ;
+    arch-vis:lineStyle     arch-vis:SolidLine ;
+    arch-vis:sourceDecor   arch-vis:HollowDiamond ;
+    arch-vis:targetDecor   arch-vis:NoDecoration ;
+.

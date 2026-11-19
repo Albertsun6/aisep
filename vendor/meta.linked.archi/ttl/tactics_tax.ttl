@@ -1,0 +1,102 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix iso-thes: <http://purl.org/iso25964/skos-thes#> .
+
+@prefix tac:     <https://meta.linked.archi/tactics#> .
+@prefix :        <https://meta.linked.archi/tactics/tax#> .
+
+#################################################################
+# Concept Scheme
+#################################################################
+
+<https://meta.linked.archi/tactics/tax#>
+    a                             skos:ConceptScheme ;
+    skos:prefLabel                "Tactics Concept Scheme"@en ;
+    dcterms:description           "Classification of the architectural tactics by the quality attribute they serve."@en ;
+    skos:hasTopConcept            :ByQualityAttribute ;
+    cc:license                    "http://creativecommons.org/licenses/by/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/tactics/tax#" ;
+    vann:preferredNamespacePrefix "tactax" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi Tactics Taxonomy"@en ;
+    dcterms:created               "2026-11-16"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionInfo               "0.1.0"@en ;
+.
+
+
+#################################################################
+# By quality attribute
+#################################################################
+
+:ByQualityAttribute
+    a                 skos:Concept ;
+    skos:topConceptOf <https://meta.linked.archi/tactics/tax#> ;
+    skos:prefLabel    "By Quality Attribute"@en ;
+    skos:definition   "The tactics by the quality attribute they serve."@en ;
+    skos:inScheme     <https://meta.linked.archi/tactics/tax#> ;
+.
+
+:AvailabilityTactics
+    a                 skos:Concept ;
+    skos:broader      :ByQualityAttribute ;
+    skos:prefLabel    "Availability Tactics"@en ;
+    skos:definition   "Tactics that keep a system available: detecting faults, recovering from them and preventing them."@en ;
+    skos:inScheme     <https://meta.linked.archi/tactics/tax#> ;
+    skos:narrower     tac:AvailabilityTactic, tac:DetectFaults, tac:RecoverFromFaults, tac:PreparationAndRepair,
+                      tac:Reintroduction, tac:PreventFaults ;
+.
+
+:InteroperabilityTactics
+    a                 skos:Concept ;
+    skos:broader      :ByQualityAttribute ;
+    skos:prefLabel    "Interoperability Tactics"@en ;
+    skos:definition   "Tactics that let systems exchange information and use it: locating services and managing interfaces."@en ;
+    skos:inScheme     <https://meta.linked.archi/tactics/tax#> ;
+    skos:narrower     tac:InteroperabilityTactic, tac:Locate, tac:ManageInterfaces ;
+.
+
+:ModifiabilityTactics
+    a                 skos:Concept ;
+    skos:broader      :ByQualityAttribute ;
+    skos:prefLabel    "Modifiability Tactics"@en ;
+    skos:definition   "Tactics that make change cheaper: smaller modules, higher cohesion, lower coupling and later binding."@en ;
+    skos:inScheme     <https://meta.linked.archi/tactics/tax#> ;
+    skos:narrower     tac:ModifiabilityTactic, tac:ReduceSizeOfAModule, tac:IncreaseCohesion, tac:ReduceCoupling,
+                      tac:DeferBinding ;
+.
+
+:PerformanceTactics
+    a                 skos:Concept ;
+    skos:broader      :ByQualityAttribute ;
+    skos:prefLabel    "Performance Tactics"@en ;
+    skos:definition   "Tactics that meet timing requirements: controlling the demand for resources and managing the resources."@en ;
+    skos:inScheme     <https://meta.linked.archi/tactics/tax#> ;
+    skos:narrower     tac:PerformanceTactic, tac:ControlResourceDemand, tac:ManageResources ;
+.
+
+:SecurityTactics
+    a                 skos:Concept ;
+    skos:broader      :ByQualityAttribute ;
+    skos:prefLabel    "Security Tactics"@en ;
+    skos:definition   "Tactics that protect a system: detecting attacks, resisting them, reacting to them and recovering from them."@en ;
+    skos:inScheme     <https://meta.linked.archi/tactics/tax#> ;
+    skos:narrower     tac:SecurityTactic, tac:DetectAttacks, tac:ResistAttacks, tac:ReactToAttacks,
+                      tac:RecoverFromAttacks ;
+.
+
+:QualityAttributeOrder
+    a                      skos:OrderedCollection, iso-thes:ThesaurusArray ;
+    iso-thes:superOrdinate :ByQualityAttribute ;
+    skos:prefLabel         "Quality Attribute Order"@en ;
+    skos:memberList        ( :AvailabilityTactics :InteroperabilityTactics :ModifiabilityTactics :PerformanceTactics
+                             :SecurityTactics ) ;
+.

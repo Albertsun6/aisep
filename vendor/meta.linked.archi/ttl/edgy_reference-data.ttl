@@ -1,0 +1,364 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix edgy:    <https://meta.linked.archi/edgy/onto#> .
+@prefix :        <https://meta.linked.archi/edgy/reference-data#> .
+
+#################################################################
+# Ontology Declaration
+#################################################################
+
+<https://meta.linked.archi/edgy/reference-data#>
+    a                             owl:Ontology ;
+    cc:license                    "http://creativecommons.org/licenses/by-sa/4.0/" ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/edgy/reference-data#" ;
+    vann:preferredNamespacePrefix "edgyrd" ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:title                 "Linked.Archi EDGY 23 Reference Data"@en ;
+    dcterms:description           '''Reference data for EDGY 23 enterprise design models — pre-defined
+tag types for asset classification, metric categories, capability maturity levels,
+and other enumerated values commonly used in EDGY maps.'''@en ;
+    dcterms:created               "2025-06-27"^^xsd:date ;
+    dcterms:modified              "2026-04-17"^^xsd:date ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/edgy/reference-data/23#> ;
+    owl:versionInfo               "23"@en ;
+    dcterms:source  <https://enterprise.design/wiki/Enterprise_Elements>,
+                    <https://hosiaisluoma.fi/design/enterprise-design-with-edgy-cookbook/> ;
+    prov:wasDerivedFrom <https://enterprise.design/wiki/Enterprise_Elements>,
+                        <https://hosiaisluoma.fi/design/enterprise-design-with-edgy-cookbook/> ;
+.
+
+
+#################################################################
+# Reference Data Individual
+#################################################################
+
+:EDGYReferenceData
+    a               arch:ReferenceData ;
+    skos:prefLabel  "EDGY 23 Reference Data"@en ;
+    dcterms:description "Pre-defined enumerations and classification values for EDGY 23 models."@en ;
+.
+
+
+#################################################################
+# Asset Type Tags (from Cookbook §4.3.1)
+#################################################################
+
+:AssetTypeScheme
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "EDGY Asset Types"@en ;
+    dcterms:description  "Pre-defined tag values for classifying Asset elements by type."@en ;
+    skos:hasTopConcept :IntangibleAsset, :TangibleAsset ;
+.
+
+:IntangibleAsset
+    a              skos:Concept ;
+    skos:prefLabel "Intangible Asset"@en ;
+    skos:definition "An asset that has no physical form — software, data, know-how, financial instruments."@en ;
+    skos:topConceptOf :AssetTypeScheme ;
+    skos:inScheme  :AssetTypeScheme ;
+    skos:narrower  :Application, :SystemSoftware, :Data, :KnowHow, :FinancialAsset ;
+.
+
+:TangibleAsset
+    a              skos:Concept ;
+    skos:prefLabel "Tangible Asset"@en ;
+    skos:definition "A physical asset — devices, facilities, equipment, materials."@en ;
+    skos:topConceptOf :AssetTypeScheme ;
+    skos:inScheme  :AssetTypeScheme ;
+    skos:narrower  :Device, :Facility, :Equipment, :Material, :Network ;
+.
+
+:Application
+    a              skos:Concept ;
+    skos:prefLabel "Application"@en ;
+    skos:definition "A software application or system used in business operations."@en ;
+    skos:broader   :IntangibleAsset ;
+    skos:inScheme  :AssetTypeScheme ;
+.
+
+:SystemSoftware
+    a              skos:Concept ;
+    skos:prefLabel "System Software"@en ;
+    skos:definition "Infrastructure software — operating systems, middleware, platforms."@en ;
+    skos:broader   :IntangibleAsset ;
+    skos:inScheme  :AssetTypeScheme ;
+.
+
+:Data
+    a              skos:Concept ;
+    skos:prefLabel "Data"@en ;
+    skos:definition "Structured or unstructured data managed by the enterprise."@en ;
+    skos:broader   :IntangibleAsset ;
+    skos:inScheme  :AssetTypeScheme ;
+.
+
+:KnowHow
+    a              skos:Concept ;
+    skos:prefLabel "Know-How"@en ;
+    skos:definition "Intellectual property, expertise, patents, trade secrets."@en ;
+    skos:broader   :IntangibleAsset ;
+    skos:inScheme  :AssetTypeScheme ;
+.
+
+:FinancialAsset
+    a              skos:Concept ;
+    skos:prefLabel "Financial Asset"@en ;
+    skos:definition "Financial instruments, investments, budgets."@en ;
+    skos:broader   :IntangibleAsset ;
+    skos:inScheme  :AssetTypeScheme ;
+.
+
+:Device
+    a              skos:Concept ;
+    skos:prefLabel "Device"@en ;
+    skos:definition "Hardware devices — servers, laptops, IoT sensors, mobile devices."@en ;
+    skos:broader   :TangibleAsset ;
+    skos:inScheme  :AssetTypeScheme ;
+.
+
+:Facility
+    a              skos:Concept ;
+    skos:prefLabel "Facility"@en ;
+    skos:definition "Physical locations — buildings, offices, data centres, warehouses."@en ;
+    skos:broader   :TangibleAsset ;
+    skos:inScheme  :AssetTypeScheme ;
+.
+
+:Equipment
+    a              skos:Concept ;
+    skos:prefLabel "Equipment"@en ;
+    skos:definition "Machinery, tools, instruments used in operations."@en ;
+    skos:broader   :TangibleAsset ;
+    skos:inScheme  :AssetTypeScheme ;
+.
+
+:Material
+    a              skos:Concept ;
+    skos:prefLabel "Material"@en ;
+    skos:definition "Raw materials, supplies, consumables."@en ;
+    skos:broader   :TangibleAsset ;
+    skos:inScheme  :AssetTypeScheme ;
+.
+
+:Network
+    a              skos:Concept ;
+    skos:prefLabel "Network"@en ;
+    skos:definition "Communication networks — LAN, WAN, internet connections."@en ;
+    skos:broader   :TangibleAsset ;
+    skos:inScheme  :AssetTypeScheme ;
+.
+
+
+#################################################################
+# Metric Categories (from Cookbook §4.3.2)
+#################################################################
+
+:MetricCategoryScheme
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "EDGY Metric Categories"@en ;
+    dcterms:description  "Suggested metric categories for EDGY elements — from the EDGY language foundations."@en ;
+    skos:hasTopConcept :Priority, :Investment, :Cost, :Risk, :Performance, :Quality ;
+.
+
+:Priority
+    a              skos:Concept ;
+    skos:prefLabel "Priority"@en ;
+    skos:definition "Relative importance or urgency of an element."@en ;
+    skos:topConceptOf :MetricCategoryScheme ;
+    skos:inScheme  :MetricCategoryScheme ;
+.
+
+:Investment
+    a              skos:Concept ;
+    skos:prefLabel "Investment"@en ;
+    skos:definition "Level of investment allocated to an element."@en ;
+    skos:topConceptOf :MetricCategoryScheme ;
+    skos:inScheme  :MetricCategoryScheme ;
+.
+
+:Cost
+    a              skos:Concept ;
+    skos:prefLabel "Cost"@en ;
+    skos:definition "Operational or total cost associated with an element."@en ;
+    skos:topConceptOf :MetricCategoryScheme ;
+    skos:inScheme  :MetricCategoryScheme ;
+.
+
+:Risk
+    a              skos:Concept ;
+    skos:prefLabel "Risk"@en ;
+    skos:definition "Risk level or exposure associated with an element."@en ;
+    skos:topConceptOf :MetricCategoryScheme ;
+    skos:inScheme  :MetricCategoryScheme ;
+.
+
+:Performance
+    a              skos:Concept ;
+    skos:prefLabel "Performance"@en ;
+    skos:definition "How well an element performs against expectations."@en ;
+    skos:topConceptOf :MetricCategoryScheme ;
+    skos:inScheme  :MetricCategoryScheme ;
+.
+
+:Quality
+    a              skos:Concept ;
+    skos:prefLabel "Quality / Fitness"@en ;
+    skos:definition "Quality level or fitness for purpose of an element."@en ;
+    skos:topConceptOf :MetricCategoryScheme ;
+    skos:inScheme  :MetricCategoryScheme ;
+.
+
+
+#################################################################
+# Traffic Light Values (for Metrics)
+#################################################################
+
+:TrafficLightScheme
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "Traffic Light Values"@en ;
+    dcterms:description  "Standard RAG (Red-Amber-Green) values for metric colour coding."@en ;
+    skos:hasTopConcept :Green, :Amber, :Red, :NotApplicable ;
+.
+
+:Green
+    a              skos:Concept ;
+    skos:prefLabel "Green"@en ;
+    skos:definition "Good — meets or exceeds expectations."@en ;
+    skos:notation  "#16D917" ;
+    skos:topConceptOf :TrafficLightScheme ;
+    skos:inScheme  :TrafficLightScheme ;
+.
+
+:Amber
+    a              skos:Concept ;
+    skos:prefLabel "Amber"@en ;
+    skos:definition "Warning — needs attention, partially meets expectations."@en ;
+    skos:notation  "#FFA500" ;
+    skos:topConceptOf :TrafficLightScheme ;
+    skos:inScheme  :TrafficLightScheme ;
+.
+
+:Red
+    a              skos:Concept ;
+    skos:prefLabel "Red"@en ;
+    skos:definition "Critical — does not meet expectations, requires immediate action."@en ;
+    skos:notation  "#FF0000" ;
+    skos:topConceptOf :TrafficLightScheme ;
+    skos:inScheme  :TrafficLightScheme ;
+.
+
+:NotApplicable
+    a              skos:Concept ;
+    skos:prefLabel "N/A"@en ;
+    skos:definition "Not applicable — no information available or not relevant."@en ;
+    skos:notation  "#CCCCCC" ;
+    skos:topConceptOf :TrafficLightScheme ;
+    skos:inScheme  :TrafficLightScheme ;
+.
+
+
+#################################################################
+# Channel Types
+#################################################################
+
+:ChannelTypeScheme
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "EDGY Channel Types"@en ;
+    dcterms:description  "Classification of channel types for the Channel element."@en ;
+    skos:hasTopConcept :DigitalChannel, :PhysicalChannel, :HumanChannel, :ThirdPartyChannel ;
+.
+
+:DigitalChannel
+    a              skos:Concept ;
+    skos:prefLabel "Digital Channel"@en ;
+    skos:definition "Websites, mobile apps, e-commerce platforms, social media."@en ;
+    skos:topConceptOf :ChannelTypeScheme ;
+    skos:inScheme  :ChannelTypeScheme ;
+.
+
+:PhysicalChannel
+    a              skos:Concept ;
+    skos:prefLabel "Physical Channel"@en ;
+    skos:definition "Retail stores, service centres, delivery points, point-of-sale."@en ;
+    skos:topConceptOf :ChannelTypeScheme ;
+    skos:inScheme  :ChannelTypeScheme ;
+.
+
+:HumanChannel
+    a              skos:Concept ;
+    skos:prefLabel "Human Interaction Channel"@en ;
+    skos:definition "Call centres, customer support, face-to-face service."@en ;
+    skos:topConceptOf :ChannelTypeScheme ;
+    skos:inScheme  :ChannelTypeScheme ;
+.
+
+:ThirdPartyChannel
+    a              skos:Concept ;
+    skos:prefLabel "Third-Party Channel"@en ;
+    skos:definition "Resellers, distributors, marketplaces, partner platforms."@en ;
+    skos:topConceptOf :ChannelTypeScheme ;
+    skos:inScheme  :ChannelTypeScheme ;
+.
+
+
+#################################################################
+# Capability Maturity Levels
+#################################################################
+
+:CapabilityMaturityScheme
+    a                skos:ConceptScheme ;
+    skos:prefLabel   "Capability Maturity Levels"@en ;
+    dcterms:description  "Maturity levels for assessing business capabilities."@en ;
+    skos:hasTopConcept :Initial, :Developing, :Defined, :Managed, :Optimising ;
+.
+
+:Initial
+    a              skos:Concept ;
+    skos:prefLabel "Initial"@en ;
+    skos:definition "Ad-hoc, reactive — capability exists but is not formally managed."@en ;
+    skos:topConceptOf :CapabilityMaturityScheme ;
+    skos:inScheme  :CapabilityMaturityScheme ;
+.
+
+:Developing
+    a              skos:Concept ;
+    skos:prefLabel "Developing"@en ;
+    skos:definition "Emerging — basic processes exist but are inconsistent."@en ;
+    skos:topConceptOf :CapabilityMaturityScheme ;
+    skos:inScheme  :CapabilityMaturityScheme ;
+.
+
+:Defined
+    a              skos:Concept ;
+    skos:prefLabel "Defined"@en ;
+    skos:definition "Standardised — processes are documented and consistently followed."@en ;
+    skos:topConceptOf :CapabilityMaturityScheme ;
+    skos:inScheme  :CapabilityMaturityScheme ;
+.
+
+:Managed
+    a              skos:Concept ;
+    skos:prefLabel "Managed"@en ;
+    skos:definition "Measured — performance is monitored and controlled."@en ;
+    skos:topConceptOf :CapabilityMaturityScheme ;
+    skos:inScheme  :CapabilityMaturityScheme ;
+.
+
+:Optimising
+    a              skos:Concept ;
+    skos:prefLabel "Optimising"@en ;
+    skos:definition "Continuously improving — focus on innovation and optimisation."@en ;
+    skos:topConceptOf :CapabilityMaturityScheme ;
+    skos:inScheme  :CapabilityMaturityScheme ;
+.
