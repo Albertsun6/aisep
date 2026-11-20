@@ -8,6 +8,15 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, ROOT)
 PY = sys.executable
 
+# Git >= 2.4x starts `git maintenance run --auto --detach` after commits; its background repack moves loose objects into
+# packs while a test is cloning the same repo ("unable to read sha1 file", T14 flaky). Turn auto-maintenance off for every
+# git this test process and its children run (env-level config also covers clones, topology.py and the server).
+_n = int(os.environ.get("GIT_CONFIG_COUNT", "0"))
+for _k, _v in (("maintenance.auto", "false"), ("gc.auto", "0")):
+    os.environ[f"GIT_CONFIG_KEY_{_n}"], os.environ[f"GIT_CONFIG_VALUE_{_n}"] = _k, _v
+    _n += 1
+os.environ["GIT_CONFIG_COUNT"] = str(_n)
+
 
 def git(cwd, *args, check=True):
     p = subprocess.run(["git", "-C", str(cwd), "-c", "commit.gpgsign=false", *args], capture_output=True, text=True)
@@ -37,6 +46,8 @@ def template(tmp_path_factory):
     for d in ("modules", "vendor", "tools", "aisep"):
         shutil.copytree(os.path.join(ROOT, d), t / d, ignore=ign)
     shutil.copytree(os.path.join(ROOT, "models", "procurement"), t / "models" / "procurement", ignore=ign)
+    # like a real model repo: the server runs from the repo, so its own __pycache__ must be ignored
+    shutil.copy2(os.path.join(ROOT, ".gitignore"), t / ".gitignore")
     return t
 
 
