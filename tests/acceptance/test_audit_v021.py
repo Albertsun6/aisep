@@ -9,8 +9,8 @@ Run:  <venv python> tests/acceptance/test_audit_v021.py      (also run by `aisep
 import contextlib, io, os, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(ROOT, "tools"))
-import aisep as T  # noqa: E402
+sys.path.insert(0, ROOT)  # the aisep/ library package (tools/aisep.py is the CLI shell)
+from aisep import core as T  # noqa: E402
 
 HDR = """@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
