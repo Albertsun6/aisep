@@ -1,4 +1,5 @@
-"""Merge-time check: negatives written BEFORE the implementation (docs/mcp-interface.md §5.9 "合并时校验" / "合并前重算" /
+"""Merge-time check: negatives written BEFORE the implementation (docs/mcp-interface.md as amended by the 第四轮 review,
+PR #11 / ADR-016; §5.9 "合并时校验" / "合并前重算" /
 "批准专用 PR" / "发布关口", the approval-commit criterion of step 1, §11 T38 / T39 / T40 / T43, "第三轮" + "核对轮").
 
 Each test first builds its Git topology in a tmp repo (+ a local bare `origin`; nothing is ever pushed to GitHub) and
@@ -15,11 +16,16 @@ Interface contract the implementation session (slice S6) is to provide — modul
                    injected clock of check 3); remote = where release tags are read (git ls-remote).
         Runs checks 1–7, the approval-only-PR rules and the release-tag check. Builds M locally
         (T + `git merge --no-ff --no-commit H` in a scratch worktree) and leaves every ref and the caller's worktree
-        unchanged. [] = may merge.
+        unchanged. M is always merged locally on the given T, never refs/pull/N/merge (R4-10). [] = may merge.
     classify_pr(repo, pr_head, target_ref) -> "approval-only" | "normal"
     approval_commit_problems(repo, evidence, tip) -> list[problem]
         The step-1 criterion over evidence..tip (no merge commit; every commit satisfies (a)(b)(c)); the same function
         record_approval step 1/7 calls. merge_check must call it through the module attribute (the T38 stub test counts).
+    target_unchanged(repo, branch, t_used, *, remote="origin") -> bool
+        R4-11 ②: `git ls-remote` the target branch right before `gh pr merge`; False → recompute.
+    post_merge_verify(repo, new_head, t_used, pr_head, *, head_ref, now) -> list[problem]
+        R4-11 ③: new_head's first parent == t_used and second parent == pr_head → []; otherwise re-run the merge-result
+        gate and checks 6, 7 on new_head (a failure means: open a revert PR and report).
     pr_inputs(event, env) -> {"pr_head", "head_ref", "target_ref"}
         From the GitHub event payload and environment: pr_head = event.pull_request.head.sha, never env GITHUB_SHA.
 
@@ -43,9 +49,14 @@ reason vocabulary (details.reason; the two marked * are the strings §5.9 step 1
     activity-base-mismatch          new activity baseCommit ≠ merge-base(headCommit, T) (check 4, Q)
     activity-branch-mismatch        new activity aisep:branch ≠ head_ref (check 4, Q)
     ambiguous-merge-base            merge-base(headCommit, T) has several answers (check 4)
+    evidence-gate-failed            an Approved record's evidence snapshot fails model_gate; Rejected not checked (check 3, R4-4)
+    merge-conflict                  T + `git merge --no-ff --no-commit H` conflicts (口径, R4-10)
     merge-result-gate-failed        model_gate on M fails (check 5, U3)
-    unapproved-change-to-approved   element Approved on T modified / pre-approved IRI added, no new covering record (check 6, U1, 核对轮 2)
-    approved-element-removed        element Approved on T removed (check 6, Q6④, 核对轮 1)
+    unapproved-change-to-approved   element / model Approved on T modified (retirement included) or pre-approved IRI added, and
+                                    no new Approved covering record that is also the effective record on M (check 6, U1,
+                                    核对轮 2, R4-2, R4-3, R4-6, G4-2); an illegal record (approves a relationship, view,
+                                    Stakeholder: R4-5) never covers
+    approved-element-removed        element Approved on T removed, even with a covering record (check 6, Q6④, 核对轮 1, G4-2)
     approved-content-drifted        an approved object differs between the evidence snapshot and M (check 7, I, 核对轮 3/5)
     release-tag-missing             no compliantly named tag (release/{yyyymmdd}-{ev7} | release/v…) for an Approved GateRelease (tag check, K)
     release-tag-mismatch            such a tag exists but peels to another commit (tag check, K, L)
@@ -53,7 +64,9 @@ reason vocabulary (details.reason; the two marked * are the strings §5.9 step 1
 
 Not covered here (other slices): record_approval's own errors (STALE_HEAD, INVALID_ARGUMENT …, slice S5), the workbench's
 tag/branch creation (client.ts, S8), the record_approval half of the stub-count test, and the GitHub server-side merge
-of T43 (only the local `git merge` is exercised).
+of T43 (only the local `git merge` is exercised), the revert PR itself after a failed post-merge verification, and
+record_approval's own
+side of G4-5 (`branch` = refs/heads/… → INVALID_ARGUMENT) and of R4-7 (seconds in the default IRI).
 """
 import functools, importlib, os, subprocess
 from datetime import datetime, timezone
@@ -158,7 +171,7 @@ def feature(t, branch="feat/x", element="newThing", label="新东西", start="ma
 
 
 def act(t, head, branch, base=None, local=None):
-    return dict(local=local or f"activity-20261120-{head[:7]}", head=head,
+    return dict(local=local or f"activity-20261120110000-{head[:7]}", head=head,
                 base=base or t.merge_base(head, MAIN), branch=branch)
 
 
@@ -261,11 +274,17 @@ def _deviation(t, kind):
         return h, t.approve("GateArchitecture", ["newThing"], evidence=h, extra_ttl=extra)[0]
     if kind == "c-activity-only":
         return h, t.activity_only(act_["local"], h, act_["base"], "feat/x")
+    if kind == "r4-copies-existing-record":  # 第四轮 R4-8: the copy vanishes from the graph diff
+        extra = t.record_block(f"{GOV}/approval-20261119120000-architecture-audittrail.ttl")
+        return h, t.approve("GateArchitecture", ["newThing"], evidence=h, extra_ttl=extra)[0]
+    if kind == "r4-filename-not-local-name":  # 第四轮 R4-8
+        return h, t.approve("GateArchitecture", ["newThing"], evidence=h, path=f"{GOV}/approval-renamed.ttl")[0]
     raise AssertionError(kind)
 
 
 DEVIATIONS = ["a-forged-trailer", "a-two-trailers", "b-modifies-governance-ttl", "b-non-ttl", "b-subdirectory",
-              "b-symlink", "b-executable", "c-two-records", "c-record-plus-stakeholder", "c-activity-only"]
+              "b-symlink", "b-executable", "c-two-records", "c-record-plus-stakeholder", "c-activity-only",
+              "r4-copies-existing-record", "r4-filename-not-local-name"]
 
 
 @pytest.mark.parametrize("kind", ["valid", "valid-with-activity"])
@@ -279,10 +298,11 @@ def test_criterion_valid_shapes_pass(t, kind):
 def test_criterion_deviation_is_not_an_approval_commit(t, kind):
     h, a = _deviation(t, kind)
     assert t.git("rev-list", "--count", f"{h}..{a}") == "1"
+    added = [l.split() for l in t.git("diff-tree", "-r", "--no-commit-id", "--diff-filter=A", a).splitlines()]
     if kind == "b-symlink":
-        assert t.git("ls-tree", a, "--", f"{GOV}/").count("120000") == 1
+        assert len(added) == 1 and added[0][1] == "120000", added
     if kind == "b-executable":
-        assert "100755" in t.git("ls-tree", "-r", a, "--", f"{GOV}/")
+        assert len(added) == 1 and added[0][1] == "100755", added
     assert_rejected(call("approval_commit_problems", str(t.root), h, a), "not-approval-commit", offending=a)
 
 
@@ -347,7 +367,7 @@ def test_T38_same_instant_records_both_checked(t):
 def test_T38_existing_record_rewritten_rejected_although_gate_passes(t):
     """E: rewrite the approves of a record already on T. Gate PASS on the PR head (so only this check stops it)."""
     t.checkout("main", new="feat/x")
-    rel = f"{GOV}/approval-20261119-architecture-audittrail.ttl"
+    rel = f"{GOV}/approval-20261119120000-architecture-audittrail.ttl"
     t.write(rel, t.read(rel).replace("aisep:approves :auditTrail", "aisep:approves :auditTrail, :supplier"))
     h = t.commit_all("widen an existing approval")
     assert cli_gate(t, h)
@@ -356,7 +376,7 @@ def test_T38_existing_record_rewritten_rejected_although_gate_passes(t):
 
 def test_T38_existing_activity_rewritten_rejected(t):
     t.checkout("main", new="feat/x")
-    rel = f"{GOV}/approval-20261119-architecture-audittrail.ttl"
+    rel = f"{GOV}/approval-20261119120000-architecture-audittrail.ttl"
     t.write(rel, t.read(rel).replace('"ao-session-0"', '"ao-session-forged"'))
     h = t.commit_all("rewrite an existing activity")
     assert_rejected(check(t, h, "feat/x"), "governance-record-modified", iri=t.base_activity)
@@ -364,13 +384,14 @@ def test_T38_existing_activity_rewritten_rejected(t):
 
 def test_T38_delete_rejected_record_rejected(t):
     t.checkout("main", new="feat/x")
-    t.git("rm", "-q", f"{GOV}/approval-20261119-requirements-rejected.ttl")
+    t.git("rm", "-q", f"{GOV}/approval-20261119130000-requirements-rejected.ttl")
     h = t.commit_all("drop the rejection")
     assert_rejected(check(t, h, "feat/x"), "governance-record-removed", iri=t.base_rejected)
 
 
 def test_T38_unrelated_content_pr_is_clean(t):
-    """Positive twin of the E cases and of U1: a PR touching nothing approved and no record."""
+    """ADR-016 (第四轮 R4-1): an ordinary PR adding a Proposed element with no approval record passes. Also the
+    positive twin of the E cases and of U1."""
     h = feature(t)
     assert_clean(check(t, h, "feat/x"))
 
@@ -411,7 +432,7 @@ def test_T38_approves_iri_missing_at_evidence_rejected(t):
 
 def test_T38_preapproved_iri_created_without_reapproval(t):
     """核对轮 2: T holds a record approving :futureThing before it exists; a PR creating it needs a new approval."""
-    t.approve("GateArchitecture", ["futureThing"], evidence=t.rev(MAIN), local="approval-20261120-pre-future")
+    t.approve("GateArchitecture", ["futureThing"], evidence=t.rev(MAIN), local="approval-20261120090000-pre-future")
     t.push("main")
     h = feature(t, element="futureThing", label="未来之物")
     assert_rejected(check(t, h, "feat/x"), "unapproved-change-to-approved", iri=M + "futureThing")
@@ -437,7 +458,7 @@ def test_T38_remove_approved_element_always_rejected(t):
     assert_clean(check(t, h2, "feat/y"))
 
 
-@pytest.mark.parametrize("forge", ["none", "base", "branch"])
+@pytest.mark.parametrize("forge", ["none", "base", "branch", "branch-full-ref"])
 def test_T38_activity_base_and_branch_recomputed(t, forge):
     h = feature(t)
     a_ = act(t, h, "feat/x")
@@ -446,12 +467,15 @@ def test_T38_activity_base_and_branch_recomputed(t, forge):
         assert a_["base"] != t.merge_base(h, MAIN)
     if forge == "branch":
         a_["branch"] = "feat/other"
+    if forge == "branch-full-ref":  # G4-5: aisep:branch is the short name; refs/heads/feat/x ≠ head_ref
+        a_["branch"] = "refs/heads/feat/x"
     a, _, _ = t.approve("GateArchitecture", ["newThing"], activity=a_)
     p = check(t, a, "feat/x")
     if forge == "none":
         assert_clean(p)
     else:
-        assert_rejected(p, {"base": "activity-base-mismatch", "branch": "activity-branch-mismatch"}[forge])
+        assert_rejected(p, {"base": "activity-base-mismatch", "branch": "activity-branch-mismatch",
+                                  "branch-full-ref": "activity-branch-mismatch"}[forge])
 
 
 def _criss_cross(t):
@@ -538,6 +562,15 @@ def test_T38_merge_result_gate_and_pre_merge_recompute(t):
     assert_clean(check(t, h, "feat/x", target=t1))  # CI ran when main was at T1
     assert refs_snapshot(t) == before  # 检查前后两条分支头不变、工作区不变
     assert_rejected(check(t, h, "feat/x"), "merge-result-gate-failed")  # 合并前重算 against the current T2
+    # R4-10: a platform merge ref built on the stale T1 (gate PASS there) must not be used; M is merged on T2
+    t.git("checkout", "-q", "--detach", t1)
+    t.git("merge", "-q", "--no-ff", "-m", "platform test merge", h)
+    t.git("update-ref", "refs/pull/9/merge", t.rev())
+    t.checkout("feat/x")
+    event = {"pull_request": {"head": {"sha": h, "ref": "feat/x"}, "base": {"ref": "main"}, "number": 9}}
+    inp = call("pr_inputs", event, {"GITHUB_SHA": t.rev("refs/pull/9/merge"), "GITHUB_REF": "refs/pull/9/merge"})
+    assert inp["pr_head"] == h and inp["target_ref"] in (MAIN, "refs/remotes/origin/main")
+    assert_rejected(check(t, h, "feat/x"), "merge-result-gate-failed")
 
 
 def test_T38_stub_count_criterion_called_by_merge_check(t, monkeypatch):
@@ -594,7 +627,7 @@ def test_T39_forged_release_commit_passes_ci_not_a_security_guarantee(t):
     approval-only and passes. The criterion checks shape, not provenance; the human PR approval is the guard."""
     r = t.rev(MAIN)
     name = release_branch(t, r)
-    a, _, _ = t.approve("GateRelease", ["quoteApproval"], evidence=r, local="approval-20261120-release-handwritten")
+    a, _, _ = t.approve("GateRelease", ["quoteApproval"], evidence=r, local="approval-20261120110000-release-handwritten")
     t.tag(f"release/20261120-{r[:7]}", r)
     assert call("classify_pr", str(t.root), a, MAIN) == "approval-only"
     assert_clean(check(t, a, name))
@@ -614,7 +647,7 @@ def test_T39_extra_commit_makes_pr_normal(t, extra):
                 "> ;\n    skos:prefLabel \"闯入者\"@zh .\n", "a")
         t.commit_all("add a person")
     elif extra == "activity-only":
-        t.activity_only("activity-20261120-orphan", r, r, name)
+        t.activity_only("activity-20261120110000-orphan", r, r, name)
     h = t.rev()
     assert call("classify_pr", str(t.root), h, MAIN) == "normal"
     assert_rejected(check(t, h, name), "release-in-normal-pr")
@@ -670,7 +703,7 @@ def test_T39_release_of_old_r_with_drifted_object(t, approves, main_touches, dri
     r = t.rev(MAIN)
     t.checkout("main")
     if main_touches == "new-record":
-        t.approve("GateArchitecture", ["supplier"], evidence=r, local="approval-20261120-main-other")
+        t.approve("GateArchitecture", ["supplier"], evidence=r, local="approval-20261120090000-main-other")
     else:
         t.relabel(main_touches, "主线改名")
     _, name, a = _release(t, r, approves=approves)
@@ -802,7 +835,7 @@ def test_T43_control_append_to_governance_ttl_conflicts(t):
     for br, el in (("feat/a", "supplier"), ("feat/b", "quotation")):
         t.checkout("main", new=br)
         t.write("models/procurement/governance.ttl",
-                record_ttl(f"approval-20261120-{el}", "GateArchitecture", [el], t.rev(MAIN)), "a")
+                record_ttl(f"approval-20261120110000-{el}", "GateArchitecture", [el], t.rev(MAIN)), "a")
         t.commit_all(f"append {el}")
     t.checkout("main")
     t.git("merge", "-q", "--no-ff", "-m", "a", "feat/a")
@@ -810,6 +843,270 @@ def test_T43_control_append_to_governance_ttl_conflicts(t):
                        capture_output=True, text=True)
     assert p.returncode != 0 and "governance.ttl" in t.git("diff", "--name-only", "--diff-filter=U")
     t.git("merge", "--abort")
+
+
+# ================================================================== 第四轮 (PR #11, ADR-016): T38 / T43 additions
+
+@pytest.mark.parametrize("cover", ["rejected", "other-gate-approved"])
+def test_T38_R4_2_cover_must_be_approved_any_gate(t, cover):
+    """R4-2: a Rejected record does not re-approve; an Approved record of another gate does."""
+    t.checkout("main", new="feat/x")
+    h = t.relabel("auditTrail", "审计轨迹V2")
+    if cover == "rejected":
+        a, _, _ = t.approve("GateArchitecture", ["auditTrail"], evidence=h, decision="Rejected")
+        assert_rejected(check(t, a, "feat/x"), "unapproved-change-to-approved", iri=M + "auditTrail")
+    else:
+        a, _, _ = t.approve("GateDesign", ["auditTrail"], evidence=h)
+        assert_clean(check(t, a, "feat/x"))
+
+
+def test_T38_R4_3_backdated_cover_rejected(t):
+    """R4-3: the cover record is generated before T's own Approved record of the object (2026-11-19T12:00:00Z), so on
+    M the old record stays effective."""
+    t.checkout("main", new="feat/x")
+    h = t.relabel("auditTrail", "审计轨迹V2")
+    a, _, _ = t.approve("GateArchitecture", ["auditTrail"], evidence=h, at="2026-11-19T11:00:00Z")
+    assert_rejected(check(t, a, "feat/x"), "unapproved-change-to-approved", iri=M + "auditTrail")
+
+
+def test_T38_R4_3_later_record_on_main_rejected_at_recompute(t):
+    """R4-3: CI passes; main then takes a later record on the same object → the branch's cover is no longer effective
+    on M; the pre-merge recompute refuses."""
+    t.checkout("main", new="feat/x")
+    h = t.relabel("auditTrail", "审计轨迹V2")
+    a, _, _ = t.approve("GateArchitecture", ["auditTrail"], evidence=h, at="2026-11-20T11:00:00Z")
+    t1 = t.rev(MAIN)
+    assert_clean(check(t, a, "feat/x", target=t1))
+    t.checkout("main")
+    t.approve("GateRequirements", ["auditTrail"], evidence=t1, at="2026-11-20T11:30:00Z",
+              local="approval-20261120113000-requirements-main")
+    t.checkout("feat/x")
+    assert_rejected(check(t, a, "feat/x"), "unapproved-change-to-approved", iri=M + "auditTrail")
+
+
+LEGACY = "models/procurement/legacy.ttl"
+
+
+@pytest.mark.parametrize("decision", ["Approved", "Rejected"])
+def test_T38_R4_4_approved_evidence_must_pass_gate(t, decision):
+    """R4-4: main carries an L1 violation (a direct triple, as if committed with --no-verify) when the branch forks; the
+    branch approves on top of it; main then fixes it so M passes. Approved → rejected; Rejected → not for this reason."""
+    from fixtures.topology import PREFIXES
+    t.checkout("main")
+    t.write(LEGACY, PREFIXES + "\n:quoteApproval am4:accesses :quotation .\n")
+    t0 = t.commit_all("legacy direct triple (--no-verify)")
+    h = feature(t)
+    a, _, _ = t.approve("GateArchitecture", ["newThing"], evidence=h, decision=decision)
+    t.checkout("main"); t.git("rm", "-q", LEGACY); t1 = t.commit_all("fix the legacy violation")
+    t.checkout("feat/x")
+    if decision == "Approved":  # the fixture is what it claims (gate runs once per decision would only repeat it)
+        assert not cli_gate(t, h) and cli_gate(t, t1, merge=a) and t.merge_base(a, MAIN) == t0
+    p = check(t, a, "feat/x")
+    if decision == "Approved":
+        assert_rejected(p, "evidence-gate-failed")
+    elif not isinstance(p, _Pending):
+        assert "evidence-gate-failed" not in reasons(p), p
+
+
+@pytest.mark.parametrize("target", ["relationship", "view", "stakeholder"])
+def test_T38_R4_5_record_approving_illegal_target_does_not_cover(t, target):
+    """R4-5: approves may name elements (not records, activities, Stakeholders), models and ADRs only. A record that
+    also names a relationship / view / Stakeholder is illegal (L1) and does not re-approve :auditTrail."""
+    t.checkout("main", new="feat/x")
+    if target == "view":
+        t.write(AM4, "\n:overviewView a arch:View ;\n    arch:inModel <" + M + "> ;\n    skos:prefLabel \"总览视图\"@zh .\n", "a")
+        t.commit_all("add a view")
+    h = t.relabel("auditTrail", "审计轨迹V2")
+    other = {"relationship": "rel-supplier-assigned-submitQuotation", "view": "overviewView",
+             "stakeholder": "chiefArchitect"}[target]
+    a, _, _ = t.approve("GateArchitecture", ["auditTrail", other], evidence=h)
+    assert_rejected(check(t, a, "feat/x"), "unapproved-change-to-approved", iri=M + "auditTrail")
+
+
+def _approve_model_on_main(t):
+    t.checkout("main")
+    t.approve("GateArchitecture", [f"<{M}>"], evidence=t.rev(MAIN), at="2026-11-20T09:00:00Z",
+              local="approval-20261120090000-architecture-model")
+
+
+@pytest.mark.parametrize("change,covered", [("prefLabel", False), ("conformsTo", False), ("prefLabel", True)])
+def test_T38_R4_6_model_subject_triples_count_as_modification(t, change, covered):
+    """R4-6: the model's own triples are in its comparison scope; relabelling an Approved model needs re-approval."""
+    _approve_model_on_main(t)
+    t.checkout("main", new="feat/x")
+    if change == "prefLabel":
+        h = t.set_model_label("采购V2")
+    else:
+        t.write(AM4, f"\n<{M}> arch:modelConformsToMetamodel <https://meta.linked.archi/archimate4/onto#> .\n", "a")
+        h = t.commit_all("declare the metamodel")
+    if covered:
+        a, _, _ = t.approve("GateArchitecture", [f"<{M}>"], evidence=h)
+        assert_clean(check(t, a, "feat/x"))
+    else:
+        assert_rejected(check(t, h, "feat/x"), "unapproved-change-to-approved", iri=M)
+
+
+@pytest.mark.parametrize("model_approved", [False, True])
+def test_T38_G4_4_relationship_change_does_not_touch_endpoint(t, model_approved):
+    """G4-4: :quoteApproval is Approved on T. Retargeting a relationship that has it as an endpoint passes and leaves it
+    Approved; when the whole model is Approved the same change needs re-approval of the model."""
+    if model_approved:
+        _approve_model_on_main(t)
+    t.checkout("main", new="feat/x")
+    h = t.retarget("rel-procurementManager-assigned-quoteApproval", "submitQuotation")
+    assert "arch:target :submitQuotation" in t.git("show", f"{h}:{AM4}")
+    p = check(t, h, "feat/x")
+    if model_approved:
+        assert_rejected(p, "unapproved-change-to-approved", iri=M)
+    else:
+        assert_clean(p)
+
+
+@pytest.mark.parametrize("old_at,new_at,superseded", [
+    ("2026-11-20T10:00:00Z", "2026-11-20T12:00:00+08:00", False),  # = 04:00Z, earlier: not a later superset
+    ("2026-11-20T10:00:00Z", "2026-11-20T18:00:00+08:00", False),  # = 10:00Z, same instant: both checked
+    ("2026-11-20T10:00:00Z", "2026-11-20T19:00:00+08:00", True),   # = 11:00Z, later: positive twin
+])
+def test_T38_G4_1_times_compared_as_utc_instants(t, old_at, new_at, superseded):
+    h1 = feature(t)
+    t.approve("GateArchitecture", ["newThing"], evidence=h1, at=old_at)
+    h2 = t.relabel("newThing", "新东西改")
+    a, _, _ = t.approve("GateArchitecture", ["newThing"], evidence=h2, at=new_at)
+    p = check(t, a, "feat/x")
+    if superseded:
+        assert_clean(p)
+    else:
+        assert_rejected(p, "not-approval-commit", offending=h2)
+
+
+@pytest.mark.parametrize("delete_first", [True, False])
+def test_T38_G4_2_remove_approved_element_rejected_even_with_cover(t, delete_first):
+    t.checkout("main", new="feat/x")
+    if delete_first:
+        h = t.remove_block("auditTrail")
+        a, _, _ = t.approve("GateArchitecture", ["auditTrail"], evidence=h)
+    else:
+        h = t.relabel("auditTrail", "审计轨迹V2")
+        t.approve("GateArchitecture", ["auditTrail"], evidence=h)
+        a = t.remove_block("auditTrail")
+    assert ":auditTrail a " not in t.read(AM4)
+    assert_rejected(check(t, a, "feat/x"), "approved-element-removed", iri=M + "auditTrail")
+
+
+@pytest.mark.parametrize("retire_covered", [False, True])
+def test_T38_G4_2_retirement_is_a_modification(t, retire_covered):
+    """Retiring (owl:deprecated) an Approved element counts as modified: it needs an Approved cover in the same PR."""
+    t.checkout("main", new="feat/x")
+    t.write(AM4, "\n:auditTrail owl:deprecated true .\n", "a")
+    if "@prefix owl:" not in t.read(AM4):
+        t.write(AM4, "@prefix owl:   <http://www.w3.org/2002/07/owl#> .\n" + t.read(AM4))
+    h = t.commit_all("retire auditTrail")
+    if retire_covered:
+        a, _, _ = t.approve("GateArchitecture", ["auditTrail"], evidence=h)
+        assert_clean(check(t, a, "feat/x"))
+    else:
+        assert_rejected(check(t, h, "feat/x"), "unapproved-change-to-approved", iri=M + "auditTrail")
+
+
+@pytest.mark.parametrize("full_superset", [True, False])
+def test_T38_G4_3_reapprove_on_merge_commit(t, full_superset):
+    """G4-3: approve, merge main into the branch, re-approve with the merge commit as evidence (same gate, later).
+    A superset supersedes the old record (pass); a partial one leaves it checked (merge commit in its range)."""
+    feature(t); t.add_element("otherThing", "另一个"); h1 = t.rev()
+    t.approve("GateArchitecture", ["newThing", "otherThing"], evidence=h1)
+    t.checkout("main"); t.relabel("supplier", "供应商V2")
+    t.checkout("feat/x"); t.git("merge", "-q", "--no-ff", "-m", "Merge main", "main")
+    mc = t.rev()
+    assert len(t.git("rev-parse", f"{mc}^@").split()) == 2
+    objs = ["newThing", "otherThing"] if full_superset else ["newThing"]
+    a, _, _ = t.approve("GateArchitecture", objs, evidence=mc, at="2026-11-20T11:30:00Z")
+    p = check(t, a, "feat/x")
+    if full_superset:
+        assert_clean(p)
+    else:
+        assert_rejected(p, "merge-commit-in-range")
+
+
+def test_T38_G4_6_superseded_record_activity_not_recomputed(t):
+    """G4-6: approve at C (activity base F); another PR merges the branch ancestor C1 into main → the activity's
+    baseCommit no longer equals merge-base(C, T) → rejected; re-approving on a new commit supersedes the old record
+    and its activity is not recomputed → pass."""
+    f = t.rev(MAIN)
+    t.checkout("main", new="feat/x")
+    c1 = t.add_element("thingOne", "一")
+    c = t.add_element("thingTwo", "二")
+    a1, _, _ = t.approve("GateArchitecture", ["thingOne", "thingTwo"], activity=act(t, c, "feat/x"))
+    assert t.merge_base(c, MAIN) == f
+    t.checkout("main"); t.git("merge", "-q", "--no-ff", "-m", "other PR takes C1", c1)
+    t.checkout("feat/x")
+    assert t.merge_base(c, MAIN) == c1
+    assert_rejected(check(t, a1, "feat/x"), "activity-base-mismatch")
+    c2 = t.relabel("thingTwo", "二改")
+    a2, _, _ = t.approve("GateArchitecture", ["thingOne", "thingTwo"], at="2026-11-20T11:30:00Z",
+                         activity=act(t, c2, "feat/x", local=f"activity-20261120113000-{c2[:7]}"))
+    assert_clean(check(t, a2, "feat/x"))
+
+
+@pytest.mark.parametrize("same_second", [False, True])
+def test_T43_R4_7_same_gate_same_r_two_branches(t, same_second):
+    """R4-7: two branches from the same R approve the same object at the same gate. Different seconds → different
+    local names, both merge cleanly (checker: clean). Same second → same file name, different content → the second
+    merge conflicts (the registered residual risk; checker: merge-conflict). The git half runs for real."""
+    t.checkout("main", new="feat/a")
+    ha = t.add_element("thingA", "甲")
+    t.checkout("main", new="feat/b")
+    t.git("reset", "-q", "--hard", ha)  # same content commit R on both branches
+    t.checkout("feat/a")
+    aa, la, _ = t.approve("GateArchitecture", ["thingA"], evidence=ha, at="2026-11-20T11:00:00Z")
+    t.checkout("feat/b")
+    ab, lb, _ = t.approve("GateArchitecture", ["thingA"], evidence=ha, approved_by=":codingBot",
+                          at="2026-11-20T11:00:00.500Z" if same_second else "2026-11-20T11:00:01Z")
+    assert (la == lb) is same_second
+    t.checkout("main")
+    t.git("merge", "-q", "--no-ff", "-m", "Merge feat/a", "feat/a")
+    p = subprocess.run(["git", "-C", str(t.root), "merge", "-q", "--no-ff", "-m", "Merge feat/b", "feat/b"],
+                       capture_output=True, text=True)
+    assert (p.returncode != 0) is same_second, p.stdout + p.stderr
+    if same_second:
+        assert f"{GOV}/{la}.ttl" in t.git("diff", "--name-only", "--diff-filter=U")
+        t.git("merge", "--abort")
+    else:
+        t.git("reset", "-q", "--hard", "HEAD~1")
+    r = check(t, ab, "feat/b")
+    if same_second:
+        assert_rejected(r, "merge-conflict")
+    else:
+        assert_clean(r)
+
+
+def test_T38_R4_11_target_moved_before_merge_means_recompute(t):
+    """R4-11 ②: the recompute used T1; the remote main then moves → ls-remote differs → do not merge, recompute."""
+    t1 = t.rev(MAIN)
+    assert call("target_unchanged", str(t.root), "main", t1) == True  # noqa: E712 (positive twin)
+    t.checkout("main"); t.add_element("later", "之后的提交"); t.push("main")
+    assert t.git("ls-remote", "origin", "refs/heads/main").split()[0] != t1
+    assert call("target_unchanged", str(t.root), "main", t1) == False  # noqa: E712
+
+
+@pytest.mark.parametrize("parents_match", [True, False])
+def test_T38_R4_11_post_merge_verify(t, parents_match):
+    """R4-11 ③: the PR passed against T1. If the platform merged onto T1, the new head's parents are (T1, H) → [].
+    If main had moved to T2 (deleting the element the PR references), the parents differ and re-running the merge
+    result gate on the new head fails."""
+    t.checkout("main"); t1 = t.add_element("ledger", "台账", rel="models/procurement/ledger.ttl")
+    t.checkout("main", new="feat/x")
+    h = t.add_relationship("rel-quoteApproval-accesses-ledger", "am4:Access", "quoteApproval", "ledger")
+    t.checkout("main")
+    if not parents_match:
+        t.remove_block("ledger", rel="models/procurement/ledger.ttl")
+    t.git("merge", "-q", "--no-ff", "-m", "Merge feat/x", h)
+    m2 = t.rev()
+    assert (t.git("rev-parse", f"{m2}^1") == t1) is parents_match and t.git("rev-parse", f"{m2}^2") == h
+    p = call("post_merge_verify", str(t.root), m2, t1, h, head_ref="feat/x", now=NOW)
+    if parents_match:
+        assert_clean(p)
+    else:
+        assert_rejected(p, "merge-result-gate-failed")
 
 
 # ------------------------------------------------------------------ every test: build all fixtures, then XFAIL if the

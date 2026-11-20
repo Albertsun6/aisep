@@ -6,6 +6,7 @@ one new file `models/procurement/governance/<local>.ttl`, mode 100644, one Appro
 it references), one `AISEP-Evidence` trailer. Deviations (forged trailer, symlink, two records …) are explicit options.
 """
 import os, shutil, subprocess
+from datetime import datetime, timezone
 
 M = "https://aisep.example/model/procurement/"
 GOV = "models/procurement/governance"
@@ -20,6 +21,12 @@ PREFIXES = """@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 @prefix aisep: <https://aisep.example/ont/aisep#> .
 @prefix :      <https://aisep.example/model/procurement/> .
 """
+
+
+def stamp(at):
+    """yyyymmddHHMMSS of an xsd:dateTime, normalised to UTC (record / activity IRIs, §5.9 step 5, 第四轮 R4-7)."""
+    d = datetime.fromisoformat(at.replace("Z", "+00:00"))
+    return (d.astimezone(timezone.utc) if d.tzinfo else d).strftime("%Y%m%d%H%M%S")
 
 
 def git(cwd, *args, check=True, env=None):
@@ -113,16 +120,16 @@ class Topo:
         self.write(AM4, element_ttl("auditTrail", "审计轨迹"), "a")
         self.write("models/procurement/governance.ttl",
                    "\n:codingBot a arch:Stakeholder ;\n    arch:inModel <" + M + "> ;\n    skos:prefLabel \"编码代理\"@zh .\n", "a")
-        self.base_activity = M + f"activity-20261119-{self.c0[:7]}"
-        self.write(f"{GOV}/approval-20261119-architecture-audittrail.ttl", PREFIXES + activity_ttl(
-            f"activity-20261119-{self.c0[:7]}", self.c0, self.c0, "feat/audit", session="ao-session-0",
+        self.base_activity = M + f"activity-20261119100000-{self.c0[:7]}"
+        self.write(f"{GOV}/approval-20261119120000-architecture-audittrail.ttl", PREFIXES + activity_ttl(
+            f"activity-20261119100000-{self.c0[:7]}", self.c0, self.c0, "feat/audit", session="ao-session-0",
             started="2026-11-19T09:00:00Z", ended="2026-11-19T10:00:00Z") + record_ttl(
-            "approval-20261119-architecture-audittrail", "GateArchitecture", ["auditTrail"], self.c0,
-            at="2026-11-19T12:00:00Z", activity=f"activity-20261119-{self.c0[:7]}"))
-        self.base_record = M + "approval-20261119-architecture-audittrail"
-        self.base_rejected = M + "approval-20261119-requirements-rejected"
-        self.write(f"{GOV}/approval-20261119-requirements-rejected.ttl", PREFIXES + record_ttl(
-            "approval-20261119-requirements-rejected", "GateRequirements", ["supplier"], self.c0,
+            "approval-20261119120000-architecture-audittrail", "GateArchitecture", ["auditTrail"], self.c0,
+            at="2026-11-19T12:00:00Z", activity=f"activity-20261119100000-{self.c0[:7]}"))
+        self.base_record = M + "approval-20261119120000-architecture-audittrail"
+        self.base_rejected = M + "approval-20261119130000-requirements-rejected"
+        self.write(f"{GOV}/approval-20261119130000-requirements-rejected.ttl", PREFIXES + record_ttl(
+            "approval-20261119130000-requirements-rejected", "GateRequirements", ["supplier"], self.c0,
             at="2026-11-19T13:00:00Z", decision="Rejected"))
         self.base = self.commit_all("baseline: approved :auditTrail, rejected :supplier")
 
@@ -155,22 +162,23 @@ class Topo:
 
     # -- approval commits (shape of §5.9 step 7) and deliberate deviations
     def approve(self, gate, approves, evidence=None, *, local=None, at="2026-11-20T11:00:00Z", decision="Approved",
-                activity=None, extra_ttl="", trailer=None, path=None, symlink=False, executable=False, date=None):
+                activity=None, extra_ttl="", trailer=None, path=None, symlink=False, executable=False, date=None,
+                approved_by=":chiefArchitect"):
         """Commit one approval record. evidence defaults to HEAD (the commit the human looked at). activity: dict of
         activity_ttl kwargs (local/head/base/branch…) or None. Returns (commit, record_local, record_iri)."""
         evidence = evidence or self.rev()
-        local = local or f"approval-20261120-{gate.lower()[4:]}-{evidence[:7]}"
+        local = local or f"approval-{stamp(at)}-{gate.lower()[4:]}-{evidence[:7]}"
         body = PREFIXES
         if activity:
             body += activity_ttl(**activity)
-        body += record_ttl(local, gate, approves, evidence, at=at, decision=decision,
+        body += record_ttl(local, gate, approves, evidence, at=at, decision=decision, approved_by=approved_by,
                            activity=activity["local"] if activity else None) + extra_ttl
         rel = path or f"{GOV}/{local}.ttl"
-        if symlink:
-            self.write(f"{GOV}/.store/{local}.txt", body)
+        if symlink:  # the commit adds only the link (mode 120000); its target lives outside the repository
+            target = self.tmp / f"{local}.target.ttl"
+            target.write_text(body, encoding="utf-8")
             os.makedirs(os.path.dirname(self.path(rel)), exist_ok=True)
-            os.symlink(os.path.relpath(self.path(f"{GOV}/.store/{local}.txt"), os.path.dirname(self.path(rel))),
-                       self.path(rel))
+            os.symlink(str(target), self.path(rel))
         else:
             self.write(rel, body)
         if executable:
@@ -183,6 +191,26 @@ class Topo:
         """A commit adding only an AgentActivity that no new record references (§5.9 approval-only PR rule 3)."""
         self.write(f"{GOV}/{local}.ttl", PREFIXES + activity_ttl(local, head, base, branch))
         return self.commit_all(f"aisep: activity {local}", trailers=[f"AISEP-Evidence: {head}"])
+
+    def record_block(self, rel):
+        """The subject blocks of an existing record file without its prefix header (to copy into another file)."""
+        return self.read(rel)[len(PREFIXES):]
+
+    def set_model_label(self, new_label, msg=None):
+        txt = self.read(AM4)
+        old = '<' + M + '> a arch:Model ;\n    skos:prefLabel "采购"@zh'
+        assert old in txt, "fixture: model header changed"
+        self.write(AM4, txt.replace(old, old.replace("采购", new_label)))
+        return self.commit_all(msg or "relabel the model")
+
+    def retarget(self, rel_local, new_target, msg=None):
+        """Change arch:target of the qualified relationship :rel_local in am4.ttl."""
+        txt = self.read(AM4)
+        i = txt.index(f"\n:{rel_local} a ")
+        j = txt.index("arch:target :", i) + len("arch:target :")
+        k = txt.index(" .", j)
+        self.write(AM4, txt[:j] + new_target + txt[k:])
+        return self.commit_all(msg or f"retarget {rel_local}")
 
     def merge_base(self, a, b):
         return self.git("merge-base", a, b)
