@@ -25,7 +25,7 @@ import pyoxigraph as ox
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)  # the aisep/ library package; this file has the same name, so the repo root must come first
 from aisep.core import (AISEP, ARCH, Ctx, dependencies, discover, expand, impact, l3, l4, rel,  # noqa: E402
-                        run_check, short)
+                        run_check, short, shown)
 from aisep import gitio  # noqa: E402
 from aisep.errors import AisepError  # noqa: E402
 
@@ -45,10 +45,10 @@ def model_files(args):
 
 
 def report(ctx, layers):
-    shown = [p for p in ctx.problems if p[1] in layers]
-    for sev, layer, text in sorted(set(shown), key=lambda p: ({"Violation": 0, "Warning": 1}.get(p[0], 2), p[1], p[2])):
+    rows = shown(ctx.problems, layers)
+    for sev, layer, text in rows:
         print(f"[{sev}] {layer} {text}")
-    n = lambda s: sum(1 for p in set(shown) if p[0] == s)
+    n = lambda s: sum(1 for p in rows if p[0] == s)
     return n("Violation"), n("Warning"), n("Info")
 
 
@@ -162,14 +162,15 @@ def cmd_impact(args):
         print("=" * 78 + f"\n[Warning] IMPACT ON AN INVALID MODEL (--allow-invalid): {v} L0/L1/L2 violation(s); the result "
               "below may be wrong\n" + "=" * 78, file=sys.stderr)
     start = expand(ctx, args[0])
-    if not ctx.types(start):
+    unknown = not ctx.types(start)
+    if unknown:  # exit 1, not 0: "no impact" and "no such element" must not look alike (mcp-interface.md §3.1, F4)
         print(f"[Warning] {short(start)} is not an element of the loaded models", file=sys.stderr)
     rows = impact(ctx, start, depth, mode)
     print("element\tlabel\ttype\tdepth\tpath")
     for d, x, p, note in rows:
         print(f"{short(x)}\t{ctx.label(x)}\t{'+'.join(short(t) for t in ctx.types(x))}\t{d}{note}\t{p}")
     print(f"-- impact ({mode}) of {short(start)} ({ctx.label(start)}): {len(rows)} element(s), depth<={depth}", file=sys.stderr)
-    return 0
+    return 1 if unknown else 0
 
 
 def run_fixture(mods, fixture):
@@ -217,6 +218,9 @@ def run_pytest(tests_dir):
         for c in cases:
             bad = c.find("failure") if c.find("failure") is not None else c.find("error")
             detail = (bad.get("message") or "").splitlines()[0][:160] if bad is not None else ""
+            skip = c.find("skipped")  # xfail and skip: not a failure, but say so instead of a bare PASS
+            if bad is None and skip is not None:
+                detail = f"{skip.get('type', 'skipped')}: {(skip.get('message') or '').splitlines()[0][:140] if skip.get('message') else ''}"
             rows.append(("pytest", c.get("name"), "pytest", bad is None, detail))
     if not rows or p.returncode not in (0, 1):  # collection error, usage error, pytest missing
         tail = (p.stdout + p.stderr).strip().splitlines()
