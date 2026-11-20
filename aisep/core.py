@@ -628,10 +628,12 @@ class Ctx:
         members = {x for (x,) in self.rows(f"SELECT DISTINCT ?x WHERE {{ GRAPH ?g {{ ?x arch:inModel ?m }} {self.src_graph_filter()} }}")}
         for f, qs in self.src_quads.items():
             for p in sorted({q.predicate.value for q in qs} - declared - PREDICATE_ALLOW):
-                s = next(q.subject for q in qs if q.predicate.value == p)
-                self.add("Violation", "L1", f"{short(s)}: undeclared predicate {self.pname(p)} in model file {self.rel(f)} — "
-                         f"every predicate must be declared in a loaded module/ontology or be one of the authoring-profile "
-                         f"predicates (closed world, G7); model links between elements as qualified relationships")
+                # one violation per subject using it (not per file): a write that adds another use must count as new
+                for s in dict.fromkeys(q.subject for q in qs if q.predicate.value == p):
+                    self.add("Violation", "L1", f"{short(s)}: undeclared predicate {self.pname(p)} in model file {self.rel(f)} — "
+                             f"every predicate must be declared in a loaded module/ontology or be one of the authoring-profile "
+                             f"predicates (closed world, G7); model links between elements as qualified relationships",
+                             focus=s.value if isinstance(s, ox.NamedNode) else None)
             for q in qs:
                 p = q.predicate.value
                 if p in declared and p not in ELEMENT_LINK_OK and p not in direct and p not in PREDICATE_ALLOW \

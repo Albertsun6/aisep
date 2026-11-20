@@ -314,7 +314,7 @@ def test_T41_set_labels(repo):
     commit_all(repo, "de label")
     r = W.model_set_labels(CFG, "procurement:supplier", prefLabel="供货商", repo=str(repo))
     assert r["changed"] and r["iri"] == M + "supplier"
-    assert r["before"]["prefLabel"] == ["供应商"] and r["after"]["prefLabel"] == ["供货商"]
+    assert r["before"]["prefLabel"] == "供应商" and r["after"]["prefLabel"] == "供货商"
     hunks = re.findall(r"^@@ -(\d+)", git(repo, "diff", "-U0", "--", P + "am4.ttl"), re.M)
     assert len(hunks) == 1 and 14 <= int(hunks[0]) <= 16                    # only the supplier block changed
     assert '"Lieferant"@de' in text(repo)                                   # other languages untouched
@@ -327,7 +327,7 @@ def test_T41_set_labels(repo):
     W.model_set_labels(CFG, "procurement:supplier", definition="提供报价的外部企业", repo=str(repo))
     assert '"提供报价的外部企业"@zh' in text(repo)
     r = W.model_set_labels(CFG, "procurement:supplier", definition=None, altLabel=None, repo=str(repo))
-    assert r["after"]["definition"] == [] and r["after"]["altLabel"] == []
+    assert r["after"]["definition"] is None and r["after"]["altLabel"] is None
     assert "skos:definition" not in text(repo).split(":procurementManager")[0] and '"Supplier"@en' not in text(repo)
     assert '"Lieferant"@de' in text(repo)                                   # only @en altLabel removed
     assert tools.model_gate(CFG, repo=str(repo))["result"] == "PASS"

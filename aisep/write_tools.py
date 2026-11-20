@@ -21,6 +21,13 @@ PROTECTED_TYPES = {core.AISEP + "ApprovalRecord", core.AISEP + "AgentActivity"}
 
 # ---------------------------------------------------------------- helpers
 
+def _no_extra(extra):
+    """Unknown arguments are a tool execution error naming them, not a TypeError (§3.1, contract of the S4 tests)."""
+    if extra:
+        raise AisepError("INVALID_ARGUMENT", f"不接受的参数：{', '.join(sorted(extra))}",
+                         details={"rejectedFields": sorted(extra)})
+
+
 def _bad(field, msg):
     return AisepError("INVALID_ARGUMENT", msg, details={"rejectedFields": [field]})
 
@@ -146,7 +153,8 @@ def _lit(v, lang):
 # ---------------------------------------------------------------- §5.2
 
 def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, definition=None, attributes=None,
-                      file=None, dryRun=False, repo=None):
+                      file=None, dryRun=False, repo=None, **extra):
+    _no_extra(extra)
     if not isinstance(prefLabel, str) or not prefLabel.strip():
         raise _bad("prefLabel", "prefLabel 不能为空")
     if slug is None:
@@ -202,7 +210,9 @@ def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, def
 
 # ---------------------------------------------------------------- §5.3
 
-def model_add_relationship(cfg, type, source, target, model=None, file=None, dryRun=False, repo=None):
+def model_add_relationship(cfg, type, source, target, model=None, file=None, dryRun=False, repo=None, **extra):
+    _no_extra(extra)
+
     def build(ws, ctx):
         st = _subject_triples(ctx)
         s_iri, t_iri = _member(ctx, st, source, "source"), _member(ctx, st, target, "target")
@@ -242,7 +252,8 @@ def model_add_relationship(cfg, type, source, target, model=None, file=None, dry
 
 # ---------------------------------------------------------------- §5.10
 
-def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET, dryRun=False, repo=None):
+def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET, dryRun=False, repo=None, **extra):
+    _no_extra(extra)
     if prefLabel is UNSET and altLabel is UNSET and definition is UNSET:
         raise AisepError("INVALID_ARGUMENT", "prefLabel、altLabel、definition 至少给一个",
                          details={"rejectedFields": ["prefLabel", "altLabel", "definition"]})
@@ -265,7 +276,8 @@ def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET
             raise AisepError("PROTECTED_RESOURCE", f"{core.short(x)} 的三元组有一部分在别的模型目录里，不改别人的模型",
                              details={"files": outside})
         spec = [(PREF, "zh", prefLabel), (ALT, "en", altLabel), (DEF, "zh", definition)]
-        before = {k: [t.object.value for _, t in st[x] if t.predicate.value == p and (t.object.language or "") == lang]
+        before = {k: next((t.object.value for _, t in st[x] if t.predicate.value == p and isinstance(t.object, ox.Literal)
+                           and (t.object.language or "") == lang), None)
                   for k, (p, lang, _) in zip(("prefLabel", "altLabel", "definition"), spec)}
         removed, added, adds = {}, {}, {}
         type_file = _type_file(st, x)
@@ -283,11 +295,138 @@ def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET
                 nt = ox.Triple(ox.NamedNode(x), ox.NamedNode(p), _lit(v, lang))
                 added.setdefault(f, []).append(nt)
                 adds.setdefault(f, {}).setdefault(x, []).append((nt.predicate, nt.object))
-        after = {k: (before[k] if v is UNSET else ([] if v is None else [v]))
-                 for k, (_, _, v) in zip(("prefLabel", "altLabel", "definition"), spec)}
+        after = {k: before[k] if v is UNSET else v for k, (_, _, v) in zip(("prefLabel", "altLabel", "definition"), spec)}
         result = {"iri": x, "before": before, "after": after}
         files = sorted(set(removed) | set(added))
         edits = {f: writer.rewrite_blocks(ws.text(f), removed.get(f, set()), adds.get(f, {})) for f in files}
         return {"result": result, "edits": edits, "removed": removed, "added": added}
+
+    return writer.transaction(cfg, repo, build, dryRun)
+
+
+# ---------------------------------------------------------------- §5.5
+
+DETACH = {core.ARCH + "inView"} | {core.NS["bpmn"] + p for p in ("flowElements", "flowNodeRefs", "lanes", "laneSets")}
+NOT_REMOVABLE = {core.ARCH + "Model"}
+
+
+def _kind(ctx, st, iri):
+    preds = {t.predicate.value for _, t in st.get(iri, ())}
+    if SOURCE in preds and TARGET in preds:
+        return "relationship"
+    if any({core.ARCH + "Diagram", core.ARCH + "Catalog", core.ARCH + "Matrix"} & set(ctx.ancestors(t.object.value))
+           for _, t in st.get(iri, ()) if t.predicate.value == core.A):
+        return "view"
+    return "element"
+
+
+def remove_plan(ctx, st, target):
+    """§5.5 steps 1-4 on the SOURCE graph: (delete entries, detach entries, blockers, triples to remove per file)."""
+    model_iri = next(t.object.value for _, t in st[target] if t.predicate.value == IN_MODEL)
+    mdir = f"models/{model_iri[len(core.MODEL_BASE):].strip('/')}/"
+    D, reason = [target], {target: "target"}
+    blockers = {}
+
+    def block(s, p, f, why):
+        blockers.setdefault((s, p, f), why)
+    changed = True
+    while changed:  # step 2: relationship closure (relationships pointing to relationships included)
+        changed = False
+        for r, ts in sorted(st.items()):
+            if r in reason:
+                continue
+            ends = [(f, t) for f, t in ts if t.predicate.value in (SOURCE, TARGET) and t.object.value in reason]
+            if not ends:
+                continue
+            r_model = next((t.object.value for _, t in ts if t.predicate.value == IN_MODEL), None)
+            if r_model == model_iri:
+                D.append(r)
+                reason[r] = "endpoint"
+                changed = True
+            else:
+                for f, t in ends:
+                    block(r, t.predicate.value, f, "cross-model-relationship")
+    remove, detach = {}, []
+    for d in D:  # step 3: the members' own triples, only inside the target's model directory
+        for f, t in st.get(d, ()):
+            if f.startswith(mdir):
+                remove.setdefault(f, set()).add((d, t.predicate.value, t.object))
+            else:
+                block(d, t.predicate.value, f, "other-model-subject")
+    members = set(D)
+    for s, ts in sorted(st.items()):  # step 4: external references to D
+        if s in members:
+            continue
+        for f, t in ts:
+            if not (isinstance(t.object, ox.NamedNode) and t.object.value in members):
+                continue
+            p = t.predicate.value
+            if not f.startswith(mdir):
+                block(s, p, f, "other-model")
+            elif p in DETACH:
+                detach.append({"subject": s, "predicate": core.short(p), "object": t.object.value, "file": f})
+                remove.setdefault(f, set()).add((s, p, t.object))
+            else:
+                block(s, p, f, "referenced")
+    for f, qs in ctx.src_quads.items():  # blank-node references to D are not handled automatically
+        for q in qs:
+            if isinstance(q.subject, ox.BlankNode) and isinstance(q.object, ox.NamedNode) and q.object.value in members:
+                block(str(q.subject), q.predicate.value, ctx.rel(f), "referenced")
+    delete = sorted(({"iri": d, "kind": _kind(ctx, st, d), "reason": reason[d]} for d in D), key=lambda e: e["iri"])
+    plan = {"delete": delete, "detach": sorted(detach, key=lambda e: (e["subject"], e["predicate"], e["object"])),
+            "blockers": [{"subject": s, "predicate": core.short(p), "file": f, "reason": why}
+                         for (s, p, f), why in sorted(blockers.items())]}
+    return plan, remove
+
+
+def plan_digest(target, plan, files):
+    """sha256 over the target, the plan and the current bytes of every file the plan touches: any later change to
+    those files (even a comment) makes an old digest stale (T18)."""
+    import hashlib, json
+    return "sha256:" + hashlib.sha256(json.dumps({"target": target, "plan": plan, "files": files}, sort_keys=True,
+                                                 ensure_ascii=False).encode()).hexdigest()
+
+
+def model_remove(cfg, iri, cascade=False, dryRun=False, planDigest=None, repo=None, **extra):
+    _no_extra(extra)
+
+    def build(ws, ctx):
+        st = _subject_triples(ctx)
+        try:
+            target = core.expand(ctx, iri)
+        except AisepError:
+            target = iri
+        if target not in st:
+            if planDigest is not None:  # the delete already happened (response lost, replayed)
+                return {"result": {"target": target, "plan": None, "planDigest": planDigest, "written": False,
+                                   "alreadyAbsent": True}, "edits": {}}
+            from aisep.tools import _candidates
+            raise AisepError("ELEMENT_NOT_FOUND", f"{core.short(target)} 不存在", hint="从 details.candidates 里选",
+                             details={"candidates": _candidates(ctx, target)})
+        types = {t.object.value for _, t in st[target] if t.predicate.value == core.A}
+        if any((PROTECTED_TYPES | NOT_REMOVABLE) & set(ctx.ancestors(c)) for c in types):
+            raise AisepError("PROTECTED_RESOURCE", f"{core.short(target)} 是批准记录、AI 活动或模型本身，不能删除")
+        if not any(t.predicate.value == IN_MODEL for _, t in st[target]):
+            raise AisepError("ELEMENT_NOT_FOUND", f"{core.short(target)} 不是模型成员")
+        plan, remove = remove_plan(ctx, st, target)
+        digest = plan_digest(target, plan, {f: writer.sha(ws.data.get(f)) for f in sorted(remove)})
+        details = {"plan": plan, "planDigest": digest}
+        if planDigest is not None and planDigest != digest:
+            raise AisepError("PLAN_STALE", "计划已变化（文件在 dryRun 之后被改过）", hint="先用 dryRun: true 取新计划",
+                             details=details)
+        if plan["blockers"]:
+            raise AisepError("REFERENCED", f"{core.short(target)} 被 {len(plan['blockers'])} 处引用，不能删除",
+                             hint="改用 owl:deprecated true + dcterms:isReplacedBy 退役，元素会推导为 Superseded（§6.6、§7.2）",
+                             details=details)
+        if not cascade and (len(plan["delete"]) > 1 or plan["detach"]):
+            raise AisepError("CASCADE_REQUIRED", f"删除 {core.short(target)} 会连带 {len(plan['delete']) - 1} 个关系、"
+                             f"摘除 {len(plan['detach'])} 条成员关系", hint="确认后传 cascade: true 和 planDigest",
+                             details=details)
+        if any(isinstance(o, ox.BlankNode) for rs in remove.values() for _, _, o in rs):
+            raise AisepError("EDIT_UNSAFE", "要删的三元组挂着空白节点，不自动删除，请手工编辑", details=details)
+        edits = {f: writer.rewrite_blocks(ws.text(f), rs, {}) for f, rs in sorted(remove.items())}
+        return {"result": {"target": target, "plan": plan, "planDigest": digest, "written": not dryRun,
+                           "alreadyAbsent": False},
+                "edits": edits, "removed": remove}
 
     return writer.transaction(cfg, repo, build, dryRun)
