@@ -333,9 +333,10 @@ GOV = """@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
 gov = standalone(GOV)
 rc, out, _ = aisep("check", files=gov)
 states = {r["x"].split(":")[-1]: r["s"] for r in query_rows("SELECT ?x ?s WHERE { ?x arch:approvalState ?s }", files=gov)}
-want = {"a": "aisep:Rejected", "b": "arch:Proposed", "c": "aisep:Superseded", "d": "arch:Approved", "alice": "arch:Proposed"}
-claim(7, "build derives arch:approvalState from approval records: latest decision wins, none -> Proposed, replaced -> Superseded",
-      rc == 0 and states == want, f"check rc={rc}; derived={sorted(states.items())}")
+want = {"a": "aisep:Rejected", "b": "arch:Proposed", "c": "aisep:Superseded", "d": "arch:Approved"}  # :alice (arch:Stakeholder) gets none (R4-5)
+claim(7, "build derives arch:approvalState from approval records: latest decision wins, none -> Proposed, replaced -> Superseded; "
+      "a Stakeholder has no approvalState",
+      rc == 0 and states == want and "alice" not in states, f"check rc={rc}; derived={sorted(states.items())}")
 rc, out, _ = aisep("check", files=appended("am4.ttl", ":quotation arch:approvalState arch:Approved ."))
 hit = [l for l in out.splitlines() if l.startswith("[Violation]") and "hand-written arch:approvalState" in l]
 claim(7, "a hand-written arch:approvalState in the example is rejected by check (L1)",

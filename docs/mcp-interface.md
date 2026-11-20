@@ -1029,7 +1029,7 @@ export const APPROVAL_STATE_IRI: Record<string, ApprovalState> = {
 	"https://aisep.example/ont/aisep#Rejected": "Rejected",
 	"https://aisep.example/ont/aisep#Superseded": "Superseded",
 };
-// ELEMENTS_QUERY 保留（D4），但只选**有** arch:approvalState 的主语（去掉 OPTIONAL）：批准记录、AI 活动、Stakeholder 也是 arch:Element、
+// ELEMENTS_QUERY 保留（D4），但只选**有** arch:approvalState 的主语（去掉 OPTIONAL）：批准记录、AI 活动也是 arch:Element、
 // 也有 inModel 和 zh 名称，却没有 approvalState（实测：采购例子里 approval-20261119-arch-baseline 就是这样）。
 // 沿用"缺失 → Proposed"会让批准记录以 Proposed 出现在待批准关口，这个状态不是推导给出的，违背 P4。
 // elementsFromRows 改为读 Term.value，approvalState 用 APPROVAL_STATE_IRI 映射；缺失或映射不到的 IRI 直接抛错。
