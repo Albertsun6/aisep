@@ -1,6 +1,6 @@
 # AISEP 第二步：元模型规范（v0.4）
 
-状态：§14 的 D1–D10 已于 2026-11-19 全部按建议拍板（ADR-011）；v0.3 = v0.2 + 三轮审计和第二次 GPT 评审之后补的 R1–R4、G1–G10，全部已在原型里实现并验证。v0.4 = v0.3 + “AI 进行中”的数据来源（ADR-013）：新增 `aisep:AgentActivity`（§6.7）、批准记录的 `aisep:activity`（§6.6）、MCP 的 `model.diff` 与 `governance.record_approval` 改动（§8.3）；AgentActivity 与两个 MCP 工具在 MCP 接口设计时一并定稿。依据：`spike-linked-archi/spike-result.md`（第一步结论）、《方法论总纲（草案1）》§6/§6a、《AISEP 架构原则》、`decisions.md`（ADR-003/004/007/008/009/010）。
+状态：§14 的 D1–D10 已于 2026-11-19 全部按建议拍板（ADR-011）；v0.3 = v0.2 + 三轮审计和第二次 GPT 评审之后补的 R1–R4、G1–G10，全部已在原型里实现并验证。v0.4 = v0.3 + “AI 进行中”的数据来源（ADR-013）：新增 `aisep:AgentActivity`（§6.7）、批准记录的 `aisep:activity`（§6.6）、MCP 的 `model.diff` 与 `governance.record_approval` 改动（§8.3）；AgentActivity 与 `model.diff`、`governance.record_approval` 已在《MCP Server 接口设计》中定稿（ADR-014）。依据：`spike-linked-archi/spike-result.md`（第一步结论）、《方法论总纲（草案1）》§6/§6a、《AISEP 架构原则》、`decisions.md`（ADR-003/004/007/008/009/010）。
 基线：Linked.Archi core 0.6.0 + ArchiMate 4.0（vendored，按 SHA256 锁定）。命名空间先用占位符 `https://aisep.example/`，第三步建正式仓库前统一替换。
 原型：`metamodel-prototype/`（179 项测试全部通过，详见 §15）。修订与辩论记录见附录 B，已知限制见附录 C。
 
@@ -36,13 +36,15 @@
 | AISEP 模块本体 | `{base}ont/{module}#` | `https://aisep.example/ont/ddd#BoundedContext` |
 | 模型 | `{base}model/{model-slug}/` | `https://aisep.example/model/procurement/` |
 | 元素 | `{model}{slug}` | `…/procurement/quoteApproval` |
-| 关系 | `{model}rel-{源slug}-{直连谓词本地名}-{目标slug}`，重名时加 `-2` | `…/procurement/rel-supplier-assignedTo-quoteApproval` |
+| 关系 | `{model}rel-{源slug}-{直连谓词本地名}-{目标slug}`，重名时加 `-2`。直连谓词本地名取关系类最近的 `arch:unqualifiedForm`；类没有声明时取类本地名，首字母小写。 | `…/procurement/rel-supplier-assignedTo-quoteApproval` |
 | 视图 | `{model}view-{slug}` | `…/procurement/view-quote` |
 | 批准记录 | `{model}approval-{yyyymmdd}-{slug}` | `…/procurement/approval-20261119-arch-baseline` |
+| AI 活动 | `{model}activity-{yyyymmdd}-{headCommit 前 7 位}`，重名时加 `-2` | `…/procurement/activity-20261120-9c41e07` |
 
-- slug 用可读英文 camelCase。**一经创建不改**：改名只改标签。IRI 由写入层生成（§8），不靠人记规则。
+- slug 用可读英文 camelCase。**一经创建不改**：改名只改标签。改标签经 `model.set_labels` 写入（§8.3）。IRI 由写入层生成（§8），不靠人记规则。
 - 跨模型引用直接写对方的 IRI；被引用元素被删除时 L1 报错（原型已验证）。
 - 修订历史交给 Git。
+- 现有手写 IRI 不按本表重命名（slug 一经创建不改）；本表只约束写入层新生成的 IRI。
 
 ## 4. 三原语骨架（AISEP 最小必填）
 
@@ -142,10 +144,15 @@
 - `aisep:ApprovalRecord` ⊑ `arch:Element`。这是作者写的唯一治理事实，字段：
   - `aisep:gate` ∈ {需求确认, 架构决策, 设计评审, 代码合并, 发布上线}，即架构原则五的五个关口（SKOS）；
   - `aisep:decision` ∈ {Approved, Rejected}；
-  - `aisep:approvedBy` → 人（必须是 `arch:Stakeholder` 或 `prov:Agent` 的实例）；
+  - `aisep:approvedBy` → 人（必须是 `arch:Stakeholder` 的实例，且不能是 `aisep:AIAgent`；AI 不能批准，原则五）；
   - `prov:generatedAtTime`；
   - `aisep:approves` → 一个或多个元素、模型或 ADR；
-  - `aisep:evidence`（**必填**，恰好一个）：批准时那次校验报告对应的 git commit（40 位十六进制）或 `sha256:<64 位十六进制>`，证明"批准的是哪个版本"。经 MCP 写入时自动填写。
+  - `aisep:evidence`（**必填**，恰好一个）：批准时那次校验报告对应的 git commit（40 位十六进制）或 `sha256:<64 位十六进制>`，证明"批准的是哪个版本"。经 MCP 写入时自动填写：取调用方给出的 headCommit（人评审的那个提交；有活动时等于该活动的 `aisep:headCommit`），写入层核对它与分支头之间只有批准提交：其间不得有合并提交，每个提交都带 `AISEP-Evidence` trailer、只改一个模型的 governance 文件、且源图只新增批准记录或 AI 活动（无修改、无删除）；该核对在提交前持锁复做一次，提交后父提交不是被核对的分支头时撤回。写入前在该提交上运行 `gate`，结论为 Approved 而 gate 未通过时拒绝写入。
+
+    批准提交判据：一个提交只有一个父提交，带 `AISEP-Evidence` trailer，只改一个模型的 governance 文件，且相对父提交源图只新增批准记录或 AI 活动（无修改、无删除）。批准记录的 evidence（有活动时即活动的 headCommit）到所在分支头之间只允许出现满足该判据的提交；evidence 等于分支头是其特例。写入时由写入层核对；合并进受保护分支前由 CI 用同一判据再核对一次（范围 `evidence..分支头`，不含合并提交本身；只查本次合并新增、且推导 approvalState 时被采用的记录），并在合并结果上运行 `gate`，任一不通过即拒绝合并，须在新的提交上重新过关口。只含批准提交的合并请求只做上述核对与 `gate`，不要求再过关口；夹带其他提交的按普通合并请求处理。
+
+    已在主分支上的提交（如发布关口）的批准不直接提交到主分支：从被批准的那个提交拉短命分支，只提交这一条批准记录，经合并请求合入后删分支。这类批准不带 AI 活动。发布关口的 evidence 是被发布的主分支提交，该提交打 `release/{yyyymmdd}-{前 7 位}` 标签（或版本号标签 `release/v…`）。
+
   - `aisep:activity`（可选，最多一个）→ 一条 `aisep:AgentActivity`（§6.7），表示这次批准针对的是哪次 AI 活动；必须是模型元素（IRI，带 `arch:inModel`），不能是空白节点。evidence 是 40 位 commit 时，必须等于该活动的 `aisep:headCommit`，否则 L1 报错。
 - **`arch:approvalState` 由构建推导**：取最近一条**合法**批准记录的结论（不合法的记录不参与推导，构建时报 Warning）；没有记录则为 Proposed；元素本身被合并、替换（带 `dcterms:isReplacedBy`，且目标必须是某个模型里的元素，否则 L1 报错，也不触发）则为 Superseded。`aisep:Rejected`、`aisep:Superseded` 是 AISEP 补的取值，上游只有 Proposed/Approved。同一元素有两条时间相同（按时区归一化后）但结论不同的记录时，L1 报"批准有歧义"。手填 approvalState，包括通过子属性间接写入，都在 L1 报错。
 - 工作台只展示批准记录、触发新增批准记录，不保存状态（ADR-009）。
@@ -156,12 +163,14 @@
 - `aisep:CodeLocation`：`schema:codeRepository`（命名空间统一用 `https://schema.org/`）、`aisep:path`、可选 `aisep:symbol`、`aisep:swhid`。
 - `aisep:Implementation`（限定关系，CodeLocation → 设计元素），直连谓词 `aisep:implements`。
 - `aisep:Deployable` ⊑ `am4:Artifact`，带 `aisep:packageUrl`（purl）。Artifact → ApplicationComponent 的 Realization 可以直接画。
-- `aisep:AgentActivity` ⊑ `arch:Element`、`prov:Activity`（ADR-013，**草案，与 MCP 接口设计一并定稿**）：一次**已完成**的 AI 活动，只在任务过关口时经 `governance.record_approval` 写入；进行中的状态不进模型仓库。字段：
-  - `prov:wasAssociatedWith` → 执行的代理，恰好一个；判定与 `aisep:approvedBy` 相同（`arch:Stakeholder` 或 `prov:Agent` 的实例；`prov:Agent` 目前实际不可用，见附录 C）；
+- `aisep:AIAgent` ⊑ `arch:Element`、`prov:SoftwareAgent`（aisep-core 另声明 `prov:SoftwareAgent ⊑ prov:Agent`；不加载 PROV-O 本体）：执行任务的 AI 代理，按元素通则写名称和 `arch:inModel`。
+- `aisep:AgentActivity` ⊑ `arch:Element`、`prov:Activity`（ADR-013、ADR-014）：一次**已完成**的 AI 活动。只在任务过关口时由 `governance.record_approval` 写入，与批准记录在同一次提交里；进行中的状态不进模型仓库。一个（sessionRef, headCommit）只有一条，同一 head 过多个关口时复用；IRI 见 §3。字段：
+  - `skos:prefLabel` 恰好一个 `@zh`（缺省"AI 活动：{分支}"，建议写任务标题），`arch:inModel` 恰好一个；
+  - `prov:wasAssociatedWith` → 执行的代理，恰好一个，必须是 `arch:Stakeholder` 或 `aisep:AIAgent` 的实例；
   - `prov:startedAtTime`、`prov:endedAtTime`，各恰好一个 xsd:dateTime，开始不晚于结束（按时区归一化，不带时区的按 UTC）；
-  - `aisep:sessionRef`：外部编排器的会话标识，字符串，恰好一个；对元模型不透明，不绑定 AO；
-  - `aisep:branch`：分支名，字符串，恰好一个；
-  - `aisep:baseCommit`、`aisep:headCommit`：各恰好一个 40 位十六进制 commit。baseCommit 取分支与模型主分支的分叉点（merge-base），不是主分支最新提交。
+  - `aisep:sessionRef`：外部编排器的会话标识，非空字符串，恰好一个；对元模型不透明，不绑定 AO；
+  - `aisep:branch`：分支名，非空字符串，恰好一个；
+  - `aisep:baseCommit`、`aisep:headCommit`：各恰好一个 40 位十六进制 commit，**只由写入层填写**：headCommit 是被批准的那个 commit（写入层核对它与分支头之间只有批准提交），baseCommit 是它与模型主分支的 merge-base。L1 只校验格式。
   - **不存"作用于哪些元素"**：由 `model.diff(baseCommit, headCommit)` 实时算出（§8.3）。
 - 提交、构建、部署的溯源只定义词汇（PROV-O），不做接入。
 
@@ -195,24 +204,26 @@
 ### 8.2 删除与变更
 - 删除元素：一并删除以它为端点的关系、指向它的 `inView`、它作为 refines 目标的关系；或者拒绝删除并列出引用。
 - 改关系类型 = 删掉旧资源、新建一个，IRI 跟着变。
-- **未原型化**（`rm` 还没实现），在 MCP Server 里实现。
+- 删除由 `model.remove` 执行（接口文档 §5.5）。删除集从目标开始，反复加入以删除集成员为 `arch:source` 或 `arch:target`、且与目标同属一个模型的限定关系，直到不变；删除集成员在本模型文件里作为主语的三元组全部删除。判据在模型源文件上算，不用构建后的图。外部引用中，`arch:inView` 与 BPMN 成员属性（flowElements、flowNodeRefs、lanes、laneSets）摘除；其他谓词（含批准、替换、追溯、`bpmn:default`）与跨模型引用（含别的模型里以目标为端点的关系）一律拒绝并列出，提示改用 `owl:deprecated` + `dcterms:isReplacedBy` 退役。批准记录、AI 活动、模型本身不能删除。默认不级联（有牵连即拒绝并返回计划），`cascade` 显式开启；支持 dryRun。删除后不得引入新的 L0–L2 违规，否则整体不写。按主语块编辑文本，编辑后必须与预期的图等价，否则不写。
 
 ### 8.3 MCP Server 语义契约（ADR-008）
 | 工具 | 语义 | 对应层 |
 |---|---|---|
-| `model.add_element` | 生成 IRI（§3），写入恰好一个类型、inModel、zh 名称 | 写入后自动跑 L1/L2 |
+| `model.add_element` | 生成 IRI（§3），写入恰好一个类型、inModel、zh 名称 | 写入前在候选图上跑 L0–L2，只拒绝新增的违规；结果逐条标明违规是写前已有还是本次新增 |
 | `model.add_relationship` | 只写限定关系；先查记法混用规则和矩阵，不合法就拒绝写入并说明原因 | L1/L2 |
 | `model.remove` | 按 §8.2 级联删除，或者拒绝 | L1 |
+| `model.set_labels` | 只改名称（`skos:prefLabel` @zh）、英文名（`skos:altLabel` @en）、定义（`skos:definition` @zh），IRI、类型、关系不变；§3"改名只改标签"的写入口。批准记录、AI 活动不能改 | 写入前在候选图上跑 L0–L2，只拒绝新增的违规 |
 | `model.check` / `model.validate` | L0–L2 / L3 | §10 |
+| `model.gate` | 只读，原子执行 L0–L4，一份合并结论；提交、CI 与关口页只认它（G10） | L0–L4 |
 | `model.query` | 只读 SPARQL，跑在构建后的图上 | — |
 | `model.impact` | §9 两种模式 | — |
-| `model.findings` | L4 | — |
-| `governance.record_approval` | 新增一条批准记录（不改状态字段）；可选传入活动信息（代理、sessionRef、分支、起止时间、baseCommit、headCommit），在同一次提交里写入 `aisep:AgentActivity` 并用 `aisep:activity` 关联，evidence 自动填为 headCommit | L1 |
-| `model.diff` | 只读，输入两个 Git 引用 base、head（不给 base 时取 head 与模型主分支的 merge-base），返回新增、修改、删除的元素和关系清单（按 IRI；同一 IRI 的三元组有变化算修改；改关系类型按 §8.2 表现为删除加新增）。无状态，只读 Git 对象，可从任意 worktree 调用 | — |
+| `model.findings` | L4；另返回 openViolations：同一份内容上 L0–L2 的全部违规（结构化发现项），供查看写入时被放过的遗留违规。openViolations 不新增层级，不计入 gate 结论 | L4（openViolations 复用 L0–L2） |
+| `governance.record_approval` | 新增一条批准记录（不改状态字段）。顶层必填 branch、headCommit（有无活动都必填）；可选 expectedBaseCommit，只用于核对、不写入（不等于被拒收的 baseCommit）。写入层核对 headCommit 与分支头之间只有批准提交（无合并提交；每个提交带 `AISEP-Evidence` trailer、只改一个模型的 governance 文件、源图只新增批准记录或 AI 活动），提交前持锁复核。branch 不能是主分支；headCommit 已在主分支上时不接受活动信息；发布关口的 headCommit 必须在主分支上。可选活动信息只含代理、sessionRef、起止时间和标签：写入层算出 baseCommit，在同一次提交里写入 `aisep:AgentActivity`（分支、headCommit 取顶层值）并用 `aisep:activity` 关联；evidence 取调用方给出的 headCommit，generatedAtTime、baseCommit 由写入层填，不接受调用方传入 evidence、generatedAtTime、baseCommit。Approved 要求 evidence 处 gate 通过。只提交 `governance.ttl` 一个路径，不跳过 pre-commit | L0–L2 + gate |
+| `model.diff` | 只读。base 是 Git 引用（不给时取 head 侧 commit 与模型主分支的 merge-base）；head 有两种：Git 引用，或某分支检出的工作区（按分支名经 `git worktree list` 定位，只接受分支名，不接受路径）。工作区内容 = 该工作区模型目录下已跟踪 Turtle 文件的当前内容 + 未跟踪且未被忽略的新 Turtle 文件 − 已在工作区删除的文件。返回新增、修改、删除的元素和关系清单（按 IRI；同一 IRI 的三元组有变化算修改；改关系类型按 §8.2 表现为删除加新增）。比较的是两边模型源文件的并集图（构建前）；三元组在文件间移动、排版和注释变化不算修改。多个 merge-base 时报错，要求显式给 base。结果按 kind（element / relationship / view / governance / schema / other）分组计数；detail 取 summary / items / triples；标明 head 的种类、对应 commit 和工作区是否有未提交改动。工作区里某个文件解析失败时，结果标为不完整并列出失败文件，其余照常比较，失败文件里的主语不判为删除。无状态，不写任何东西，可从任意 worktree 调用 | L0 |
 
-所有写操作都是 Turtle 文件的修改，进 Git；MCP 不保存任何不在文件里的状态。接口的具体设计另写文档。
+所有写操作都是 Turtle 文件的修改，进 Git；MCP 不保存任何不在文件里的状态。接口的具体设计见《MCP Server 接口设计》（`docs/mcp-interface.md`）。线上工具名把点换成下划线（`model.diff` → `model_diff`）。写工具只改工作区、不提交；`governance.record_approval` 例外，自己做一次只含 governance 文件的提交。
 
-`model.diff` 同时服务两处：工作台"AI 进行中"区域（每个编排器会话按分支名算改动元素）和关口页的模型差异图，接口按这两个用途一起设计。v1 只比较已提交内容；前提是模型文件和会话改动的代码在同一个仓库、同一条分支上（见附录 C）。**不提供任何"上报进行中状态"的写工具**（ADR-013）。
+`model.diff` 同时服务两处：工作台"AI 进行中"区域（每个编排器会话按分支名算改动元素）和关口页的模型差异图，接口按这两个用途一起设计。"AI 进行中"缺省比较会话分支的工作区（含未提交改动），关口页差异图和批准只认已提交的 commit；前提是模型文件和会话改动的代码在同一个仓库、同一条分支上（见附录 C）。**不提供任何"上报进行中状态"的写工具**（ADR-013）。
 
 ## 9. 影响分析口径（作为数据）
 
@@ -272,7 +283,7 @@ spike 里 AI 试验用的 7 元素标准答案，其实是无向的 3 跳邻域�
 - 不引入：core-vis、edgy（CC-BY-SA）、ddd-crew 的文字（CC-BY-SA）。SPDX、OSLC 只用 `skos:exactMatch` 引用。
 
 ## 13. 不在第一批范围
-C4、Backstage 接入、TOGAF 内容元模型、ArchiMate 派生规则引擎、图形布局、成本扩展、ADM 框架实例化（第三步）、CI/CD 实际接入、MCP 接口的具体设计（另写文档）。
+C4、Backstage 接入、TOGAF 内容元模型、ArchiMate 派生规则引擎、图形布局、成本扩展、ADM 框架实例化（第三步）、CI/CD 实际接入。
 
 ## 14. 决策（2026-11-19 已拍板，全部按建议采纳，见 ADR-011）
 
@@ -384,7 +395,7 @@ C4、Backstage 接入、TOGAF 内容元模型、ArchiMate 派生规则引擎、�
 
 ## 附 C：已知限制（第一批不处理）
 
-- `model.diff` v1 只比较已提交内容：进行中的会话在提交前，"改动元素"一栏为空或滞后。
+- `model.diff` 的 worktree 模式读的是会话分支检出的工作区：会话的工作区已被清理（只剩分支）时退回只比较已提交内容；工作区里写到一半的文件会让结果标为不完整（失败文件里的主语不计）。index（暂存区）与磁盘不同时以磁盘为准。
 - 分支差异的前提是模型文件和会话改动的代码在同一仓库、同一分支；模型仓库独立时，编码会话的分支里没有模型差异。
 
 - 同一节点在不同层级的锚点是否互相一致（UML 类的 am4 锚点是否等于它 DDD 锚点的 am4 锚点），不检查。
@@ -392,5 +403,11 @@ C4、Backstage 接入、TOGAF 内容元模型、ArchiMate 派生规则引擎、�
 - 模型里声明的类不能用 deprecated/isReplacedBy 退役（R1 只允许名称和定义）；合并、拆分模式只适用于实例。
 - "通用域风味"推导规则（§6.1）、DomainEvent 过去时 Warning（§6.4）、`rm` 级联删除（§8.2）没有原型化，留给 MCP Server 实现。
 - G7 的"元素间直连"白名单包含 BPMN 结构属性（flowElements、lanes 等）和 `arch:hasQualityMeasure`、`ddd:exposedAggregate`。这是为了让合法模型通过而做的判断，未经异构评审。
-- PROV-O 本体没有加载，闭世界下模型里不能写 `a prov:Agent`；`aisep:approvedBy` 和 `prov:wasAssociatedWith` 规则里的 "或 prov:Agent" 目前用不上，代理只能用 `arch:Stakeholder`。
+- PROV-O 不整体加载；aisep-core 只声明 `aisep:AIAgent`，另在其对齐文件里加 `prov:SoftwareAgent ⊑ prov:Agent` 一条（ADR-010），其余 PROV-O 术语不可用，G7 白名单不变。
+- 历史批准的差异图和 gate 重跑依赖 headCommit 仍可达。模型仓库禁用 squash 合并和 rebase 合并，批准提交只经普通 merge 进受保护分支（ADR-014）；落实要同时做到：托管平台关闭 squash、rebase 两种 PR 合并方式，受保护分支禁止 force push、限制直接 push，PR 合并保留原提交（cherry-pick、rebase 都会生成新的 commit id）。这些是仓库托管平台的设置，元模型和 MCP 不检查；CI 可另加一步检查批准记录的 evidence 是目标受保护分支的祖先。绕过它合入、或分支未合并就删除时，旧 commit 可能被 GC，历史批准无法重跑。
+- 合并时校验（evidence 到分支头之间只有批准提交、合并结果 gate）、批准专用合并请求的判定、发布标签检查由 CI 执行，须设为受保护分支的必需检查；元模型和 MCP 不检查 CI 是否配上。
+- 写入层对工作区文件的"写前哈希核对"不是真正的比较并交换：不遵守写锁的外部编辑器或 Git 命令在核对与替换之间（毫秒级）写入的内容会被覆盖。
+- `model.remove` 只检查本仓库：独立模型仓库里指向被删元素的引用看不到，删除后会在那边悬空。
+- `governance.record_approval` 在"追加写入"与"提交完成"之间被杀，会留下未提交的批准块；下次调用以 DIRTY_WORKTREE 报出，需人工清理。多文件写入同样不是崩溃原子的，由 gate 兜底。
+- `model.remove` 对 BPMN 成员属性以外的引用一律拒绝，放开需要逐条进规范。布局文件出现前，删除不处理布局。
 - `tools/aisep.py` 需要 Python 3.12 及以上。
