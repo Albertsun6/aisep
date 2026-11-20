@@ -49,6 +49,11 @@
 - 禁止：写或修改 `arch:approvalState`；修改或删除已有批准记录；写任何"进行中"状态。结论变化只能新增记录。
 - 写完再跑一次 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')`），必须为 PASS。再跑 `$PY tools/aisep.py build $(find models/<slug> -name '*.ttl')`，确认没有"批准记录被忽略或有歧义"的 Warning。
 - 不执行 `git commit` / `git push`，除非用户明确要求。
+- 用户要求提交、又无法用 MCP 时，手工提交必须满足批准提交判据（`docs/mcp-interface.md` §5.9 第 1 步），否则合并时被拒：
+  - 先确认被评审的改动已全部提交、`git status --porcelain -- models/` 为空，evidence 取 `git rev-parse HEAD`（40 位，不用 `sha256:`）；
+  - 记录文件模式 100644，直接放在 `models/<slug>/governance/` 下，文件名等于记录 IRI 的本地名，文件里只有这一条记录（可带它引用的一条活动）；
+  - 只提交这一个文件：`git add -- <记录文件> && git commit --only -m "aisep: <gate> <decision> <记录短名>" --trailer "AISEP-Evidence: <evidence>" -- <记录文件>`；不用 `-a`，不加 `--no-verify`；
+  - evidence 到这个提交之间不能有别的提交。
 
 ### 完成标准
 
