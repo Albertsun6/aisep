@@ -10,4 +10,4 @@ AI 驱动的软件工程平台：统一模型仓库（ArchiMate 4.0 枢纽 + BPM
 | `models/` | 模型（一个目录一个模型），`procurement/` 为示例 |
 | `tools/aisep.py` | CLI：`gate` / `check` / `validate` / `findings` / `query` / `impact` / `build` / `test` |
 
-使用方法见 `USAGE.md`，代理规则见 `AGENTS.md`。
+环境、常用命令与代理规则见 `AGENTS.md`。

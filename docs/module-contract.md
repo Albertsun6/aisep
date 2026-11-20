@@ -1,6 +1,6 @@
 # Prototype contract (shared by all module authors) — implements `docs/metamodel-spec.md` v0.2 (+ v0.2.1 rules R1–R4 from the adversarial audit)
 
-Python: `/Users/yongqian/Desktop/AISEP/spike-linked-archi/.venv/bin/python` (pyoxigraph 0.5, pyshacl 0.40, rdflib 7.6). Do NOT create another venv.
+Python: the main checkout's `.venv/bin/python` (`~/Desktop/AISEP/aisep/.venv`; pyoxigraph 0.5, pyshacl 0.40, rdflib 7.6). Do NOT create another venv.
 Vendored upstream (read-only): `vendor/meta.linked.archi/ttl/*.ttl` (file name = URL path, `/`→`_`). rdflib cannot parse files with RDF 1.2 `<<( )>>` (e.g. `archimate4_relationship-tables.ttl`); pyoxigraph can.
 Reference implementation from the spike (copy ideas freely): `/Users/yongqian/Desktop/AISEP/spike-linked-archi/scripts/la.py`, `shapes/aisep-closed-world.ttl`, `scripts/negative_tests.py`, `scripts/diff_test.py`.
 

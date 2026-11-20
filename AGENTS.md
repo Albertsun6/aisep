@@ -3,7 +3,7 @@
 本仓库是 AISEP 的模型仓库 + 元模型 + 工具。规范以 `docs/` 为准：原则 `docs/principles.md`，方法论 `docs/methodology.md`，元模型 `docs/metamodel-spec.md`，决策 `docs/decisions.md`，MCP 接口 `docs/mcp-interface.md`。
 
 ## 环境
-- Python ≥ 3.12，依赖见 `requirements.txt`。本机共用解释器：`PY=~/Desktop/AISEP/spike-linked-archi/.venv/bin/python`，不要另建 venv。
+- Python ≥ 3.12，依赖见 `requirements.txt`。解释器用主 checkout 的 `.venv`（已 gitignore，所有 worktree 共用，不要在 worktree 里另建）：`PY=~/Desktop/AISEP/aisep/.venv/bin/python`。新机器上建：`uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt`。
 - 启用提交钩子：`git config core.hooksPath .githooks`
 
 ## 硬规则（违反即返工）

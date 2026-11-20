@@ -1,6 +1,6 @@
 """AISEP metamodel prototype CLI (implements CONTRACT.md / spec "AISEP 第二步：元模型规范（草案）").
 
-Usage (run with the spike venv python):
+Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
   aisep.py build    [model files...]   -> build/graph.nq (sources + generated direct triples + derived aisep:notation and
                                           arch:approvalState, one graph per arch:Model); L3/L4/query/impact see the same
                                           (prints [Warning] build lines for ignored/ambiguous approval records)
