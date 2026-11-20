@@ -191,7 +191,8 @@ def test_T23_two_trailers_stale_head(t):
     h = feature(t)
     t.write(f"{GOV}/approval-20261120100000-x.ttl", PREFIXES + record_ttl("approval-20261120100000-x",
                                                                           "GateArchitecture", ["newThing"], h))
-    t.commit_all("two trailers", trailers=[f"AISEP-Evidence: {h}", f"AISEP-Evidence: {h}"])
+    c = t.commit_all("two trailers", trailers=[f"AISEP-Evidence: {h}", f"AISEP-Evidence: {h}"])
+    assert t.trailer_count(c) == 2  # the fixture really carries two trailers
     n = commits(t)
     ra_err("STALE_HEAD", t, gate="GateDesign", head=h)
     assert commits(t) == n

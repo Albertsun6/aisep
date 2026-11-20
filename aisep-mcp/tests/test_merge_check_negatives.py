@@ -252,7 +252,9 @@ def _deviation(t, kind):
     if kind == "a-two-trailers":
         from fixtures.topology import PREFIXES, record_ttl
         t.write(f"{GOV}/approval-x.ttl", PREFIXES + record_ttl("approval-x", "GateArchitecture", ["newThing"], h))
-        return h, t.commit_all("aisep: two trailers", trailers=[f"AISEP-Evidence: {h}", f"AISEP-Evidence: {h}"])
+        c = t.commit_all("aisep: two trailers", trailers=[f"AISEP-Evidence: {h}", f"AISEP-Evidence: {h}"])
+        assert t.trailer_count(c) == 2  # the fixture really carries two trailers
+        return h, c
     if kind == "b-modifies-governance-ttl":
         t.write("models/procurement/governance.ttl", "\n:intruder a arch:Stakeholder ;\n    arch:inModel <" + M +
                 "> ;\n    skos:prefLabel \"闯入者\"@zh .\n", "a")
@@ -1049,34 +1051,56 @@ def test_T38_G4_6_superseded_record_activity_not_recomputed(t):
 
 @pytest.mark.parametrize("same_second", [False, True])
 def test_T43_R4_7_same_gate_same_r_two_branches(t, same_second):
-    """R4-7: two branches from the same R approve the same object at the same gate. Different seconds → different
-    local names, both merge cleanly (checker: clean). Same second → same file name, different content → the second
-    merge conflicts (the registered residual risk; checker: merge-conflict). The git half runs for real."""
-    t.checkout("main", new="feat/a")
-    ha = t.add_element("thingA", "甲")
-    t.checkout("main", new="feat/b")
-    t.git("reset", "-q", "--hard", ha)  # same content commit R on both branches
-    t.checkout("feat/a")
-    aa, la, _ = t.approve("GateArchitecture", ["thingA"], evidence=ha, at="2026-11-20T11:00:00Z")
-    t.checkout("feat/b")
-    ab, lb, _ = t.approve("GateArchitecture", ["thingA"], evidence=ha, approved_by=":codingBot",
+    """R4-7: two approval branches from the same mainline commit R approve it at the same gate — in practice only the
+    release gate (U4①: a mainline commit may only get GateRelease). Different seconds → different local names, both
+    merge cleanly (checker: clean). Same second → same file name, different content → the second merge conflicts
+    (the registered residual risk; checker: merge-conflict). The git half runs for real; tags only on the local origin."""
+    r = t.rev(MAIN)
+    na, nb = (f"approval/release-{r[:7]}-20261120110000", f"approval/release-{r[:7]}-20261120110001")
+    t.checkout(r, new=na)
+    aa, la, _ = t.approve("GateRelease", ["quoteApproval"], evidence=r, at="2026-11-20T11:00:00Z")
+    t.checkout(r, new=nb)
+    ab, lb, _ = t.approve("GateRelease", ["quoteApproval"], evidence=r, approved_by=":codingBot",
                           at="2026-11-20T11:00:00.500Z" if same_second else "2026-11-20T11:00:01Z")
-    assert (la == lb) is same_second
+    t.tag(f"release/20261120-{r[:7]}", r)
+    assert (la == lb) is same_second and t.rev(f"{aa}^") == t.rev(f"{ab}^") == r
     t.checkout("main")
-    t.git("merge", "-q", "--no-ff", "-m", "Merge feat/a", "feat/a")
-    p = subprocess.run(["git", "-C", str(t.root), "merge", "-q", "--no-ff", "-m", "Merge feat/b", "feat/b"],
+    t.git("merge", "-q", "--no-ff", "-m", f"Merge {na}", na)
+    p = subprocess.run(["git", "-C", str(t.root), "merge", "-q", "--no-ff", "-m", f"Merge {nb}", nb],
                        capture_output=True, text=True)
     assert (p.returncode != 0) is same_second, p.stdout + p.stderr
     if same_second:
         assert f"{GOV}/{la}.ttl" in t.git("diff", "--name-only", "--diff-filter=U")
         t.git("merge", "--abort")
     else:
-        t.git("reset", "-q", "--hard", "HEAD~1")
-    r = check(t, ab, "feat/b")
+        t.git("reset", "-q", "--hard", "HEAD~1")  # main = T after the first release PR; check the second against it
+    res = check(t, ab, nb)
     if same_second:
-        assert_rejected(r, "merge-conflict")
+        assert_rejected(res, "merge-conflict")
     else:
-        assert_clean(r)
+        assert call("classify_pr", str(t.root), ab, MAIN) == "approval-only"
+        assert_clean(res)
+
+
+def test_T43_non_release_gate_after_other_branch_merged(t):
+    """The topology R4-7 was first written with (U4①, check 3): feat/a and feat/b share the content commit H and each
+    approve it with GateArchitecture; once feat/a is merged, H is on main, so feat/b's record now approves a mainline
+    commit at a non-release gate → mainline-head-gate-not-release. Positive twin: feat/b checked before feat/a merges."""
+    t.checkout("main", new="feat/a")
+    h = t.add_element("thingA", "甲")
+    t.checkout("main", new="feat/b")
+    t.git("reset", "-q", "--hard", h)
+    t.checkout("feat/a")
+    t.approve("GateArchitecture", ["thingA"], evidence=h, at="2026-11-20T11:00:00Z")
+    t.checkout("feat/b")
+    ab, _, _ = t.approve("GateArchitecture", ["thingA"], evidence=h, approved_by=":codingBot",
+                         at="2026-11-20T11:00:01Z")
+    t1 = t.rev(MAIN)
+    assert_clean(check(t, ab, "feat/b", target=t1))
+    t.checkout("main")
+    t.git("merge", "-q", "--no-ff", "-m", "Merge feat/a", "feat/a")
+    assert subprocess.run(["git", "-C", str(t.root), "merge-base", "--is-ancestor", h, MAIN]).returncode == 0
+    assert_rejected(check(t, ab, "feat/b"), "mainline-head-gate-not-release")
 
 
 def test_T38_R4_11_target_moved_before_merge_means_recompute(t):

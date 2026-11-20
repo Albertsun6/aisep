@@ -102,12 +102,17 @@ class Topo:
 
     def commit_all(self, msg, trailers=(), date=None):
         self.git("add", "-A")
-        args = ["commit", "-q", "-m", msg] + [x for t in trailers for x in ("--trailer", t)]
+        # trailer.ifexists=add: git's default (addIfDifferentNeighbor) folds two identical trailers into one, which
+        # would silently turn the "two AISEP-Evidence trailers" deviation into a valid approval commit
+        args = ["-c", "trailer.ifexists=add", "commit", "-q", "-m", msg] + [x for t in trailers for x in ("--trailer", t)]
         env = None
         if date:
             env = dict(os.environ, GIT_COMMITTER_DATE=date, GIT_AUTHOR_DATE=date)
         git(self.root, *args, env=env)
         return self.rev()
+
+    def trailer_count(self, commit, key="AISEP-Evidence"):
+        return len(self.git("log", "-1", f"--format=%(trailers:key={key},valueonly)", commit).split())
 
     def checkout(self, ref, new=None):
         self.git("checkout", "-q", *(["-b", new] if new else []), ref)
