@@ -25,7 +25,7 @@
 
 - 本次评审的是哪个关口？评审对象是哪些元素、模型或 ADR（`aisep:approves` 的目标）？
 - 待批准的版本是哪个 commit？工作区是否有未提交改动（有则先让用户处理，未提交内容不能批准）？
-- 批准人是谁？其 IRI 是否已作为 `arch:Stakeholder` 或 `prov:Agent` 存在于模型中？不存在时问用户是否新增。
+- 批准人是谁？其 IRI 是否已作为 `arch:Stakeholder`（不能是 `aisep:AIAgent`）存在于模型中？不存在时问用户是否新增。
 - 本次是否针对一次 AI 活动？若是，收集代理、sessionRef、分支、起止时间，用于 `aisep:AgentActivity`。
 
 ### 第二步：自动检查（只读）
