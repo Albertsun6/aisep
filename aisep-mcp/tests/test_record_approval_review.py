@@ -1,12 +1,12 @@
 """S5 governance_record_approval — gaps found by the independent review of PR #24 (docs/mcp-interface.md §5.9), written
 by a session that does not implement aisep/approval.py.
 
-Each test names the implementation line whose removal / weakening turns it red ("变红"). Two tests fail on the
-implementation as reviewed (b858c19) and are marked xfail(strict=True) with the reason; drop the mark once fixed:
-  - test_branch_switched_in_worktree_before_lock: W is re-checked for detached HEAD only, not for still having `branch`
-    checked out, so the approval lands on another branch while the result says `branch`.
-  - test_rollback_when_index_locked_at_commit: step 8 ignores the exit status of `git rm --cached`; when it fails the
-    file is deleted anyway and COMMIT_FAILED says "已回滚" while the index still stages the record.
+Each test names the implementation line whose removal / weakening turns it red ("变红"; line numbers as of 685bc25).
+Two tests failed on the implementation as reviewed (b858c19) and passed once 685bc25 fixed it:
+  - test_branch_switched_in_worktree_before_lock: W was re-checked for detached HEAD only, not for still having
+    `branch` checked out, so the approval landed on another branch while the result said `branch`.
+  - test_rollback_when_index_locked_at_commit: step 8 ignored the exit status of `git rm --cached`; when it failed the
+    file was deleted anyway and COMMIT_FAILED said "已回滚" while the index still staged the record.
 
 Injection points are module attributes of aisep.approval / aisep.gitio replaced with monkeypatch (same style as
 test_approval_extra.py): gitio.locate_worktree returns before the lock is taken; approval._sha_file is first called
@@ -72,18 +72,18 @@ def after_locate(monkeypatch, action):
 
 # ================================================================== 1. W switched to another branch before the lock
 
-@pytest.mark.xfail(strict=True, reason="b858c19: 锁内只查 detached HEAD，不核对 W 检出的仍是 branch（approval.py:348）；"
-                                       "提交落在 feat/y，返回值却写 feat/x")
 def test_branch_switched_in_worktree_before_lock(t, monkeypatch):
     """§5.9 step 7: W is where `branch` is checked out. If W switches to feat/y (also from headCommit) between
-    locate_worktree and the lock, committing in W would write to feat/y. Expected: STALE_HEAD or CONFLICT, neither
-    branch moves. 变红 (once fixed): drop the comparison of `git symbolic-ref HEAD` with refs/heads/<branch>."""
+    locate_worktree and the lock, committing in W would write to feat/y. Expected: CONFLICT, retryable (§7.1 rule 4:
+    CONFLICT is retryable except the failed take-back of step 7), neither branch moves. details.reason
+    "worktree-switched" is the implementation's name; §5.9 does not name this case (待定, not pinned).
+    变红: drop the comparison of `git symbolic-ref HEAD` with refs/heads/<branch> (approval.py:380)."""
     after_locate(monkeypatch, lambda w: gitio.git(w, "checkout", "-q", "-b", "feat/y"))
     before = refs(t)
     try:
         r = call(t)
     except AisepError as e:
-        assert e.code in ("STALE_HEAD", "CONFLICT"), e.code
+        assert e.code == "CONFLICT" and e.retryable is True, (e.code, e.retryable)
     else:
         pytest.fail(f"no error; commit {r['commit'][:7]} reported on {r['branch']}")
     assert t.rev("refs/heads/feat/x") == t.head
@@ -118,11 +118,13 @@ def _rollback_is_honest(t, e, positive):
     assert nxt.code == "DIRTY_WORKTREE" and nxt.details.get("orphanApproval") is True
 
 
-@pytest.mark.xfail(strict=True, reason="b858c19: 第 8 步不看 git rm --cached 的退出码（approval.py:240），index.lock 被占时"
-                                       "照样删文件并报「已回滚」，index 里仍暂存着记录")
 def test_rollback_when_index_locked_at_commit(t, monkeypatch):
     """index.lock taken after `git add`, before `git commit --only`: commit fails, and so does `git rm --cached`.
-    变红 (once fixed): ignore the exit status of `git rm --cached` in _unstage_and_maybe_delete again."""
+    The rollback cannot finish: the file stays staged and on disk, COMMIT_FAILED with details.orphanApproval and
+    details.recover. retryable False: §5.9 step 8 only covers a successful `git rm --cached`; §7.1 rule 4 makes
+    COMMIT_FAILED retryable "锁占用时", but retrying unchanged here meets DIRTY_WORKTREE (the orphan), so per the rule's
+    own principle ("原样重试没有意义") it is not retryable (待定: the spec should say so for this case).
+    变红: ignore the exit status of `git rm --cached` again (approval.py:262-263, `return "stuck"`)."""
     lock, real = [], approval._sha_file
 
     def sha(w, rel):
@@ -136,13 +138,17 @@ def test_rollback_when_index_locked_at_commit(t, monkeypatch):
         if lock and os.path.exists(lock[0]):
             os.remove(lock[0])
     monkeypatch.undo()
+    assert staged(t), "fixture: the record was staged before the commit failed"
+    assert e.code == "COMMIT_FAILED" and e.retryable is False, (e.code, e.retryable)
+    assert e.details.get("orphanApproval") is True and staged(t)[0] in e.details.get("recover", "")
     _rollback_is_honest(t, e, lambda: call(t))
 
 
 def test_rollback_when_index_locked_at_add(t, monkeypatch):
     """index.lock taken right after the file is created, before `git add`: add, commit and rm --cached all fail; the
-    record never reached the index, so the honest end state is "rolled back" (file deleted, COMMIT_FAILED).
-    变红: in _unstage_and_maybe_delete drop the os.remove (approval.py:242) → file left behind with COMMIT_FAILED."""
+    record never reached the index, so the honest end state is "rolled back" (file deleted, COMMIT_FAILED), retryable
+    because index.lock was held (§7.1 rule 4: COMMIT_FAILED 锁占用时 retryable).
+    变红: in _unstage_and_maybe_delete drop the os.remove (approval.py:265) → file left behind with COMMIT_FAILED."""
     lock, real = [], approval._write_new
 
     def write(w, rel, data):
@@ -156,6 +162,7 @@ def test_rollback_when_index_locked_at_add(t, monkeypatch):
             os.remove(lock[0])
     monkeypatch.undo()
     assert staged(t) == []  # the fixture really kept the record out of the index
+    assert e.code == "COMMIT_FAILED" and e.retryable is True, (e.code, e.retryable)
     _rollback_is_honest(t, e, lambda: call(t))
 
 
@@ -163,7 +170,7 @@ def test_rollback_when_index_locked_at_add(t, monkeypatch):
 
 def test_write_rejected_approves_a_stakeholder(t):
     """R4-5: approves → chiefArchitect (an arch:Stakeholder, not an element) makes the new record invalid
-    (Ctx.approval_problems), so step 6 refuses. 变红: drop `cand.approval_problems()` from `bad` (approval.py:392)."""
+    (Ctx.approval_problems), so step 6 refuses. 变红: drop `cand.approval_problems()` from `bad` (approval.py:424)."""
     before = refs(t)
     e = err(t, approves=[BOSS])
     assert e.code == "WRITE_REJECTED", e.code
@@ -174,7 +181,7 @@ def test_write_rejected_approves_a_stakeholder(t):
 def test_write_rejected_candidate_adds_violation(t, monkeypatch):
     """The candidate graph (W + the new file) adds a Violation that is not a record problem: the record file is made
     to carry one extra triple (a second @zh prefLabel on :newThing). 变红: test only `bad`, not `new`
-    (approval.py:394 `if new or bad`)."""
+    (approval.py:426 `if new or bad`)."""
     real = approval._record_file
     monkeypatch.setattr(approval, "_record_file", lambda *a: real(*a) + EXTRA)
     before = refs(t)
@@ -192,7 +199,7 @@ EXTRA = '\n:newThing skos:prefLabel "第二个中文名"@zh .\n'
 def test_code_commit_after_locate_before_lock_stale(t, monkeypatch):
     """§5.9 step 7 锁内复验: an agent's ordinary commit lands after the unlocked step 1 and before the lock. The
     re-check on tip' sees a non-approval commit in headCommit..tip' → STALE_HEAD, no approval commit.
-    变红: delete `_stale(root, head, tip2)` under the lock (approval.py:357)."""
+    变红: delete `_stale(root, head, tip2)` under the lock (approval.py:389)."""
     def agent_commit(w):
         t.write("src/agent.py", "print('agent')\n")
         agent_commit.c = t.commit_all("agent commit before the lock")
@@ -212,7 +219,7 @@ def test_code_commit_after_locate_before_lock_stale(t, monkeypatch):
 ])
 def test_dedupe_key_components(t, second):
     """§5.9 step 4: duplicate only when (gate, decision, approvedBy, approves set, evidence) are all equal.
-    变红: drop the corresponding element from the tuple compared in _find_duplicate (approval.py:101-102)."""
+    变红: drop the corresponding element from the tuple compared in _find_duplicate (approval.py:115-116)."""
     r1 = call(t)
     assert r1["duplicate"] is False
     # one second later: an Approved and a Rejected record at the same instant are ambiguous (WRITE_REJECTED)
@@ -229,7 +236,7 @@ def test_dedupe_key_components(t, second):
 @pytest.mark.parametrize("who", ["newThing", "auditTrail"])
 def test_approver_not_a_stakeholder(t, who):
     """approvedBy exists but is a model element, not an arch:Stakeholder → APPROVER_NOT_ALLOWED (§5.9 input table).
-    变红: drop `or not ctx.is_a(boss, ARCH + "Stakeholder")` (approval.py:309)."""
+    变红: drop `or not ctx.is_a(boss, ARCH + "Stakeholder")` (approval.py:338)."""
     before = refs(t)
     e = err(t, approvedBy=M + who)
     assert e.code == "APPROVER_NOT_ALLOWED", e.code
