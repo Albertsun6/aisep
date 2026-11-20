@@ -147,13 +147,14 @@
   - `aisep:approvedBy` → 人（必须是 `arch:Stakeholder` 的实例，且不能是 `aisep:AIAgent`；AI 不能批准，原则五）；
   - `prov:generatedAtTime`；
   - `aisep:approves` → 一个或多个元素、模型或 ADR；
-  - `aisep:evidence`（**必填**，恰好一个）：批准时那次校验报告对应的 git commit（40 位十六进制）或 `sha256:<64 位十六进制>`，证明"批准的是哪个版本"。经 MCP 写入时自动填写：取调用方给出的 headCommit（人评审的那个提交；有活动时等于该活动的 `aisep:headCommit`），写入层核对它与分支头之间只有批准提交：其间不得有合并提交，每个提交都带 `AISEP-Evidence` trailer、只改一个模型的 governance 文件、且源图只新增批准记录或 AI 活动（无修改、无删除）；该核对在提交前持锁复做一次，提交后父提交不是被核对的分支头时撤回。写入前在该提交上运行 `gate`，结论为 Approved 而 gate 未通过时拒绝写入。
+  - `aisep:evidence`（**必填**，恰好一个）：批准时那次校验报告对应的 git commit（40 位十六进制）或 `sha256:<64 位十六进制>`，证明"批准的是哪个版本"。经 MCP 写入时自动填写：取调用方给出的 headCommit（人评审的那个提交；有活动时等于该活动的 `aisep:headCommit`），写入层核对它与分支头之间只有批准提交：其间不得有合并提交，每个提交都恰好带一个值等于所新增记录 evidence 的 `AISEP-Evidence` trailer、恰好新增一个 `models/<slug>/governance/` 下的 `.ttl` 普通文件（不进子目录，不修改、不删除已有文件）、且源图只新增一条批准记录（可另带一条被它引用的 AI 活动；无修改、无删除）；该核对在提交前持锁复做一次，提交后父提交不是被核对的分支头时撤回。写入前在该提交上运行 `gate`，结论为 Approved 而 gate 未通过时拒绝写入。
 
-    批准提交判据：一个提交只有一个父提交，带 `AISEP-Evidence` trailer，只改一个模型的 governance 文件，且相对父提交源图只新增批准记录或 AI 活动（无修改、无删除）。批准记录的 evidence（有活动时即活动的 headCommit）到所在分支头之间只允许出现满足该判据的提交；evidence 等于分支头是其特例。写入时由写入层核对；合并进受保护分支前由 CI 用同一判据再核对一次（范围 `evidence..分支头`，不含合并提交本身；只查本次合并新增、且推导 approvalState 时被采用的记录），并在合并结果上运行 `gate`，任一不通过即拒绝合并，须在新的提交上重新过关口。只含批准提交的合并请求只做上述核对与 `gate`，不要求再过关口；夹带其他提交的按普通合并请求处理。
+    批准提交判据：一个提交只有一个父提交，恰好带一个 `AISEP-Evidence` trailer 且其值等于该提交新增记录的 evidence，相对父提交恰好新增一个文件（路径为 `models/<slug>/governance/<文件名>.ttl`，不在子目录，文件模式 100644），不修改、不删除已有文件，且相对父提交源图只新增一条批准记录，另可带至多一条被它引用的 AI 活动（无修改、无删除）。批准记录的 evidence（有活动时即活动的 headCommit）到所在分支头之间只允许出现满足该判据的提交；evidence 等于分支头是其特例。写入时由写入层核对；合并进受保护分支前由 CI 用同一判据再核对一次（范围 `evidence..分支头`，不含合并提交本身），查本次合并新增的全部合法记录（同一合并请求内被同关口、`approves` 为其超集、时间更晚的新记录取代的除外）。合并时另要求：新记录的 evidence 必须是 40 位 commit，生成时间不得晚于检查时的当前时间 5 分钟以上（不与可伪造的提交时间比）；被批准对象必须在 evidence 中存在，且其内容（模型按全部成员及以成员为端点的关系，ADR 按它及其直接引用的组成节点）在 evidence 与合并结果中必须相同；目标分支上已有的批准记录和 AI 活动不得修改或删除；修改目标分支上已批准的元素，或新增目标分支上已显示为批准但尚不存在的元素，须在同一合并请求里有新的合法批准记录覆盖；删除目标分支上已批准的元素一律拒绝（被批准过的元素只能退役，Q6④）；新增 AI 活动的 baseCommit、branch 须与按目标分支重算的值一致；在合并结果上运行 `gate`。任一不通过即拒绝合并，须在新的提交上重新过关口。CI 通过后目标分支可能前进，执行合并的人在合并前用同一检查对当前目标分支头重算，不过不合。只含批准提交、至少新增一条批准记录、且新增的 AI 活动都被新记录引用的合并请求不要求再过关口，上述核对、`gate` 与人工合并批准照常；夹带其他提交的按普通合并请求处理。
 
-    已在主分支上的提交（如发布关口）的批准不直接提交到主分支：从被批准的那个提交拉短命分支，只提交这一条批准记录，经合并请求合入后删分支。这类批准不带 AI 活动。发布关口的 evidence 是被发布的主分支提交，该提交打 `release/{yyyymmdd}-{前 7 位}` 标签（或版本号标签 `release/v…`）。
+    已在主分支上的提交只能批准发布关口，其他关口拒绝；判断时从被批准的提交沿第一父提交回溯、跳过批准提交，取得到的第一个提交（有效内容提交）。这类批准不直接提交到主分支：从被批准的那个提交拉短命分支，只提交这一条批准记录，经合并请求合入后删分支；这类记录只能经只含批准提交的合并请求合入，夹带其他提交的合并请求中出现即拒绝。这类批准不带 AI 活动；evidence 是被发布的主分支提交，必须是目标分支头的祖先，被批准对象在 evidence 到目标分支当前头之间不得被修改或删除（内容已变须重新选被发布的提交）。只有结论为 Approved 时被发布的提交才打 `release/{yyyymmdd}-{前 7 位}` 标签（或版本号标签 `release/v…`），Rejected 不打；标签是对外的发布指针，被发布提交的可达性由主线保证。
 
   - `aisep:activity`（可选，最多一个）→ 一条 `aisep:AgentActivity`（§6.7），表示这次批准针对的是哪次 AI 活动；必须是模型元素（IRI，带 `arch:inModel`），不能是空白节点。evidence 是 40 位 commit 时，必须等于该活动的 `aisep:headCommit`，否则 L1 报错。
+  - 文件：每条批准记录单独一个文件 `models/<slug>/governance/<记录本地名>.ttl`（同次写入的 AI 活动在同一文件）；批准只新增文件，不改已有文件。早先写在 `governance.ttl` 里的记录与人员不搬迁，`governance.ttl` 仍放 `arch:Stakeholder` 等治理类元素。
 - **`arch:approvalState` 由构建推导**：取最近一条**合法**批准记录的结论（不合法的记录不参与推导，构建时报 Warning）；没有记录则为 Proposed；元素本身被合并、替换（带 `dcterms:isReplacedBy`，且目标必须是某个模型里的元素，否则 L1 报错，也不触发）则为 Superseded。`aisep:Rejected`、`aisep:Superseded` 是 AISEP 补的取值，上游只有 Proposed/Approved。同一元素有两条时间相同（按时区归一化后）但结论不同的记录时，L1 报"批准有歧义"。手填 approvalState，包括通过子属性间接写入，都在 L1 报错。
 - 工作台只展示批准记录、触发新增批准记录，不保存状态（ADR-009）。
 - 架构决策采用 vendored 的 `arch-decision`（ADR：Decision/Option/Force），用 `ad:relatedConcept` 连接元素。它的 shapes 读的是直连三元组，所以 L3 必须跑在构建后的图上（§10）。
@@ -218,7 +219,7 @@
 | `model.query` | 只读 SPARQL，跑在构建后的图上 | — |
 | `model.impact` | §9 两种模式 | — |
 | `model.findings` | L4；另返回 openViolations：同一份内容上 L0–L2 的全部违规（结构化发现项），供查看写入时被放过的遗留违规。openViolations 不新增层级，不计入 gate 结论 | L4（openViolations 复用 L0–L2） |
-| `governance.record_approval` | 新增一条批准记录（不改状态字段）。顶层必填 branch、headCommit（有无活动都必填）；可选 expectedBaseCommit，只用于核对、不写入（不等于被拒收的 baseCommit）。写入层核对 headCommit 与分支头之间只有批准提交（无合并提交；每个提交带 `AISEP-Evidence` trailer、只改一个模型的 governance 文件、源图只新增批准记录或 AI 活动），提交前持锁复核。branch 不能是主分支；headCommit 已在主分支上时不接受活动信息；发布关口的 headCommit 必须在主分支上。可选活动信息只含代理、sessionRef、起止时间和标签：写入层算出 baseCommit，在同一次提交里写入 `aisep:AgentActivity`（分支、headCommit 取顶层值）并用 `aisep:activity` 关联；evidence 取调用方给出的 headCommit，generatedAtTime、baseCommit 由写入层填，不接受调用方传入 evidence、generatedAtTime、baseCommit。Approved 要求 evidence 处 gate 通过。只提交 `governance.ttl` 一个路径，不跳过 pre-commit | L0–L2 + gate |
+| `governance.record_approval` | 新增一条批准记录（不改状态字段）。顶层必填 branch、headCommit（有无活动都必填）；可选 expectedBaseCommit，只用于核对、不写入（不等于被拒收的 baseCommit）。写入层核对 headCommit 与分支头之间只有批准提交（无合并提交；每个提交恰好带一个值等于记录 evidence 的 `AISEP-Evidence` trailer、恰好新增一个 governance 目录下的 `.ttl` 普通文件、源图只新增一条批准记录（可另带一条它引用的 AI 活动）），提交前持锁复核。branch 不能是主分支；headCommit 已在主分支上（按有效内容提交判定，§6.6）时只接受发布关口、不接受活动信息；发布关口的 headCommit 必须在主分支上。可选活动信息只含代理、sessionRef、起止时间和标签：写入层算出 baseCommit，在同一次提交里写入 `aisep:AgentActivity`（分支、headCommit 取顶层值）并用 `aisep:activity` 关联；evidence 取调用方给出的 headCommit，generatedAtTime、baseCommit 由写入层填，不接受调用方传入 evidence、generatedAtTime、baseCommit。Approved 要求 evidence 处 gate 通过。每条记录新建一个 `governance/<记录本地名>.ttl`，只提交这一个路径，不跳过 pre-commit | L0–L2 + gate |
 | `model.diff` | 只读。base 是 Git 引用（不给时取 head 侧 commit 与模型主分支的 merge-base）；head 有两种：Git 引用，或某分支检出的工作区（按分支名经 `git worktree list` 定位，只接受分支名，不接受路径）。工作区内容 = 该工作区模型目录下已跟踪 Turtle 文件的当前内容 + 未跟踪且未被忽略的新 Turtle 文件 − 已在工作区删除的文件。返回新增、修改、删除的元素和关系清单（按 IRI；同一 IRI 的三元组有变化算修改；改关系类型按 §8.2 表现为删除加新增）。比较的是两边模型源文件的并集图（构建前）；三元组在文件间移动、排版和注释变化不算修改。多个 merge-base 时报错，要求显式给 base。结果按 kind（element / relationship / view / governance / schema / other）分组计数；detail 取 summary / items / triples；标明 head 的种类、对应 commit 和工作区是否有未提交改动。工作区里某个文件解析失败时，结果标为不完整并列出失败文件，其余照常比较，失败文件里的主语不判为删除。无状态，不写任何东西，可从任意 worktree 调用 | L0 |
 
 所有写操作都是 Turtle 文件的修改，进 Git；MCP 不保存任何不在文件里的状态。接口的具体设计见《MCP Server 接口设计》（`docs/mcp-interface.md`）。线上工具名把点换成下划线（`model.diff` → `model_diff`）。写工具只改工作区、不提交；`governance.record_approval` 例外，自己做一次只含 governance 文件的提交。
@@ -404,10 +405,13 @@ C4、Backstage 接入、TOGAF 内容元模型、ArchiMate 派生规则引擎、�
 - "通用域风味"推导规则（§6.1）、DomainEvent 过去时 Warning（§6.4）、`rm` 级联删除（§8.2）没有原型化，留给 MCP Server 实现。
 - G7 的"元素间直连"白名单包含 BPMN 结构属性（flowElements、lanes 等）和 `arch:hasQualityMeasure`、`ddd:exposedAggregate`。这是为了让合法模型通过而做的判断，未经异构评审。
 - PROV-O 不整体加载；aisep-core 只声明 `aisep:AIAgent`，另在其对齐文件里加 `prov:SoftwareAgent ⊑ prov:Agent` 一条（ADR-010），其余 PROV-O 术语不可用，G7 白名单不变。
-- 历史批准的差异图和 gate 重跑依赖 headCommit 仍可达。模型仓库禁用 squash 合并和 rebase 合并，批准提交只经普通 merge 进受保护分支（ADR-014）；落实要同时做到：托管平台关闭 squash、rebase 两种 PR 合并方式，受保护分支禁止 force push、限制直接 push，PR 合并保留原提交（cherry-pick、rebase 都会生成新的 commit id）。这些是仓库托管平台的设置，元模型和 MCP 不检查；CI 可另加一步检查批准记录的 evidence 是目标受保护分支的祖先。绕过它合入、或分支未合并就删除时，旧 commit 可能被 GC，历史批准无法重跑。
-- 合并时校验（evidence 到分支头之间只有批准提交、合并结果 gate）、批准专用合并请求的判定、发布标签检查由 CI 执行，须设为受保护分支的必需检查；元模型和 MCP 不检查 CI 是否配上。
+- 历史批准的差异图和 gate 重跑依赖 headCommit 仍可达。模型仓库禁用 squash 合并和 rebase 合并，批准提交只经普通 merge 进受保护分支（ADR-014）；落实要同时做到：托管平台关闭 squash、rebase 两种 PR 合并方式，受保护分支禁止 force push、限制直接 push，PR 合并保留原提交（cherry-pick、rebase 都会生成新的 commit id）。这些是仓库托管平台的设置，元模型和 MCP 不检查；合并时校验已要求新记录的 evidence 是合并请求头的祖先（发布批准还须是目标分支头的祖先）。绕过它合入、或分支未合并就删除时，旧 commit 可能被 GC，历史批准无法重跑；管理员绕过分支保护、force push 后重开合并请求，同样可能让已合入记录的 evidence 不再可达。本仓库的 `main` 目前没有分支保护（2026-11-20 经 GitHub API 实测返回 Branch not protected），落实 Q5 须先配置。
+- 合并时校验（evidence 到分支头之间只有批准提交、已有记录不可改、已批准元素改动须重批、合并结果 gate 等）、批准专用合并请求的判定、发布标签检查由 CI 执行，须设为受保护分支的必需检查；元模型和 MCP 不检查 CI 是否配上。不开"要求分支最新"、不用合并队列（个人账号的 private 仓库用不了合并队列），目标分支前进后必需检查不会自动重跑，所以合并前由执行合并的人用同一检查对当前目标分支头重算；绕过它直接在网页上点合并时，合并结果 gate 可能只对旧主线有效，这是残余风险。该检查脚本尚未实现。
+- 进入受保护分支的批准记录 evidence 只能是 40 位 commit：`sha256:<64 位十六进制>` 形式 L1 合法，但合并时校验判断不了它与分支的祖先关系，一律拒绝；它只适用于不经合并进受保护分支的场合。
+- `release/*` 标签可被移动、删除，发布标签检查只在合并时看一次。应以托管平台的 tag ruleset 禁止删除与移动（private 仓库需 GitHub Pro 及以上）；未配置时为残余风险。
+- 发布批准的合并请求关闭未合并时，已推送的 `release/*` 标签不自动删除，由人清理；清理前它指向一个未合入主线的发布批准。
 - 写入层对工作区文件的"写前哈希核对"不是真正的比较并交换：不遵守写锁的外部编辑器或 Git 命令在核对与替换之间（毫秒级）写入的内容会被覆盖。
 - `model.remove` 只检查本仓库：独立模型仓库里指向被删元素的引用看不到，删除后会在那边悬空。
-- `governance.record_approval` 在"追加写入"与"提交完成"之间被杀，会留下未提交的批准块；下次调用以 DIRTY_WORKTREE 报出，需人工清理。多文件写入同样不是崩溃原子的，由 gate 兜底。
+- `governance.record_approval` 在"新建记录文件"与"提交完成"之间被杀，会留下未提交的记录文件；下次调用以 DIRTY_WORKTREE 报出，需人工清理。多文件写入同样不是崩溃原子的，由 gate 兜底。
 - `model.remove` 对 BPMN 成员属性以外的引用一律拒绝，放开需要逐条进规范。布局文件出现前，删除不处理布局。
 - `tools/aisep.py` 需要 Python 3.12 及以上。

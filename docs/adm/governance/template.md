@@ -57,7 +57,7 @@
 
 - 结论（`aisep:decision`）：`aisep:DecisionApproved` / `aisep:DecisionRejected`
 - 否决理由或附加条件：<写清楚；否决时列出需要返工的项>
-- 批准记录写入 `models/<slug>/governance.ttl`，字段（规范 §6.6）：
+- 每条批准记录新建一个文件 `models/<slug>/governance/<记录本地名>.ttl`（记录本地名即 IRI 去掉 `{model}` 前缀的部分；`governance.ttl` 里的是存量记录，不再往里追加），字段（规范 §6.6）：
 
 | 字段 | 取值 |
 |---|---|
