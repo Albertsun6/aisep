@@ -816,17 +816,26 @@ def sparql_constraints(path):
 # ------------------------------------------------------------------ L3 (pyshacl)
 
 _RDFLIB = {}
+_PREPARED = {}  # (query text, initNs) -> rdflib prepared Query
 
 
-def rdflib_graph(key, files):
-    """Union of files as an rdflib Graph, cached by key; shapes files get MINUS rewritten (pyshacl rejects MINUS)."""
+def _content_key(files):
+    """Cache key by file content, not path: a commit snapshot's temp-dir copy of modules/ and vendor/ hits the entry
+    of the same bytes parsed elsewhere (merge checks gate several snapshots). These files hold no relative IRIs."""
+    import hashlib
+    return tuple(hashlib.sha256(open(f, "rb").read()).hexdigest() for f in files)
+
+
+def rdflib_graph(kind, files):
+    """Union of files as an rdflib Graph, cached by content; shapes files get MINUS rewritten (pyshacl rejects MINUS)."""
     from rdflib import Graph, Literal
     from rdflib.namespace import SH
+    key = (kind, _content_key(files))
     if key not in _RDFLIB:
         g = Graph()
         for f in files:
             g.parse(f, format="turtle")
-        if key[0] == "shapes":
+        if kind == "shapes":
             for _, _, c in list(g.triples((None, SH.sparql, None))):
                 sel = str(g.value(c, SH.select) or "")
                 if re.search(r"\bMINUS\s*\{", sel):  # upstream core-shapes: MINUS == FILTER NOT EXISTS there (vars bound)
@@ -835,12 +844,33 @@ def rdflib_graph(key, files):
     return _RDFLIB[key]
 
 
+def _prepared_query_graph():
+    """rdflib Graph whose query() parses each SPARQL text once: pyshacl re-sends the same sh:select text for every focus
+    node (pre-bound via initBindings), and re-parsing it was about half of L3's time. Same text, same initNs
+    (rdflib's default: the graph's namespaces), same base (None) as rdflib's own string path, so the same algebra."""
+    from rdflib import Graph
+    from rdflib.plugins.sparql.processor import prepareQuery
+
+    class PreparedQueryGraph(Graph):
+        def query(self, query_object, processor="sparql", result="sparql", initNs=None, initBindings=None,  # noqa: N803
+                  use_store_provided=True, **kwargs):
+            if isinstance(query_object, str) and processor == "sparql" and not kwargs:
+                ns = initNs or dict(self.namespaces())
+                key = (query_object, tuple(sorted((k, str(v)) for k, v in ns.items())))
+                if key not in _PREPARED:
+                    _PREPARED[key] = prepareQuery(query_object, initNs=ns)
+                query_object = _PREPARED[key]
+            return super().query(query_object, processor, result, initNs, initBindings, use_store_provided, **kwargs)
+    return PreparedQueryGraph()
+
+
 def l3(ctx):
     from rdflib import Graph
     from rdflib.namespace import RDF, SH, SKOS
     from pyshacl import validate as shacl
     model_nt = ox.serialize([ox.Triple(q.subject, q.predicate, q.object) for qs in ctx.src_quads.values() for q in qs]
                             + [ox.Triple(s, p, o) for s, p, o, _ in ctx.built], format=ox.RdfFormat.N_TRIPLES)
+    model = Graph().parse(data=model_nt.decode("utf-8"), format="nt")  # once; each run below copies it
     hub = [m for m in ctx.mods if m.name in HUB_MODULES]
     runs = []
     if hub:
@@ -853,10 +883,11 @@ def l3(ctx):
     for name, data_files, shape_files in runs:
         if not shape_files:
             continue
-        data = Graph()
-        data += rdflib_graph(("data", tuple(data_files)), data_files)
-        data.parse(data=model_nt.decode("utf-8"), format="nt")
-        shapes = rdflib_graph(("shapes", tuple(shape_files)), shape_files)
+        data = _prepared_query_graph()
+        for f in data_files:  # per file: the module runs share most ontology files
+            data += rdflib_graph("data", [f])
+        data += model
+        shapes = rdflib_graph("shapes", shape_files)
         _, report, _ = shacl(data, shacl_graph=shapes, inference="none", allow_warnings=True)
         if not isinstance(report, Graph):  # pyshacl ValidationFailure (SHACL §3.6.2 failure, e.g. a shape breaking
             # the §5.3.1 pre-binding rules): no report graph, so the gate must not pass silently or crash
@@ -980,14 +1011,12 @@ def expand(ctx, name):
 
 
 def forget_paths(prefix):
-    """Drop the per-path caches (relationship table, SHACL-SPARQL constraints, rdflib graphs) for files under prefix —
+    """Drop the per-path caches (relationship table, SHACL-SPARQL constraints) for files under prefix —
     a deleted snapshot directory's path may be reused by a later snapshot of a different commit."""
     for k in [k for k in _RT if k.startswith(prefix)]:
         del _RT[k]
     for k in [k for k in _SC if k.startswith(prefix)]:
         del _SC[k]
-    for k in [k for k in _RDFLIB if any(f.startswith(prefix) for f in k[1])]:
-        del _RDFLIB[k]
 
 
 def shown(problems, layers):
