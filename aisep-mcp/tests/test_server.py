@@ -71,9 +71,10 @@ EXPECTED_ANNOTATIONS = {  # §4 table: (readOnly, destructive, idempotent, openW
     "model_gate": (True, None, True, False), "model_impact": (True, None, True, False),
     "model_diff": (True, None, True, False), "model_add_element": (False, False, True, False),
     "model_add_relationship": (False, False, True, False), "model_remove": (False, True, True, False),
-    "model_set_labels": (False, True, True, False)}
-EXPECTED_PROFILES = {"agent": set(EXPECTED_ANNOTATIONS),
-                     "workbench": {"model_query", "model_findings", "model_gate", "model_impact", "model_diff"}}
+    "model_set_labels": (False, True, True, False), "governance_record_approval": (False, False, True, True)}
+EXPECTED_PROFILES = {"agent": set(EXPECTED_ANNOTATIONS) - {"governance_record_approval"},
+                     "workbench": {"model_query", "model_findings", "model_gate", "model_impact", "model_diff",
+                                   "governance_record_approval"}}
 
 
 def test_T2_annotations_profiles_and_readonly_really_reads_only(repo):
@@ -271,6 +272,7 @@ def test_T34_ts_client_receives_every_error_code(repo, tmp_path):
     bnode = commit_all(repo, "bnode cycle")
     git(repo, "revert", "--no-edit", "HEAD")
     git(repo, "branch", "parked")
+    feat = git(repo, "rev-parse", "parked")
     plain = tmp_path / "plain"
     plain.mkdir()
     foreign = tempfile.mkdtemp(prefix="aisep-t34-outside-")  # a real repository outside --allow-root (= tmp_path)
@@ -297,6 +299,12 @@ def test_T34_ts_client_receives_every_error_code(repo, tmp_path):
         ("model_remove", {"iri": "procurement:quoteApproval", "cascade": True}, "REFERENCED"),
         ("model_remove", {"iri": "procurement:quotation"}, "CASCADE_REQUIRED"),
         ("model_remove", {"iri": "procurement:quotation", "cascade": True, "planDigest": "sha256:0"}, "PLAN_STALE"),
+        ("governance_record_approval", {"model": "procurement", "gate": "GateArchitecture", "decision": "Approved",
+                                        "approvedBy": "procurement:chiefArchitect", "approves": ["procurement:supplier"],
+                                        "branch": "main", "headCommit": feat}, "INVALID_ARGUMENT"),
+        ("governance_record_approval", {"model": "procurement", "gate": "GateArchitecture", "decision": "Approved",
+                                        "approvedBy": "procurement:chiefArchitect", "approves": ["procurement:supplier"],
+                                        "branch": "parked", "headCommit": feat, "evidence": feat}, "INVALID_ARGUMENT"),
         ("model_findings", {}, "INTERNAL"),  # AISEP_MCP_FAULT below makes this tool raise
     ]
     spec = {"command": PY, "args": server_cmd(repo)[1:], "cwd": str(repo),

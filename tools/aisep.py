@@ -211,8 +211,11 @@ def run_pytest(tests_dir):
         return []
     with tempfile.TemporaryDirectory() as tmp:
         xml = os.path.join(tmp, "junit.xml")
-        p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", f"--junitxml={xml}", tests_dir],
-                           cwd=ROOT, capture_output=True, text=True, timeout=1800)
+        try:  # the suite takes ~30 min on a busy machine (merge-check negatives alone ~21 min)
+            p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", f"--junitxml={xml}",
+                                tests_dir], cwd=ROOT, capture_output=True, text=True, timeout=7200)
+        except subprocess.TimeoutExpired:
+            return [("pytest", os.path.relpath(tests_dir, ROOT), "pytest", False, "timed out after 7200 s")]
         cases = ElementTree.parse(xml).getroot().iter("testcase") if os.path.isfile(xml) else []
         rows = []
         for c in cases:

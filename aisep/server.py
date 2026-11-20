@@ -17,7 +17,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import MCPError
 from mcp_types.jsonrpc import INVALID_PARAMS
 
-from aisep import diff, tools, write_tools
+from aisep import approval, diff, tools, write_tools
 from aisep.errors import CODES, AisepError
 
 MAX_TEXT_LINES = 200
@@ -50,6 +50,8 @@ def out(*required):
 ANN_READ = dict(read_only_hint=True, idempotent_hint=True, open_world_hint=False)
 ANN_ADD = dict(read_only_hint=False, destructive_hint=False, idempotent_hint=True, open_world_hint=False)
 ANN_DESTRUCTIVE = dict(read_only_hint=False, destructive_hint=True, idempotent_hint=True, open_world_hint=False)
+# §4: it runs the repository's own pre-commit hook, which may reach outside
+ANN_APPROVAL = dict(read_only_hint=False, destructive_hint=False, idempotent_hint=True, open_world_hint=True)
 
 TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotations, profiles)
     "model_check": (tools.model_check, "L0–L2 快速诊断（不是门禁结论）", READ_IN,
@@ -90,6 +92,18 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
     "model_remove": (write_tools.model_remove, "删除元素/关系/视图；牵连时返回计划，需 cascade + planDigest",
                      obj({"iri": S(), "cascade": B, "dryRun": B, "planDigest": S(), "repo": REPO}, ["iri"]),
                      out("target", "planDigest"), ANN_DESTRUCTIVE, {"agent"}),
+    "governance_record_approval": (
+        approval.governance_record_approval,
+        "记录一次关口批准：在 branch 检出的工作区新建一个记录文件并提交一次（evidence=headCommit，时间与 baseCommit 由服务器给）",
+        obj({"model": MODEL, "gate": S(enum=["GateRequirements", "GateArchitecture", "GateDesign", "GateMerge", "GateRelease"]),
+             "decision": S(enum=["Approved", "Rejected"]), "approvedBy": S(),
+             "approves": {"type": "array", "items": S(), "minItems": 1}, "branch": S(),
+             "headCommit": S(pattern="^[0-9a-f]{40}$"), "expectedBaseCommit": S(pattern="^[0-9a-f]{40}$"), "slug": S(),
+             "prefLabel": S(), "activity": obj({"agent": S(), "sessionRef": S(), "startedAt": S(), "endedAt": S(),
+                                                "branch": S(), "label": S()}, ["agent", "sessionRef", "startedAt"]),
+             "mainRef": S(), "repo": REPO},
+            ["model", "gate", "decision", "approvedBy", "approves", "branch", "headCommit"]),
+        out("approval", "commit", "duplicate"), ANN_APPROVAL, {"workbench"}),
 }
 PROFILES = {"agent": "agent", "workbench": "workbench", "all": None}
 
