@@ -3,7 +3,7 @@ server (docs/mcp-interface.md §3.1). Functions return data and raise AisepError
 
 Engines: pyoxigraph for everything (parse, store, SPARQL, L1/L2/L4, build, impact); pyshacl only for L3.
 """
-import glob, os, re
+import glob, os, re, threading
 from collections import deque
 from datetime import datetime, timezone
 
@@ -864,7 +864,19 @@ def _prepared_query_graph():
     return PreparedQueryGraph()
 
 
+_L3_LOCK = threading.Lock()
+
+
 def l3(ctx):
+    """Serialised process-wide: the MCP server runs tools in threads, and rdflib's SPARQL parser is not thread-safe —
+    pyparsing's _trim_arity learns each parse action's arity on its first calls by catching TypeErrors, so concurrent
+    first parses raise TypeErrors and can leave a parse action permanently mis-learned (every later L3 fails). The
+    caches above are only touched under this lock too. L3 is pure Python, so the GIL left no parallelism to lose."""
+    with _L3_LOCK:
+        _l3(ctx)
+
+
+def _l3(ctx):
     from rdflib import Graph
     from rdflib.namespace import RDF, SH, SKOS
     from pyshacl import validate as shacl
