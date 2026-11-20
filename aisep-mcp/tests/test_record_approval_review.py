@@ -1,0 +1,237 @@
+"""S5 governance_record_approval — gaps found by the independent review of PR #24 (docs/mcp-interface.md §5.9), written
+by a session that does not implement aisep/approval.py.
+
+Each test names the implementation line whose removal / weakening turns it red ("变红"). Two tests fail on the
+implementation as reviewed (b858c19) and are marked xfail(strict=True) with the reason; drop the mark once fixed:
+  - test_branch_switched_in_worktree_before_lock: W is re-checked for detached HEAD only, not for still having `branch`
+    checked out, so the approval lands on another branch while the result says `branch`.
+  - test_rollback_when_index_locked_at_commit: step 8 ignores the exit status of `git rm --cached`; when it fails the
+    file is deleted anyway and COMMIT_FAILED says "已回滚" while the index still stages the record.
+
+Injection points are module attributes of aisep.approval / aisep.gitio replaced with monkeypatch (same style as
+test_approval_extra.py): gitio.locate_worktree returns before the lock is taken; approval._sha_file is first called
+after `git add` and right before `git commit --only`; approval._write_new runs right before `git add`."""
+import os
+from datetime import datetime, timezone
+
+import pytest
+
+from aisep import approval, gitio, tools
+from aisep.errors import AisepError
+from fixtures.topology import GOV, M, Topo
+
+NOW = datetime(2026, 11, 20, 11, 0, 0, tzinfo=timezone.utc)
+BOSS = M + "chiefArchitect"
+BOT = M + "codingBot"  # arch:Stakeholder, not an aisep:AIAgent (baseline): a valid second approver
+
+
+@pytest.fixture
+def t(template, tmp_path):
+    topo = Topo(template, tmp_path)
+    topo.checkout("main", new="feat/x")
+    topo.head = topo.add_element("newThing", "新东西")
+    return topo
+
+
+def call(t, **kw):
+    args = dict(model="procurement", gate="GateArchitecture", decision="Approved", approvedBy=BOSS,
+                approves=[M + "newThing"], branch="feat/x", headCommit=t.head, repo=str(t.root), now=NOW)
+    args.update(kw)
+    return approval.governance_record_approval(tools.Config(allow_roots=(str(t.tmp),)), **args)
+
+
+def err(t, **kw):
+    with pytest.raises(AisepError) as e:
+        call(t, **kw)
+    return e.value
+
+
+def refs(t):
+    return t.git("for-each-ref", "--format=%(refname) %(objectname)", "refs/heads")
+
+
+def new_records(t):
+    d = t.path(GOV)
+    return sorted(f for f in os.listdir(d) if f.startswith("approval-20261120")) if os.path.isdir(d) else []
+
+
+def staged(t):
+    return [f for f in t.git("ls-files", "--", GOV).splitlines() if os.path.basename(f).startswith("approval-20261120")]
+
+
+def after_locate(monkeypatch, action):
+    """Run `action(w)` after gitio.locate_worktree found W and before approval takes W's write lock."""
+    real = gitio.locate_worktree
+
+    def located(*a, **k):
+        w = real(*a, **k)
+        action(w)
+        return w
+    monkeypatch.setattr(gitio, "locate_worktree", located)
+
+
+# ================================================================== 1. W switched to another branch before the lock
+
+@pytest.mark.xfail(strict=True, reason="b858c19: 锁内只查 detached HEAD，不核对 W 检出的仍是 branch（approval.py:348）；"
+                                       "提交落在 feat/y，返回值却写 feat/x")
+def test_branch_switched_in_worktree_before_lock(t, monkeypatch):
+    """§5.9 step 7: W is where `branch` is checked out. If W switches to feat/y (also from headCommit) between
+    locate_worktree and the lock, committing in W would write to feat/y. Expected: STALE_HEAD or CONFLICT, neither
+    branch moves. 变红 (once fixed): drop the comparison of `git symbolic-ref HEAD` with refs/heads/<branch>."""
+    after_locate(monkeypatch, lambda w: gitio.git(w, "checkout", "-q", "-b", "feat/y"))
+    before = refs(t)
+    try:
+        r = call(t)
+    except AisepError as e:
+        assert e.code in ("STALE_HEAD", "CONFLICT"), e.code
+    else:
+        pytest.fail(f"no error; commit {r['commit'][:7]} reported on {r['branch']}")
+    assert t.rev("refs/heads/feat/x") == t.head
+    assert t.rev("refs/heads/feat/y") == t.head
+    assert new_records(t) == [] and staged(t) == []
+
+
+# ================================================================== 2. rollback when index.lock is held
+
+def _hold_index_lock(t):
+    p = os.path.join(t.root, t.git("rev-parse", "--git-path", "index.lock"))
+    open(p, "w").close()
+    return p
+
+
+def _rollback_is_honest(t, e, positive):
+    """§5.9 step 8 + step 9. Only two honest end states (checked after the lock is released):
+    - rolled back: the record is neither staged nor on disk, code COMMIT_FAILED (the file was not modified);
+    - not rolled back (git rm --cached failed): the file stays on disk next to its staged entry — never a staged
+      entry whose file was deleted — the error does not say "已回滚", and the next call reports the leftover as
+      DIRTY_WORKTREE + orphanApproval (step 7's recovery path). The error code for this case is not fixed by §5.9
+      (待定: COMMIT_FAILED or CONFLICT accepted here)."""
+    assert t.rev("refs/heads/feat/x") == t.head
+    on_disk, in_index = new_records(t), staged(t)
+    if not in_index:
+        assert on_disk == [] and e.code == "COMMIT_FAILED", (e.code, on_disk)
+        assert positive()["duplicate"] is False  # positive twin: the worktree is clean again
+        return
+    assert [os.path.basename(f) for f in in_index] == on_disk, "staged record whose file was deleted"
+    assert e.code in ("COMMIT_FAILED", "CONFLICT") and "已回滚" not in e.message, (e.code, e.message)
+    nxt = err(t)
+    assert nxt.code == "DIRTY_WORKTREE" and nxt.details.get("orphanApproval") is True
+
+
+@pytest.mark.xfail(strict=True, reason="b858c19: 第 8 步不看 git rm --cached 的退出码（approval.py:240），index.lock 被占时"
+                                       "照样删文件并报「已回滚」，index 里仍暂存着记录")
+def test_rollback_when_index_locked_at_commit(t, monkeypatch):
+    """index.lock taken after `git add`, before `git commit --only`: commit fails, and so does `git rm --cached`.
+    变红 (once fixed): ignore the exit status of `git rm --cached` in _unstage_and_maybe_delete again."""
+    lock, real = [], approval._sha_file
+
+    def sha(w, rel):
+        if not lock:
+            lock.append(_hold_index_lock(t))
+        return real(w, rel)
+    monkeypatch.setattr(approval, "_sha_file", sha)
+    try:
+        e = err(t)
+    finally:
+        if lock and os.path.exists(lock[0]):
+            os.remove(lock[0])
+    monkeypatch.undo()
+    _rollback_is_honest(t, e, lambda: call(t))
+
+
+def test_rollback_when_index_locked_at_add(t, monkeypatch):
+    """index.lock taken right after the file is created, before `git add`: add, commit and rm --cached all fail; the
+    record never reached the index, so the honest end state is "rolled back" (file deleted, COMMIT_FAILED).
+    变红: in _unstage_and_maybe_delete drop the os.remove (approval.py:242) → file left behind with COMMIT_FAILED."""
+    lock, real = [], approval._write_new
+
+    def write(w, rel, data):
+        real(w, rel, data)
+        lock.append(_hold_index_lock(t))
+    monkeypatch.setattr(approval, "_write_new", write)
+    try:
+        e = err(t)
+    finally:
+        if lock and os.path.exists(lock[0]):
+            os.remove(lock[0])
+    monkeypatch.undo()
+    assert staged(t) == []  # the fixture really kept the record out of the index
+    _rollback_is_honest(t, e, lambda: call(t))
+
+
+# ================================================================== 3. step 6: WRITE_REJECTED, branch unchanged
+
+def test_write_rejected_approves_a_stakeholder(t):
+    """R4-5: approves → chiefArchitect (an arch:Stakeholder, not an element) makes the new record invalid
+    (Ctx.approval_problems), so step 6 refuses. 变红: drop `cand.approval_problems()` from `bad` (approval.py:392)."""
+    before = refs(t)
+    e = err(t, approves=[BOSS])
+    assert e.code == "WRITE_REJECTED", e.code
+    assert e.details["recordProblems"]
+    assert refs(t) == before and new_records(t) == [] and t.git("status", "--porcelain") == ""
+
+
+def test_write_rejected_candidate_adds_violation(t, monkeypatch):
+    """The candidate graph (W + the new file) adds a Violation that is not a record problem: the record file is made
+    to carry one extra triple (a second @zh prefLabel on :newThing). 变红: test only `bad`, not `new`
+    (approval.py:394 `if new or bad`)."""
+    real = approval._record_file
+    monkeypatch.setattr(approval, "_record_file", lambda *a: real(*a) + EXTRA)
+    before = refs(t)
+    e = err(t)
+    assert e.code == "WRITE_REJECTED", e.code
+    assert e.details["findings"] and not e.details["recordProblems"]
+    assert refs(t) == before and new_records(t) == [] and t.git("status", "--porcelain") == ""
+
+
+EXTRA = '\n:newThing skos:prefLabel "第二个中文名"@zh .\n'
+
+
+# ================================================================== 4. re-validation under the lock
+
+def test_code_commit_after_locate_before_lock_stale(t, monkeypatch):
+    """§5.9 step 7 锁内复验: an agent's ordinary commit lands after the unlocked step 1 and before the lock. The
+    re-check on tip' sees a non-approval commit in headCommit..tip' → STALE_HEAD, no approval commit.
+    变红: delete `_stale(root, head, tip2)` under the lock (approval.py:357)."""
+    def agent_commit(w):
+        t.write("src/agent.py", "print('agent')\n")
+        agent_commit.c = t.commit_all("agent commit before the lock")
+    after_locate(monkeypatch, agent_commit)
+    e = err(t)
+    assert e.code == "STALE_HEAD", e.code
+    assert t.rev("refs/heads/feat/x") == agent_commit.c and t.rev(f"{agent_commit.c}^") == t.head
+    assert new_records(t) == [] and t.git("status", "--porcelain") == ""
+
+
+# ================================================================== 5. dedupe key: each component counts
+
+@pytest.mark.parametrize("second", [
+    pytest.param(dict(approvedBy=BOT), id="approvedBy"),
+    pytest.param(dict(approves=[M + "newThing", M + "auditTrail"]), id="approves-set"),
+    pytest.param(dict(decision="Rejected"), id="decision"),
+])
+def test_dedupe_key_components(t, second):
+    """§5.9 step 4: duplicate only when (gate, decision, approvedBy, approves set, evidence) are all equal.
+    变红: drop the corresponding element from the tuple compared in _find_duplicate (approval.py:101-102)."""
+    r1 = call(t)
+    assert r1["duplicate"] is False
+    # one second later: an Approved and a Rejected record at the same instant are ambiguous (WRITE_REJECTED)
+    second = dict(second, now=NOW.replace(second=1))
+    r2 = call(t, **second)
+    assert r2["duplicate"] is False and r2["approval"]["iri"] != r1["approval"]["iri"]
+    assert t.rev("refs/heads/feat/x") == r2["commit"] and t.rev(f"{r2['commit']}^") == r1["commit"]
+    assert len(new_records(t)) == 2
+    assert call(t, **second)["duplicate"] is True  # positive twin: the same second call is a replay
+
+
+# ================================================================== 6. APPROVER_NOT_ALLOWED: not a Stakeholder
+
+@pytest.mark.parametrize("who", ["newThing", "auditTrail"])
+def test_approver_not_a_stakeholder(t, who):
+    """approvedBy exists but is a model element, not an arch:Stakeholder → APPROVER_NOT_ALLOWED (§5.9 input table).
+    变红: drop `or not ctx.is_a(boss, ARCH + "Stakeholder")` (approval.py:309)."""
+    before = refs(t)
+    e = err(t, approvedBy=M + who)
+    assert e.code == "APPROVER_NOT_ALLOWED", e.code
+    assert e.details["rejectedFields"] == ["approvedBy"]
+    assert refs(t) == before and new_records(t) == [] and t.git("status", "--porcelain") == ""
