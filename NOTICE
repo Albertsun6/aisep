@@ -16,3 +16,12 @@ vendor/meta.linked.archi/
     - Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)
     - Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
   Creators are named in each file's dcterms:creator statements.
+
+  The following files declare no license of their own; they are included as
+  published upstream, their terms are those of https://meta.linked.archi/,
+  and they are NOT licensed under the Apache License by this project:
+    ttl/admit_onto.ttl, ttl/catalog.ttl, and the 12 ttl/examples_*.ttl files.
+
+  ttl/backstage_onto.ttl and ttl/backstage_metamodel.ttl quote Backstage
+  documentation, Copyright The Backstage Authors, licensed under the Apache
+  License, Version 2.0.
