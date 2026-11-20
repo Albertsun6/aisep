@@ -16,7 +16,7 @@
 | F4 | `impact` 遇到不存在的元素：只打一条 Warning，**退出码 0，结果为空** | `impact procurement:noSuchThing` |
 | F5 | `query` 收到 `INSERT DATA`：pyoxigraph 抛 `SyntaxError` 堆栈，原型没有包装，退出码 1 | `query 'INSERT DATA {…}'` |
 | F6 | `query` 里的 `SERVICE` **会真的发 HTTP 请求**（报错 `OSError: The port 9 is not allowed for HTTP(S)`，说明已尝试连接） | `query 'SELECT * WHERE { SERVICE <http://127.0.0.1:9/sparql> {…} }'` |
-| F7 | 采购模型 54 个成员；`arch:approvalState` 有 26 个，值是 IRI：`arch:Proposed` 25 个，`arch:Approved` 1 个 | `query` |
+| F7 | 采购模型 54 个成员；`arch:approvalState` 有 26 个，值是 IRI：`arch:Proposed` 25 个，`arch:Approved` 1 个（其中 1 个 Proposed 是 `arch:Stakeholder` 首席架构师；推导范围按 R4-5 收窄后为 25 个：Proposed 24 个，Approved 1 个） | `query` |
 | F8 | 指向 `quoteApproval` 的源三元组 9 条：1 条 `aisep:approves`（批准记录），8 条是关系的 `arch:source`/`arch:target` | `query` |
 | F9 | 指向 `quotation` 的源三元组 3 条，都是关系端点（1 条 Realization、2 条 Access） | `query` |
 | F10 | 指向 `bpmnReview` 的源三元组：`sf1` 的 target、`sf2` 的 source、`bpmnQuoteApproval bpmn:flowElements` | `query` |
@@ -574,6 +574,7 @@
 }
 ```
 
+- `base.mainRef`：base 缺省时是实际用来求 merge-base 的完整 ref 名（§3.3）；显式给出 `base` 时不涉及主分支，为 `null`。`truncated` 与 `items`、`touchedElements`、`moves` 同在，`detail: "summary"` 时不返回（计数永远完整，§3.5）。
 - `head.kind` 标明比的是什么：`ref` 时 `head.commit` 是被比较的 commit；`worktree` 时 `head.headCommit` 是该工作区的 `HEAD`，`dirty` 表示工作区 `models/` 下的 `.ttl` 相对 `headCommit` 是否有改动（含未跟踪新文件、删除、读不了的文件）。`dirty: false` 时结果与 `{head: headCommit}` 相同。
 - `files.head` 在 worktree 模式下是工作区里的相对路径；`moves` 照常计算。
 - 删除项的 `types`、`label` 取 base 侧。关系端点的 `label` 取对应一侧（端点本身没变也给），差异图不用再查。
@@ -906,7 +907,8 @@ export type Layer = "L0" | "build" | "L1" | "L2" | "L3" | "L4";
 export type DiffKind = "element" | "relationship" | "view" | "governance" | "schema" | "other";
 export type Change = "added" | "modified" | "removed";
 
-export interface Target { repo?: string; ref?: string } // 工作台总是传 repo 和 ref
+export interface Target { repo?: string; ref?: string } // 工作台不传 repo（§3.3）；ref 按 §2 表：架构全景、待批准关口不传（读主分支），
+                                                        // "已在分支批准"标记传会话分支，关口页传 head.commit
 
 export interface Finding {
 	severity: "Violation" | "Warning" | "Info";
@@ -919,10 +921,14 @@ export interface Finding {
 }
 
 export interface Term { type: "iri" | "literal" | "bnode"; value: string; datatype?: string; lang?: string }
-export type QueryResult =
+export type QueryResult = (
 	| { kind: "select"; variables: string[]; rows: Record<string, Term>[]; truncated: boolean }
 	| { kind: "ask"; value: boolean }
-	| { kind: "triples"; triples: [Term, Term, Term][]; truncated: boolean };
+	| { kind: "triples"; triples: [Term, Term, Term][]; truncated: boolean }
+) & {
+	source: { repo: string; ref: string | null; commit: Sha | null }; // §5.0 公共输出
+	findings: Finding[]; // §5.0；只有 allowPartial 时非空（工作台不传 allowPartial，所以也不会收到 partial、skippedFiles）
+};
 // 工作台只发 SELECT：query() 收到别的 kind 直接抛 AisepToolError("UNEXPECTED_RESULT_KIND")。
 
 export interface GateResult {
@@ -939,7 +945,10 @@ export interface ImpactResult {
 	mode: ImpactMode;
 	depth: number;
 	invalidModel: { violations: number } | null;
-	items: ImpactItem[];
+	items: ImpactItem[]; // 最多 500 条（§3.5）
+	truncated: boolean;  // items 超上限被截断
+	findings: Finding[]; // §5.0；allowInvalid 时为 L0–L2 违规，否则为空
+	source: { repo: string; ref: string | null; commit: Sha | null };
 }
 
 /** model_findings 结果（§5.4）。工作台只用 openViolations 画"架构全景"的违规计数徽标。 */
@@ -966,7 +975,7 @@ export interface DiffItem {
 	triples?: { added: [string, Term][]; removed: [string, Term][] };
 }
 export interface DiffResult {
-	base: { ref: string | null; commit: Sha; viaMergeBase: boolean; mainRef?: string };
+	base: { ref: string | null; commit: Sha; viaMergeBase: boolean; mainRef: string | null }; // base 显式给出时 mainRef 为 null（§5.8）
 	head:
 		| { kind: "ref"; ref: string | null; commit: Sha }
 		| { kind: "worktree"; branch: string; headCommit: Sha; dirty: boolean };
@@ -981,7 +990,7 @@ export interface DiffResult {
 	items?: DiffItem[];           // detail = items | triples
 	touchedElements?: Iri[];
 	moves?: { iri: Iri; files: { base: string[]; head: string[] } }[];
-	truncated: boolean;
+	truncated?: boolean;          // 与 items 同在：detail = summary 时没有（§5.8）
 }
 
 export interface ActivityInput {
@@ -1029,10 +1038,13 @@ export const APPROVAL_STATE_IRI: Record<string, ApprovalState> = {
 	"https://aisep.example/ont/aisep#Rejected": "Rejected",
 	"https://aisep.example/ont/aisep#Superseded": "Superseded",
 };
-// ELEMENTS_QUERY 保留（D4），但只选**有** arch:approvalState 的主语（去掉 OPTIONAL）：批准记录、AI 活动也是 arch:Element、
-// 也有 inModel 和 zh 名称，却没有 approvalState（实测：采购例子里 approval-20261119-arch-baseline 就是这样）。
-// 沿用"缺失 → Proposed"会让批准记录以 Proposed 出现在待批准关口，这个状态不是推导给出的，违背 P4。
-// elementsFromRows 改为读 Term.value，approvalState 用 APPROVAL_STATE_IRI 映射；缺失或映射不到的 IRI 直接抛错。
+// 推导范围是口径 A（Albert 已定，#29 已实现，见规范 §6.6）：aisep:ApprovalRecord、aisep:AgentActivity、arch:Stakeholder 都没有 approvalState。
+// 两条固定查询（D4：只是工作台的固定 SPARQL，不是新工具），都读主分支、都排除 aisep:ApprovalRecord 与 aisep:AgentActivity 的实例
+// （它们也是 arch:Element、也有 inModel 和 zh 名称，实测：采购例子里 approval-20261119-arch-baseline）：
+// - ELEMENTS_QUERY（架构全景）：选有 arch:inModel 和 zh 名称的主语；arch:approvalState 用 OPTIONAL。缺失 → 显示"无批准状态"
+//   （如 Stakeholder），**不**当作 Proposed：那个状态不是推导给出的，违背 P4。
+// - PENDING_QUERY（待批准关口）：只选 arch:approvalState 为 arch:Proposed 的主语。
+// elementsFromRows 改为读 Term.value，approvalState 有值时用 APPROVAL_STATE_IRI 映射；映射不到的 IRI 直接抛错。
 ```
 
 `ao-sessions.ts` 的 `AgentSessionRow` 不变，**不新增任何 AO 接口或字段**：仓库路径和主分支由工作台的服务器进程启动参数 `--repo`、`--main-branch` 给出（§3.3），工作台调用时不传。P10 的上游接触面（`GET /api/v1/sessions` 及 `UPSTREAM.md` 已登记的字段）不扩大。代价：v1 一个工作台服务器进程只服务一个仓库，与 §1"不做多仓库项目"一致。
@@ -1235,7 +1247,7 @@ export const APPROVAL_STATE_IRI: Record<string, ApprovalState> = {
 | D1 | 编码代理画像是否列出 `governance_record_approval` | 不列 | 批准是人的动作（原则五）。画像不是安全边界（§4） |
 | D2 | "改动元素"一栏口径 | `changedElementCount`（只数 kind=element 的增删改） | 最贴近"改了哪些元素"；`touchedElementCount` 也返回，改口径不改接口 |
 | D3 | 校验工具个数 | 保留 check/validate/findings + 新增 gate，单层结果标 `partial: true` | 只加不改 §8.3 契约。实测代理常选错再改成单一工具 |
-| D4 | 辅助工具（列元素、查词汇） | 一期不加；改名工具 `model_set_labels` 已由用户在另一会话拍板加入（§5.10） | §8.3 没有；固定查询超过 5 条，或代理常因"不知道能连什么"反复被拒，再加 |
+| D4 | 辅助工具（列元素、查词汇） | 一期不加；改名工具 `model_set_labels` 已由用户在另一会话拍板加入（§5.10）。工作台的列元素、待批准列表用固定查询 `ELEMENTS_QUERY`、`PENDING_QUERY`（§8），不是工具 | §8.3 没有；固定查询超过 5 条，或代理常因"不知道能连什么"反复被拒，再加 |
 | D5 | 代理身份映射 | 每种 harness 在模型里有一个固定代理元素，找不到就拒绝并提示先建 | 元素数量稳定，历史能按代理聚合；不让写工具多一个"顺带建元素"的分支 |
 | D6 | 工作台的仓库与主分支从哪来 | 服务器启动参数 `--repo`、`--main-branch`，工作台不传 | 不依赖 AO 的 `GET /api/v1/projects`，P10 上游接触面不扩大；v1 本来就只支持单仓库 |
 | D7 | 主分支短名怎么解析 | 先远端跟踪引用 `refs/remotes/<upstream>/<b>`，再本地分支 | 本地 main 落后时 merge-base 会落到旧提交，diff 虚高（评审实测） |
@@ -1278,7 +1290,7 @@ export const APPROVAL_STATE_IRI: Record<string, ApprovalState> = {
 | T28 | PROV 最小桩（Q4-C） | 加桩后，`prov:wasAssociatedWith` 指向 `aisep:AIAgent` 实例的夹具 gate PASS；`prov:used` 仍报 `undeclared predicate`；`approvedBy` 指向 AIAgent → L1 与 L3（EG13）都失败、一致；`a prov:SoftwareAgent` 的实例仍报未声明的具体类；原型测试全过 |
 | T29 | 查询只读 | `INSERT DATA` → `QUERY_NOT_READONLY`，store 三元组数不变；含 `SERVICE` → `QUERY_NOT_READONLY`，且断网下无网络调用；超 limit → `truncated:true`；有一个文件解析失败 → `PARSE_FAILED`，`allowPartial:true` → `partial:true` 且 `skippedFiles` 含该文件 |
 | T30 | HTTP 安全与协议 | 错误 `Origin` → 403；`Host` 非 loopback → 拒绝；从 `Origin: app://renderer` 发 `OPTIONS` 预检成功且 `Access-Control-Allow-Headers` 含 `Mcp-Method`、`Mcp-Name`；从其他源（含 `null`）预检 → 403；按 2026-07-28 形状、不发 `initialize` 直接 `tools/call` 成功；缺 `Mcp-Name` → 400 / `-32020`；头里的版本与 `_meta` 不一致 → 拒绝；用 `mcp==2.3.*` 实测确认服务器确实协商 2026-07-28（本文据评审转述，尚未在本机跑过） |
-| T31 | 工作台替换 | `npm run typecheck` 通过；vitest 基线 292 项 + 新用例全绿；`McpModelClient` 把 `isError` 转成 `AisepToolError(code)`；`elementsFromRows` 遇未知或缺失的 approvalState 抛错；采购例子的待批准列表不含 `approval-20261119-arch-baseline`；"改动元素"各状态都渲染（含"含未提交"、incomplete、`WORKTREE_NOT_FOUND` 退回引用模式）；"架构全景"违规徽标在植入 1 个遗留违规时显示 1；`FixtureClient` 与 `McpModelClient` 对同一夹具仓库的结果结构等价（契约测试） |
+| T31 | 工作台替换 | `npm run typecheck` 通过；vitest 基线 292 项 + 新用例全绿；`McpModelClient` 把 `isError` 转成 `AisepToolError(code)`；`elementsFromRows` 遇映射不到的 approvalState 抛错，缺失时显示"无批准状态"；采购例子的架构全景与待批准列表都不含 `approval-20261119-arch-baseline` 和 AI 活动，待批准列表只含 Proposed 元素；"改动元素"各状态都渲染（含"含未提交"、incomplete、`WORKTREE_NOT_FOUND` 退回引用模式）；"架构全景"违规徽标在植入 1 个遗留违规时显示 1；`FixtureClient` 与 `McpModelClient` 对同一夹具仓库的结果结构等价（契约测试） |
 | T32 | 真客户端端到端 | 复用**一个** `claude -p` 进程挂 `--mcp-config`，让它"给采购模型加一个'报价行'业务对象，并用 Access 连到提交报价单"：工具调用序列无协议错误，最终 gate PASS。只跑一次，控制成本 |
 | T33 | 异构评审 | 已做一轮（GPT 族，见文末记录），反例已并入 T5、T7、T15、T19、T23、T25、T26、T29。修订后的新增内容（§5.9 逐提交校验、目标 worktree 锁、§5.8 树形空白节点）和拍板后新增的内容（§5.8 worktree 模式、§5.4 `openViolations`、§5.1 `preexisting`、Q5 禁用 rebase 合并）定稿前再过一次。**第二轮已做**（2026-11-20，GPT `gpt-5.6-sol-high` + Claude Git 语义与安全 lens，22 条，见文末"第二轮"），反例已并入 T7、T13、T23、T35、T36、T37。第二轮引入的修订（锁内复验与提交后撤回、统一文件集合、逐级 `O_NOFOLLOW`、前后核对）只经同模型落文，尚无可执行探针，实现时按上列用例验证。R2-13、R2-15 拍板后新增的内容（§5.9"合并时校验""批准专用 PR""发布关口"、T38–T40）由第三轮覆盖。**第三轮已做**（2026-11-20，3 路：GPT `gpt-5.6-sol-high` + Claude Git 语义 lens + Claude 对抗绕过 lens，另做平台事实核查，归并为 18 簇，见文末"第三轮"），反例已并入 T13、T21、T23、T26、T38–T40、T43；第三轮的修订（U1–U4 与各簇改文）只经同模型落文，未再过异构评审 |
 | T34 | 错误结果符合 outputSchema | 用 TS SDK `Client.callTool` 对每个错误码各触发一例：不抛 `InvalidParams`，`structuredContent.error.code` 原样到达；未捕获异常 → `INTERNAL`，不是 `-32603` |

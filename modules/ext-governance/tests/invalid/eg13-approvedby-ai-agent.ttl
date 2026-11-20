@@ -1,0 +1,18 @@
+# expect: EG13:
+# T28 / Q4=C: approvedBy points to an aisep:AIAgent (an AI may not approve, principle 5).
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:ac a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "组件"@zh .
+:boss a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "架构师"@zh .
+:bot a aisep:AIAgent ; arch:inModel :t ; skos:prefLabel "编码代理"@zh .
+:rec a aisep:ApprovalRecord ; arch:inModel :t ; skos:prefLabel "记录rec"@zh ;
+    aisep:gate aisep:GateMerge ; aisep:decision aisep:DecisionApproved ; aisep:approvedBy :bot ; aisep:approves :ac ;
+    aisep:evidence "3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e" ; prov:generatedAtTime "2026-11-20T11:00:00Z"^^xsd:dateTime .

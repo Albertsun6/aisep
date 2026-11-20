@@ -1,5 +1,5 @@
 # expect: EG13:
-# Invalid: approvedBy points to an application component, not an arch:Stakeholder / prov:Agent.
+# Invalid: approvedBy points to an application component, not an arch:Stakeholder.
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
 @prefix prov:  <http://www.w3.org/ns/prov#> .

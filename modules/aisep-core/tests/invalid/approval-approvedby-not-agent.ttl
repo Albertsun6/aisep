@@ -1,5 +1,5 @@
-# expect: is not an arch:Stakeholder or prov:Agent
-# G1/EG13 (audit n12): approvedBy must be an arch:Stakeholder or prov:Agent instance; L1 = L3 EG13 = derivation (ignored).
+# expect: is not an arch:Stakeholder (or is an aisep:AIAgent
+# G1/EG13 (audit n12): approvedBy must be an arch:Stakeholder instance (not an aisep:AIAgent, Q4=C); L1 = L3 EG13 = derivation (ignored).
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
