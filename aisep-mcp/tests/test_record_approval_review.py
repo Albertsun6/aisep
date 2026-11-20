@@ -15,6 +15,8 @@ Two tests failed on the implementation as reviewed (b858c19) and passed once 685
     pass on f9515a3): the commit was found only through W's HEAD reflog.
   - test_hook_stacks_beyond_the_candidate_windows_still_names_a[off-21 / on-51] (failed on 1874d8f, pass on 79e202a):
     A was searched for only in fixed windows (last 20 commits of W, last 50 reflog entries).
+Marked xfail(strict=True) on 26e7f7e: test_agent_plain_commit_takes_staged_record (major),
+test_hook_on_top_reason_is_not_worktree_switched and test_rollback_kept_file_conflict_retryable_per_7_2 (minor).
 
 Injection points are module attributes of aisep.approval / aisep.gitio replaced with monkeypatch (same style as
 test_approval_extra.py): gitio.locate_worktree returns before the lock is taken; approval._sha_file is first called
@@ -275,6 +277,108 @@ def test_hook_stacks_beyond_the_candidate_windows_still_names_a(t, reflog, n):
     assert t.rev(f"{a}^") == t.head and t.git("log", "-1", "--format=%s", c) == f"hook-commit {n}"
     assert e.code == "CONFLICT" and e.retryable is False, (e.code, e.retryable)
     assert e.details.get("commit") == a, e.details.get("commit")
+
+
+# ================================================================== 1b. an agent's plain `git commit` takes our staged record
+
+def _in_head(t, rel):
+    return t.git("ls-tree", "--name-only", "HEAD", "--", rel) == rel
+
+
+@pytest.mark.xfail(strict=True, reason="26e7f7e: 记录先 git add 进 W 的共享 index，代理在 commit --only 之前的普通 git commit 把它带走；"
+                                       "我们的 commit 失败后按「已回滚」处理：暂存删除已被 HEAD 跟踪的记录并删掉磁盘文件")
+def test_agent_plain_commit_takes_staged_record(t, monkeypatch):
+    """§5.9 step 7: after `git add -- <record>` and before `git commit --only`, the agent runs `git add src/agent.py`
+    and a plain `git commit` (no -a) in W. Its commit C picks up everything staged, our record included.
+    Two acceptable outcomes:
+    - C does not contain the record (e.g. the record is staged in a private index, not W's): then step 7's parent
+      check applies — A^ must be tip', so our call either succeeds with A^ == tip' or answers STALE_HEAD
+      (concurrent-commit) after taking A back; nothing of ours left staged or on disk;
+    - C contains the record: CONFLICT that names C (in details or the message); our record is then part of C.
+    In no case "已回滚", and never undo what HEAD already tracks: a record file committed in C is not staged for
+    deletion and not deleted from disk (step 8 rolls back only what this call staged).
+    变红 (once fixed): stage the record in W's shared index again and roll back with `git rm --cached` + delete."""
+    real, done = approval._sha_file, []
+
+    def agent_commits(w, rel):
+        if not done:
+            done.append(1)
+            t.write("src/agent.py", "print('agent')\n")
+            t.git("add", "--", "src/agent.py")
+            t.git("commit", "-q", "-m", "agent: plain commit")
+            done.append(t.rev("HEAD"))
+        return real(w, rel)
+    monkeypatch.setattr(approval, "_sha_file", agent_commits)
+    try:
+        r, e = call(t), None
+    except AisepError as x:
+        r, e = None, x
+    assert len(done) == 2, "fixture: the agent commit was not injected"
+    c = done[1]
+    assert t.rev(f"{c}^") == t.head
+    rel = f"{GOV}/approval-20261120110000-architecture-{t.head[:7]}.ttl"
+    c_has_record = t.git("ls-tree", "--name-only", c, "--", rel) == rel
+    if e is not None:
+        assert "已回滚" not in e.message, e.message
+    if _in_head(t, rel):  # whatever happened, what HEAD tracks is not undone
+        assert os.path.exists(t.path(rel)), "committed record deleted from disk"
+        assert t.git("diff", "--cached", "--name-status", "--", rel) == "", "committed record staged for deletion"
+    if c_has_record:
+        assert e is not None and e.code == "CONFLICT", (e and e.code, r)
+        assert c in repr(e.details) or c[:7] in e.message, (e.message, e.details)
+    else:
+        if e is None:
+            assert t.rev(f"{r['commit']}^") == t.head, "approval commit stacked on the agent's commit"
+        else:
+            assert e.code == "STALE_HEAD" and e.details.get("reason") == "concurrent-commit", (e.code, e.details)
+            assert t.rev("refs/heads/feat/x") == c
+        assert staged(t) == [] or e is None
+        assert new_records(t) == [] or e is None
+
+
+# ================================================================== 1c. minor: reason and retryable of CONFLICT
+
+@pytest.mark.xfail(strict=True, reason="26e7f7e: 钩子在 A 上叠提交（W 没被切换）也报 reason=worktree-switched")
+def test_hook_on_top_reason_is_not_worktree_switched(t):
+    """W is never switched; a post-commit hook stacks one commit on A. The CONFLICT must not claim the worktree was
+    switched (details.reason). 变红 (once fixed): always use "worktree-switched" in _misplaced."""
+    _hook_stacks(t, 1)
+    e = _no_success(t)
+    assert e.code == "CONFLICT" and e.details.get("reason") != "worktree-switched", (e.code, e.details.get("reason"))
+
+
+@pytest.mark.xfail(strict=True, reason="26e7f7e: 回滚时记录文件被改动而保留的 CONFLICT 报 retryable=false；§7.2 只把"
+                                       "「提交后撤回失败」的 CONFLICT 列为不可重试")
+@pytest.mark.parametrize("where", ["commit-hook", "add-locked"])
+def test_rollback_kept_file_conflict_retryable_per_7_2(t, monkeypatch, where):
+    """§7.2: CONFLICT is retryable, except record_approval's failed take-back after a commit (§5.9 step 7). The
+    step-8 CONFLICT "file changed by a hook or editor, kept" (commit failed) and its git-add twin are not take-backs.
+    Note: retrying unchanged then meets DIRTY_WORKTREE + orphanApproval for the kept file, so §7.1 rule 4's principle
+    would say not retryable — the spec's letter (§7.2) is asserted here as requested; the spec may want to list
+    these CONFLICTs as exceptions instead.
+    变红 (once fixed): retryable=False on those CONFLICTs again."""
+    if where == "commit-hook":
+        d = t.tmp / "hooks"
+        d.mkdir(exist_ok=True)
+        (d / "pre-commit").write_text(f'#!/bin/sh\nfor f in {GOV}/approval-20261120110000-*.ttl; do echo "# hook" >> "$f"; done\nexit 1\n')
+        os.chmod(d / "pre-commit", 0o755)
+        t.git("config", "core.hooksPath", str(d))
+    else:
+        real, lock = approval._write_new, []
+
+        def write(w, rel, data):
+            real(w, rel, data)
+            with open(os.path.join(w, rel), "a", encoding="utf-8") as f:
+                f.write("# editor\n")
+            lock.append(_hold_index_lock(t))
+        monkeypatch.setattr(approval, "_write_new", write)
+    try:
+        e = err(t)
+    finally:
+        if where == "add-locked" and lock and os.path.exists(lock[0]):
+            os.remove(lock[0])
+    assert e.code == "CONFLICT" and e.retryable is True, (e.code, e.retryable, e.message)
+    assert t.rev("refs/heads/feat/x") == t.head and staged(t) == []
 
 
 # ================================================================== 2. rollback when index.lock is held
