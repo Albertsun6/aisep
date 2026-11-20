@@ -9,7 +9,10 @@
     skos:prefLabel "AISEP 核心"@zh , "AISEP core"@en ;
     aisep:moduleKind aisep:Extension ;
     owl:versionInfo "0.2.0" ;
-    aisep:loads "modules/aisep-core/onto.ttl" ;
+    aisep:loads "modules/aisep-core/onto.ttl" , "modules/aisep-core/align.ttl" ;
+    # align.ttl: the single PROV-O axiom prov:SoftwareAgent ⊑ prov:Agent (ADR-010, Q4=C), kept out of onto.ttl.
+    # Deliberately NOT an aisep:alignmentFile (that is for hub alignments, which spec §10.2 keeps out of the other
+    # modules' L3 runs): ext-governance's EG17 must see aisep:AIAgent as a prov:Agent, so it is a plain load.
     aisep:impactFile "modules/aisep-core/impact.ttl" ;
     aisep:shapesFile "modules/aisep-core/shapes.ttl" ;
     aisep:ownsNamespace "https://aisep.example/ont/aisep#" , "https://meta.linked.archi/core#" .

@@ -1,0 +1,13 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+# aisep-core alignment (ADR-010; docs/mcp-interface.md §6.2 Q4=C). The ONLY assertion about an upstream (PROV-O) term,
+# synonymous with the PROV-O source, so the ancestor chain of aisep:AIAgent reaches prov:Agent without loading PROV-O.
+# It does not make prov:SoftwareAgent instantiable: prov# is owned by no module, so `a prov:SoftwareAgent` stays an
+# undeclared concrete class (T28). Loaded by aisep:loads, not declared as aisep:alignmentFile (see metamodel.ttl).
+
+<https://aisep.example/ont/aisep/align#> a owl:Ontology ;
+    owl:versionInfo "0.1.0" .
+
+prov:SoftwareAgent rdfs:subClassOf prov:Agent .
