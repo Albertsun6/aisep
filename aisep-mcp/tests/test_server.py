@@ -106,13 +106,13 @@ def _norm(x):
     return x
 
 
-def test_T4_restart_gives_same_results_and_leaves_nothing(repo):
-    snaps = lambda: set(glob.glob(os.path.join(tempfile.gettempdir(), "aisep-snap-*")))
-    left = snaps()
-    first = [_norm(r.structured_content) for r in stdio_calls(repo, READ_CALLS)]   # process 1, then it exits
-    second = [_norm(r.structured_content) for r in stdio_calls(repo, READ_CALLS)]  # process 2
+def test_T4_restart_gives_same_results_and_leaves_nothing(repo, tmp_path):
+    private = tmp_path / "server-tmp"  # the server's own TMPDIR: other processes' temp files cannot interfere
+    private.mkdir()
+    first = [_norm(r.structured_content) for r in stdio_calls(repo, READ_CALLS, {"TMPDIR": str(private)})]   # process 1
+    second = [_norm(r.structured_content) for r in stdio_calls(repo, READ_CALLS, {"TMPDIR": str(private)})]  # process 2
     assert first == second
-    assert git(repo, "status", "--porcelain") == "" and snaps() == left
+    assert git(repo, "status", "--porcelain") == "" and os.listdir(private) == []
 
 
 # ---------------------------------------------------------------- T5: stdout carries only JSON-RPC
