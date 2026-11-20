@@ -72,7 +72,7 @@
 
 - 第 1 节"尚未回答的问题"为空；第 2 节已有用户确认。
 - 每条 Must 需求至少聚合一条验收标准，验收标准可直接写成测试（Given/When/Then）。
-- `$PY tools/aisep.py gate models/<slug>/*.ttl` 结果为 PASS。此时 Must 级的"追溯缺口"Warning 允许存在（测试用例尚未编写），在本文档第 7 节列出；到"代码合并"关口前必须清零。
+- `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 结果为 PASS。此时 Must 级的"追溯缺口"Warning 允许存在（测试用例尚未编写），在本文档第 7 节列出；到"代码合并"关口前必须清零。
 - 通过**需求确认**关口评审（`docs/adm/governance/template.md`），产出一条 `aisep:gate aisep:GateRequirements` 的批准记录。
 
 ## 7. 关口评审输入

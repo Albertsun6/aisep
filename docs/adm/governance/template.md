@@ -29,7 +29,7 @@
 
 ## 1. 自动检查结果（必须全部附上，不靠口述）
 
-- `gate`：`$PY tools/aisep.py gate models/<slug>/*.ttl` 的 SUMMARY 行：<粘贴>。result 必须为 PASS。
+- `gate`：`$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 的 SUMMARY 行：<粘贴>。result 必须为 PASS。
 - 模型差异：`model.diff`（base = 与主分支的分叉点，head = 待批准版本）列出的新增 / 修改 / 删除：<粘贴或附链接>。MCP 不可用时用 `git diff <base>..<head> -- models/<slug>/` 代替。
 - 影响分析：对每个被修改或删除的元素跑 `$PY tools/aisep.py impact <IRI> --mode depends`，列出受影响元素：<粘贴>。
 - L4 遗留 Warning：<逐条列出，并写处理计划>

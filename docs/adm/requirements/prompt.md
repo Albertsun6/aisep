@@ -16,7 +16,7 @@
 4. `docs/metamodel-spec.md` §4（三原语）、§6.5（验证扩展）、§7（跨记法追溯）。
 5. `docs/adm/requirements/template.md`：你要交付的文档结构、元素清单和追溯表。
 6. 范例：`models/procurement/am4.ttl`、`models/procurement/verification.ttl`、`models/procurement/bpmn.ttl`。
-7. 现有模型 `models/<slug>/*.ttl`（如已存在）：先查有没有同义的需求、目标、使用者，有就复用，不另建。
+7. 现有模型（如已存在；`models/<slug>/` 下全部 `.ttl`，含 `governance/` 子目录）：先查有没有同义的需求、目标、使用者，有就复用，不另建。
 
 ### 第一步：追问（在写任何文件之前）
 
@@ -50,7 +50,7 @@
 **写入规则**：
 - 通用写法（类型、`arch:inModel`、`@zh` 名称、IRI、只写限定关系、不写 `arch:approvalState`）见 `AGENTS.md` 硬规则与 `docs/module-contract.md`「Authoring profile」，这里不重复；不改 `vendor/`、`modules/`、`tools/`，不自造批准记录。
 - MCP Server 可用时只通过规范 §8.3 的工具写（`model.add_element`、`model.add_relationship`、`model.remove`），被拒绝时读原因，改模型或问用户，不绕过；批准用 `governance.record_approval`。
-- 每改一批跑 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate models/<slug>/*.ttl`），直到 PASS；只认 gate，`model.check` / `model.validate` 只作诊断。
+- 每改一批跑 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')`），直到 PASS；只认 gate，`model.check` / `model.validate` 只作诊断。
 - 本阶段：MCP 接口细节见 `docs/mcp-interface.md`；Violation 修不了就停下来报告；元模型表达不了的需求，记下来报告给用户。
 
 ### 第四步：填文档、准备关口

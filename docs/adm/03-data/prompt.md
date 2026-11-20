@@ -30,7 +30,7 @@
 ## 写入规则
 - 通用写法（类型、`arch:inModel`、`@zh` 名称、IRI、只写限定关系、不写 `arch:approvalState`）见 `AGENTS.md` 硬规则与 `docs/module-contract.md`「Authoring profile」，这里不重复；不改 `vendor/`、`modules/`、`tools/`，不自造批准记录。
 - MCP Server 可用时只通过规范 §8.3 的工具写（`model.add_element`、`model.add_relationship`、`model.remove`），被拒绝时读原因，改模型或问用户，不绕过；批准用 `governance.record_approval`。
-- 每改一批跑 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate models/<slug>/*.ttl`），直到 PASS；只认 gate，`model.check` / `model.validate` 只作诊断。
+- 每改一批跑 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')`），直到 PASS；只认 gate，`model.check` / `model.validate` 只作诊断。
 - "不做什么"写成 `aisep:priority aisep:Wont` 的 `am4:Requirement`。
 - 本阶段：MCP 不可用时编辑 `models/<slug>/ddd.ttl`；不要给聚合同时加 `am4:DataObject` 类型（一元素一记法）；数据决策用限定关系 `ad:RelatedConcept` 关联元素；不提交 git（除非用户要求）。
 
