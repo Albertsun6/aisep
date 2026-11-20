@@ -462,7 +462,9 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
                                  details={"output": tail}, retryable=False)
             raise AisepError("COMMIT_FAILED", "git commit 失败（钩子拒绝或 index.lock 被占用），已回滚",
                              details={"output": tail}, retryable="index.lock" in tail)
-        a = gitio.git(w, "rev-parse", "HEAD")[1].strip()
+        a = _landed(w, root, branch, msg)
+        if a is None:  # W was switched during step 6: our commit sits on another branch (or detached)
+            raise _misplaced(w, root, branch, msg, rel, written)
         if gitio.git(w, "rev-parse", f"{a}^")[1].strip() != tip2:  # someone committed between re-check and commit
             rc, _, _ = gitio.git(w, "update-ref", f"refs/heads/{branch}", f"{a}^", a)
             if rc != 0:
@@ -478,6 +480,42 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
             "evidence": head, "baseCommit": base, "commit": a, "branch": branch, "duplicate": False, "gate": gres,
             "derivedApprovalState": [{"iri": o, "before": before[o], "after": after[o]} for o in objs],
             "findings": findings}
+
+
+def _ours(root, commit, msg):
+    """The approval commit is recognised by its subject: it carries rec_local, unique across all refs (_free)."""
+    return gitio.git(root, "log", "-1", "--format=%s", commit)[1].strip() == msg
+
+
+def _landed(w, root, branch, msg):
+    """Our commit if it is the tip of refs/heads/<branch>, else None. Does not read HEAD: W may have been switched
+    to another branch before `git commit`, which then moved that branch instead."""
+    rc, tip, _ = gitio.git(root, "rev-parse", "-q", "--verify", f"refs/heads/{branch}^{{commit}}")
+    tip = tip.strip()
+    return tip if rc == 0 and _ours(root, tip, msg) else None
+
+
+def _misplaced(w, root, branch, msg, rel, written):
+    """`git commit` moved whatever W had checked out. Take our commit back there with a compare-and-swap update-ref
+    (never touching refs/heads/<branch>), unstage and delete the record file, answer CONFLICT."""
+    out = gitio.git(root, "for-each-ref", "--format=%(refname) %(objectname)", "refs/heads/")[1].split("\n")
+    wrong = [(r, c) for r, c in (l.split(" ", 1) for l in out if l) if r != f"refs/heads/{branch}" and _ours(root, c, msg)]
+    details = {"reason": "worktree-switched", "worktree": w, "landedOn": [r for r, _ in wrong]}
+    if not wrong:  # not a branch tip anywhere (a commit stacked on it, or W was detached): leave index and file alone
+        raise AisepError("CONFLICT", f"批准提交不在 {branch} 的顶端，也不是任何分支的顶端，未自动撤回", retryable=False,
+                         hint=f"人工检查 {w} 的 HEAD 与分支历史，撤回 subject 为 {msg!r} 的提交", details=details)
+    stuck = []
+    for ref, c in wrong:
+        if gitio.git(root, "update-ref", ref, f"{c}^", c)[0] != 0:
+            stuck.append(ref)
+    if stuck:
+        raise AisepError("CONFLICT", f"{w} 在校验期间被切走，批准提交落在 {', '.join(stuck)} 上且未能自动撤回", retryable=False,
+                         hint="人工检查这些分支，撤回 subject 为 " + repr(msg) + " 的提交", details=dict(details, stuckOn=stuck))
+    if _unstage_and_maybe_delete(w, rel, written) == "stuck":
+        raise AisepError("CONFLICT", f"{w} 在校验期间被切走，已撤回落错的提交，但 {rel} 仍在 index 和磁盘上", retryable=False,
+                         hint="人工恢复：" + _recover(rel), details=dict(details, orphanApproval=True, recover=_recover(rel)))
+    raise AisepError("CONFLICT", f"{w} 在校验期间被切到别的分支，已撤回落错的批准提交，{branch} 未改动", retryable=True,
+                     details=details)
 
 
 def _stale(root, head, tip):
