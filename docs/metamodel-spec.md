@@ -155,7 +155,7 @@
 
   - `aisep:activity`（可选，最多一个）→ 一条 `aisep:AgentActivity`（§6.7），表示这次批准针对的是哪次 AI 活动；必须是模型元素（IRI，带 `arch:inModel`），不能是空白节点。evidence 是 40 位 commit 时，必须等于该活动的 `aisep:headCommit`，否则 L1 报错。
   - 文件：每条批准记录单独一个文件 `models/<slug>/governance/<记录本地名>.ttl`（同次写入的 AI 活动在同一文件）；批准只新增文件，不改已有文件。早先写在 `governance.ttl` 里的记录与人员不搬迁，`governance.ttl` 仍放 `arch:Stakeholder` 等治理类元素。
-- **`arch:approvalState` 由构建推导**：取（按时区归一化，不带时区的按 UTC）最近一条**合法**批准记录的结论（不合法的记录不参与推导，构建时报 Warning）；没有记录则为 Proposed；元素本身被合并、替换（带 `dcterms:isReplacedBy`，且目标必须是某个模型里的元素，否则 L1 报错，也不触发）则为 Superseded。`aisep:Rejected`、`aisep:Superseded` 是 AISEP 补的取值，上游只有 Proposed/Approved。同一元素有两条时间相同（按时区归一化后）但结论不同的记录时，L1 报"批准有歧义"。手填 approvalState，包括通过子属性间接写入，都在 L1 报错。
+- **`arch:approvalState` 由构建推导**，只推导给可被批准的元素（与 `aisep:approves` 的允许集合一致，第四轮 R4-5、ADR-016）：带 `arch:inModel` 的 `arch:Element`，不含限定关系、`aisep:ApprovalRecord`、`aisep:AgentActivity`、`arch:Stakeholder`，这几类没有 approvalState。取值：取（按时区归一化，不带时区的按 UTC）最近一条**合法**批准记录的结论（不合法的记录不参与推导，构建时报 Warning）；没有记录则为 Proposed；元素本身被合并、替换（带 `dcterms:isReplacedBy`，且目标必须是某个模型里的元素，否则 L1 报错，也不触发）则为 Superseded。`aisep:Rejected`、`aisep:Superseded` 是 AISEP 补的取值，上游只有 Proposed/Approved。同一元素有两条时间相同（按时区归一化后）但结论不同的记录时，L1 报"批准有歧义"。手填 approvalState，包括通过子属性间接写入，都在 L1 报错。
 - 工作台只展示批准记录、触发新增批准记录，不保存状态（ADR-009）。
 - 架构决策采用 vendored 的 `arch-decision`（ADR：Decision/Option/Force），用 `ad:relatedConcept` 连接元素。它的 shapes 读的是直连三元组，所以 L3 必须跑在构建后的图上（§10）。
 - 质量：`arch:hasQualityMeasure` + ISO 25010 个体；补 `aisep:value`、`aisep:unit`、`aisep:target`、`prov:generatedAtTime`。
