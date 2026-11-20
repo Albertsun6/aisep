@@ -11,8 +11,9 @@ Two tests failed on the implementation as reviewed (b858c19) and passed once 685
     after the locked symbolic-ref check; the commit landed on feat/y while success was reported on feat/x.
   - test_switched_take_back_spares_other_branch_with_same_subject, test_switched_branch_tip_with_same_subject_is_not_ours
     (failed on 78bb9a1, pass on 9dbae0b): the commit was recognised by its subject.
-Two cases fail on 9dbae0b and are marked xfail(strict=True) (the commit is found only through W's HEAD reflog):
-  - test_plain_success_does_not_depend_on_the_reflog[reflog-off / reflog-expired-after-commit]
+  - test_plain_success_does_not_depend_on_the_reflog[reflog-off / reflog-expired-after-commit] (failed on 9dbae0b,
+    pass on f9515a3): the commit was found only through W's HEAD reflog.
+Marked xfail(strict=True) on 1874d8f: test_hook_stacks_beyond_the_candidate_windows_still_names_a (fixed windows).
 
 Injection points are module attributes of aisep.approval / aisep.gitio replaced with monkeypatch (same style as
 test_approval_extra.py): gitio.locate_worktree returns before the lock is taken; approval._sha_file is first called
@@ -203,15 +204,13 @@ def _drop_reflogs(t):
             os.remove(p)
 
 
-@pytest.mark.xfail(strict=True, reason="9dbae0b: _our_commit 只从 W 的 HEAD reflog 找本次提交；reflog 关闭或被清空时找不到，"
-                                       "正常落在 feat/x 上的批准提交被报成 CONFLICT（不可重试），也没撤回")
 @pytest.mark.parametrize("how", ["reflog-off", "reflog-expired-after-commit"])
 def test_plain_success_does_not_depend_on_the_reflog(t, monkeypatch, how):
     """No branch switch at all. §5.9 step 7 decides success by the commit and its parent (A^ == tip'); nothing in
     §5.9 depends on a reflog, which may be disabled (core.logAllRefUpdates=false without log files) or emptied
     (`git reflog expire --expire=now --all`, e.g. a concurrent gc with aggressive settings) between `git commit` and
     the post-commit check. The plain call must still succeed with A on feat/x.
-    变红 (once fixed): identify the commit only through the HEAD reflog again."""
+    Failed on 9dbae0b (reported CONFLICT). 变红: identify the commit only through the HEAD reflog again."""
     if how == "reflog-off":
         _drop_reflogs(t)
     else:
@@ -227,6 +226,16 @@ def test_plain_success_does_not_depend_on_the_reflog(t, monkeypatch, how):
         pytest.fail(f"{e.code} (retryable={e.retryable}): {e.message}; feat/x={t.rev('refs/heads/feat/x')[:7]}")
     assert r["commit"] == t.rev("refs/heads/feat/x") and t.rev(f"{r['commit']}^") == t.head
     assert t.git("status", "--porcelain") == ""
+
+
+def _hook_stacks(t, n):
+    d = t.tmp / "hooks"
+    d.mkdir(exist_ok=True)
+    (d / "post-commit").write_text(
+        '#!/bin/sh\n[ -n "$AISEP_TEST_IN_HOOK" ] && exit 0\nexport AISEP_TEST_IN_HOOK=1\nunset GIT_INDEX_FILE\n'
+        f'i=0; while [ $i -lt {n} ]; do i=$((i+1)); git commit -q --allow-empty -m "hook-commit $i" || exit 1; done\n')
+    os.chmod(d / "post-commit", 0o755)
+    t.git("config", "core.hooksPath", str(d))
 
 
 def test_post_commit_hook_commits_on_top(t):
@@ -246,6 +255,27 @@ def test_post_commit_hook_commits_on_top(t):
     a = t.rev(f"{c}^")
     assert e.code == "CONFLICT" and e.retryable is False, (e.code, e.retryable)
     assert e.details.get("commit") == a and e.hint
+
+
+@pytest.mark.xfail(strict=True, reason="1874d8f: _our_commit 只看其他分支顶端、W 最近 20 个提交和 reflog 最近 50 条；"
+                                       "钩子在 A 上叠的提交超出这些窗口时找不到 A，details.commit 为空")
+@pytest.mark.parametrize("reflog,n", [("off", 21), ("on", 51)])
+def test_hook_stacks_beyond_the_candidate_windows_still_names_a(t, reflog, n):
+    """Same as test_post_commit_hook_commits_on_top, but the hook stacks n commits on A: 21 with reflogs off (past the
+    "last 20 commits of W" window), 51 with reflogs on (past the 50 reflog entries as well). A is not the tip, so
+    nothing is taken back (CONFLICT, not retryable, branch kept) — and §5.9 step 7 still requires details to name A.
+    A is reachable from refs/heads/<branch>: it is the first-parent ancestor of the tip whose parent is tip', so no
+    fixed window is needed to find it.
+    变红 (once fixed): bound the search for A to a fixed number of recent commits again."""
+    if reflog == "off":
+        _drop_reflogs(t)
+    _hook_stacks(t, n)
+    e = _no_success(t)
+    c = t.rev("refs/heads/feat/x")
+    a = t.rev(f"{c}~{n}")
+    assert t.rev(f"{a}^") == t.head and t.git("log", "-1", "--format=%s", c) == f"hook-commit {n}"
+    assert e.code == "CONFLICT" and e.retryable is False, (e.code, e.retryable)
+    assert e.details.get("commit") == a, e.details.get("commit")
 
 
 # ================================================================== 2. rollback when index.lock is held
