@@ -372,8 +372,10 @@ class Ctx:
             else:
                 latest[x] = (min(by_t[t]), DECISION_STATE[next(iter(by_t[t].values()))])
         replaced = {x for x, _ in self.replacements() if x}  # G8: only a valid replacement supersedes
-        subjects = {x for x in in_model if self.is_a(x, ARCH + "Element") and not self.is_a(x, ARCH + "QualifiedRelationship")
-                    and not self.is_a(x, AISEP + "ApprovalRecord")} | set(latest)
+        # only approvable elements get a state (第四轮 R4-5, ADR-016): records, agent activities and Stakeholders are
+        # arch:Elements that can never be approved, so they have no approvalState (spec §6.6)
+        subjects = {x for x in in_model if self.is_a(x, ARCH + "Element") and not any(self.is_a(x, c) for c in (
+                    ARCH + "QualifiedRelationship", AISEP + "ApprovalRecord", AISEP + "AgentActivity", ARCH + "Stakeholder"))} | set(latest)
         out = []
         for x in sorted(subjects):
             state = AISEP + "Superseded" if x in replaced else latest[x][1] if x in latest else ARCH + "Proposed"

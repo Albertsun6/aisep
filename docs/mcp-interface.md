@@ -16,7 +16,7 @@
 | F4 | `impact` 遇到不存在的元素：只打一条 Warning，**退出码 0，结果为空** | `impact procurement:noSuchThing` |
 | F5 | `query` 收到 `INSERT DATA`：pyoxigraph 抛 `SyntaxError` 堆栈，原型没有包装，退出码 1 | `query 'INSERT DATA {…}'` |
 | F6 | `query` 里的 `SERVICE` **会真的发 HTTP 请求**（报错 `OSError: The port 9 is not allowed for HTTP(S)`，说明已尝试连接） | `query 'SELECT * WHERE { SERVICE <http://127.0.0.1:9/sparql> {…} }'` |
-| F7 | 采购模型 54 个成员；`arch:approvalState` 有 26 个，值是 IRI：`arch:Proposed` 25 个，`arch:Approved` 1 个 | `query` |
+| F7 | 采购模型 54 个成员；`arch:approvalState` 有 26 个，值是 IRI：`arch:Proposed` 25 个，`arch:Approved` 1 个（其中 1 个 Proposed 是 `arch:Stakeholder` 首席架构师；推导范围按 R4-5 收窄后为 25 个：Proposed 24 个，Approved 1 个） | `query` |
 | F8 | 指向 `quoteApproval` 的源三元组 9 条：1 条 `aisep:approves`（批准记录），8 条是关系的 `arch:source`/`arch:target` | `query` |
 | F9 | 指向 `quotation` 的源三元组 3 条，都是关系端点（1 条 Realization、2 条 Access） | `query` |
 | F10 | 指向 `bpmnReview` 的源三元组：`sf1` 的 target、`sf2` 的 source、`bpmnQuoteApproval bpmn:flowElements` | `query` |
@@ -1038,7 +1038,7 @@ export const APPROVAL_STATE_IRI: Record<string, ApprovalState> = {
 	"https://aisep.example/ont/aisep#Rejected": "Rejected",
 	"https://aisep.example/ont/aisep#Superseded": "Superseded",
 };
-// 推导范围用口径 A（Albert 已定）：aisep:ApprovalRecord、aisep:AgentActivity、arch:Stakeholder 都不推导 approvalState。
+// 推导范围是口径 A（Albert 已定，#29 已实现，见规范 §6.6）：aisep:ApprovalRecord、aisep:AgentActivity、arch:Stakeholder 都没有 approvalState。
 // 两条固定查询（D4：只是工作台的固定 SPARQL，不是新工具），都读主分支、都排除 aisep:ApprovalRecord 与 aisep:AgentActivity 的实例
 // （它们也是 arch:Element、也有 inModel 和 zh 名称，实测：采购例子里 approval-20261119-arch-baseline）：
 // - ELEMENTS_QUERY（架构全景）：选有 arch:inModel 和 zh 名称的主语；arch:approvalState 用 OPTIONAL。缺失 → 显示"无批准状态"
