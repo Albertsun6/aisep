@@ -308,3 +308,18 @@ def test_T34_ts_client_receives_every_error_code(repo, tmp_path):
     assert [g["threw"] for g in got] == [None] * len(cases), [g for g in got if g["threw"]]
     assert [(g["tool"], g["code"]) for g in got] == [(t, c) for t, _, c in cases]
     assert all(g["isError"] for g in got)
+
+
+def test_mcp_json_launcher_starts_the_agent_profile(repo):
+    """The repository's .mcp.json (what Claude Code starts, §3.2) launches the stdio server on the worktree, agent profile."""
+    spec = json.load(open(os.path.join(ROOT, ".mcp.json"), encoding="utf-8"))["mcpServers"]["aisep"]
+
+    async def go():
+        p = StdioServerParameters(command=spec["command"], args=spec["args"], cwd=str(repo), env=dict(env(), AISEP_PY=PY))
+        async with Client(p) as c:
+            names = {t.name for t in (await c.list_tools()).tools}
+            gate = await c.call_tool("model_gate", {})
+            return names, gate
+    names, gate = anyio.run(go)
+    assert names == EXPECTED_PROFILES["agent"] and gate.structured_content["result"] == "PASS"
+    assert gate.structured_content["source"]["repo"] == os.path.realpath(repo)

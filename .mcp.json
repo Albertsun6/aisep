@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "aisep": {
+      "type": "stdio",
+      "command": "sh",
+      "args": ["tools/aisep-mcp"]
+    }
+  }
+}

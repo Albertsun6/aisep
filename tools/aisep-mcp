@@ -1,0 +1,9 @@
+#!/bin/sh
+# AISEP MCP server for coding agents (docs/mcp-interface.md §3.2): stdio, agent profile, serving the worktree it is
+# started in. Interpreter: $AISEP_PY, else the main checkout's .venv (shared by all worktrees, as in .githooks/pre-commit).
+MAIN="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")" || exit 1
+TOP="$(git rev-parse --show-toplevel)" || exit 1
+PY="${AISEP_PY:-$MAIN/.venv/bin/python}"
+[ -x "$PY" ] || { echo "aisep-mcp: no interpreter at $PY — see AGENTS.md (uv venv ... .venv)" >&2; exit 1; }
+cd "$TOP" || exit 1
+exec "$PY" -m aisep.server --transport stdio --profile agent --allow-root "$MAIN" --repo "$TOP" "$@"
