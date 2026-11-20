@@ -256,7 +256,10 @@ def _recover(rel):
 
 def _unstage_and_maybe_delete(w, rel, written_sha, staged=True):
     """Step 8 rollback: "removed" (out of the index, file deleted), "kept" (out of the index, file changed by someone
-    else and kept) or "stuck" (`git rm --cached` failed, e.g. index.lock held: the file stays staged and on disk)."""
+    else and kept), "stuck" (`git rm --cached` failed, e.g. index.lock held: the file stays staged and on disk) or
+    "taken" (W's HEAD already tracks the file: another commit took it; index and file are left alone)."""
+    if gitio.git(w, "cat-file", "-e", f"HEAD:{rel}")[0] == 0:
+        return "taken"
     if staged:
         rc, _, _ = gitio.git(w, "rm", "--cached", "-q", "-f", "--ignore-unmatch", "--", rel)  # -f: index only
         if rc != 0:
@@ -265,6 +268,13 @@ def _unstage_and_maybe_delete(w, rel, written_sha, staged=True):
         os.remove(os.path.join(w, rel))
         return "removed"
     return "kept"
+
+
+def _taken(w, rel, what, **details):
+    c = gitio.git(w, "log", "-1", "--format=%H", "HEAD", "--", rel)[1].strip()
+    return AisepError("CONFLICT", f"{what}；{rel} 已被另一个提交 {c[:7]} 带走，未回滚（不动 index 和文件）", retryable=True,
+                      hint="重试会按去重键找到这条记录；若该提交不应包含它，人工处理",
+                      details=dict(details, reason="taken-by-other-commit", commit=c))
 
 
 def _stuck(rel, what, **details):
@@ -434,7 +444,9 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
         data = text.encode("utf-8")
         written = hashlib.sha256(data).hexdigest()
         _write_new(w, rel, data)
-        rc, _, err = gitio.git(w, "add", "--", rel)
+        # intent-to-add only: an agent's plain `git commit` in W during this window does not take an i-t-a entry
+        # (write-tree skips it); `git commit --only -- rel` then commits the file's content with the hooks as usual
+        rc, _, err = gitio.git(w, "add", "--intent-to-add", "--", rel)
         if rc != 0:  # nothing staged (git add takes index.lock or fails as a whole)
             tail = "\n".join(err.strip().splitlines()[-50:])
             if _unstage_and_maybe_delete(w, rel, written, staged=False) == "kept":
@@ -443,7 +455,10 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
             raise AisepError("COMMIT_FAILED", "git add 失败，已删除新建的记录文件", details={"output": tail},
                              retryable="index.lock" in tail)
         if _sha_file(w, rel) != written:
-            if gitio.git(w, "rm", "--cached", "-q", "-f", "--ignore-unmatch", "--", rel)[0] != 0:
+            undone = _unstage_and_maybe_delete(w, rel, None)
+            if undone == "taken":
+                raise _taken(w, rel, f"{rel} 在提交前被改动")
+            if undone == "stuck":
                 raise _stuck(rel, f"{rel} 在提交前被改动")
             raise AisepError("CONFLICT", f"{rel} 在提交前被改动，已从 index 移除、保留文件", retryable=True)
         msg = f"aisep: {gate} {decision} {rec_local}"
@@ -455,6 +470,8 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
         if p.returncode != 0:  # step 8: rollback without `git restore`
             undone = _unstage_and_maybe_delete(w, rel, written)
             tail = "\n".join((p.stdout + p.stderr).strip().splitlines()[-50:])
+            if undone == "taken":
+                raise _taken(w, rel, "git commit 失败", output=tail)
             if undone == "stuck":
                 raise _stuck(rel, "git commit 失败", output=tail)
             if undone == "kept":
@@ -473,7 +490,10 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
             if rc != 0:
                 raise AisepError("CONFLICT", f"批准提交 {a[:7]} 之上又有新提交，未自动撤回", retryable=False,
                                  hint="人工检查分支历史", details={"commit": a})
-            if _unstage_and_maybe_delete(w, rel, written) == "stuck":
+            undone = _unstage_and_maybe_delete(w, rel, written)
+            if undone == "taken":
+                raise _taken(w, rel, f"提交期间分支有新提交，已撤回提交 {a[:7]}")
+            if undone == "stuck":
                 raise AisepError("STALE_HEAD", f"提交期间分支有新提交，已撤回提交 {a[:7]}，但 {rel} 仍在 index 和磁盘上",
                                  hint="人工恢复：" + _recover(rel), details={
                                      "reason": "concurrent-commit", "orphanApproval": True, "recover": _recover(rel)})
@@ -543,7 +563,9 @@ def _misplaced(w, root, branch, msg, rel, written, blob, tip2):
     wrong = [(r, a) for r in out.split() if r != f"refs/heads/{branch}"]  # only branches whose tip IS our commit
     details = {"reason": "worktree-switched", "worktree": w, "landedOn": [r for r, _ in wrong], "commit": a}
     if not wrong:  # not a branch tip anywhere (a commit stacked on it, or W was detached): leave index and file alone
-        raise AisepError("CONFLICT", f"批准提交不在 {branch} 的顶端，也不是任何分支的顶端，未自动撤回", retryable=False,
+        details["reason"] = "commit-stacked" if a else "commit-not-found"
+        raise AisepError("CONFLICT", f"批准提交{' ' + a[:7] if a else ''}不在 {branch} 的顶端，也不是任何分支的顶端"
+                         f"（{'之上又有新提交' if a else '找不到它'}），未自动撤回", retryable=False,
                          hint=f"人工检查 {w} 的 HEAD 与分支历史，撤回 subject 为 {msg!r} 的提交", details=details)
     stuck = []
     for ref, c in wrong:
@@ -552,7 +574,10 @@ def _misplaced(w, root, branch, msg, rel, written, blob, tip2):
     if stuck:
         raise AisepError("CONFLICT", f"{w} 在校验期间被切走，批准提交落在 {', '.join(stuck)} 上且未能自动撤回", retryable=False,
                          hint="人工检查这些分支，撤回 subject 为 " + repr(msg) + " 的提交", details=dict(details, stuckOn=stuck))
-    if _unstage_and_maybe_delete(w, rel, written) == "stuck":
+    undone = _unstage_and_maybe_delete(w, rel, written)
+    if undone == "taken":
+        raise _taken(w, rel, f"{w} 在校验期间被切走，已撤回落错的提交", **details)
+    if undone == "stuck":
         raise AisepError("CONFLICT", f"{w} 在校验期间被切走，已撤回落错的提交，但 {rel} 仍在 index 和磁盘上", retryable=False,
                          hint="人工恢复：" + _recover(rel), details=dict(details, orphanApproval=True, recover=_recover(rel)))
     raise AisepError("CONFLICT", f"{w} 在校验期间被切到别的分支，已撤回落错的批准提交，{branch} 未改动", retryable=True,
