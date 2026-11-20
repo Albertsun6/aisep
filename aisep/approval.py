@@ -462,9 +462,12 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
                                  details={"output": tail}, retryable=False)
             raise AisepError("COMMIT_FAILED", "git commit 失败（钩子拒绝或 index.lock 被占用），已回滚",
                              details={"output": tail}, retryable="index.lock" in tail)
+        blob = _blob_id(w, data)
         a = _landed(w, root, branch, msg)
+        if a is not None and gitio.git(root, "rev-parse", f"{a}:{rel}")[1].strip() != blob:
+            a = None  # the tip adds our file but not what we wrote: not taken for ours
         if a is None:  # W was switched during step 6: our commit sits on another branch (or detached)
-            raise _misplaced(w, root, branch, msg, rel, written)
+            raise _misplaced(w, root, branch, msg, rel, written, blob)
         if gitio.git(w, "rev-parse", f"{a}^")[1].strip() != tip2:  # someone committed between re-check and commit
             rc, _, _ = gitio.git(w, "update-ref", f"refs/heads/{branch}", f"{a}^", a)
             if rc != 0:
@@ -482,35 +485,59 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
             "findings": findings}
 
 
-def _our_commit(w, root, msg):
-    """SHA of this call's commit, from W's own HEAD reflog (newest first): the commit entry whose commit adds exactly
-    one file, models/<m>/governance/<rec_local>.ttl, against its parent. The subject does not identify it (any commit
-    may carry it); rec_local is unique across all refs (_free), so a commit adding that file is ours."""
-    name = msg.rsplit(" ", 1)[-1] + ".ttl"
-    log = gitio.git(w, "log", "-g", "-n", "50", "--format=%H%x00%gs", "HEAD")[1]
-    for line in log.splitlines():
-        sha, _, gs = line.partition("\0")
-        if not gs.startswith("commit"):  # not the subject: a commit-msg hook may rewrite it
-            continue
-        diff = gitio.git(root, "diff-tree", "-r", "--no-commit-id", "--name-status", sha)[1].splitlines()
-        if len(diff) == 1 and re.fullmatch(rf"A\tmodels/[^/]+/{GOV_DIR}/{re.escape(name)}", diff[0]):
-            return sha
+def _adds_only(root, c, name, blob=None):
+    """True when commit c adds exactly one file, models/<m>/governance/<name>, against its first parent (with blob id
+    `blob` when given). rec_local is unique across all refs (_free), so such a commit is this call's; the subject is
+    not used (any commit may carry it)."""
+    if not c:
+        return False
+    rc, out, _ = gitio.git(root, "diff-tree", "-r", "--no-commit-id", "--raw", "--no-abbrev", c)
+    lines = out.splitlines()
+    if rc != 0 or len(lines) != 1:
+        return False
+    meta, _, path = lines[0].partition("\t")
+    f = meta.split()
+    return (len(f) == 5 and f[4] == "A" and (blob is None or f[3] == blob)
+            and re.fullmatch(rf"models/[^/]+/{GOV_DIR}/{re.escape(name)}", path) is not None)
+
+
+def _name(msg):
+    return msg.rsplit(" ", 1)[-1] + ".ttl"
+
+
+def _our_commit(w, root, msg, blob=None, branch=None):
+    """SHA of this call's commit when it is not the tip of refs/heads/<branch>: looked for among the tips of the other
+    branches, the recent history of W's HEAD and W's HEAD reflog (any of these may be missing: reflogs can be off or
+    expired), checked exactly with _adds_only."""
+    name, seen = _name(msg), set()
+    cands = gitio.git(root, "for-each-ref", "--format=%(objectname)", "refs/heads/")[1].split()
+    cands += gitio.git(w, "rev-list", "-n", "20", "HEAD")[1].split()
+    cands += [l.split("\0")[0] for l in gitio.git(w, "log", "-g", "-n", "50", "--format=%H%x00%gs", "HEAD")[1]
+              .splitlines() if l.split("\0")[-1].startswith("commit")]
+    for c in cands:
+        if c not in seen:
+            seen.add(c)
+            if _adds_only(root, c, name, blob):
+                return c
     return None
 
 
+def _blob_id(w, data):
+    return subprocess.run(["git", "-C", w, "hash-object", "--stdin"], input=data, capture_output=True).stdout.decode().strip()
+
+
 def _landed(w, root, branch, msg):
-    """Our commit if refs/heads/<branch> points exactly at it, else None. Does not read HEAD: W may have been switched
-    to another branch before `git commit`, which then moved that branch instead."""
-    a = _our_commit(w, root, msg)
+    """The tip of refs/heads/<branch> when it is this call's commit (_adds_only), else None. Reads neither HEAD (W may
+    have been switched to another branch before `git commit`) nor any reflog (may be off or expired)."""
     tip = gitio.git(root, "rev-parse", "-q", "--verify", f"refs/heads/{branch}^{{commit}}")[1].strip()
-    return a if a and tip == a else None
+    return tip if _adds_only(root, tip, _name(msg)) else None
 
 
-def _misplaced(w, root, branch, msg, rel, written):
+def _misplaced(w, root, branch, msg, rel, written, blob):
     """`git commit` moved whatever W had checked out. Take our commit (by SHA) back on the branches that point exactly
     at it, with a compare-and-swap update-ref (never refs/heads/<branch>), unstage and delete the record file,
     answer CONFLICT."""
-    a = _our_commit(w, root, msg)
+    a = _our_commit(w, root, msg, blob)
     out = gitio.git(root, "for-each-ref", "--format=%(refname)", f"--points-at={a}", "refs/heads/")[1] if a else ""
     wrong = [(r, a) for r in out.split() if r != f"refs/heads/{branch}"]  # only branches whose tip IS our commit
     details = {"reason": "worktree-switched", "worktree": w, "landedOn": [r for r, _ in wrong], "commit": a}
