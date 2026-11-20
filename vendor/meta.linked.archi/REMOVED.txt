@@ -1,0 +1,23 @@
+Files removed after the fetch recorded in FETCHED_AT / fetch.log / urls.txt.
+FETCHED_AT, fetch.log and urls.txt are kept unchanged as the record of what
+was fetched; SHA256SUMS lists only the files still present.
+
+2026-11-21  Removed 15 files that NOTICE listed as declaring no license of
+            their own and that no AISEP module manifest, code, model, test or
+            doc references (decision by Albert: delete unused unlicensed
+            vendor files; keep only what is used):
+  llms.txt
+  ttl/admit_onto.ttl
+  ttl/catalog.ttl
+  ttl/examples_archimate3.2-questions_.ttl
+  ttl/examples_archimate4-questions_.ttl
+  ttl/examples_archimate4-viewpoint_.ttl
+  ttl/examples_atlas-bank_.ttl
+  ttl/examples_cloudplatform_model_.ttl
+  ttl/examples_diagram_.ttl
+  ttl/examples_labels_.ttl
+  ttl/examples_leanix-docs-example_.ttl
+  ttl/examples_meridian_.ttl
+  ttl/examples_nordfreight_.ttl
+  ttl/examples_payflow_.ttl
+  ttl/examples_uml_.ttl
