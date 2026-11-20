@@ -129,8 +129,9 @@
     sh:property [
         sh:path aisep:approvedBy ;
         sh:minCount 1 ;
-        sh:or ( [ sh:class arch:Stakeholder ] [ sh:class prov:Agent ] ) ;
-        sh:message "EG13: an ApprovalRecord needs at least one aisep:approvedBy, an arch:Stakeholder or prov:Agent." ;
+        sh:class arch:Stakeholder ;
+        sh:not [ sh:class aisep:AIAgent ] ;
+        sh:message "EG13: an ApprovalRecord needs at least one aisep:approvedBy, an arch:Stakeholder that is not an aisep:AIAgent (an AI may not approve)." ;
         sh:severity sh:Violation ;
     ] ;
     sh:property [

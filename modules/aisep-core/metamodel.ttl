@@ -10,6 +10,7 @@
     aisep:moduleKind aisep:Extension ;
     owl:versionInfo "0.2.0" ;
     aisep:loads "modules/aisep-core/onto.ttl" ;
+    aisep:alignmentFile "modules/aisep-core/align.ttl" ;   # only prov:SoftwareAgent ⊑ prov:Agent (ADR-010, Q4=C)
     aisep:impactFile "modules/aisep-core/impact.ttl" ;
     aisep:shapesFile "modules/aisep-core/shapes.ttl" ;
     aisep:ownsNamespace "https://aisep.example/ont/aisep#" , "https://meta.linked.archi/core#" .

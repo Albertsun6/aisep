@@ -41,7 +41,9 @@ TRACE_CLASSES = {AISEP + "Verification", AISEP + "Implementation"}
 DECISION_STATE = {AISEP + "DecisionApproved": ARCH + "Approved", AISEP + "DecisionRejected": AISEP + "Rejected"}
 SRC_G, BUILT_G, ONTO_G = "urn:aisep:src:", "urn:aisep:built:", "urn:aisep:onto:"
 APPROVAL_SHAPE = "https://aisep.example/ont/aisep-shapes#ApprovalRecordShape"
-AGENTS = {ARCH + "Stakeholder", NS["prov"] + "Agent"}  # what aisep:approvedBy and prov:wasAssociatedWith may point to
+AGENTS = {ARCH + "Stakeholder", NS["prov"] + "Agent"}  # what prov:wasAssociatedWith may point to (incl. aisep:AIAgent)
+# what aisep:approvedBy may point to: a person, never an AI (Q4=C, spec §6.2/§6.6; principle 5)
+APPROVERS, NOT_APPROVERS = {ARCH + "Stakeholder"}, {AISEP + "AIAgent"}
 # R1 "model files must not change the metamodel": metamodel annotations only a module file may declare
 META_PREDICATES = {AISEP + "assertedShortcut", AISEP + "dependency", ARCH + "unqualifiedForm"}
 SKOS = NS["skos"]
@@ -395,13 +397,17 @@ class Ctx:
                     (ok if good else self.bad_replacements).append((q.subject.value, q.object))
         return ok
 
+    def _approver(self, iri):
+        anc = {a for t in self.types(iri) for a in self.ancestors(t)}
+        return bool(anc & APPROVERS) and not anc & NOT_APPROVERS
+
     def approval_problems(self):
         """THE approval-record validity check (spec §6.6, v0.2.1 R3a), used by L1 and by derive_approval_state:
         record -> [messages]. aisep-core ApprovalRecordShape (SPARQL: one decision, one xsd:dateTime-typed time, one
         gate, one evidence = 40-hex commit id or sha256:<64 hex>, approves/approvedBy present; v0.4: at most one
         aisep:activity, an aisep:AgentActivity, and a 40-hex evidence equals its aisep:headCommit — EG25/EG26) plus the
         checks ext-governance L3 states as EG11/EG13/EG15: the gate is one of the aisep:Gates declared in a MODULE file (G2), every approvedBy is an
-        arch:Stakeholder or prov:Agent instance, and the time's lexical form parses (parse_xsd_datetime)."""
+        arch:Stakeholder instance and not an aisep:AIAgent (Q4=C), and the time's lexical form parses (parse_xsd_datetime)."""
         if getattr(self, "_approval_problems", None) is not None:
             return self._approval_problems
         bad = {}
@@ -409,7 +415,6 @@ class Ctx:
             if b.get("this") is not None:
                 bad.setdefault(b["this"].value, []).append(msg)
         gates = {g for (g,) in self.rows(f"SELECT DISTINCT ?x WHERE {{ GRAPH ?g {{ ?x skos:inScheme aisep:Gates }} {self.onto_graph_filter()} }}")}
-        agents = AGENTS
         for rec, p, o in self.rows(f"""SELECT DISTINCT ?rec ?p ?o WHERE {{ GRAPH ?g {{ ?rec a ?t }} {self.src_graph_filter()}
                 ?t rdfs:subClassOf* aisep:ApprovalRecord . ?rec ?p ?o
                 VALUES ?p {{ aisep:gate aisep:approvedBy }} }}""", raw=True):
@@ -418,9 +423,9 @@ class Ctx:
                 bad.setdefault(rec, []).append(f"AISEP: aisep:gate {short(o)} is not one of the module-declared aisep:Gates "
                                                "(GateRequirements|GateArchitecture|GateDesign|GateMerge|GateRelease) (EG11, spec §6.6).")
             elif p == AISEP + "approvedBy" and (not isinstance(o, ox.NamedNode)
-                                                 or not any(agents & set(self.ancestors(t)) for t in self.types(o.value))):
-                bad.setdefault(rec, []).append(f"AISEP: aisep:approvedBy {short(o)} is not an arch:Stakeholder or prov:Agent "
-                                               "(EG13, spec §6.6).")
+                                                 or not self._approver(o.value)):
+                bad.setdefault(rec, []).append(f"AISEP: aisep:approvedBy {short(o)} is not an arch:Stakeholder (or is an "
+                                               "aisep:AIAgent: an AI may not approve) (EG13, spec §6.6).")
         # the lexical form as WRITTEN (the store canonicalises e.g. 24:00:00 to the next day's 00:00:00)
         recs = {r for (r,) in self.rows(f"""SELECT DISTINCT ?r WHERE {{ GRAPH ?g {{ ?r a ?t }} {self.src_graph_filter()}
                 ?t rdfs:subClassOf* aisep:ApprovalRecord }}""")}
@@ -850,8 +855,10 @@ def l3(ctx):
     for m in ctx.mods:
         if m.name not in HUB_MODULES and m.shapes:
             # every module's plain ontology (so cross-notation endpoints are typed, e.g. a DDD BoundedContext as
-            # arch:Element for ext-code's EC6) but only this module's own alignment (spec §10.2)
-            runs.append((m.name, list(dict.fromkeys(onto_files(ctx.mods, "none") + m.align)), m.shapes))
+            # arch:Element for ext-code's EC6) but only the alignments of this module and its dependencies (spec §10.2
+            # "本模块依赖"; e.g. aisep-core's prov:SoftwareAgent ⊑ prov:Agent, which ext-governance's EG17 needs)
+            align = [f for d in dependencies(ctx.mods, m.name) for f in d.align]
+            runs.append((m.name, list(dict.fromkeys(onto_files(ctx.mods, "none") + align)), m.shapes))
     for name, data_files, shape_files in runs:
         if not shape_files:
             continue

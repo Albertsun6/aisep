@@ -96,7 +96,7 @@ aisep:gate a owl:ObjectProperty ; rdfs:domain aisep:ApprovalRecord ; rdfs:range 
 aisep:decision a owl:ObjectProperty ; rdfs:domain aisep:ApprovalRecord ; rdfs:range skos:Concept ;
     skos:definition "aisep:DecisionApproved or aisep:DecisionRejected."@en .
 aisep:approvedBy a owl:ObjectProperty ; rdfs:domain aisep:ApprovalRecord ;
-    skos:definition "The person deciding (arch:Stakeholder or prov:Agent)."@en .
+    skos:definition "The person deciding: an arch:Stakeholder that is not an aisep:AIAgent (an AI may not approve, principle 5; spec §6.6, Q4=C)."@en .
 aisep:approves a owl:ObjectProperty ; rdfs:domain aisep:ApprovalRecord ;
     skos:definition "An element, model or ADR the decision is about."@en .
 aisep:evidence a owl:DatatypeProperty ; rdfs:domain aisep:ApprovalRecord ;
@@ -115,6 +115,11 @@ aisep:activity a owl:ObjectProperty ; rdfs:domain aisep:ApprovalRecord ; rdfs:ra
 aisep:AgentActivity a owl:Class ; rdfs:subClassOf arch:Element , prov:Activity ;
     skos:prefLabel "AI 活动"@zh ; skos:altLabel "Agent activity"@en ;
     skos:definition "One COMPLETED AI activity: exactly one prov:wasAssociatedWith (the agent), prov:startedAtTime <= prov:endedAtTime, aisep:sessionRef, aisep:branch, aisep:baseCommit (merge-base with the model main branch) and aisep:headCommit. The changed elements are not stored (model.diff(baseCommit, headCommit))."@en .
+# Q4=C minimal PROV stub (spec §6.2): the agent an aisep:AgentActivity may be associated with besides an
+# arch:Stakeholder. prov:SoftwareAgent ⊑ prov:Agent is stated in align.ttl (ADR-010); PROV-O itself is not loaded.
+aisep:AIAgent a owl:Class ; rdfs:subClassOf arch:Element , prov:SoftwareAgent ;
+    skos:prefLabel "AI 代理"@zh ; skos:altLabel "AI agent"@en ;
+    skos:definition "An AI agent that performs tasks. May be the prov:wasAssociatedWith of an aisep:AgentActivity; may NOT be an aisep:approvedBy (principle 5)."@en .
 aisep:sessionRef a owl:DatatypeProperty ; rdfs:domain aisep:AgentActivity ; rdfs:range xsd:string ;
     skos:definition "Exactly one non-empty string: the external orchestrator's session id (opaque to the metamodel; not bound to a specific orchestrator)."@en .
 aisep:branch a owl:DatatypeProperty ; rdfs:domain aisep:AgentActivity ; rdfs:range xsd:string ;
