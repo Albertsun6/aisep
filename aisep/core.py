@@ -193,6 +193,7 @@ class Ctx:
         self.mods, self.sources = mods, sources
         self.root = root or (mods[0].root if mods else ROOT)
         self.problems = []   # (severity, layer, text)
+        self.instances = []  # (severity, layer, text, focus, rule, file): one per add(), structured (§7.3)
         self.src_quads = {}  # file -> [Quad in default graph]
         self.prefixes = dict(NS)
         for f in sources:  # L0
@@ -204,10 +205,11 @@ class Ctx:
                 msg = str(e)
                 if read is not None and isinstance(e, SyntaxError):  # same text as a parse by path: "(file, line n)"
                     msg = re.sub(r"\(line (\d+)\)$", lambda mm: f"({os.path.basename(f)}, line {mm.group(1)})", msg)
-                self.add("Violation", "L0", f"cannot parse {self.rel(f)}: {msg}")
+                self.add("Violation", "L0", f"cannot parse {self.rel(f)}: {msg}", file=self.rel(f))
                 continue
             if any(isinstance(q.object, ox.Triple) or isinstance(q.subject, ox.Triple) for q in qs):
-                self.add("Violation", "L0", f"{self.rel(f)} uses an RDF 1.2 triple term <<( )>>, forbidden in AISEP models")
+                self.add("Violation", "L0", f"{self.rel(f)} uses an RDF 1.2 triple term <<( )>>, forbidden in AISEP models",
+                         file=self.rel(f))
                 qs = [q for q in qs if not isinstance(q.object, ox.Triple) and not isinstance(q.subject, ox.Triple)]
             self.src_quads[f] = qs
         self.store = ox.Store()
@@ -233,8 +235,9 @@ class Ctx:
     def rel(self, path):
         return rel(path, self.root)
 
-    def add(self, sev, layer, text):
+    def add(self, sev, layer, text, focus=None, rule=None, file=None):
         self.problems.append((sev, layer, text))
+        self.instances.append((sev, layer, text, focus, rule, file))
 
     def rows(self, q, raw=False):
         res = self.store.query(SPARQL_PREFIXES + q, use_default_graph_as_union=True)
@@ -888,8 +891,9 @@ def l4(ctx):
 
 # ------------------------------------------------------------------ impact
 
-def impact(ctx, start, depth, mode="depends"):
-    """spec §9: depends = follow the declared dependency direction ('who may break');
+def impact_hops(ctx, start, depth, mode="depends"):
+    """Returns [(depth, element, hops, related)] sorted by depth then short name; hops = [(from, relationship resource,
+    relationship class, arrow → ← ~, to)], one per hop from `start`. spec §9: depends = follow the declared dependency direction ('who may break');
     ripple = every traversed relationship both ways ('who may change together'). In both modes Association/None and
     undeclared classes are never traversed, only listed at hop 1 as related."""
     dep = dict(ctx.rows(f"SELECT ?c ?d WHERE {{ GRAPH ?g {{ ?c aisep:dependency ?d }} {ctx.onto_graph_filter()} }}"))  # R1: module files only
@@ -900,27 +904,39 @@ def impact(ctx, start, depth, mode="depends"):
         if mode == "ripple" and d in ("Forward", "Backward"):
             d = "Both"
         if d in ("Forward", "Both"):
-            edges.setdefault(s, []).append((t, c, "→"))
+            edges.setdefault(s, []).append((t, c, "→", r))
         if d in ("Backward", "Both"):
-            edges.setdefault(t, []).append((s, c, "←"))
+            edges.setdefault(t, []).append((s, c, "←", r))
         if d not in ("Forward", "Backward", "Both"):  # None or undeclared: listed at hop 1 only, never traversed
-            related.setdefault(s, []).append((t, c, "~")); related.setdefault(t, []).append((s, c, "~"))
-    found, todo = {start: (0, short(start))}, deque([start])
+            related.setdefault(s, []).append((t, c, "~", r)); related.setdefault(t, []).append((s, c, "~", r))
+    found, todo = {start: (0, [])}, deque([start])
     while todo:
         x = todo.popleft()
-        dx, px = found[x]
+        dx, hx = found[x]
         if dx >= depth:
             continue
-        for y, c, arrow in edges.get(x, []):
+        for y, c, arrow, r in edges.get(x, []):
             if y not in found:
-                found[y] = (dx + 1, f"{px} -[{short(c)}{arrow}]-> {short(y)}")
+                found[y] = (dx + 1, hx + [(x, r, c, arrow, y)])
                 todo.append(y)
-    rows = [(d, x, p, "") for x, (d, p) in found.items() if x != start]
-    for y, c, arrow in related.get(start, []):
+    rows = [(d, x, h, False) for x, (d, h) in found.items() if x != start]
+    for y, c, arrow, r in related.get(start, []):
         if y not in found:
             found[y] = (1, None)
-            rows.append((1, y, f"{short(start)} -[{short(c)}{arrow}]- {short(y)}", " (related)"))
+            rows.append((1, y, [(start, r, c, arrow, y)], True))
     return sorted(rows, key=lambda r: (r[0], short(r[1])))
+
+
+def impact(ctx, start, depth, mode="depends"):
+    """impact_hops as the CLI prints it: (depth, element, path text, note)."""
+    out = []
+    for d, x, hops, related in impact_hops(ctx, start, depth, mode):
+        if related:
+            _, _, c, arrow, y = hops[0]
+            out.append((d, x, f"{short(start)} -[{short(c)}{arrow}]- {short(y)}", " (related)"))
+        else:
+            out.append((d, x, short(start) + "".join(f" -[{short(c)}{a}]-> {short(y)}" for _, _, c, a, y in hops), ""))
+    return out
 
 
 def run_check(ctx):
@@ -937,3 +953,19 @@ def expand(ctx, name):
     if p not in ctx.prefixes:
         raise AisepError("INVALID_ARGUMENT", f"unknown prefix '{p}:' (known: {', '.join(sorted(ctx.prefixes))})")
     return ctx.prefixes[p] + local
+
+
+def forget_paths(prefix):
+    """Drop the per-path caches (relationship table, SHACL-SPARQL constraints, rdflib graphs) for files under prefix —
+    a deleted snapshot directory's path may be reused by a later snapshot of a different commit."""
+    for k in [k for k in _RT if k.startswith(prefix)]:
+        del _RT[k]
+    for k in [k for k in _SC if k.startswith(prefix)]:
+        del _SC[k]
+    for k in [k for k in _RDFLIB if any(f.startswith(prefix) for f in k[1])]:
+        del _RDFLIB[k]
+
+
+def shown(problems, layers):
+    """THE display order and de-duplication of problems (CLI report and MCP findings): severity, layer, text."""
+    return sorted({p for p in problems if p[1] in layers}, key=lambda p: ({"Violation": 0, "Warning": 1}.get(p[0], 2), p[1], p[2]))

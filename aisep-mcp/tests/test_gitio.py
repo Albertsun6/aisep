@@ -174,6 +174,13 @@ def test_file_set(repo, tmp_path):
     assert not [f for f in files if "ignored" in f or "nested" in f or "link" in f or not f.endswith(".ttl")]
 
 
+def test_deleted_tracked_file_is_not_in_the_set(repo):
+    os.remove(repo / "models/procurement/uml.ttl")
+    assert "models/procurement/uml.ttl" not in gitio.model_files(str(repo))
+    rc, out, _ = run_cli(repo, "check")
+    assert "files=6 " in out and "cannot parse" not in out
+
+
 def test_cli_default_uses_file_set(repo):
     (repo / ".gitignore").write_text("models/procurement/ignored.ttl\n")
     (repo / "models/procurement/ignored.ttl").write_text("this is not turtle")

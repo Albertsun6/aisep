@@ -78,14 +78,16 @@ def resolve_main(repo, name="main"):
 
 def model_files(root):
     """Workspace model files, relative to the worktree root, sorted: tracked ∪ untracked-and-not-ignored .ttl under
-    models/ (subdirectories included). Ignored files and files of nested repositories are not part of the model."""
+    models/ (subdirectories included), minus tracked files deleted from disk. Ignored files and files of nested
+    repositories are not part of the model."""
     seen = set()
     for extra in ((), ("--others", "--exclude-standard")):
         rc, out, err = git(root, "ls-files", "-z", *extra, "--", "models/")
         if rc != 0:
             raise AisepError("NOT_A_GIT_REPO", f"git ls-files 失败：{err.strip()}", details={"repo": root})
         seen.update(p for p in out.split("\0") if p.endswith(".ttl"))
-    return sorted(seen)
+    # a tracked file deleted from disk is not part of the workspace model (content always comes from disk, §3.3)
+    return sorted(p for p in seen if os.path.lexists(os.path.join(root, p)))
 
 
 def read_file(root, relpath):
