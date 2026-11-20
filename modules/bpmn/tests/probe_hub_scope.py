@@ -7,7 +7,7 @@ Runs the vendored ArchiMate 4.0 shapes (archimate4_shapes.ttl) over the VALID BP
 It also checks that the same alignment does make BPMN visible to hub queries (what §7.1 needs).
 Exit 0 iff A fails, B passes and the query assertions hold.
 
-Run: /Users/yongqian/Desktop/AISEP/spike-linked-archi/.venv/bin/python modules/bpmn/tests/probe_hub_scope.py
+Run: $PY modules/bpmn/tests/probe_hub_scope.py   (PY = main checkout .venv/bin/python, see AGENTS.md)
 """
 import os
 import sys

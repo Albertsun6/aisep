@@ -1,5 +1,8 @@
 #!/bin/sh
 # AISEP: commits are accepted only when `gate` passes (spec §10.1, ADR-012 G10).
-PY="${AISEP_PY:-$HOME/Desktop/AISEP/spike-linked-archi/.venv/bin/python}"
+# Interpreter: $AISEP_PY, else the main checkout's .venv (shared by all worktrees).
+MAIN="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
+PY="${AISEP_PY:-$MAIN/.venv/bin/python}"
+[ -x "$PY" ] || { echo "pre-commit: no interpreter at $PY — run: uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt (in $MAIN)" >&2; exit 1; }
 cd "$(git rev-parse --show-toplevel)" || exit 1
 exec "$PY" tools/aisep.py gate
