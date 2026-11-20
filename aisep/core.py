@@ -187,7 +187,9 @@ def owner(mods, iri):
 # ------------------------------------------------------------------ context: sources + store + build
 
 class Ctx:
-    def __init__(self, mods, sources, root=None):
+    def __init__(self, mods, sources, root=None, read=None):
+        """sources: model file paths. read: optional path -> bytes (gitio.read_file for workspace and snapshot files,
+        which refuses symlinks and non-regular files); None parses the paths directly (explicit CLI arguments)."""
         self.mods, self.sources = mods, sources
         self.root = root or (mods[0].root if mods else ROOT)
         self.problems = []   # (severity, layer, text)
@@ -195,11 +197,14 @@ class Ctx:
         self.prefixes = dict(NS)
         for f in sources:  # L0
             try:
-                parser = ox.parse(path=f, format=TTL)
+                parser = ox.parse(path=f, format=TTL) if read is None else ox.parse(read(f), format=TTL)
                 qs = list(parser)
                 self.prefixes.update({k: v for k, v in parser.prefixes.items() if k})
             except (SyntaxError, OSError) as e:
-                self.add("Violation", "L0", f"cannot parse {self.rel(f)}: {e}")
+                msg = str(e)
+                if read is not None and isinstance(e, SyntaxError):  # same text as a parse by path: "(file, line n)"
+                    msg = re.sub(r"\(line (\d+)\)$", lambda mm: f"({os.path.basename(f)}, line {mm.group(1)})", msg)
+                self.add("Violation", "L0", f"cannot parse {self.rel(f)}: {msg}")
                 continue
             if any(isinstance(q.object, ox.Triple) or isinstance(q.subject, ox.Triple) for q in qs):
                 self.add("Violation", "L0", f"{self.rel(f)} uses an RDF 1.2 triple term <<( )>>, forbidden in AISEP models")

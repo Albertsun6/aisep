@@ -17,7 +17,8 @@ Default model files = models/**/*.ttl. Problem lines start with [Violation], [Wa
 
 Engines: pyoxigraph for everything (parse, store, SPARQL, L1/L2/L4, build, impact); pyshacl only for L3.
 """
-import glob, os, subprocess, sys, time
+import glob, os, subprocess, sys, tempfile, time
+from xml.etree import ElementTree
 
 import pyoxigraph as ox
 
@@ -25,13 +26,22 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)  # the aisep/ library package; this file has the same name, so the repo root must come first
 from aisep.core import (AISEP, ARCH, Ctx, dependencies, discover, expand, impact, l3, l4, rel,  # noqa: E402
                         run_check, short)
+from aisep import gitio  # noqa: E402
 from aisep.errors import AisepError  # noqa: E402
 
 
 # ------------------------------------------------------------------ commands
 
 def model_files(args):
-    return [os.path.abspath(a) for a in args] or sorted(glob.glob(os.path.join(ROOT, "models", "**", "*.ttl"), recursive=True))
+    """(files, read) for Ctx. Explicit arguments are parsed as given. Default: the workspace file set of §3.3 (tracked
+    + untracked-not-ignored .ttl under models/, the same rule as the MCP server), read without following symlinks;
+    outside a Git checkout (e.g. an exported tarball) every models/**/*.ttl."""
+    if args:
+        return [os.path.abspath(a) for a in args], None
+    rc, top, _ = gitio.git(ROOT, "rev-parse", "--show-toplevel")
+    if rc != 0 or os.path.realpath(top.strip()) != os.path.realpath(ROOT):
+        return sorted(glob.glob(os.path.join(ROOT, "models", "**", "*.ttl"), recursive=True)), None
+    return [os.path.join(ROOT, f) for f in gitio.model_files(ROOT)], lambda f: gitio.read_file(ROOT, rel(f))
 
 
 def report(ctx, layers):
@@ -42,9 +52,9 @@ def report(ctx, layers):
     return n("Violation"), n("Warning"), n("Info")
 
 
-def cmd_check(files):
+def cmd_check(files, read=None):
     t = time.time()
-    ctx = Ctx(discover(), files)
+    ctx = Ctx(discover(), files, read=read)
     if any(p[1] == "L0" for p in ctx.problems):
         v, w, i = report(ctx, ("L0",))
     else:
@@ -54,9 +64,9 @@ def cmd_check(files):
     return 1 if v else 0
 
 
-def cmd_validate(files):
+def cmd_validate(files, read=None):
     t = time.time()
-    ctx = Ctx(discover(), files)
+    ctx = Ctx(discover(), files, read=read)
     if not any(p[1] == "L0" for p in ctx.problems):
         l3(ctx)
     v, w, i = report(ctx, ("L0", "L3"))
@@ -64,11 +74,11 @@ def cmd_validate(files):
     return 1 if v else 0
 
 
-def cmd_gate(files):
+def cmd_gate(files, read=None):
     """G10: the one CI / pre-commit entry point — L0..L4 atomically on one context (check + validate + findings),
     one combined summary, exit 1 if any layer reports a Violation."""
     t = time.time()
-    ctx = Ctx(discover(), files)
+    ctx = Ctx(discover(), files, read=read)
     if not any(p[1] == "L0" for p in ctx.problems):
         run_check(ctx)
         l3(ctx)
@@ -81,8 +91,8 @@ def cmd_gate(files):
     return 1 if v else 0
 
 
-def cmd_build(files):
-    ctx = Ctx(discover(), files)
+def cmd_build(files, read=None):
+    ctx = Ctx(discover(), files, read=read)
     v, _, _ = report(ctx, ("L0", "build"))  # build Warnings: ignored/ambiguous approval records (R3)
     out = os.path.join(ROOT, "build", "graph.nq")
     quads = ctx.write_build(out)
@@ -95,18 +105,18 @@ def cmd_build(files):
     return 1 if v else 0
 
 
-def cmd_findings(files):
-    ctx = Ctx(discover(), files)
+def cmd_findings(files, read=None):
+    ctx = Ctx(discover(), files, read=read)
     l4(ctx)
     v, w, i = report(ctx, ("L0", "L4"))
     print(f"SUMMARY findings warnings={w} infos={i}")
     return 0
 
 
-def cmd_query(q, files):
+def cmd_query(q, files, read=None):
     if os.path.isfile(q):
         q = open(q, encoding="utf-8").read()
-    ctx = Ctx(discover(), files)
+    ctx = Ctx(discover(), files, read=read)
     report(ctx, ("L0",))
     res = ctx.store.query(q, prefixes=ctx.prefixes, use_default_graph_as_union=True)
     if isinstance(res, ox.QueryBoolean) or isinstance(res, bool):
@@ -137,7 +147,8 @@ def cmd_impact(args):
         mode = args[i + 1]; args = args[:i] + args[i + 2:]
     if not args or mode not in ("depends", "ripple"):
         sys.exit("usage: aisep.py impact <element> [--mode depends|ripple] [--depth N] [--allow-invalid] [model files...]")
-    ctx = Ctx(discover(), model_files(args[1:]))
+    files, read = model_files(args[1:])
+    ctx = Ctx(discover(), files, read=read)
     if not any(p[1] == "L0" for p in ctx.problems):
         run_check(ctx)  # G9: impact over an L1/L2-invalid model is refused unless --allow-invalid
     v = sum(1 for p in set(ctx.problems) if p[0] == "Violation")
@@ -193,6 +204,26 @@ def run_fixture(mods, fixture):
     return bool(hit), (hit[0][:160] if hit else f"expected '{expect}', got: {(v or ['no violation'])[0][:140]}")
 
 
+def run_pytest(tests_dir):
+    """aisep-mcp/tests (pytest, docs/mcp-interface.md §11): one result row per test case, from the JUnit XML report."""
+    if not os.path.isdir(tests_dir):
+        return []
+    with tempfile.TemporaryDirectory() as tmp:
+        xml = os.path.join(tmp, "junit.xml")
+        p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", f"--junitxml={xml}", tests_dir],
+                           cwd=ROOT, capture_output=True, text=True, timeout=1800)
+        cases = ElementTree.parse(xml).getroot().iter("testcase") if os.path.isfile(xml) else []
+        rows = []
+        for c in cases:
+            bad = c.find("failure") if c.find("failure") is not None else c.find("error")
+            detail = (bad.get("message") or "").splitlines()[0][:160] if bad is not None else ""
+            rows.append(("pytest", c.get("name"), "pytest", bad is None, detail))
+    if not rows or p.returncode not in (0, 1):  # collection error, usage error, pytest missing
+        tail = (p.stdout + p.stderr).strip().splitlines()
+        rows.append(("pytest", os.path.relpath(tests_dir, ROOT), "pytest", False, tail[-1][:160] if tail else f"exit {p.returncode}"))
+    return rows
+
+
 def cmd_test():
     mods = discover()
     results = []
@@ -215,6 +246,7 @@ def cmd_test():
         p = subprocess.run([sys.executable, py], cwd=ROOT, capture_output=True, text=True, timeout=900)
         tail = (p.stdout + p.stderr).strip().splitlines()
         results.append(("acceptance", os.path.basename(py), "script", p.returncode == 0, tail[-1][:160] if tail else ""))
+    results += run_pytest(os.path.join(ROOT, "aisep-mcp", "tests"))
     w = max([len(r[0]) for r in results] + [6]), max([len(r[1]) for r in results] + [7])
     print(f"{'module':<{w[0]}}  {'fixture':<{w[1]}}  kind     result  detail")
     for mod, fx, kind, ok, detail in results:
@@ -235,9 +267,9 @@ def main(argv):
     if cmd == "query":
         if not args:
             print(__doc__); return 2
-        return cmd_query(args[0], model_files(args[1:]))
+        return cmd_query(args[0], *model_files(args[1:]))
     return {"build": cmd_build, "check": cmd_check, "validate": cmd_validate, "findings": cmd_findings,
-            "gate": cmd_gate}[cmd](model_files(args))
+            "gate": cmd_gate}[cmd](*model_files(args))
 
 
 if __name__ == "__main__":
