@@ -11,7 +11,7 @@
 # AISEP closed-world rules (spec §4, §6.6). Upstream core is open-world; these close it.
 # Every constraint is SHACL-SPARQL and SELF-TARGETING (its WHERE clause re-states the target pattern), so that
 # `aisep.py check` (L1) can run the same queries in pyoxigraph with $this unbound, and pyshacl (L3) can run them
-# with $this pre-bound. Keep queries free of MINUS and of the word "SERVICE" (pyshacl rejects both).
+# with $this pre-bound. Keep queries free of MINUS, VALUES and of the word "SERVICE" (SHACL §5.3.1 pre-binding; pyshacl rejects all three).
 
 aisepsh:prefixes a owl:Ontology ;
     sh:declare
@@ -95,8 +95,7 @@ aisepsh:ForbiddenTermShape a sh:NodeShape ;
         sh:message "AISEP: forbidden term {?p} (deprecated in Linked.Archi core or banned by AISEP); use arch:inModel / arch:inView and a qualified relationship instead." ;
         sh:prefixes aisepsh:prefixes ;
         sh:select """SELECT $this ?p WHERE {
-            VALUES ?p { arch:partOfModel arch:exposedInView arch:contains rdf:reifies }
-            $this ?p ?o . }""" ] .
+            $this ?p ?o . FILTER(?p IN (arch:partOfModel, arch:exposedInView, arch:contains, rdf:reifies)) }""" ] .
 
 # ---- Qualified relationships ----
 aisepsh:RelationshipShape a sh:NodeShape ;
