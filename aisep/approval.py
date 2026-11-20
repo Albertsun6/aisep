@@ -271,10 +271,13 @@ def _unstage_and_maybe_delete(w, rel, written_sha, staged=True):
 
 
 def _taken(w, rel, what, **details):
+    """details.commit stays our own approval commit A (only when there is one); C, the commit that took the record, is
+    takenByCommit. Not retryable: C is not an approval commit, so a retry stops at STALE_HEAD before the dedupe."""
     c = gitio.git(w, "log", "-1", "--format=%H", "HEAD", "--", rel)[1].strip()
-    return AisepError("CONFLICT", f"{what}；{rel} 已被另一个提交 {c[:7]} 带走，未回滚（不动 index 和文件）", retryable=True,
-                      hint="重试会按去重键找到这条记录；若该提交不应包含它，人工处理",
-                      details=dict(details, reason="taken-by-other-commit", commit=c))
+    return AisepError("CONFLICT", f"{what}；{rel} 已被另一个提交 {c[:7]} 带走，未回滚（不动 index 和文件）", retryable=False,
+                      hint=f"不要重试（会报 STALE_HEAD）：人工检查提交 {c[:7]}（git show {c[:7]}），决定保留还是撤回其中的"
+                           "记录，之后在新的 headCommit 上重新批准",
+                      details=dict(details, reason="taken-by-other-commit", takenByCommit=c))
 
 
 def _stuck(rel, what, **details):
@@ -460,7 +463,8 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
                 raise _taken(w, rel, f"{rel} 在提交前被改动")
             if undone == "stuck":
                 raise _stuck(rel, f"{rel} 在提交前被改动")
-            raise AisepError("CONFLICT", f"{rel} 在提交前被改动，已从 index 移除、保留文件", retryable=True)
+            raise AisepError("CONFLICT", f"{rel} 在提交前被改动，已从 index 移除、保留文件", retryable=False,
+                             hint=f"人工检查保留的 {rel}（已被别人改过，不自动删除）；处理后再重新批准", details={"fileKept": True})
         msg = f"aisep: {gate} {decision} {rec_local}"
         cmd = ["git", "-C", w, "-c", "trailer.ifexists=add", "commit", "-q", "--only", "-m", msg,
                "--trailer", f"AISEP-Evidence: {head}"]
@@ -492,7 +496,7 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
                                  hint="人工检查分支历史", details={"commit": a})
             undone = _unstage_and_maybe_delete(w, rel, written)
             if undone == "taken":
-                raise _taken(w, rel, f"提交期间分支有新提交，已撤回提交 {a[:7]}")
+                raise _taken(w, rel, f"提交期间分支有新提交，已撤回提交 {a[:7]}", commit=a)
             if undone == "stuck":
                 raise AisepError("STALE_HEAD", f"提交期间分支有新提交，已撤回提交 {a[:7]}，但 {rel} 仍在 index 和磁盘上",
                                  hint="人工恢复：" + _recover(rel), details={
@@ -580,6 +584,9 @@ def _misplaced(w, root, branch, msg, rel, written, blob, tip2):
     if undone == "stuck":
         raise AisepError("CONFLICT", f"{w} 在校验期间被切走，已撤回落错的提交，但 {rel} 仍在 index 和磁盘上", retryable=False,
                          hint="人工恢复：" + _recover(rel), details=dict(details, orphanApproval=True, recover=_recover(rel)))
+    if undone == "kept":
+        raise AisepError("CONFLICT", f"{w} 在校验期间被切走，已撤回落错的提交，但 {rel} 已被改动：保留文件、已移出 index",
+                         retryable=False, hint=f"人工检查保留的 {rel}（已被别人改过，不自动删除）；处理后再重新批准", details=dict(details, fileKept=True))
     raise AisepError("CONFLICT", f"{w} 在校验期间被切到别的分支，已撤回落错的批准提交，{branch} 未改动", retryable=True,
                      details=details)
 

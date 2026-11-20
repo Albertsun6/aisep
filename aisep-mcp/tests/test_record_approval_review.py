@@ -294,7 +294,8 @@ def test_agent_commit_between_add_and_commit(t, monkeypatch, agent):
       A^ != tip': step 7 takes A back (compare-and-swap) and answers STALE_HEAD (concurrent-commit); C kept, nothing
       of ours staged or on disk.
     - commit-a: `git commit -a` does take the intent-to-add record. Then CONFLICT, reason "taken-by-other-commit",
-      details.commit = C, retryable (§7.2: not a failed take-back; a retry finds the record by the dedupe key).
+      details.takenByCommit = C, no details.commit (this call made no commit A), retryable False (Albert 2026-11-21:
+      C is not an approval commit, so an unchanged retry meets STALE_HEAD, never the record by the dedupe key).
     In no case "已回滚", and never undo what HEAD already tracks (step 8 rolls back only what this call staged): a
     record committed in C stays on disk and is not staged for deletion.
     Failed on 26e7f7e (plain-commit took the record; reported "已回滚", staged its deletion, deleted the file).
@@ -327,8 +328,9 @@ def test_agent_commit_between_add_and_commit(t, monkeypatch, agent):
         assert staged(t) == [] and new_records(t) == [] and t.git("status", "--porcelain") == ""
     else:
         assert c_has_record, "fixture: git commit -a should take the intent-to-add record"
-        assert e.code == "CONFLICT" and e.retryable is True, (e.code, e.retryable)
-        assert e.details.get("reason") == "taken-by-other-commit" and e.details.get("commit") == c, e.details
+        assert e.code == "CONFLICT" and e.retryable is False, (e.code, e.retryable)
+        assert e.details.get("reason") == "taken-by-other-commit" and e.details.get("takenByCommit") == c, e.details
+        assert "commit" not in e.details, e.details
         assert os.path.exists(t.path(rel)), "committed record deleted from disk"
         assert t.git("status", "--porcelain") == "", "committed record staged for deletion or changed"
 
