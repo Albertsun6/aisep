@@ -80,5 +80,5 @@
 ## 出口条件
 - 第 2–7 节填完，每张表的 IRI 都在 `models/<slug>/am4.ttl` 中存在。
 - 每个目标至少有一个成果或需求关联；范围外至少一条；第 8 节无阻断项。
-- `tools/aisep.py gate models/<slug>/*.ttl` 结果为 PASS（只认 gate）。
+- `tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 结果为 PASS（只认 gate）。
 - **关口评审**：按 `docs/adm/governance` 的流程评审，产出一条 `aisep:ApprovalRecord`（`aisep:gate aisep:GateRequirements`，见 governance 模板第 0 节的阶段—关口对照），`aisep:approves` 指向本阶段的目标与需求，`aisep:evidence` 为评审时的 commit。批准记录写在 `models/<slug>/governance.ttl`，参考 `models/procurement/governance.ttl`。

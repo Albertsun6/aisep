@@ -12,7 +12,7 @@
 
 ## 1. 入口条件
 - [ ] 数据架构已过“架构决策”关口（限界上下文与聚合已批准）
-- [ ] `$PY tools/aisep.py gate models/<slug>/*.ttl` 为 PASS
+- [ ] `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 为 PASS
 
 ## 2. 系统边界（应用组件）
 <每个应用组件一行。原则：组件边界对齐限界上下文，一个上下文只落在一个组件里；一个组件可以组合多个上下文。>
@@ -75,5 +75,5 @@
 ## 10. 出口条件（关口评审）
 - [ ] 每个限界上下文落在恰好一个应用组件里；每条跨组件集成都能对应到一条上下文映射
 - [ ] 技术基线每项有选型与理由；偏离架构原则的有 ADR
-- [ ] `$PY tools/aisep.py gate models/<slug>/*.ttl` 为 PASS，L2 Warning 与 L4 发现项逐条处置
+- [ ] `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 为 PASS，L2 Warning 与 L4 发现项逐条处置
 - [ ] 已按 `docs/adm/governance/` 完成“架构决策”关口评审并写入批准记录（`aisep:ApprovalRecord`，`aisep:gate aisep:GateArchitecture`，`aisep:evidence` 为评审时的 commit；经 MCP 时用 `governance.record_approval`）；不手写 `arch:approvalState`

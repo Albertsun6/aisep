@@ -13,7 +13,7 @@
 ## 1. 入口条件
 - [ ] 业务架构已过“架构决策”关口（存在对其元素的 `aisep:decision aisep:DecisionApproved` 批准记录）
 - [ ] 业务对象（`am4:BusinessObject`）与业务能力（`am4:Capability`）清单已在 `am4.ttl`
-- [ ] `$PY tools/aisep.py gate models/<slug>/*.ttl` 为 PASS
+- [ ] `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 为 PASS
 
 ## 2. 子域划分
 <列出子域，每个说明类型与理由。核心域要说清“为什么是差异化竞争力”。>
@@ -76,6 +76,6 @@
 
 ## 9. 出口条件（关口评审）
 - [ ] 每个 `am4:BusinessObject` 至少被一个聚合实现；每类主数据只有一个权威聚合
-- [ ] `$PY tools/aisep.py gate models/<slug>/*.ttl` 为 PASS，L4 发现项已逐条处置
+- [ ] `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 为 PASS，L4 发现项已逐条处置
 - [ ] 已按 `docs/adm/governance/` 完成“架构决策”关口评审，并写入批准记录：`aisep:ApprovalRecord`，`aisep:gate aisep:GateArchitecture`，`aisep:approves` 指向本阶段元素，`aisep:evidence` 为评审时的 commit；经 MCP 时用 `governance.record_approval`
 - [ ] 不手写 `arch:approvalState`（由构建推导）

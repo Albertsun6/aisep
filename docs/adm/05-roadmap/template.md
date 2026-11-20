@@ -12,7 +12,7 @@
 
 ## 1. 入口条件
 - [ ] 数据架构、应用 + 技术架构均已过“架构决策”关口
-- [ ] `$PY tools/aisep.py gate models/<slug>/*.ttl` 为 PASS
+- [ ] `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 为 PASS
 
 ## 2. 差距分析（机会与解决方案）
 <比较基线与目标，列出差距。ArchiMate 4.0 已无 Gap 元素，差距只记在本表，不进模型；每个差距要能落到第 4 节的某个工作包。>
@@ -67,5 +67,5 @@
 ## 10. 出口条件（关口评审）
 - [ ] 目标态的每个应用组件、节点至少被一个交付物实现，并属于某个平台期
 - [ ] 工作包之间的 `am4:Triggering` 无环、无孤立工作包
-- [ ] `$PY tools/aisep.py gate models/<slug>/*.ttl` 为 PASS，L4 发现项逐条处置
+- [ ] `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 为 PASS，L4 发现项逐条处置
 - [ ] 已按 `docs/adm/governance/` 完成“架构决策”关口评审并写入批准记录（`aisep:ApprovalRecord`，`aisep:gate aisep:GateArchitecture`，`aisep:approves` 指向平台期与工作包，`aisep:evidence` 为评审时的 commit；经 MCP 时用 `governance.record_approval`）；不手写 `arch:approvalState`

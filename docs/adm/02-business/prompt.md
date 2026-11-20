@@ -35,7 +35,7 @@
 ### 写入规则
 - 通用写法（类型、`arch:inModel`、`@zh` 名称、IRI、只写限定关系、不写 `arch:approvalState`）见 `AGENTS.md` 硬规则与 `docs/module-contract.md`「Authoring profile」，这里不重复；不改 `vendor/`、`modules/`、`tools/`，不自造批准记录。
 - MCP Server 可用时只通过规范 §8.3 的工具写（`model.add_element`、`model.add_relationship`、`model.remove`），被拒绝时读原因，改模型或问用户，不绕过；批准用 `governance.record_approval`。
-- 每改一批跑 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate models/<slug>/*.ttl`），直到 PASS；只认 gate，`model.check` / `model.validate` 只作诊断。
+- 每改一批跑 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')`），直到 PASS；只认 gate，`model.check` / `model.validate` 只作诊断。
 - "不做什么"写成 `aisep:priority aisep:Wont` 的 `am4:Requirement`。
 - 本阶段：MCP 不可用时编辑 `models/<slug>/am4.ttl` 与 `models/<slug>/bpmn.ttl`；类只用 template 表中列出的 am4 / BPMN 类（网关可无名称）。
   - **一个元素只属于一个记法**：同一流程在 am4 和 BPMN 各建一个节点，用 `arch:Refines`（源 = BPMN 节点，目标 = am4 节点）连接，不写 `a bpmn:Process , am4:Process` 这种混合类型。
@@ -47,7 +47,7 @@
 1. 业务架构文档第 1–5 节填完，表中每个 IRI 都在 `am4.ttl` / `bpmn.ttl` 中存在。
 2. 每个 `am4:Capability` 至少经 `am4:Realization` 连到一个愿景 `am4:Requirement`（不直接连目标、成果）。
 3. 每个关键 `am4:Process` 有 `am4:Assignment` 指定的执行角色，并恰好有一个 `bpmn:Process` refines 它；BPMN 图含开始/结束事件和已确认的异常分支。
-4. `$PY tools/aisep.py gate models/<slug>/*.ttl` 输出 `result=PASS`，把 SUMMARY 行贴在汇报里；L4 发现项逐条说明处理意见。
+4. `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 输出 `result=PASS`，把 SUMMARY 行贴在汇报里；L4 发现项逐条说明处理意见。
 5. 向用户提交**关口摘要**（原则五）：做了什么、依据哪些标准和模型、新增元素清单（IRI + 中文名）、待决问题、需要人拍板的点。
 6. 停在关口：按 `docs/adm/governance/` 发起评审，由人批准后才新增 `aisep:ApprovalRecord`
    （MCP 可用时用 `governance.record_approval`）。**未经批准不进入数据架构阶段。**

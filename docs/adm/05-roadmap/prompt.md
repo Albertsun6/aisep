@@ -10,7 +10,7 @@
 1. `AGENTS.md`（硬规则与 `$PY`）；`docs/principles.md`；`docs/methodology.md` §3
 2. `docs/metamodel-spec.md` §3、§4、§6.1、§6.6（批准与 Superseded 推导）、§7.2（合并与拆分）、§9（影响分析）、§10
 3. `docs/module-contract.md` 的 “Authoring profile” 一节（`dcterms:isReplacedBy` 规则）
-4. 前序阶段交付物：`docs/adm/02-business/`、`03-data/`、`04-app-tech/`，以及 `models/<slug>/*.ttl`
+4. 前序阶段交付物：`docs/adm/02-business/`、`03-data/`、`04-app-tech/`，以及 `models/<slug>/` 下全部 `.ttl`（含 `governance/` 子目录）
 5. 本阶段模板：`docs/adm/05-roadmap/template.md`
 
 先用 `model.query`（或 `$PY tools/aisep.py query`）列出目标态的组件、节点、服务、数据对象、Must 级需求及其批准状态，作为差距分析的底稿；用 `model.impact`（或 `aisep.py impact --mode ripple`）评估每个替换对象的波及范围。
@@ -30,7 +30,7 @@
 ## 写入规则
 - 通用写法（类型、`arch:inModel`、`@zh` 名称、IRI、只写限定关系、不写 `arch:approvalState`）见 `AGENTS.md` 硬规则与 `docs/module-contract.md`「Authoring profile」，这里不重复；不改 `vendor/`、`modules/`、`tools/`，不自造批准记录。
 - MCP Server 可用时只通过规范 §8.3 的工具写（`model.add_element`、`model.add_relationship`、`model.remove`），被拒绝时读原因，改模型或问用户，不绕过；批准用 `governance.record_approval`。
-- 每改一批跑 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate models/<slug>/*.ttl`），直到 PASS；只认 gate，`model.check` / `model.validate` 只作诊断。
+- 每改一批跑 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')`），直到 PASS；只认 gate，`model.check` / `model.validate` 只作诊断。
 - "不做什么"写成 `aisep:priority aisep:Wont` 的 `am4:Requirement`。
 - 本阶段：
   - 差距不进模型（ArchiMate 4.0 无 Gap 元素），只记在模板第 2 节。
