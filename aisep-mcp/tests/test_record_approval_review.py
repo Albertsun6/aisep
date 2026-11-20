@@ -7,6 +7,8 @@ Two tests failed on the implementation as reviewed (b858c19) and passed once 685
     `branch` checked out, so the approval landed on another branch while the result said `branch`.
   - test_rollback_when_index_locked_at_commit: step 8 ignored the exit status of `git rm --cached`; when it failed the
     file was deleted anyway and COMMIT_FAILED said "已回滚" while the index still staged the record.
+One test fails on f9c2338 and is marked xfail(strict=True); drop the mark once fixed:
+  - test_branch_switched_in_worktree_after_recheck_before_commit: W switched after the locked symbolic-ref check.
 
 Injection points are module attributes of aisep.approval / aisep.gitio replaced with monkeypatch (same style as
 test_approval_extra.py): gitio.locate_worktree returns before the lock is taken; approval._sha_file is first called
@@ -89,6 +91,43 @@ def test_branch_switched_in_worktree_before_lock(t, monkeypatch):
     assert t.rev("refs/heads/feat/x") == t.head
     assert t.rev("refs/heads/feat/y") == t.head
     assert new_records(t) == [] and staged(t) == []
+
+
+@pytest.mark.xfail(strict=True, reason="f9c2338: symbolic-ref 只在锁内复验时核对一次（approval.py:380），之后到 git commit "
+                                       "之间 W 被切到 feat/y，提交落在 feat/y、A^ 仍等于 tip'，工具报告成功提交到 feat/x")
+def test_branch_switched_in_worktree_after_recheck_before_commit(t, monkeypatch):
+    """§5.9 step 7: the write lock only excludes model_* writers; an agent's own `git checkout` in W can still happen
+    after the locked symbolic-ref check and before `git commit`. Here W switches to feat/y (from tip', so A^ == tip'
+    and the parent check alone does not see it) right before the record file is written.
+    Never a reported success. Two honest end states:
+    - taken back: feat/x and feat/y both still at headCommit, the record neither staged nor on disk; the error is
+      STALE_HEAD or CONFLICT (§5.9 does not name this case: 待定);
+    - not taken back: CONFLICT, retryable false, details.commit = the stray commit A and a hint for the human — same as
+      step 7's failed compare-and-swap take-back ("不再动分支，报 CONFLICT（不可重试），details 给出 A 和恢复提示").
+    In both, refs/heads/feat/x never gets an approval commit.
+    变红 (once fixed): drop the post-commit check that the commit landed on refs/heads/<branch>."""
+    real = approval._write_new
+
+    def switch_then_write(w, rel, data):
+        gitio.git(w, "checkout", "-q", "-b", "feat/y")
+        return real(w, rel, data)
+    monkeypatch.setattr(approval, "_write_new", switch_then_write)
+    try:
+        r = call(t)
+    except AisepError as e:
+        err_ = e
+    else:
+        pytest.fail(f"reported success: commit {r['commit'][:7]} on {r['branch']}; "
+                    f"feat/x={t.rev('refs/heads/feat/x')[:7]} feat/y={t.rev('refs/heads/feat/y')[:7]}")
+    assert t.rev("refs/heads/feat/x") == t.head
+    y = t.rev("refs/heads/feat/y")
+    if y == t.head:
+        assert err_.code in ("STALE_HEAD", "CONFLICT"), err_.code
+        assert new_records(t) == [] and staged(t) == []
+    else:
+        assert t.rev(f"{y}^") == t.head  # the fixture: the stray approval commit sits on feat/y
+        assert err_.code == "CONFLICT" and err_.retryable is False, (err_.code, err_.retryable)
+        assert err_.details.get("commit") == y and err_.hint
 
 
 # ================================================================== 2. rollback when index.lock is held
