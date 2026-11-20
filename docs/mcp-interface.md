@@ -1343,10 +1343,10 @@ T1 用保守正则（≤64、只含 `[a-zA-Z0-9_-]`）断言，不依赖具体�
 
 | §8.3 逻辑名 | 线上名 | 本文 | `tools/aisep.py` / 规则映射 | 状态 |
 |---|---|---|---|---|
-| `model.add_element` | `model_add_element` | §5.2 | 校验：`run_check` L948–950；TypeShape / InModelShape / LabelShape（aisep-core `shapes.ttl` L29 / L53 / L73）；R2 `l1_one_notation` L643–655；G7 `l1_closed_predicates` L620–641；抽象类 `ABSTRACT_ROOTS` L64。写入：无 | GAP（校验复用 EXISTS） |
-| `model.add_relationship` | `model_add_relationship` | §5.3 | 判定：`l1_notation_mixing` L657–691（§7.3、G5）、`l1_refines` L693–723（§7.2）、`l2` L726–759 + `rt_table` L765–778；IRI：`Ctx.uf` L230、`nearest` L255–259；每个关系类都声明 `arch:unqualifiedForm`（RelationshipShape，`shapes.ttl` L102 起）。写入：无 | GAP（规则 EXISTS） |
-| `model.remove` | `model_remove` | §5.5 | 找引用：`Ctx.relationships` L316–319、`src_quads`（L205）；兜底：EndpointShape（`shapes.ttl` L126 起）；`ELEMENT_LINK_OK` L83–88。级联逻辑：无（§8.2"未原型化"） | GAP |
-| （扩展）`model.set_labels` | `model_set_labels` | §5.10 | 校验：`run_check` L948–950、LabelShape（`shapes.ttl` L73）。按主语块改写标签：无 | GAP（校验 EXISTS，扩展 §8.3） |
+| `model.add_element` | `model_add_element` | §5.2 | 校验：`run_check` L948–950；TypeShape / InModelShape / LabelShape（aisep-core `shapes.ttl` L29 / L53 / L73）；R2 `l1_one_notation` L643–655；G7 `l1_closed_predicates` L620–641；抽象类 `ABSTRACT_ROOTS` L64。写入：已实现（S4a，PR #15）：`aisep/write_tools.py` 的 `model_add_element`，写入层 `aisep/writer.py`（`rewrite_blocks`、`check_equivalence`）；只拒绝新增违规。测试 `aisep-mcp/tests/test_write_tools.py`、`test_write.py`（T6、T7、T8 等）、`test_server.py` | EXISTS |
+| `model.add_relationship` | `model_add_relationship` | §5.3 | 判定：`l1_notation_mixing` L657–691（§7.3、G5）、`l1_refines` L693–723（§7.2）、`l2` L726–759 + `rt_table` L765–778；IRI：`Ctx.uf` L230、`nearest` L255–259；每个关系类都声明 `arch:unqualifiedForm`（RelationshipShape，`shapes.ttl` L102 起）。写入：已实现（S4a，PR #15）：`aisep/write_tools.py` 的 `model_add_relationship`（不写直连三元组），写入层 `aisep/writer.py`。测试 `aisep-mcp/tests/test_write_tools.py`、`test_write.py`、`test_server.py` | EXISTS |
+| `model.remove` | `model_remove` | §5.5 | 找引用：`Ctx.relationships` L316–319、`src_quads`（L205）；兜底：EndpointShape（`shapes.ttl` L126 起）；`ELEMENT_LINK_OK` L83–88。级联逻辑：已实现（S4b，PR #17）：`aisep/write_tools.py` 的 `model_remove`、`remove_plan`、`plan_digest`（`cascade` + `dryRun` + `planDigest`，重放幂等）。测试 `aisep-mcp/tests/test_remove.py`、`test_write_tools.py`（T18 等）、`test_server.py` | EXISTS |
+| （扩展）`model.set_labels` | `model_set_labels` | §5.10 | 校验：`run_check` L948–950、LabelShape（`shapes.ttl` L73）。按主语块改写标签：已实现（S4a，PR #15）：`aisep/write_tools.py` 的 `model_set_labels`，`aisep/writer.py` 的 `rewrite_blocks`。测试 `aisep-mcp/tests/test_write_tools.py`（T41）、`test_write.py`、`test_server.py` | EXISTS（扩展 §8.3） |
 | `model.check` | `model_check` | §5.4 | `cmd_check` L953–962 → `Ctx.__init__` L202–237（L0 在 L207–218）+ `run_check` L948–950（`l1` L491–539、`l2` L726–759） | EXISTS |
 | `model.validate` | `model_validate` | §5.4 | `cmd_validate` L965–972、`l3` L819–848 | EXISTS |
 | （扩展）`model.gate` | `model_gate` | §5.4 | `cmd_gate` L975–989（G10） | EXISTS（扩展 §8.3） |
@@ -1354,7 +1354,7 @@ T1 用保守正则（≤64、只含 `[a-zA-Z0-9_-]`）断言，不依赖具体�
 | `model.query` | `model_query` | §5.6 | `cmd_query` L1014–1033、`onto_files` L179–186（载入 L220–221） | EXISTS（查询核心）；`limit`/`truncated`、拒绝 `SERVICE` 为新增 |
 | `model.impact` | `model_impact` | §5.7 | `cmd_impact` L1047–1076（G9 L1060–1071）、`impact` L895–931（依赖方向 `aisep:dependency` L899）、`expand` L1036–1044 | EXISTS；结构化路径、未知元素报错为新增 |
 | `governance.record_approval` | `governance_record_approval` | §5.9 | `approval_problems` L396–433（G1；EG11/13/15/16/25/26；ApprovalRecordShape `shapes.ttl` L150 起）、`activity_problems` L435–468（EG17–24；AgentActivityShape `shapes.ttl` L237 起）、R3c `l1` L510–514、`derive_approval_state` L337–380；`AGENTS` L56 要按 Q4=C 拆成两个集合（§6.2）。写入、Git 取值与核对、提交：无 | GAP（校验与推导 EXISTS） |
-| `model.diff` | `model_diff` | §5.8 | 只可复用 `ox.parse` 用法（L207–218）、`short` L104–112、`model_graph_of` L470–475 | GAP |
+| `model.diff` | `model_diff` | §5.8 | 只可复用 `ox.parse` 用法（L207–218）、`short` L104–112、`model_graph_of` L470–475；实现：已实现（S3，PR #13）：`aisep/diff.py` 的 `model_diff`（Git 引用模式与 worktree 模式）。测试 `aisep-mcp/tests/test_diff.py`（T14、T15 等）、`test_server.py` | EXISTS |
 
 **全部工具共有的新建工作**：MCP 外壳（stdio + 本机 HTTP，§3.2）；把命令函数改为返回结构化结果（`report` L940–945 及各 `cmd_*`，§3.1）；§5.1 的写入流程、文件选择（含 `aisep#` 按 `aisep:loads` 判定的小函数）与新违规判定；§3.3 的仓库定位与统一文件集合（替换 `model_files` L936–937 的 glob）；§7 的错误模型。
 
