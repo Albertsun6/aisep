@@ -35,7 +35,7 @@
 ### 写入规则
 - 通用写法（类型、`arch:inModel`、`@zh` 名称、IRI、只写限定关系、不写 `arch:approvalState`）见 `AGENTS.md` 硬规则与 `docs/module-contract.md`「Authoring profile」，这里不重复；不改 `vendor/`、`modules/`、`tools/`，不自造批准记录。
 - MCP Server 可用时只通过规范 §8.3 的工具写（`model.add_element`、`model.add_relationship`、`model.remove`），被拒绝时读原因，改模型或问用户，不绕过；批准用 `governance.record_approval`。
-- 每改一批跑 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate models/<slug>/*.ttl`），直到 PASS；只认 gate，`model.check` / `model.validate` 只作诊断。
+- 每改一批跑 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')`），直到 PASS；只认 gate，`model.check` / `model.validate` 只作诊断。
 - "不做什么"写成 `aisep:priority aisep:Wont` 的 `am4:Requirement`。
 - 本阶段：MCP 不可用时编辑 `models/<slug>/am4.ttl`；类只用 template 表里列出的 am4 类；L2 报矩阵不允许的关系，换合法关系或问用户；不写 BPMN/DDD/UML，不写代码。
 
@@ -43,7 +43,7 @@
 1. 愿景文档第 2–7 节填完，表中每个 IRI 都在 `models/<slug>/am4.ttl` 中存在；第 5 节"范围外"至少一条，且每条已落成 `aisep:Wont` 需求。
 2. 每个 `am4:Goal` 至少关联一个 `am4:Outcome` 或 `am4:Requirement`；每个 `am4:Driver` 至少关联一个干系人或评估。
 3. Must 级需求已标 `aisep:priority aisep:Must`。
-4. `$PY tools/aisep.py gate models/<slug>/*.ttl` 输出 `result=PASS`，把 SUMMARY 行贴在汇报里。
+4. `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 输出 `result=PASS`，把 SUMMARY 行贴在汇报里。
 5. 向用户提交**关口摘要**（原则五）：做了什么、依据哪些标准和模型、新增元素清单（IRI + 中文名）、待决问题、需要人拍板的点。
 6. 停在关口：按 `docs/adm/governance/` 发起评审，由人批准后才新增 `aisep:ApprovalRecord`
    （MCP 可用时用 `governance.record_approval`）。**未经批准不进入业务架构阶段。**

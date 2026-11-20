@@ -80,6 +80,6 @@
 ## 出口条件
 - 第 1–5 节填完，表中 IRI 都在 `am4.ttl` / `bpmn.ttl` 中存在。
 - 每个能力至少经 `am4:Realization` 连到一个愿景需求；每个关键 `am4:Process` 有执行角色，并有 BPMN 细化。
-- `$PY tools/aisep.py gate models/<slug>/*.ttl` 为 PASS（只认 gate）。
+- `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')` 为 PASS（只认 gate）。
 - **关口评审**：按 `docs/adm/governance/` 的流程评审，产出一条 `aisep:ApprovalRecord`（`aisep:gate aisep:GateArchitecture`，见 governance 模板第 0 节的阶段—关口对照），
   `aisep:approves` 指向能力地图与关键流程，`aisep:evidence` 为评审时的 commit，写在 `models/<slug>/governance.ttl`。

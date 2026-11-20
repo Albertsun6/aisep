@@ -30,11 +30,11 @@
 
 ### 第二步：自动检查（只读）
 
-1. 在待批准的 commit 上（不要动用户当前的工作区，必要时用 `git worktree add` 建临时检出），运行 `$PY tools/aisep.py gate models/<slug>/*.ttl`（MCP 可用且服务端指向该检出时用 `model.gate`），记录 SUMMARY 行。FAIL 时停止评审，报告 Violation，不进入后续步骤。
+1. 在待批准的 commit 上（不要动用户当前的工作区，必要时用 `git worktree add` 建临时检出），运行 `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')`（MCP 可用且服务端指向该检出时用 `model.gate`），记录 SUMMARY 行。FAIL 时停止评审，报告 Violation，不进入后续步骤。
 2. 取模型差异：MCP 可用时调用 `model.diff`（不传 base，默认取与主分支的分叉点）；否则 `git merge-base` 后 `git diff <base>..<head> -- models/<slug>/`。
 3. 对每个被修改或删除的元素运行 `$PY tools/aisep.py impact <IRI> --mode depends`（MCP：`model.impact`）。
-4. 运行 `$PY tools/aisep.py findings models/<slug>/*.ttl`（MCP：`model.findings`），列出 L4 Warning。
-5. 需要核对追溯时，用 `$PY tools/aisep.py query '<SPARQL>' models/<slug>/*.ttl`（MCP：`model.query`）查询，不靠肉眼读文件下结论。
+4. 运行 `$PY tools/aisep.py findings $(find models/<slug> -name '*.ttl')`（MCP：`model.findings`），列出 L4 Warning。
+5. 需要核对追溯时，用 `$PY tools/aisep.py query '<SPARQL>' $(find models/<slug> -name '*.ttl')`（MCP：`model.query`）查询，不靠肉眼读文件下结论。
 
 ### 第三步：按清单核对，交给人裁决
 
@@ -47,7 +47,7 @@
 - MCP Server 可用时，只用 `governance.record_approval` 写入（evidence 自动填为 headCommit；有 AI 活动时一并传入活动信息）。
 - MCP Server 不可用时，按 `docs/module-contract.md` 的作者规范，**新建**一个文件 `models/<slug>/governance/<记录本地名>.ttl`，只写一条 `aisep:ApprovalRecord`（一条记录一个文件），字段按 `template.md` 第 4 节，参照 `models/procurement/governance.ttl`（其中是存量记录，不再往里追加）。
 - 禁止：写或修改 `arch:approvalState`；修改或删除已有批准记录；写任何"进行中"状态。结论变化只能新增记录。
-- 写完再跑一次 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate models/<slug>/*.ttl`），必须为 PASS。再跑 `$PY tools/aisep.py build models/<slug>/*.ttl`，确认没有"批准记录被忽略或有歧义"的 Warning。
+- 写完再跑一次 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate $(find models/<slug> -name '*.ttl')`），必须为 PASS。再跑 `$PY tools/aisep.py build $(find models/<slug> -name '*.ttl')`，确认没有"批准记录被忽略或有歧义"的 Warning。
 - 不执行 `git commit` / `git push`，除非用户明确要求。
 
 ### 完成标准

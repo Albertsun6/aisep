@@ -1146,7 +1146,7 @@ export const APPROVAL_STATE_IRI: Record<string, ApprovalState> = {
 
 - 新增：
 
-> - 历史批准的差异图和 gate 重跑依赖 headCommit 仍可达。模型仓库禁用 squash 合并和 rebase 合并，批准提交只经普通 merge 进受保护分支（ADR-014）；落实要同时做到：托管平台关闭 squash、rebase 两种 PR 合并方式，受保护分支禁止 force push、限制直接 push，PR 合并保留原提交（cherry-pick、rebase 都会生成新的 commit id）。这些是仓库托管平台的设置，元模型和 MCP 不检查；合并时校验已要求新记录的 evidence 是合并请求头的祖先（发布批准还须是目标分支头的祖先）。绕过它合入、或分支未合并就删除时，旧 commit 可能被 GC，历史批准无法重跑；管理员绕过分支保护、force push 后重开合并请求，同样可能让已合入记录的 evidence 不再可达。本仓库的 `main` 目前没有分支保护（2026-11-20 经 GitHub API 实测返回 Branch not protected），落实 Q5 须先配置。
+> - 历史批准的差异图和 gate 重跑依赖 headCommit 仍可达。模型仓库禁用 squash 合并和 rebase 合并，批准提交只经普通 merge 进受保护分支（ADR-014）；落实要同时做到：托管平台关闭 squash、rebase 两种 PR 合并方式，受保护分支禁止 force push、限制直接 push，PR 合并保留原提交（cherry-pick、rebase 都会生成新的 commit id）。这些是仓库托管平台的设置，元模型和 MCP 不检查；合并时校验已要求新记录的 evidence 是合并请求头的祖先（发布批准还须是目标分支头的祖先）。绕过它合入、或分支未合并就删除时，旧 commit 可能被 GC，历史批准无法重跑；管理员绕过分支保护、force push 后重开合并请求，同样可能让已合入记录的 evidence 不再可达。本仓库已于 2026-11-20 配置：只允许普通合并（关闭 squash、rebase），`main` 受保护（必需检查 `gate`、不要求分支最新、禁止 force push 与删除、管理员同样受约束）；未要求 PR 评审批准（个人仓库无第二人评审，人工批准靠 AGENTS.md「批准 #N」）。
 > - 合并时校验（evidence 到分支头之间只有批准提交、已有记录不可改、已批准元素改动须重批、合并结果 gate 等）、批准专用合并请求的判定、发布标签检查由 CI 执行，须设为受保护分支的必需检查；元模型和 MCP 不检查 CI 是否配上。不开"要求分支最新"、不用合并队列（个人账号的 private 仓库用不了合并队列），目标分支前进后必需检查不会自动重跑，所以合并前由执行合并的人用同一检查对当前目标分支头重算；绕过它直接在网页上点合并时，合并结果 gate 可能只对旧主线有效，这是残余风险。该检查脚本尚未实现。
 > - 进入受保护分支的批准记录 evidence 只能是 40 位 commit：`sha256:<64 位十六进制>` 形式 L1 合法，但合并时校验判断不了它与分支的祖先关系，一律拒绝；它只适用于不经合并进受保护分支的场合。
 > - `release/*` 标签可被移动、删除，发布标签检查只在合并时看一次。应以托管平台的 tag ruleset 禁止删除与移动（private 仓库需 GitHub Pro 及以上）；未配置时为残余风险。
@@ -1344,7 +1344,7 @@ T1 用保守正则（≤64、只含 `[a-zA-Z0-9_-]`）断言，不依赖具体�
 |---|---|---|---|
 | 合并时校验与合并前重算的检查脚本（口径、检查项 1–6、批准专用 PR 判定、发布标签检查；CI 与执行合并的人共用一个脚本） | §5.9"合并时校验""合并前重算""批准专用 PR""发布关口"第 4 步 | 无。现有 `.github/workflows/gate.yml` 只在 PR 检出上跑 `aisep.py gate`，`actions/checkout` 用缺省浅克隆（未设 `fetch-depth: 0`）；判据函数（第 1 步）、源图差异（§5.8）、推导（`derive_approval_state` L337–380）、`approval_problems`（L396–433）可复用 | GAP |
 | 记录文件放在 `models/<slug>/governance/` 子目录（U2） | §3.3、§5.1、§5.9 第 1、5、7、8 步 | 第三轮处置矩阵记为"原型 `model_files` 的 glob 不含 governance/ 子目录"。执行会话核对：`glob(models/**/*.ttl, recursive=True)` 会匹配子目录（临时目录实测读到 `models/p/governance/x.ttl`），`model_graph_of`（L470–475）按文件内容的 `arch:inModel` 归属模型、不看目录，原型能读到子目录里的记录。仍要新写：统一文件集合函数对子目录的用例（T43）、判据 (b) 的路径匹配（只认 `models/<slug>/governance/` 下一层的新增文件）、记录文件的新建、`git add` 与回滚 | GAP（原型读取 EXISTS） |
-| ADM 文档中的 `gate models/<slug>/*.ttl` 命令（`docs/adm/` 下 24 处）| §3.3 | shell 展开不含 `governance/` 子目录，新记录文件不被检查；不带参数时原型递归读取全部模型（`model_files` L936–937）。GAP：CLI 增加按模型目录递归的参数，或把这些命令改为不带文件参数 |
+| ADM 文档中的 `gate models/<slug>/*.ttl` 命令（`docs/adm/` 下 24 处）| §3.3 | shell 展开不含 `governance/` 子目录，新记录文件不被检查。2026-11-20 已改：命令统一为 `$(find models/<slug> -name '*.ttl')`（递归含子目录），两处非命令的引用改为文字说明；CLI 未加新参数 | 已解决（文档） |
 
 ---
 
@@ -1466,7 +1466,7 @@ T1 用保守正则（≤64、只含 `[a-zA-Z0-9_-]`）断言，不依赖具体�
 | 网页 Resolve conflicts | 把整个 base 分支合进 head 分支 → `evidence..PR 头` 出现合并提交，按判据拒绝（§5.9 检查项 3） | GitHub Docs：在 GitHub 上解决合并冲突（Resolving a merge conflict on GitHub） |
 | 不开"要求分支最新"时 | base 前进不会自动重跑必需检查（推断，中高置信）→ U3 合并前重算 | GitHub Docs：关于受保护分支（About protected branches） |
 | tag ruleset | private 仓库需 GitHub Pro 及以上 → release 标签保护登记为附录 C 残余风险 | GitHub Docs：关于规则集（About rulesets） |
-| 本仓库 `main` 的分支保护 | 2026-11-20 实测无分支保护（API 返回 `Branch not protected`）→ 落实 Q5 前须先配置，登记附录 C | GitHub REST API：获取分支保护（`GET /repos/{owner}/{repo}/branches/main/protection`） |
+| 本仓库 `main` 的分支保护 | 2026-11-20 实测无分支保护（API 返回 `Branch not protected`）→ 落实 Q5 前须先配置，登记附录 C；同日已配置（见附录 C） | GitHub REST API：获取分支保护（`GET /repos/{owner}/{repo}/branches/main/protection`） |
 
 **逐条处置**
 
