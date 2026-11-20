@@ -482,25 +482,38 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
             "findings": findings}
 
 
-def _ours(root, commit, msg):
-    """The approval commit is recognised by its subject: it carries rec_local, unique across all refs (_free)."""
-    return gitio.git(root, "log", "-1", "--format=%s", commit)[1].strip() == msg
+def _our_commit(w, root, msg):
+    """SHA of this call's commit, from W's own HEAD reflog (newest first): the commit entry whose commit adds exactly
+    one file, models/<m>/governance/<rec_local>.ttl, against its parent. The subject does not identify it (any commit
+    may carry it); rec_local is unique across all refs (_free), so a commit adding that file is ours."""
+    name = msg.rsplit(" ", 1)[-1] + ".ttl"
+    log = gitio.git(w, "log", "-g", "-n", "50", "--format=%H%x00%gs", "HEAD")[1]
+    for line in log.splitlines():
+        sha, _, gs = line.partition("\0")
+        if not gs.startswith("commit"):  # not the subject: a commit-msg hook may rewrite it
+            continue
+        diff = gitio.git(root, "diff-tree", "-r", "--no-commit-id", "--name-status", sha)[1].splitlines()
+        if len(diff) == 1 and re.fullmatch(rf"A\tmodels/[^/]+/{GOV_DIR}/{re.escape(name)}", diff[0]):
+            return sha
+    return None
 
 
 def _landed(w, root, branch, msg):
-    """Our commit if it is the tip of refs/heads/<branch>, else None. Does not read HEAD: W may have been switched
+    """Our commit if refs/heads/<branch> points exactly at it, else None. Does not read HEAD: W may have been switched
     to another branch before `git commit`, which then moved that branch instead."""
-    rc, tip, _ = gitio.git(root, "rev-parse", "-q", "--verify", f"refs/heads/{branch}^{{commit}}")
-    tip = tip.strip()
-    return tip if rc == 0 and _ours(root, tip, msg) else None
+    a = _our_commit(w, root, msg)
+    tip = gitio.git(root, "rev-parse", "-q", "--verify", f"refs/heads/{branch}^{{commit}}")[1].strip()
+    return a if a and tip == a else None
 
 
 def _misplaced(w, root, branch, msg, rel, written):
-    """`git commit` moved whatever W had checked out. Take our commit back there with a compare-and-swap update-ref
-    (never touching refs/heads/<branch>), unstage and delete the record file, answer CONFLICT."""
-    out = gitio.git(root, "for-each-ref", "--format=%(refname) %(objectname)", "refs/heads/")[1].split("\n")
-    wrong = [(r, c) for r, c in (l.split(" ", 1) for l in out if l) if r != f"refs/heads/{branch}" and _ours(root, c, msg)]
-    details = {"reason": "worktree-switched", "worktree": w, "landedOn": [r for r, _ in wrong]}
+    """`git commit` moved whatever W had checked out. Take our commit (by SHA) back on the branches that point exactly
+    at it, with a compare-and-swap update-ref (never refs/heads/<branch>), unstage and delete the record file,
+    answer CONFLICT."""
+    a = _our_commit(w, root, msg)
+    out = gitio.git(root, "for-each-ref", "--format=%(refname)", f"--points-at={a}", "refs/heads/")[1] if a else ""
+    wrong = [(r, a) for r in out.split() if r != f"refs/heads/{branch}"]  # only branches whose tip IS our commit
+    details = {"reason": "worktree-switched", "worktree": w, "landedOn": [r for r, _ in wrong], "commit": a}
     if not wrong:  # not a branch tip anywhere (a commit stacked on it, or W was detached): leave index and file alone
         raise AisepError("CONFLICT", f"批准提交不在 {branch} 的顶端，也不是任何分支的顶端，未自动撤回", retryable=False,
                          hint=f"人工检查 {w} 的 HEAD 与分支历史，撤回 subject 为 {msg!r} 的提交", details=details)
