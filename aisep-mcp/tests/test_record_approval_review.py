@@ -13,7 +13,8 @@ Two tests failed on the implementation as reviewed (b858c19) and passed once 685
     (failed on 78bb9a1, pass on 9dbae0b): the commit was recognised by its subject.
   - test_plain_success_does_not_depend_on_the_reflog[reflog-off / reflog-expired-after-commit] (failed on 9dbae0b,
     pass on f9515a3): the commit was found only through W's HEAD reflog.
-Marked xfail(strict=True) on 1874d8f: test_hook_stacks_beyond_the_candidate_windows_still_names_a (fixed windows).
+  - test_hook_stacks_beyond_the_candidate_windows_still_names_a[off-21 / on-51] (failed on 1874d8f, pass on 79e202a):
+    A was searched for only in fixed windows (last 20 commits of W, last 50 reflog entries).
 
 Injection points are module attributes of aisep.approval / aisep.gitio replaced with monkeypatch (same style as
 test_approval_extra.py): gitio.locate_worktree returns before the lock is taken; approval._sha_file is first called
@@ -257,8 +258,6 @@ def test_post_commit_hook_commits_on_top(t):
     assert e.details.get("commit") == a and e.hint
 
 
-@pytest.mark.xfail(strict=True, reason="1874d8f: _our_commit 只看其他分支顶端、W 最近 20 个提交和 reflog 最近 50 条；"
-                                       "钩子在 A 上叠的提交超出这些窗口时找不到 A，details.commit 为空")
 @pytest.mark.parametrize("reflog,n", [("off", 21), ("on", 51)])
 def test_hook_stacks_beyond_the_candidate_windows_still_names_a(t, reflog, n):
     """Same as test_post_commit_hook_commits_on_top, but the hook stacks n commits on A: 21 with reflogs off (past the
@@ -266,7 +265,7 @@ def test_hook_stacks_beyond_the_candidate_windows_still_names_a(t, reflog, n):
     nothing is taken back (CONFLICT, not retryable, branch kept) — and §5.9 step 7 still requires details to name A.
     A is reachable from refs/heads/<branch>: it is the first-parent ancestor of the tip whose parent is tip', so no
     fixed window is needed to find it.
-    变红 (once fixed): bound the search for A to a fixed number of recent commits again."""
+    Failed on 1874d8f (details.commit None). 变红: bound the search for A to a fixed number of recent commits again."""
     if reflog == "off":
         _drop_reflogs(t)
     _hook_stacks(t, n)
