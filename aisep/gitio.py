@@ -142,3 +142,120 @@ def snapshot(repo, commit):
         yield tmp, files
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ---------------------------------------------------------------- worktrees, merge-base, committed blobs (§3.3, §5.8)
+
+def validate_branch_name(repo, name):
+    """A branch short name only: no path, no refs/…, no @{-1} (check-ref-format --branch must return it unchanged)."""
+    if not isinstance(name, str) or not name or name.startswith(("-", "/", "refs/")) or "\\" in name or "\0" in name:
+        raise AisepError("INVALID_ARGUMENT", f"只接受分支短名，收到 {name!r}", details={"rejectedFields": ["worktree"]})
+    rc, out, _ = git(repo, "check-ref-format", "--branch", name)
+    if rc != 0 or out.strip() != name:
+        raise AisepError("INVALID_ARGUMENT", f"{name!r} 不是合法的分支短名", details={"rejectedFields": ["worktree"]})
+
+
+def worktree_entries(repo):
+    rc, out, err = git(repo, "worktree", "list", "--porcelain", "-z")
+    if rc != 0:
+        raise AisepError("NOT_A_GIT_REPO", f"git worktree list 失败：{err.strip()}")
+    entries, cur = [], {}
+    for field in out.split("\0"):
+        if not field:
+            if cur:
+                entries.append(cur)
+            cur = {}
+            continue
+        k, _, v = field.partition(" ")
+        cur[k] = v
+    if cur:
+        entries.append(cur)
+    return entries
+
+
+def _common_dir(path):
+    rc, out, _ = git(path, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    return _real(out.strip()) if rc == 0 else None
+
+
+def locate_worktree(repo, branch, allow_roots=()):
+    """The worktree W where refs/heads/<branch> is checked out, found only among Git's own registrations, then checked:
+    realpath(W) under an allow-root (else PATH_OUTSIDE_ROOT) and W's common dir == repo's (else WORKTREE_NOT_FOUND)."""
+    validate_branch_name(repo, branch)
+    want = f"refs/heads/{branch}"
+    hits = [e for e in worktree_entries(repo) if e.get("branch") == want]
+    if not hits:
+        raise AisepError("WORKTREE_NOT_FOUND", f"分支 {branch} 没有检出的工作区",
+                         hint="改用 Git 引用模式：head 传分支名字符串", details={"branchExists": _ref_exists(repo, want)})
+    w = hits[0]["worktree"]
+    if "prunable" in hits[0] or not os.path.isdir(w):
+        raise AisepError("WORKTREE_NOT_FOUND", f"分支 {branch} 的工作区目录已不存在",
+                         details={"branchExists": True, "prunable": True})
+    if allow_roots and not under(w, allow_roots):
+        raise AisepError("PATH_OUTSIDE_ROOT", f"分支 {branch} 的工作区不在允许的根目录之下", details={"branch": branch})
+    if _common_dir(w) != _common_dir(repo):
+        raise AisepError("WORKTREE_NOT_FOUND", f"分支 {branch} 登记的工作区不属于本仓库", details={"branchExists": True})
+    return _real(w)
+
+
+def merge_base(repo, a, b):
+    rc, out, _ = git(repo, "merge-base", "--all", a, b)
+    found = out.split() if rc == 0 else []
+    if not found:
+        raise AisepError("NO_MERGE_BASE", f"{a[:7]} 与 {b[:7]} 没有共同祖先")
+    if len(found) > 1:
+        raise AisepError("AMBIGUOUS_MERGE_BASE", f"有 {len(found)} 个 merge-base（交叉合并），无法确定比较起点",
+                         hint="显式传 base", details={"candidates": found})
+    return found[0]
+
+
+def tree_entries(repo, commit, path):
+    """{path: (mode, type, sha)} of the entries directly under path in commit, keyed by full path ({} if absent)."""
+    rc, out, _ = git(repo, "ls-tree", "-z", commit, "--", path.rstrip("/") + "/")
+    res = {}
+    for rec in out.split("\0") if rc == 0 else ():
+        if rec:
+            meta, name = rec.split("\t", 1)
+            mode, typ, sha = meta.split()
+            res[name] = (mode, typ, sha)
+    return res
+
+
+def commit_files(repo, commit, prefixes=("models/",)):
+    """{path: bytes | "symlink" | "not-regular"} of the .ttl blobs under the prefixes in commit, read with one
+    cat-file --batch. A link (mode 120000) or gitlink is never followed."""
+    meta = {}
+    for prefix in prefixes:
+        rc, out, err = git(repo, "ls-tree", "-r", "-z", commit, "--", prefix)
+        if rc != 0:
+            raise AisepError("REF_NOT_FOUND", f"读不了提交 {commit} 的树：{err.strip()}", details={"ref": commit})
+        for rec in out.split("\0"):
+            if rec:
+                m, path = rec.split("\t", 1)
+                mode, typ, sha = m.split()
+                if path.endswith(".ttl"):
+                    meta[path] = (mode, typ, sha)
+    files = {p: ("symlink" if mode == "120000" else "not-regular") for p, (mode, typ, _) in meta.items()
+             if mode == "120000" or typ != "blob"}
+    want = [(p, sha) for p, (mode, typ, sha) in sorted(meta.items()) if p not in files]
+    if want:
+        p = subprocess.run(["git", "-C", repo, "cat-file", "--batch"], input="".join(f"{sha}\n" for _, sha in want).encode(),
+                           capture_output=True)
+        buf, pos = p.stdout, 0
+        for path, _ in want:
+            nl = buf.index(b"\n", pos)
+            size = int(buf[pos:nl].split()[2])
+            files[path] = buf[nl + 1:nl + 1 + size]
+            pos = nl + 1 + size + 1
+    return files
+
+
+def index_flags(w):
+    """{path: tag} from `ls-files -v` under models/: 'S' = skip-worktree, lowercase = assume-unchanged."""
+    rc, out, _ = git(w, "ls-files", "-v", "-z", "--", "models/")
+    return {rec[2:]: rec[0] for rec in out.split("\0") if rec} if rc == 0 else {}
+
+
+def sparse_checkout(w):
+    rc, out, _ = git(w, "config", "--bool", "core.sparseCheckout")
+    return rc == 0 and out.strip() == "true"
