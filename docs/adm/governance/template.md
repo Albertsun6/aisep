@@ -61,22 +61,22 @@
 
 | 字段 | 取值 |
 |---|---|
-| IRI | `{model}approval-{yyyymmdd}-{slug}`（规范 §3） |
+| IRI | `{model}approval-{yyyymmddHHMMSS}-{slug}`（UTC，规范 §3） |
 | 类型 | `aisep:ApprovalRecord`，带 `arch:inModel` 和一个 `@zh` 名称 |
 | `aisep:gate` | 第 0 节选定的关口 |
 | `aisep:decision` | 上面的结论 |
 | `aisep:approvedBy` | 批准人 IRI |
 | `aisep:approves` | 评审对象 IRI（一个或多个） |
-| `aisep:evidence` | 待批准版本的 40 位 commit 或 `sha256:<64 位十六进制>`，恰好一个 |
+| `aisep:evidence` | 待批准版本的 40 位 commit，恰好一个。`sha256:<64 位十六进制>` 形式 L1 合法，但合并时校验一律拒绝，只用于不经合并进主分支的场合（规范附录 C） |
 | `prov:generatedAtTime` | 批准时间（xsd:dateTime，带时区） |
 | `aisep:activity` | 可选：本次针对的 `aisep:AgentActivity`（代理、sessionRef、分支、起止时间、baseCommit、headCommit）；evidence 为 commit 时必须等于其 headCommit |
 
-- 优先通过 `governance.record_approval` 写入（自动填 evidence，可同时写入 `aisep:AgentActivity`）；MCP 不可用时按上表手写，再跑一次 gate。
+- 优先通过 `governance.record_approval` 写入（自动填 evidence，可同时写入 `aisep:AgentActivity`）；MCP 不可用时按上表手写，再跑一次 gate；要提交时按 `prompt.md` 第四步的手工提交配方，否则过不了合并时校验。
 - **不写 `arch:approvalState`**：构建时由最近一条合法批准记录推导（无记录 = Proposed，被替换 = Superseded）。改结论只能新增一条记录，不修改旧记录。
 
 ## 5. 变更管理
 
-- 所有变更走 Git 分支，合并前必须经过对应关口；没有批准记录的变更不进主分支。
-- 已批准的元素被修改后，旧批准不自动作废：评审时对照 `model.diff` 判断是否需要在原关口重新批准。
+- 所有变更走 Git 分支、经 PR 人工批准合入。未经关口批准的模型改动可以进主分支，在主分支上推导为 Proposed，由"待批准关口"列出（ADR-016）。
+- 已批准的元素被修改后，旧批准不自动作废：CI 要求同一 PR 内有一条新的、结论为 Approved 的合法批准记录覆盖它（关口不限，且须是该对象在合并结果中生效、即时间最晚的那条），否则拒绝合并；评审时对照 `model.diff` 看清改了什么。删除已批准元素一律拒绝，只能退役（ADR-015 U1）。
 - 合并或拆分元素：保留一个，其余标 `owl:deprecated true` + `dcterms:isReplacedBy`，追溯链迁移到保留的元素（规范 §7.2）。
 - 不存在"进行中"状态的记录（ADR-013）；进行中的工作只体现为分支上的文件差异。

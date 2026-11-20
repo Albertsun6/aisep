@@ -38,8 +38,8 @@
 | 元素 | `{model}{slug}` | `…/procurement/quoteApproval` |
 | 关系 | `{model}rel-{源slug}-{直连谓词本地名}-{目标slug}`，重名时加 `-2`。直连谓词本地名取关系类最近的 `arch:unqualifiedForm`；类没有声明时取类本地名，首字母小写。 | `…/procurement/rel-supplier-assignedTo-quoteApproval` |
 | 视图 | `{model}view-{slug}` | `…/procurement/view-quote` |
-| 批准记录 | `{model}approval-{yyyymmdd}-{slug}` | `…/procurement/approval-20261119-arch-baseline` |
-| AI 活动 | `{model}activity-{yyyymmdd}-{headCommit 前 7 位}`，重名时加 `-2` | `…/procurement/activity-20261120-9c41e07` |
+| 批准记录 | `{model}approval-{yyyymmddHHMMSS}-{slug}`（UTC；2026-11-20 前的存量记录按 `{yyyymmdd}` 命名，不改） | `…/procurement/approval-20261119-arch-baseline` |
+| AI 活动 | `{model}activity-{yyyymmddHHMMSS}-{headCommit 前 7 位}`（UTC），重名时加 `-2` | `…/procurement/activity-20261120093015-9c41e07` |
 
 - slug 用可读英文 camelCase。**一经创建不改**：改名只改标签。改标签经 `model.set_labels` 写入（§8.3）。IRI 由写入层生成（§8），不靠人记规则。
 - 跨模型引用直接写对方的 IRI；被引用元素被删除时 L1 报错（原型已验证）。
@@ -146,16 +146,16 @@
   - `aisep:decision` ∈ {Approved, Rejected}；
   - `aisep:approvedBy` → 人（必须是 `arch:Stakeholder` 的实例，且不能是 `aisep:AIAgent`；AI 不能批准，原则五）；
   - `prov:generatedAtTime`；
-  - `aisep:approves` → 一个或多个元素、模型或 ADR；
+  - `aisep:approves` → 一个或多个元素、模型或 ADR。允许集合：带 `arch:inModel` 的元素（不含 `aisep:ApprovalRecord`、`aisep:AgentActivity`、`arch:Stakeholder`）、`arch:Model` 实例、ADR（`ad:Decision`）；限定关系和视图不可被批准，它们的改动只计入所属模型、不计入端点元素。目标存在但类型不在集合内的记录不合法（L1 报错，不参与推导；ADR-016）；目标不存在的按原口径处理（不因此报 L1）；
   - `aisep:evidence`（**必填**，恰好一个）：批准时那次校验报告对应的 git commit（40 位十六进制）或 `sha256:<64 位十六进制>`，证明"批准的是哪个版本"。经 MCP 写入时自动填写：取调用方给出的 headCommit（人评审的那个提交；有活动时等于该活动的 `aisep:headCommit`），写入层核对它与分支头之间只有批准提交：其间不得有合并提交，每个提交都恰好带一个值等于所新增记录 evidence 的 `AISEP-Evidence` trailer、恰好新增一个 `models/<slug>/governance/` 下的 `.ttl` 普通文件（不进子目录，不修改、不删除已有文件）、且源图只新增一条批准记录（可另带一条被它引用的 AI 活动；无修改、无删除）；该核对在提交前持锁复做一次，提交后父提交不是被核对的分支头时撤回。写入前在该提交上运行 `gate`，结论为 Approved 而 gate 未通过时拒绝写入。
 
-    批准提交判据：一个提交只有一个父提交，恰好带一个 `AISEP-Evidence` trailer 且其值等于该提交新增记录的 evidence，相对父提交恰好新增一个文件（路径为 `models/<slug>/governance/<文件名>.ttl`，不在子目录，文件模式 100644），不修改、不删除已有文件，且相对父提交源图只新增一条批准记录，另可带至多一条被它引用的 AI 活动（无修改、无删除）。批准记录的 evidence（有活动时即活动的 headCommit）到所在分支头之间只允许出现满足该判据的提交；evidence 等于分支头是其特例。写入时由写入层核对；合并进受保护分支前由 CI 用同一判据再核对一次（范围 `evidence..分支头`，不含合并提交本身），查本次合并新增的全部合法记录（同一合并请求内被同关口、`approves` 为其超集、时间更晚的新记录取代的除外）。合并时另要求：新记录的 evidence 必须是 40 位 commit，生成时间不得晚于检查时的当前时间 5 分钟以上（不与可伪造的提交时间比）；被批准对象必须在 evidence 中存在，且其内容（模型按全部成员及以成员为端点的关系，ADR 按它及其直接引用的组成节点）在 evidence 与合并结果中必须相同；目标分支上已有的批准记录和 AI 活动不得修改或删除；修改目标分支上已批准的元素，或新增目标分支上已显示为批准但尚不存在的元素，须在同一合并请求里有新的合法批准记录覆盖；删除目标分支上已批准的元素一律拒绝（被批准过的元素只能退役，Q6④）；新增 AI 活动的 baseCommit、branch 须与按目标分支重算的值一致；在合并结果上运行 `gate`。任一不通过即拒绝合并，须在新的提交上重新过关口。CI 通过后目标分支可能前进，执行合并的人在合并前用同一检查对当前目标分支头重算，不过不合。只含批准提交、至少新增一条批准记录、且新增的 AI 活动都被新记录引用的合并请求不要求再过关口，上述核对、`gate` 与人工合并批准照常；夹带其他提交的按普通合并请求处理。
+    批准提交判据：一个提交只有一个父提交，恰好带一个 `AISEP-Evidence` trailer 且其值等于该提交新增记录的 evidence，相对父提交恰好新增一个文件（路径为 `models/<slug>/governance/<文件名>.ttl`，不在子目录，文件模式 100644），不修改、不删除已有文件，且相对父提交源图只新增一条批准记录，另可带至多一条被它引用的 AI 活动（无修改、无删除）；新文件里只能有这条记录及其活动，文件名等于记录 IRI 的本地名。批准记录的 evidence（有活动时即活动的 headCommit）到所在分支头之间只允许出现满足该判据的提交；evidence 等于分支头是其特例。写入时由写入层核对；合并进受保护分支前由 CI 用同一判据再核对一次（范围 `evidence..分支头`，不含合并提交本身），查本次合并新增的全部合法记录（同一合并请求内被同关口、`approves` 为其超集、时间（按时区归一化）更晚的新记录取代的除外）。合并时另要求：新记录的 evidence 必须是 40 位 commit，结论为 Approved 的新记录在 evidence 上运行 `gate` 须通过，生成时间不得晚于检查时的当前时间 5 分钟以上（不与可伪造的提交时间比）；被批准对象必须在 evidence 中存在，且其内容（模型按它自身、全部成员及以成员为端点的关系，ADR 按它及其直接引用的组成节点）在 evidence 与合并结果中必须相同；目标分支上已有的批准记录和 AI 活动不得修改或删除；修改目标分支上已批准的元素，或新增目标分支上已显示为批准但尚不存在的元素，须在同一合并请求里有新的、结论为 Approved 的合法批准记录覆盖（关口不限），且它须是该对象在合并结果中生效的那条记录；删除目标分支上已批准的元素一律拒绝（被批准过的元素只能退役，Q6④）；新增 AI 活动的 baseCommit、branch 须与按目标分支重算的值一致；在合并结果上运行 `gate`。任一不通过即拒绝合并，须在新的提交上重新过关口。CI 通过后目标分支可能前进，执行合并的人在合并前用同一检查对当前目标分支头重算，不过不合。只含批准提交、至少新增一条批准记录、且新增的 AI 活动都被新记录引用的合并请求不要求再过关口，上述核对、`gate` 与人工合并批准照常；夹带其他提交的按普通合并请求处理。
 
     已在主分支上的提交只能批准发布关口，其他关口拒绝；判断时从被批准的提交沿第一父提交回溯、跳过批准提交，取得到的第一个提交（有效内容提交）。这类批准不直接提交到主分支：从被批准的那个提交拉短命分支，只提交这一条批准记录，经合并请求合入后删分支；这类记录只能经只含批准提交的合并请求合入，夹带其他提交的合并请求中出现即拒绝。这类批准不带 AI 活动；evidence 是被发布的主分支提交，必须是目标分支头的祖先，被批准对象在 evidence 到目标分支当前头之间不得被修改或删除（内容已变须重新选被发布的提交）。只有结论为 Approved 时被发布的提交才打 `release/{yyyymmdd}-{前 7 位}` 标签（或版本号标签 `release/v…`），Rejected 不打；标签是对外的发布指针，被发布提交的可达性由主线保证。
 
   - `aisep:activity`（可选，最多一个）→ 一条 `aisep:AgentActivity`（§6.7），表示这次批准针对的是哪次 AI 活动；必须是模型元素（IRI，带 `arch:inModel`），不能是空白节点。evidence 是 40 位 commit 时，必须等于该活动的 `aisep:headCommit`，否则 L1 报错。
   - 文件：每条批准记录单独一个文件 `models/<slug>/governance/<记录本地名>.ttl`（同次写入的 AI 活动在同一文件）；批准只新增文件，不改已有文件。早先写在 `governance.ttl` 里的记录与人员不搬迁，`governance.ttl` 仍放 `arch:Stakeholder` 等治理类元素。
-- **`arch:approvalState` 由构建推导**：取最近一条**合法**批准记录的结论（不合法的记录不参与推导，构建时报 Warning）；没有记录则为 Proposed；元素本身被合并、替换（带 `dcterms:isReplacedBy`，且目标必须是某个模型里的元素，否则 L1 报错，也不触发）则为 Superseded。`aisep:Rejected`、`aisep:Superseded` 是 AISEP 补的取值，上游只有 Proposed/Approved。同一元素有两条时间相同（按时区归一化后）但结论不同的记录时，L1 报"批准有歧义"。手填 approvalState，包括通过子属性间接写入，都在 L1 报错。
+- **`arch:approvalState` 由构建推导**：取（按时区归一化，不带时区的按 UTC）最近一条**合法**批准记录的结论（不合法的记录不参与推导，构建时报 Warning）；没有记录则为 Proposed；元素本身被合并、替换（带 `dcterms:isReplacedBy`，且目标必须是某个模型里的元素，否则 L1 报错，也不触发）则为 Superseded。`aisep:Rejected`、`aisep:Superseded` 是 AISEP 补的取值，上游只有 Proposed/Approved。同一元素有两条时间相同（按时区归一化后）但结论不同的记录时，L1 报"批准有歧义"。手填 approvalState，包括通过子属性间接写入，都在 L1 报错。
 - 工作台只展示批准记录、触发新增批准记录，不保存状态（ADR-009）。
 - 架构决策采用 vendored 的 `arch-decision`（ADR：Decision/Option/Force），用 `ad:relatedConcept` 连接元素。它的 shapes 读的是直连三元组，所以 L3 必须跑在构建后的图上（§10）。
 - 质量：`arch:hasQualityMeasure` + ISO 25010 个体；补 `aisep:value`、`aisep:unit`、`aisep:target`、`prov:generatedAtTime`。
@@ -170,7 +170,7 @@
   - `prov:wasAssociatedWith` → 执行的代理，恰好一个，必须是 `arch:Stakeholder` 或 `aisep:AIAgent` 的实例；
   - `prov:startedAtTime`、`prov:endedAtTime`，各恰好一个 xsd:dateTime，开始不晚于结束（按时区归一化，不带时区的按 UTC）；
   - `aisep:sessionRef`：外部编排器的会话标识，非空字符串，恰好一个；对元模型不透明，不绑定 AO；
-  - `aisep:branch`：分支名，非空字符串，恰好一个；
+  - `aisep:branch`：分支短名（不含 `refs/heads/`），非空字符串，恰好一个；
   - `aisep:baseCommit`、`aisep:headCommit`：各恰好一个 40 位十六进制 commit，**只由写入层填写**：headCommit 是被批准的那个 commit（写入层核对它与分支头之间只有批准提交），baseCommit 是它与模型主分支的 merge-base。L1 只校验格式。
   - **不存"作用于哪些元素"**：由 `model.diff(baseCommit, headCommit)` 实时算出（§8.3）。
 - 提交、构建、部署的溯源只定义词汇（PROV-O），不做接入。
@@ -406,7 +406,9 @@ C4、Backstage 接入、TOGAF 内容元模型、ArchiMate 派生规则引擎、�
 - G7 的"元素间直连"白名单包含 BPMN 结构属性（flowElements、lanes 等）和 `arch:hasQualityMeasure`、`ddd:exposedAggregate`。这是为了让合法模型通过而做的判断，未经异构评审。
 - PROV-O 不整体加载；aisep-core 只声明 `aisep:AIAgent`，另在其对齐文件里加 `prov:SoftwareAgent ⊑ prov:Agent` 一条（ADR-010），其余 PROV-O 术语不可用，G7 白名单不变。
 - 历史批准的差异图和 gate 重跑依赖 headCommit 仍可达。模型仓库禁用 squash 合并和 rebase 合并，批准提交只经普通 merge 进受保护分支（ADR-014）；落实要同时做到：托管平台关闭 squash、rebase 两种 PR 合并方式，受保护分支禁止 force push、限制直接 push，PR 合并保留原提交（cherry-pick、rebase 都会生成新的 commit id）。这些是仓库托管平台的设置，元模型和 MCP 不检查；合并时校验已要求新记录的 evidence 是合并请求头的祖先（发布批准还须是目标分支头的祖先）。绕过它合入、或分支未合并就删除时，旧 commit 可能被 GC，历史批准无法重跑；管理员绕过分支保护、force push 后重开合并请求，同样可能让已合入记录的 evidence 不再可达。本仓库已于 2026-11-20 配置：只允许普通合并（关闭 squash、rebase），`main` 受保护（必需检查 `gate`、不要求分支最新、禁止 force push 与删除、管理员同样受约束）；未要求 PR 评审批准（个人仓库无第二人评审，人工批准靠 AGENTS.md「批准 #N」）。
-- 合并时校验（evidence 到分支头之间只有批准提交、已有记录不可改、已批准元素改动须重批、合并结果 gate 等）、批准专用合并请求的判定、发布标签检查由 CI 执行，须设为受保护分支的必需检查；元模型和 MCP 不检查 CI 是否配上。不开"要求分支最新"、不用合并队列（个人账号的 private 仓库用不了合并队列），目标分支前进后必需检查不会自动重跑，所以合并前由执行合并的人用同一检查对当前目标分支头重算；绕过它直接在网页上点合并时，合并结果 gate 可能只对旧主线有效，这是残余风险。该检查脚本尚未实现。
+- 合并时校验（evidence 到分支头之间只有批准提交、已有记录不可改、已批准元素改动须重批、合并结果 gate 等）、批准专用合并请求的判定、发布标签检查由 CI 执行，须设为受保护分支的必需检查；元模型和 MCP 不检查 CI 是否配上。不开"要求分支最新"、不用合并队列（个人账号的 private 仓库用不了合并队列），目标分支前进后必需检查不会自动重跑，所以合并前由执行合并的人用同一检查对当前目标分支头重算；绕过它直接在网页上点合并时，合并结果 gate 可能只对旧主线有效，这是残余风险。重算与合并之间也没有原子绑定：平台合并只能锁合并请求头、锁不了目标分支头，重算通过后目标分支仍可能前进；由合并串行、合并前再比对目标分支头、合并后核验父提交并在不过时回滚来压缩，余下为残余风险。该检查脚本尚未实现。
+- 普通合并请求不要求带批准记录，未经批准的模型改动可以进主分支（推导为 Proposed，ADR-016）。主线提交只能批准发布关口，所以主线上的 Proposed 元素要过其他关口，须从主分支拉分支、先有一个非批准提交（可以是空提交）再批；这是已拍板规则组合（ADR-015 U4①、ADR-016）的已知限制。
+- 元素级批准不覆盖以它为端点的限定关系：合并请求只改一条关系的端点（如换掉 target）时，被连接的已批准元素不须重批，合并后仍显示 Approved。要约束连接，须按模型批准（模型的比较范围含以成员为端点的关系）。这是有意的口径（第四轮 G4-4，用户拍板），否则每加一条代码追溯都会触发对设计元素的重批。
 - 进入受保护分支的批准记录 evidence 只能是 40 位 commit：`sha256:<64 位十六进制>` 形式 L1 合法，但合并时校验判断不了它与分支的祖先关系，一律拒绝；它只适用于不经合并进受保护分支的场合。
 - `release/*` 标签由托管平台的 tag ruleset 禁止删除与移动（本仓库 2026-11-20 已配置规则集 `release-tags-immutable`：规则 deletion、update、non_fast_forward，无绕过者，管理员同样受约束；探针实测创建可以、强推移动与删除均被 GH013 拒绝）。规则集被停用或修改时，标签可被移动、删除，发布标签检查又只在合并时看一次，此时为残余风险。
 - 发布批准的合并请求关闭未合并时，已推送的 `release/*` 标签不自动删除，由人清理；清理前它指向一个未合入主线的发布批准。因规则集禁止删除，清理须由仓库管理员临时停用规则集、删标签、再启用；规则集不设绕过者，是为了不让与人共用账号凭据的 AI 也能绕过。
