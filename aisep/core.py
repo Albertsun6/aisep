@@ -429,6 +429,24 @@ class Ctx:
                     bad.setdefault(q.subject.value, []).append(
                         f"AISEP: prov:generatedAtTime {q.object.value!r} is not a well-formed xsd:dateTime "
                         "(YYYY-MM-DDThh:mm:ss[.s][Z|±hh:mm], a real calendar instant, hour < 24) (EG15, spec §6.6).")
+        # 第四轮 R4-5 (ADR-016): an existing approves target must be an element (not a record, an activity or a
+        # Stakeholder; relationships and views are not elements), an arch:Model or an ADR. A target that is not a
+        # subject of any source is judged as before (the merge-time check reports it against the evidence snapshot).
+        src_types = {}
+        for x, t in self.rows(f"SELECT DISTINCT ?x ?t WHERE {{ GRAPH ?g {{ ?x a ?t }} {self.src_graph_filter()} FILTER(isIRI(?t)) }}"):
+            src_types.setdefault(x, set()).add(t)
+        subjects = {q.subject.value for qs in self.src_quads.values() for q in qs if isinstance(q.subject, ox.NamedNode)}
+        for rec, x in self.rows(f"""SELECT DISTINCT ?rec ?x WHERE {{ GRAPH ?g {{ ?rec aisep:approves ?x }} {self.src_graph_filter()}
+                ?rec a/rdfs:subClassOf* aisep:ApprovalRecord FILTER(isIRI(?x)) }}"""):
+            if x not in subjects:
+                continue
+            anc = {a for t in src_types.get(x, ()) for a in self.ancestors(t)}
+            element = (x in self.asserted and ARCH + "Element" in anc and not anc & {
+                ARCH + "QualifiedRelationship", AISEP + "ApprovalRecord", AISEP + "AgentActivity", ARCH + "Stakeholder"})
+            if not (element or ARCH + "Model" in anc or NS["ad"] + "Decision" in anc):
+                bad.setdefault(rec, []).append(
+                    f"AISEP: aisep:approves {short(x)} is not an approvable target — an element other than an approval "
+                    "record, agent activity or arch:Stakeholder, an arch:Model, or an ADR (第四轮 R4-5, spec §6.6).")
         self._approval_problems = bad
         return bad
 
