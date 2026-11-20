@@ -1362,9 +1362,9 @@ T1 用保守正则（≤64、只含 `[a-zA-Z0-9_-]`）断言，不依赖具体�
 
 | 项 | 本文 | 现状 | 状态 |
 |---|---|---|---|
-| 合并时校验与合并前重算的检查脚本（口径、检查项 1–7（第 7 项见 T38 核对轮负例、T39 第三轮 I；第四轮 R4-12）、批准专用 PR 判定、发布标签检查；CI 与执行合并的人共用一个脚本） | §5.9"合并时校验""合并前重算""批准专用 PR""发布关口"第 4 步 | 无。现有 `.github/workflows/gate.yml` 已用完整克隆（`fetch-depth: 0`，f6fba58），但只在 PR 检出上跑 `aisep.py gate`，检查项 1–7、批准专用 PR 判定、发布标签检查与合并前重算都未实现（第四轮 G4-7 更新现状）；判据函数（第 1 步）、源图差异（§5.8）、推导（`derive_approval_state` L337–380）、`approval_problems`（L396–433）可复用 | GAP |
-| `approves` 目标类型校验（第四轮 R4-5，ADR-016） | 规范 §6.6、§5.9 输入表 | `approval_problems`（`aisep/core.py`）只核对关口与批准人，不核对 `approves` 的目标类型；`derive_approval_state` 会给限定关系、视图等任意目标推导 approvalState。要在 `approval_problems` 加允许集合检查（元素不含 ApprovalRecord、AgentActivity、Stakeholder；模型；ADR），推导与 L1 共用 | GAP |
-| 批准记录文件形状检查（第四轮 R4-8） | §5.9 第 1 步 | 无。判据函数要直接解析新增文件：主语集合、主语三元组全在文件内、文件名等于记录本地名 | GAP |
+| 合并时校验与合并前重算的检查脚本（口径、检查项 1–7（第 7 项见 T38 核对轮负例、T39 第三轮 I；第四轮 R4-12）、批准专用 PR 判定、发布标签检查；CI 与执行合并的人共用一个脚本） | §5.9"合并时校验""合并前重算""批准专用 PR""发布关口"第 4 步 | 已实现（S6，PR #18）：`aisep/mergecheck.py` 的 `merge_check`（口径、检查项 1–7、批准专用 PR 判定 `classify_pr`、发布标签检查）、`approval_commit_problems`（第 1 步判据，`record_approval` 共用）、合并前重算的 `target_unchanged`（R4-11 ②）与 `post_merge_verify`（R4-11 ③），命令行 `python -m aisep.mergecheck`；`.github/workflows/gate.yml` 的 `mergecheck` job 跑在 PR 上，已与 `gate` 并列为 main 的必需检查。负例 `aisep-mcp/tests/test_merge_check_negatives.py` 全部通过 | EXISTS |
+| `approves` 目标类型校验（第四轮 R4-5，ADR-016） | 规范 §6.6、§5.9 输入表 | 已实现（S6，PR #18）：`approval_problems`（`aisep/core.py`）对存在的目标核对允许集合（带 `arch:inModel` 的 `arch:Element`，不含限定关系、ApprovalRecord、AgentActivity、Stakeholder；`arch:Model`；`ad:Decision`），不合法的记录 L1 报出、推导忽略；目标不存在的按原口径 | EXISTS |
+| 批准记录文件形状检查（第四轮 R4-8） | §5.9 第 1 步 | 已实现（S6，PR #18）：判据函数（`aisep/mergecheck.py` 的 `_commit_shape`）直接解析新增文件，核对主语集合、主语三元组全在该文件内、文件名等于记录本地名 | EXISTS |
 | 记录文件放在 `models/<slug>/governance/` 子目录（U2） | §3.3、§5.1、§5.9 第 1、5、7、8 步 | 第三轮处置矩阵记为"原型 `model_files` 的 glob 不含 governance/ 子目录"。执行会话核对：`glob(models/**/*.ttl, recursive=True)` 会匹配子目录（临时目录实测读到 `models/p/governance/x.ttl`），`model_graph_of`（L470–475）按文件内容的 `arch:inModel` 归属模型、不看目录，原型能读到子目录里的记录。仍要新写：统一文件集合函数对子目录的用例（T43）、判据 (b) 的路径匹配（只认 `models/<slug>/governance/` 下一层的新增文件）、记录文件的新建、`git add` 与回滚 | GAP（原型读取 EXISTS） |
 | ADM 文档中的 `gate models/<slug>/*.ttl` 命令（`docs/adm/` 下 24 处）| §3.3 | shell 展开不含 `governance/` 子目录，新记录文件不被检查。2026-11-20 已改：命令统一为 `$(find models/<slug> -name '*.ttl')`（递归含子目录），两处非命令的引用改为文字说明；CLI 未加新参数 | 已解决（文档） |
 
