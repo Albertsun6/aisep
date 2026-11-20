@@ -9,9 +9,10 @@ Two tests failed on the implementation as reviewed (b858c19) and passed once 685
     file was deleted anyway and COMMIT_FAILED said "已回滚" while the index still staged the record.
   - test_branch_switched_in_worktree_after_recheck_before_commit (failed on f9c2338, passes on 78bb9a1): W switched
     after the locked symbolic-ref check; the commit landed on feat/y while success was reported on feat/x.
-Two tests fail on 78bb9a1 and are marked xfail(strict=True) (the commit is recognised by its subject):
-  - test_switched_take_back_spares_other_branch_with_same_subject
-  - test_switched_branch_tip_with_same_subject_is_not_ours
+  - test_switched_take_back_spares_other_branch_with_same_subject, test_switched_branch_tip_with_same_subject_is_not_ours
+    (failed on 78bb9a1, pass on 9dbae0b): the commit was recognised by its subject.
+Two cases fail on 9dbae0b and are marked xfail(strict=True) (the commit is found only through W's HEAD reflog):
+  - test_plain_success_does_not_depend_on_the_reflog[reflog-off / reflog-expired-after-commit]
 
 Injection points are module attributes of aisep.approval / aisep.gitio replaced with monkeypatch (same style as
 test_approval_extra.py): gitio.locate_worktree returns before the lock is taken; approval._sha_file is first called
@@ -111,13 +112,21 @@ def _no_success(t):
         r = call(t)
     except AisepError as e:
         return e
-    pytest.fail(f"reported success: commit {r['commit'][:7]} on {r['branch']}; "
-                f"feat/x={t.rev('refs/heads/feat/x')[:7]} feat/y={t.rev('refs/heads/feat/y')[:7]}")
+    pytest.fail(f"reported success: commit {r['commit'][:7]} on {r['branch']}; branches: {refs(t)}")
 
 
 def _msg(t):
     """The subject record_approval gives its commit (the implementation recognises its own commit by it)."""
     return f"aisep: GateArchitecture Approved approval-20261120110000-architecture-{t.head[:7]}"
+
+
+def _taken_back(t, e, tip):
+    """The stray commit was taken back from feat/y only; feat/x (= tip) untouched; nothing staged or on disk."""
+    assert e.code == "CONFLICT" and e.retryable is True, (e.code, e.retryable)
+    assert e.details.get("reason") == "worktree-switched" and e.details.get("landedOn") == ["refs/heads/feat/y"]
+    assert t.rev("refs/heads/feat/x") == tip and t.rev("refs/heads/feat/y") == tip
+    assert new_records(t) == [] and staged(t) == []
+    assert t.git("status", "--porcelain") == ""
 
 
 def test_branch_switched_in_worktree_after_recheck_before_commit(t, monkeypatch):
@@ -130,20 +139,15 @@ def test_branch_switched_in_worktree_after_recheck_before_commit(t, monkeypatch)
     Failed on f9c2338: reported success on feat/x while the commit sat on feat/y.
     变红: drop the post-commit check `_landed` (approval.py: `a = _landed(...)`, `if a is None: raise _misplaced(...)`)."""
     _switch_before_write(monkeypatch)
-    e = _no_success(t)
-    assert e.code == "CONFLICT" and e.retryable is True, (e.code, e.retryable)
-    assert e.details.get("reason") == "worktree-switched" and e.details.get("landedOn") == ["refs/heads/feat/y"]
-    assert t.rev("refs/heads/feat/x") == t.head and t.rev("refs/heads/feat/y") == t.head
-    assert new_records(t) == [] and staged(t) == []
-    assert t.git("status", "--porcelain") == ""
+    _taken_back(t, _no_success(t), t.head)
 
 
 def test_branch_switched_and_commit_stacked_cannot_take_back(t, monkeypatch):
     """Same window, and the agent also commits on feat/y right after our commit: ours is no longer a branch tip, so it
     cannot be taken back without dropping the agent's commit. §5.9 step 7 for a failed take-back: do not touch the
     branches, CONFLICT not retryable, a recovery hint for the human. refs/heads/feat/x untouched, the agent's commit
-    kept. (§5.9 also says details carry A; the implementation names the commit by subject in the hint only — reported,
-    not pinned.) 变红: let _misplaced update-ref whatever branch W is on even when ours is not its tip."""
+    kept, details.commit = our commit A (§5.9 step 7: "details 给出 A"; added in 9dbae0b).
+    变红: let _misplaced update-ref whatever branch W is on even when ours is not its tip."""
     _switch_before_write(monkeypatch)
     real = approval._landed
 
@@ -158,32 +162,28 @@ def test_branch_switched_and_commit_stacked_cannot_take_back(t, monkeypatch):
     c = agent_commits_first.c
     assert t.rev("refs/heads/feat/y") == c and t.git("log", "-1", "--format=%s", f"{c}^") == _msg(t)
     assert t.rev(f"{c}^^") == t.head
+    assert e.details.get("commit") == t.rev(f"{c}^")
 
 
-@pytest.mark.xfail(strict=True, reason="78bb9a1: _misplaced 按 subject 认提交，把另一个分支顶端同 subject 的提交也当成"
-                                       "落错的批准提交撤回（update-ref 掉别人的提交）")
 def test_switched_take_back_spares_other_branch_with_same_subject(t, monkeypatch):
     """The commit is recognised by its subject. Another branch feat/z whose tip merely has the same subject (any
     commit can carry it) must not be rewound: the take-back may only touch the branch W actually moved.
-    变红 (once fixed): identify the stray commit by subject alone again."""
+    Failed on 78bb9a1 (feat/z rewound). 变红: identify the stray commit by subject alone again (_misplaced)."""
     z = t.git("commit-tree", "main^{tree}", "-p", "main", "-m", _msg(t))
     t.git("update-ref", "refs/heads/feat/z", z)
     _switch_before_write(monkeypatch)
     e = _no_success(t)
     assert t.rev("refs/heads/feat/z") == z, "feat/z was rewound"
-    assert e.code == "CONFLICT", e.code
-    assert t.rev("refs/heads/feat/x") == t.head and t.rev("refs/heads/feat/y") == t.head
-    assert new_records(t) == [] and staged(t) == []
+    _taken_back(t, e, t.head)
 
 
-@pytest.mark.xfail(strict=True, reason="78bb9a1: _landed 只看 refs/heads/<branch> 顶端的 subject；顶端恰是一个同 subject 的"
-                                       "（合法）批准提交时，把它当成本次提交，按并发提交撤回，倒退了 feat/x，真提交留在 feat/y")
 def test_switched_branch_tip_with_same_subject_is_not_ours(t, monkeypatch):
     """refs/heads/feat/x's tip is a valid approval commit (another record file, GateDesign, evidence = headCommit) whose
     subject happens to equal the one record_approval will use. W then switches to feat/y before our commit. The
     implementation must not take feat/x's tip for its own commit: feat/x keeps that commit (no update-ref on
     `branch`), our stray commit is taken back from feat/y, CONFLICT.
-    变红 (once fixed): recognise our commit by the subject of refs/heads/<branch>'s tip alone again."""
+    Failed on 78bb9a1 (feat/x rewound). 变红: recognise our commit by the subject of refs/heads/<branch>'s tip alone
+    again (_landed)."""
     local = "approval-20261119230000-design-crafted"
     t.write(f"{GOV}/{local}.ttl", PREFIXES + record_ttl(local, "GateDesign", ["newThing"], t.head,
                                                         at="2026-11-19T23:00:00Z"))
@@ -191,9 +191,61 @@ def test_switched_branch_tip_with_same_subject_is_not_ours(t, monkeypatch):
     _switch_before_write(monkeypatch)
     e = _no_success(t)
     assert t.rev("refs/heads/feat/x") == x, "feat/x was rewound"
-    assert e.code == "CONFLICT", e.code
-    assert t.rev("refs/heads/feat/y") == x
-    assert new_records(t) == [] and staged(t) == []
+    _taken_back(t, e, x)
+
+
+def _drop_reflogs(t):
+    """core.logAllRefUpdates=false and no reflog files: Git then writes no reflog at all for HEAD or the branches."""
+    t.git("config", "core.logAllRefUpdates", "false")
+    for ref in ("HEAD", "refs/heads/feat/x"):
+        p = os.path.join(t.root, t.git("rev-parse", "--git-path", f"logs/{ref}"))
+        if os.path.exists(p):
+            os.remove(p)
+
+
+@pytest.mark.xfail(strict=True, reason="9dbae0b: _our_commit 只从 W 的 HEAD reflog 找本次提交；reflog 关闭或被清空时找不到，"
+                                       "正常落在 feat/x 上的批准提交被报成 CONFLICT（不可重试），也没撤回")
+@pytest.mark.parametrize("how", ["reflog-off", "reflog-expired-after-commit"])
+def test_plain_success_does_not_depend_on_the_reflog(t, monkeypatch, how):
+    """No branch switch at all. §5.9 step 7 decides success by the commit and its parent (A^ == tip'); nothing in
+    §5.9 depends on a reflog, which may be disabled (core.logAllRefUpdates=false without log files) or emptied
+    (`git reflog expire --expire=now --all`, e.g. a concurrent gc with aggressive settings) between `git commit` and
+    the post-commit check. The plain call must still succeed with A on feat/x.
+    变红 (once fixed): identify the commit only through the HEAD reflog again."""
+    if how == "reflog-off":
+        _drop_reflogs(t)
+    else:
+        real = approval._landed
+
+        def expire_then_check(w, root, branch, msg):
+            gitio.git(w, "reflog", "expire", "--expire=now", "--all")
+            return real(w, root, branch, msg)
+        monkeypatch.setattr(approval, "_landed", expire_then_check)
+    try:
+        r = call(t)
+    except AisepError as e:
+        pytest.fail(f"{e.code} (retryable={e.retryable}): {e.message}; feat/x={t.rev('refs/heads/feat/x')[:7]}")
+    assert r["commit"] == t.rev("refs/heads/feat/x") and t.rev(f"{r['commit']}^") == t.head
+    assert t.git("status", "--porcelain") == ""
+
+
+def test_post_commit_hook_commits_on_top(t):
+    """A post-commit hook makes one more (empty) commit C on top of ours (A). A is no longer the branch tip: same as
+    step 7's failed take-back ("A 之上又有新提交") — CONFLICT not retryable, details.commit = A, the branch is not
+    rewound (C stays). Never a reported success.
+    变红: report success whenever the reflog finds our commit, without checking it is the branch tip (_landed)."""
+    d = t.tmp / "hooks"
+    d.mkdir(exist_ok=True)
+    (d / "post-commit").write_text('#!/bin/sh\n[ -n "$AISEP_TEST_IN_HOOK" ] && exit 0\n'
+                                   'AISEP_TEST_IN_HOOK=1 exec env -u GIT_INDEX_FILE git commit -q --allow-empty -m hook-commit\n')
+    os.chmod(d / "post-commit", 0o755)
+    t.git("config", "core.hooksPath", str(d))
+    e = _no_success(t)
+    c = t.rev("refs/heads/feat/x")
+    assert t.git("log", "-1", "--format=%s", c) == "hook-commit" and t.rev(f"{c}^^") == t.head
+    a = t.rev(f"{c}^")
+    assert e.code == "CONFLICT" and e.retryable is False, (e.code, e.retryable)
+    assert e.details.get("commit") == a and e.hint
 
 
 # ================================================================== 2. rollback when index.lock is held
