@@ -37,6 +37,8 @@ def template(tmp_path_factory):
     for d in ("modules", "vendor", "tools", "aisep"):
         shutil.copytree(os.path.join(ROOT, d), t / d, ignore=ign)
     shutil.copytree(os.path.join(ROOT, "models", "procurement"), t / "models" / "procurement", ignore=ign)
+    # like a real model repo: the server runs from the repo, so its own __pycache__ must be ignored
+    shutil.copy2(os.path.join(ROOT, ".gitignore"), t / ".gitignore")
     return t
 
 
