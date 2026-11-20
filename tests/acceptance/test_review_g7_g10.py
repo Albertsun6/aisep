@@ -5,8 +5,8 @@ import glob, os, subprocess, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 AISEP = os.path.join(ROOT, "tools", "aisep.py")
-sys.path.insert(0, os.path.join(ROOT, "tools"))
-import aisep as T  # noqa: E402
+sys.path.insert(0, ROOT)  # the aisep/ library package (tools/aisep.py is the CLI shell)
+from aisep import core as T  # noqa: E402
 
 MODEL_FILES = sorted(glob.glob(os.path.join(ROOT, "models", "procurement", "*.ttl")))
 HDR = """@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
