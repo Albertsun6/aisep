@@ -16,3 +16,22 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - run: python tools/aisep.py gate
+  # §5.9 合并时校验（切片 S6）。单独一个 job，先不列为必需检查（必需的仍只有 gate）。
+  # 口径：H = pull_request.head.sha（不用 GITHUB_SHA）；T = 刚 fetch 的远端主分支；M 在 T 上本地合并生成。
+  mergecheck:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: fetch the current target branch and the PR head
+        run: |
+          git fetch --no-tags origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+          git fetch --no-tags origin "${{ github.event.pull_request.head.sha }}"
+      - run: python -m aisep.mergecheck --github-event "$GITHUB_EVENT_PATH"
