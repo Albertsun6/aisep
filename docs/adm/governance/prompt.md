@@ -45,7 +45,7 @@
 ### 第四步：写批准记录
 
 - MCP Server 可用时，只用 `governance.record_approval` 写入（evidence 自动填为 headCommit；有 AI 活动时一并传入活动信息）。
-- MCP Server 不可用时，按 `docs/module-contract.md` 的作者规范，在 `models/<slug>/governance.ttl` 中**新增**一条 `aisep:ApprovalRecord`，字段按 `template.md` 第 4 节，参照 `models/procurement/governance.ttl`。
+- MCP Server 不可用时，按 `docs/module-contract.md` 的作者规范，**新建**一个文件 `models/<slug>/governance/<记录本地名>.ttl`，只写一条 `aisep:ApprovalRecord`（一条记录一个文件），字段按 `template.md` 第 4 节，参照 `models/procurement/governance.ttl`（其中是存量记录，不再往里追加）。
 - 禁止：写或修改 `arch:approvalState`；修改或删除已有批准记录；写任何"进行中"状态。结论变化只能新增记录。
 - 写完再跑一次 `model.gate`（MCP 不可用时 `$PY tools/aisep.py gate models/<slug>/*.ttl`），必须为 PASS。再跑 `$PY tools/aisep.py build models/<slug>/*.ttl`，确认没有"批准记录被忽略或有歧义"的 Warning。
 - 不执行 `git commit` / `git push`，除非用户明确要求。
