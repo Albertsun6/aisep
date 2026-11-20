@@ -1,8 +1,18 @@
 AISEP
+Copyright 2026 Albert Sun
 
-This repository vendors ontology files from Linked.Archi (https://meta.linked.archi/),
-licensed under CC-BY-4.0, in vendor/meta.linked.archi/ (unmodified; see SHA256SUMS there).
+This product is licensed under the Apache License, Version 2.0 (see LICENSE),
+except for the third-party material listed below.
 
-AISEP's own ontologies and shapes (modules/) are licensed under CC-BY-4.0 and build on
-Linked.Archi core and its ArchiMate 4.0 ontology. See docs/metamodel-spec.md §12 for the
-license position (CC-BY-SA sources such as core-vis, edgy and ddd-crew texts are not included).
+Third-party material
+--------------------
+
+vendor/meta.linked.archi/
+  Ontologies fetched unmodified from https://meta.linked.archi/ (see
+  vendor/meta.linked.archi/fetch.log and FETCHED_AT). These files are NOT
+  covered by the Apache License; each file keeps the license it declares in its
+  own cc:license statement, which is one of:
+    - Creative Commons Attribution 4.0 (CC BY 4.0)
+    - Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)
+    - Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
+  Creators are named in each file's dcterms:creator statements.
