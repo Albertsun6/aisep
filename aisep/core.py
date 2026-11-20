@@ -853,8 +853,10 @@ def l3(ctx):
     for m in ctx.mods:
         if m.name not in HUB_MODULES and m.shapes:
             # every module's plain ontology (so cross-notation endpoints are typed, e.g. a DDD BoundedContext as
-            # arch:Element for ext-code's EC6) but only this module's own alignment (spec §10.2)
-            runs.append((m.name, list(dict.fromkeys(onto_files(ctx.mods, "none") + m.align)), m.shapes))
+            # arch:Element for ext-code's EC6) but only the alignments of this module and its dependencies (spec §10.2
+            # "本模块依赖"; e.g. aisep-core's prov:SoftwareAgent ⊑ prov:Agent, which ext-governance's EG17 needs)
+            align = [f for d in dependencies(ctx.mods, m.name) for f in d.align]
+            runs.append((m.name, list(dict.fromkeys(onto_files(ctx.mods, "none") + align)), m.shapes))
     for name, data_files, shape_files in runs:
         if not shape_files:
             continue

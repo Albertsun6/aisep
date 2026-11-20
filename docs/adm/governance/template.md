@@ -15,7 +15,7 @@
   - `aisep:GateRelease`（发布上线）
 - 评审对象（`aisep:approves` 的目标）：<元素、模型或 ADR 的 IRI 列表>
 - 待批准的版本：<分支名 + headCommit（40 位十六进制）>
-- 批准人（`aisep:approvedBy`）：<人的 IRI，必须是 `arch:Stakeholder` 或 `prov:Agent` 的实例；AI 不能批准自己的产出>
+- 批准人（`aisep:approvedBy`）：<人的 IRI，必须是 `arch:Stakeholder` 的实例，且不能是 `aisep:AIAgent`；AI 不能批准>
 
 阶段—关口对照：
 
