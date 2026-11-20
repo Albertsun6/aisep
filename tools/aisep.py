@@ -218,6 +218,9 @@ def run_pytest(tests_dir):
         for c in cases:
             bad = c.find("failure") if c.find("failure") is not None else c.find("error")
             detail = (bad.get("message") or "").splitlines()[0][:160] if bad is not None else ""
+            skip = c.find("skipped")  # xfail and skip: not a failure, but say so instead of a bare PASS
+            if bad is None and skip is not None:
+                detail = f"{skip.get('type', 'skipped')}: {(skip.get('message') or '').splitlines()[0][:140] if skip.get('message') else ''}"
             rows.append(("pytest", c.get("name"), "pytest", bad is None, detail))
     if not rows or p.returncode not in (0, 1):  # collection error, usage error, pytest missing
         tail = (p.stdout + p.stderr).strip().splitlines()
