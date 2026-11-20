@@ -15,6 +15,12 @@
 6. **`vendor/` 只读**；升级上游按规范 §11 走一次显式变更。
 7. 不存在任何"上报进行中状态"的写入（ADR-013）；所有状态都在 Git 里的文件中。
 
+## 分支与合并（一律走 PR）
+1. **不直接推 `main`**：改动在 `claude/<主题>` 分支上做（用 worktree：`.claude/worktrees/<主题>`），推送后开 PR 到 `main`。
+2. **合并要 Albert 批准**：Albert 在会话里明确批准某个 PR（如「批准 #N」）后，由 AI 代为合并，合并提交写明原话。批准按 PR 逐个算；CI 的 `gate` 没过、或批准后又加了提交，都不合并，需重新批准。没有批准不得合并。
+3. **用合并提交**：`gh pr merge --merge`，不用 squash / rebase，保留分支上的提交可达（关口回看历史批准依赖 commit 可达，见 `docs/mcp-interface.md`）。
+4. **PR 即锁**：开工前看开着的 PR；某文件已在别的 PR 里被改，就不碰它，去那个 PR 留言或等合并。
+
 ## 工作方式
 - 改元模型（`modules/`）后跑全量测试：`$PY tools/aisep.py test`（约 2.5 分钟，应全绿）。
 - 改模型（`models/`）后跑 `gate`。
