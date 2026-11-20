@@ -7,8 +7,11 @@ Two tests failed on the implementation as reviewed (b858c19) and passed once 685
     `branch` checked out, so the approval landed on another branch while the result said `branch`.
   - test_rollback_when_index_locked_at_commit: step 8 ignored the exit status of `git rm --cached`; when it failed the
     file was deleted anyway and COMMIT_FAILED said "已回滚" while the index still staged the record.
-One test fails on f9c2338 and is marked xfail(strict=True); drop the mark once fixed:
-  - test_branch_switched_in_worktree_after_recheck_before_commit: W switched after the locked symbolic-ref check.
+  - test_branch_switched_in_worktree_after_recheck_before_commit (failed on f9c2338, passes on 78bb9a1): W switched
+    after the locked symbolic-ref check; the commit landed on feat/y while success was reported on feat/x.
+Two tests fail on 78bb9a1 and are marked xfail(strict=True) (the commit is recognised by its subject):
+  - test_switched_take_back_spares_other_branch_with_same_subject
+  - test_switched_branch_tip_with_same_subject_is_not_ours
 
 Injection points are module attributes of aisep.approval / aisep.gitio replaced with monkeypatch (same style as
 test_approval_extra.py): gitio.locate_worktree returns before the lock is taken; approval._sha_file is first called
@@ -20,7 +23,7 @@ import pytest
 
 from aisep import approval, gitio, tools
 from aisep.errors import AisepError
-from fixtures.topology import GOV, M, Topo
+from fixtures.topology import GOV, M, PREFIXES, Topo, record_ttl
 
 NOW = datetime(2026, 11, 20, 11, 0, 0, tzinfo=timezone.utc)
 BOSS = M + "chiefArchitect"
@@ -93,41 +96,104 @@ def test_branch_switched_in_worktree_before_lock(t, monkeypatch):
     assert new_records(t) == [] and staged(t) == []
 
 
-@pytest.mark.xfail(strict=True, reason="f9c2338: symbolic-ref 只在锁内复验时核对一次（approval.py:380），之后到 git commit "
-                                       "之间 W 被切到 feat/y，提交落在 feat/y、A^ 仍等于 tip'，工具报告成功提交到 feat/x")
-def test_branch_switched_in_worktree_after_recheck_before_commit(t, monkeypatch):
-    """§5.9 step 7: the write lock only excludes model_* writers; an agent's own `git checkout` in W can still happen
-    after the locked symbolic-ref check and before `git commit`. Here W switches to feat/y (from tip', so A^ == tip'
-    and the parent check alone does not see it) right before the record file is written.
-    Never a reported success. Two honest end states:
-    - taken back: feat/x and feat/y both still at headCommit, the record neither staged nor on disk; the error is
-      STALE_HEAD or CONFLICT (§5.9 does not name this case: 待定);
-    - not taken back: CONFLICT, retryable false, details.commit = the stray commit A and a hint for the human — same as
-      step 7's failed compare-and-swap take-back ("不再动分支，报 CONFLICT（不可重试），details 给出 A 和恢复提示").
-    In both, refs/heads/feat/x never gets an approval commit.
-    变红 (once fixed): drop the post-commit check that the commit landed on refs/heads/<branch>."""
+def _switch_before_write(monkeypatch):
+    """W switches to feat/y (from tip') after the locked symbolic-ref check, right before the record file is written."""
     real = approval._write_new
 
     def switch_then_write(w, rel, data):
         gitio.git(w, "checkout", "-q", "-b", "feat/y")
         return real(w, rel, data)
     monkeypatch.setattr(approval, "_write_new", switch_then_write)
+
+
+def _no_success(t):
     try:
         r = call(t)
     except AisepError as e:
-        err_ = e
-    else:
-        pytest.fail(f"reported success: commit {r['commit'][:7]} on {r['branch']}; "
-                    f"feat/x={t.rev('refs/heads/feat/x')[:7]} feat/y={t.rev('refs/heads/feat/y')[:7]}")
+        return e
+    pytest.fail(f"reported success: commit {r['commit'][:7]} on {r['branch']}; "
+                f"feat/x={t.rev('refs/heads/feat/x')[:7]} feat/y={t.rev('refs/heads/feat/y')[:7]}")
+
+
+def _msg(t):
+    """The subject record_approval gives its commit (the implementation recognises its own commit by it)."""
+    return f"aisep: GateArchitecture Approved approval-20261120110000-architecture-{t.head[:7]}"
+
+
+def test_branch_switched_in_worktree_after_recheck_before_commit(t, monkeypatch):
+    """§5.9 step 7: the write lock only excludes model_* writers; an agent's own `git checkout` in W can still happen
+    after the locked symbolic-ref check and before `git commit`, which then moves feat/y (A^ == tip', so the parent
+    check alone does not see it). Expected (78bb9a1): the stray commit is taken back from feat/y with a compare-and-swap
+    update-ref, refs/heads/feat/x is never updated, the record file is unstaged and deleted (step 8, no `git restore`),
+    CONFLICT retryable (§7.1 rule 4) with details.reason "worktree-switched" and details.landedOn (names not fixed by
+    §5.9: 待定). Neither branch keeps an approval commit; nothing left in the index or on disk.
+    Failed on f9c2338: reported success on feat/x while the commit sat on feat/y.
+    变红: drop the post-commit check `_landed` (approval.py: `a = _landed(...)`, `if a is None: raise _misplaced(...)`)."""
+    _switch_before_write(monkeypatch)
+    e = _no_success(t)
+    assert e.code == "CONFLICT" and e.retryable is True, (e.code, e.retryable)
+    assert e.details.get("reason") == "worktree-switched" and e.details.get("landedOn") == ["refs/heads/feat/y"]
+    assert t.rev("refs/heads/feat/x") == t.head and t.rev("refs/heads/feat/y") == t.head
+    assert new_records(t) == [] and staged(t) == []
+    assert t.git("status", "--porcelain") == ""
+
+
+def test_branch_switched_and_commit_stacked_cannot_take_back(t, monkeypatch):
+    """Same window, and the agent also commits on feat/y right after our commit: ours is no longer a branch tip, so it
+    cannot be taken back without dropping the agent's commit. §5.9 step 7 for a failed take-back: do not touch the
+    branches, CONFLICT not retryable, a recovery hint for the human. refs/heads/feat/x untouched, the agent's commit
+    kept. (§5.9 also says details carry A; the implementation names the commit by subject in the hint only — reported,
+    not pinned.) 变红: let _misplaced update-ref whatever branch W is on even when ours is not its tip."""
+    _switch_before_write(monkeypatch)
+    real = approval._landed
+
+    def agent_commits_first(w, root, branch, msg):
+        t.write("src/agent.py", "print('agent')\n")
+        agent_commits_first.c = t.commit_all("agent commit on top")
+        return real(w, root, branch, msg)
+    monkeypatch.setattr(approval, "_landed", agent_commits_first)
+    e = _no_success(t)
+    assert e.code == "CONFLICT" and e.retryable is False and e.hint, (e.code, e.retryable, e.hint)
     assert t.rev("refs/heads/feat/x") == t.head
-    y = t.rev("refs/heads/feat/y")
-    if y == t.head:
-        assert err_.code in ("STALE_HEAD", "CONFLICT"), err_.code
-        assert new_records(t) == [] and staged(t) == []
-    else:
-        assert t.rev(f"{y}^") == t.head  # the fixture: the stray approval commit sits on feat/y
-        assert err_.code == "CONFLICT" and err_.retryable is False, (err_.code, err_.retryable)
-        assert err_.details.get("commit") == y and err_.hint
+    c = agent_commits_first.c
+    assert t.rev("refs/heads/feat/y") == c and t.git("log", "-1", "--format=%s", f"{c}^") == _msg(t)
+    assert t.rev(f"{c}^^") == t.head
+
+
+@pytest.mark.xfail(strict=True, reason="78bb9a1: _misplaced 按 subject 认提交，把另一个分支顶端同 subject 的提交也当成"
+                                       "落错的批准提交撤回（update-ref 掉别人的提交）")
+def test_switched_take_back_spares_other_branch_with_same_subject(t, monkeypatch):
+    """The commit is recognised by its subject. Another branch feat/z whose tip merely has the same subject (any
+    commit can carry it) must not be rewound: the take-back may only touch the branch W actually moved.
+    变红 (once fixed): identify the stray commit by subject alone again."""
+    z = t.git("commit-tree", "main^{tree}", "-p", "main", "-m", _msg(t))
+    t.git("update-ref", "refs/heads/feat/z", z)
+    _switch_before_write(monkeypatch)
+    e = _no_success(t)
+    assert t.rev("refs/heads/feat/z") == z, "feat/z was rewound"
+    assert e.code == "CONFLICT", e.code
+    assert t.rev("refs/heads/feat/x") == t.head and t.rev("refs/heads/feat/y") == t.head
+    assert new_records(t) == [] and staged(t) == []
+
+
+@pytest.mark.xfail(strict=True, reason="78bb9a1: _landed 只看 refs/heads/<branch> 顶端的 subject；顶端恰是一个同 subject 的"
+                                       "（合法）批准提交时，把它当成本次提交，按并发提交撤回，倒退了 feat/x，真提交留在 feat/y")
+def test_switched_branch_tip_with_same_subject_is_not_ours(t, monkeypatch):
+    """refs/heads/feat/x's tip is a valid approval commit (another record file, GateDesign, evidence = headCommit) whose
+    subject happens to equal the one record_approval will use. W then switches to feat/y before our commit. The
+    implementation must not take feat/x's tip for its own commit: feat/x keeps that commit (no update-ref on
+    `branch`), our stray commit is taken back from feat/y, CONFLICT.
+    变红 (once fixed): recognise our commit by the subject of refs/heads/<branch>'s tip alone again."""
+    local = "approval-20261119230000-design-crafted"
+    t.write(f"{GOV}/{local}.ttl", PREFIXES + record_ttl(local, "GateDesign", ["newThing"], t.head,
+                                                        at="2026-11-19T23:00:00Z"))
+    x = t.commit_all(_msg(t), trailers=[f"AISEP-Evidence: {t.head}"])
+    _switch_before_write(monkeypatch)
+    e = _no_success(t)
+    assert t.rev("refs/heads/feat/x") == x, "feat/x was rewound"
+    assert e.code == "CONFLICT", e.code
+    assert t.rev("refs/heads/feat/y") == x
+    assert new_records(t) == [] and staged(t) == []
 
 
 # ================================================================== 2. rollback when index.lock is held
