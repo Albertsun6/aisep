@@ -838,6 +838,10 @@ def l3(ctx):
         data.parse(data=model_nt.decode("utf-8"), format="nt")
         shapes = rdflib_graph(("shapes", tuple(shape_files)), shape_files)
         _, report, _ = shacl(data, shacl_graph=shapes, inference="none", allow_warnings=True)
+        if not isinstance(report, Graph):  # pyshacl ValidationFailure (SHACL §3.6.2 failure, e.g. a shape breaking
+            # the §5.3.1 pre-binding rules): no report graph, so the gate must not pass silently or crash
+            ctx.add("Violation", "L3", f"[{name}] SHACL engine rejected the data/shapes (ValidationFailure): {report}")
+            continue
         for r in report.subjects(RDF.type, SH.ValidationResult):
             sev = str(report.value(r, SH.resultSeverity)).split("#")[-1]
             focus, path = report.value(r, SH.focusNode), report.value(r, SH.resultPath)

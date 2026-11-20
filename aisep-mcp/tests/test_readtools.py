@@ -67,13 +67,6 @@ def append(repo, text, f="am4.ttl"):
 
 # ---------------------------------------------------------------- T3: same judgement as the CLI (P9)
 
-# Pre-existing prototype bug (also on main): `aisep.py gate <fixture>` crashes in l3 because pyshacl returns a
-# ValidationFailure for these fixtures. `aisep.py test` does not see it (run_fixture stops before L3 once the expected
-# L1 violation is found). Strict xfail: the day it is fixed these turn into failures and the marks must go.
-PYSHACL_FAILURE = {"deprecated-partOfModel.ttl", "reifies-forbidden.ttl"}
-PYSHACL_BUG = "prototype l3 crashes on pyshacl ValidationFailure (pre-existing, also on main)"
-
-
 def _fixtures():
     fx = sorted(glob.glob(os.path.join(ROOT, "modules", "*", "tests", "*", "*.ttl")))
     if os.environ.get("AISEP_T3_ALL"):
@@ -82,8 +75,7 @@ def _fixtures():
         first = {}
         for f in fx:  # default: the first valid and the first invalid fixture of every module
             first.setdefault(os.path.dirname(f), f)
-    return [pytest.param(f, marks=pytest.mark.xfail(raises=AttributeError, strict=True, reason=PYSHACL_BUG))
-            if os.path.basename(f) in PYSHACL_FAILURE else f for f in first.values()]
+    return list(first.values())
 
 
 def test_T3_procurement_gate_and_findings(repo):
