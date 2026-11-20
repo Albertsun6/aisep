@@ -21,6 +21,13 @@ PROTECTED_TYPES = {core.AISEP + "ApprovalRecord", core.AISEP + "AgentActivity"}
 
 # ---------------------------------------------------------------- helpers
 
+def _no_extra(extra):
+    """Unknown arguments are a tool execution error naming them, not a TypeError (§3.1, contract of the S4 tests)."""
+    if extra:
+        raise AisepError("INVALID_ARGUMENT", f"不接受的参数：{', '.join(sorted(extra))}",
+                         details={"rejectedFields": sorted(extra)})
+
+
 def _bad(field, msg):
     return AisepError("INVALID_ARGUMENT", msg, details={"rejectedFields": [field]})
 
@@ -146,7 +153,8 @@ def _lit(v, lang):
 # ---------------------------------------------------------------- §5.2
 
 def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, definition=None, attributes=None,
-                      file=None, dryRun=False, repo=None):
+                      file=None, dryRun=False, repo=None, **extra):
+    _no_extra(extra)
     if not isinstance(prefLabel, str) or not prefLabel.strip():
         raise _bad("prefLabel", "prefLabel 不能为空")
     if slug is None:
@@ -202,7 +210,9 @@ def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, def
 
 # ---------------------------------------------------------------- §5.3
 
-def model_add_relationship(cfg, type, source, target, model=None, file=None, dryRun=False, repo=None):
+def model_add_relationship(cfg, type, source, target, model=None, file=None, dryRun=False, repo=None, **extra):
+    _no_extra(extra)
+
     def build(ws, ctx):
         st = _subject_triples(ctx)
         s_iri, t_iri = _member(ctx, st, source, "source"), _member(ctx, st, target, "target")
@@ -242,7 +252,8 @@ def model_add_relationship(cfg, type, source, target, model=None, file=None, dry
 
 # ---------------------------------------------------------------- §5.10
 
-def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET, dryRun=False, repo=None):
+def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET, dryRun=False, repo=None, **extra):
+    _no_extra(extra)
     if prefLabel is UNSET and altLabel is UNSET and definition is UNSET:
         raise AisepError("INVALID_ARGUMENT", "prefLabel、altLabel、definition 至少给一个",
                          details={"rejectedFields": ["prefLabel", "altLabel", "definition"]})
@@ -265,7 +276,8 @@ def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET
             raise AisepError("PROTECTED_RESOURCE", f"{core.short(x)} 的三元组有一部分在别的模型目录里，不改别人的模型",
                              details={"files": outside})
         spec = [(PREF, "zh", prefLabel), (ALT, "en", altLabel), (DEF, "zh", definition)]
-        before = {k: [t.object.value for _, t in st[x] if t.predicate.value == p and (t.object.language or "") == lang]
+        before = {k: next((t.object.value for _, t in st[x] if t.predicate.value == p and isinstance(t.object, ox.Literal)
+                           and (t.object.language or "") == lang), None)
                   for k, (p, lang, _) in zip(("prefLabel", "altLabel", "definition"), spec)}
         removed, added, adds = {}, {}, {}
         type_file = _type_file(st, x)
@@ -283,8 +295,7 @@ def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET
                 nt = ox.Triple(ox.NamedNode(x), ox.NamedNode(p), _lit(v, lang))
                 added.setdefault(f, []).append(nt)
                 adds.setdefault(f, {}).setdefault(x, []).append((nt.predicate, nt.object))
-        after = {k: (before[k] if v is UNSET else ([] if v is None else [v]))
-                 for k, (_, _, v) in zip(("prefLabel", "altLabel", "definition"), spec)}
+        after = {k: before[k] if v is UNSET else v for k, (_, _, v) in zip(("prefLabel", "altLabel", "definition"), spec)}
         result = {"iri": x, "before": before, "after": after}
         files = sorted(set(removed) | set(added))
         edits = {f: writer.rewrite_blocks(ws.text(f), removed.get(f, set()), adds.get(f, {})) for f in files}
@@ -368,13 +379,17 @@ def remove_plan(ctx, st, target):
     return plan, remove
 
 
-def plan_digest(target, plan):
+def plan_digest(target, plan, files):
+    """sha256 over the target, the plan and the current bytes of every file the plan touches: any later change to
+    those files (even a comment) makes an old digest stale (T18)."""
     import hashlib, json
-    return "sha256:" + hashlib.sha256(json.dumps({"target": target, "plan": plan}, sort_keys=True,
+    return "sha256:" + hashlib.sha256(json.dumps({"target": target, "plan": plan, "files": files}, sort_keys=True,
                                                  ensure_ascii=False).encode()).hexdigest()
 
 
-def model_remove(cfg, iri, cascade=False, dryRun=False, planDigest=None, repo=None):
+def model_remove(cfg, iri, cascade=False, dryRun=False, planDigest=None, repo=None, **extra):
+    _no_extra(extra)
+
     def build(ws, ctx):
         st = _subject_triples(ctx)
         try:
@@ -394,7 +409,7 @@ def model_remove(cfg, iri, cascade=False, dryRun=False, planDigest=None, repo=No
         if not any(t.predicate.value == IN_MODEL for _, t in st[target]):
             raise AisepError("ELEMENT_NOT_FOUND", f"{core.short(target)} 不是模型成员")
         plan, remove = remove_plan(ctx, st, target)
-        digest = plan_digest(target, plan)
+        digest = plan_digest(target, plan, {f: writer.sha(ws.data.get(f)) for f in sorted(remove)})
         details = {"plan": plan, "planDigest": digest}
         if planDigest is not None and planDigest != digest:
             raise AisepError("PLAN_STALE", "计划已变化（文件在 dryRun 之后被改过）", hint="先用 dryRun: true 取新计划",

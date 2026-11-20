@@ -263,7 +263,8 @@ def test_T12_notation_mixing_refused_legal_written_qualified_only(repo):
     r = wt("model_add_relationship", repo, "am4:Assignment", "procurement:procurementManager",
            "procurement:submitQuotation")
     if not pending(r):
-        assert "arch:source" in r["turtle"] and "assignedTo" not in r["turtle"]  # never the direct triple (§8.1)
+        # never the direct triple (§8.1); the IRI itself does carry the local name (§3: rel-{s}-{assignedTo}-{t})
+        assert "arch:source" in r["turtle"] and "am4:assignedTo" not in r["turtle"]
 
 
 # ================================================================== T13 lock and root
@@ -313,8 +314,10 @@ def test_T17_bpmnReview_cascade_then_gate_passes(repo):
     if pending(r):
         return
     assert {d["iri"] for d in r["plan"]["delete"]} >= {M + "sf1", M + "sf2"}
-    assert [(d["subject"], d["predicate"].rsplit("#", 1)[-1].rsplit(":", 1)[-1]) for d in r["plan"]["detach"]] == \
-        [(M + "bpmnQuoteApproval", "flowElements")]
+    # one entry per detached triple (§5.5 entries carry `object`): sf1 and sf2 are flowElements members too
+    assert {(d["subject"], d["predicate"].rsplit("#", 1)[-1].rsplit(":", 1)[-1]) for d in r["plan"]["detach"]} == \
+        {(M + "bpmnQuoteApproval", "flowElements")}
+    assert {d["object"] for d in r["plan"]["detach"]} == {M + "bpmnReview", M + "sf1", M + "sf2"}
     assert T.model_gate(cfg(repo), repo=str(repo))["result"] == "PASS"
 
 

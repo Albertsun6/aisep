@@ -157,6 +157,31 @@ def append_block(text, block, pfx):
     return text + ("\n" if text else "") + block + "\n"
 
 
+def _shares_line(text, s0, s1):
+    """Another statement on the same physical line as text[s0:s1] (comments do not count)."""
+    before = text[text.rfind("\n", 0, s0) + 1:s0]
+    end = text.find("\n", s1)
+    after = text[s1:len(text) if end < 0 else end].strip()
+    return bool(before.strip()) or (bool(after) and not after.startswith("#"))
+
+
+def _in_place(stmt, hit, extra, pfx):
+    """Edit the statement text in place when every removed value has a same-predicate replacement whose old text
+    occurs exactly once (keeps the author's layout, comments and line breaks); new values are added before the final
+    '.'. None when that is not possible (the caller re-renders the statement)."""
+    extra = list(extra)
+    for t in hit:
+        rep = next((po for po in extra if po[0].value == t.predicate.value), None)
+        old = term(t.object, pfx)
+        if rep is None or stmt.count(old) != 1:
+            return None
+        extra.remove(rep)
+        stmt = stmt.replace(old, term(rep[1], pfx))
+    if extra:
+        stmt = stmt[:-1].rstrip() + " ;\n    " + " ;\n    ".join(f"{term(p, pfx)} {term(o, pfx)}" for p, o in extra) + " ."
+    return stmt
+
+
 def rewrite_blocks(text, remove, add_by_subject):
     """Re-render the statements holding a triple of `remove` or the rdf:type statement of a subject in add_by_subject
     (added pairs go there unless a statement of the same subject+predicate is being re-rendered). A statement with more
@@ -188,9 +213,15 @@ def rewrite_blocks(text, remove, add_by_subject):
         extra = targets.get(id(pl), (None, []))[1]
         if not hit and not extra:
             continue
-        if len(subjects) != 1 or any(isinstance(x, ox.BlankNode) for t in ts for x in (t.subject, t.object)):
-            raise AisepError("EDIT_UNSAFE", "要改的语句里有多个主语或空白节点，不自动改写，请手工编辑",
+        if len(subjects) != 1 or any(isinstance(x, ox.BlankNode) for t in ts for x in (t.subject, t.object)) \
+                or _shares_line(text, s0, s1):
+            raise AisepError("EDIT_UNSAFE", "要改的语句里有多个主语、空白节点，或与别的语句写在同一行，不自动改写，请手工编辑",
                              details={"statement": text[s0:s1][:200]})
+        inplace = _in_place(text[s0:s1], hit, extra, pfx)
+        if inplace is not None:
+            out.append(text[pos:s0] + inplace)
+            pos = s1
+            continue
         subj = next(iter(subjects))
         keep, extra = [], list(extra)
         for t in ts:  # a replacement takes the place of the first removed value of its predicate
@@ -245,6 +276,8 @@ class Workspace:
             try:
                 self.data[f] = gitio.read_file(root, f)
             except gitio.UnsafeFile as e:
+                if str(e) == "symlink":  # a link anywhere in the model tree would let the write land outside the worktree
+                    raise AisepError("PATH_OUTSIDE_ROOT", f"{f} 的路径经过符号链接，拒绝写入", details={"file": f}) from None
                 raise AisepError("PARSE_FAILED", f"{f} 读不了（{e}），先修好再写", details={"file": f, "error": str(e)}) from None
 
     def ctx(self, overrides=None):
