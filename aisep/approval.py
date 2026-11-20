@@ -68,6 +68,20 @@ def _check_activity(activity, branch, now):
     return dict(activity, endedAt=ended_lex)
 
 
+def _main_short(root, main_full):
+    """Branch short name of the resolved main ref: refs/heads/<b> → <b>; refs/remotes/<remote>/<b> → <b> (the remote
+    name is matched against `git remote`, since both it and <b> may contain "/")."""
+    if main_full.startswith("refs/heads/"):
+        return main_full[len("refs/heads/"):]
+    if main_full.startswith("refs/remotes/"):
+        rest = main_full[len("refs/remotes/"):]
+        for r in sorted(gitio.git(root, "remote")[1].split(), key=len, reverse=True):
+            if rest.startswith(r + "/"):
+                return rest[len(r) + 1:]
+        return rest.split("/", 1)[-1]
+    return main_full
+
+
 def _check_branch(root, branch, main_full):
     if not isinstance(branch, str) or not branch:
         raise _bad("branch", "branch 必填")
@@ -77,7 +91,7 @@ def _check_branch(root, branch, main_full):
         raise _bad("branch", f"branch 须为分支短名（不接受 refs/…、标签、修订表达式）：{branch!r}") from None
     if not gitio._ref_exists(root, f"refs/heads/{branch}"):
         raise _bad("branch", f"refs/heads/{branch} 不存在（标签、远端跟踪分支都不算）")
-    if branch == main_full.rsplit("/", 1)[-1] or f"refs/heads/{branch}" == main_full:
+    if branch == _main_short(root, main_full):
         raise AisepError("INVALID_ARGUMENT", f"不能直接提交到主分支 {branch}",
                          hint="发布关口：从被发布的提交 R 拉短命批准分支（approval/release-…），再对它批准（§5.9 发布关口）",
                          details={"rejectedFields": ["branch"], "reason": "protected-branch"})
@@ -194,7 +208,7 @@ def _dirty(w, head):
         data = disk.get(changed[0])
         if isinstance(data, bytes) and b"aisep:ApprovalRecord" in data:
             details["orphanApproval"] = True
-            details["recover"] = f"git rm --cached -q --ignore-unmatch -- {changed[0]} && rm -- {changed[0]}"
+            details["recover"] = _recover(changed[0])
     return details
 
 
@@ -236,12 +250,27 @@ def _sha_file(w, rel):
         return None
 
 
-def _unstage_and_maybe_delete(w, rel, written_sha):
-    gitio.git(w, "rm", "--cached", "-q", "-f", "--ignore-unmatch", "--", rel)  # -f: index only, even if they differ
+def _recover(rel):
+    return f"git rm --cached -q --ignore-unmatch -- {rel} && rm -- {rel}"
+
+
+def _unstage_and_maybe_delete(w, rel, written_sha, staged=True):
+    """Step 8 rollback: "removed" (out of the index, file deleted), "kept" (out of the index, file changed by someone
+    else and kept) or "stuck" (`git rm --cached` failed, e.g. index.lock held: the file stays staged and on disk)."""
+    if staged:
+        rc, _, _ = gitio.git(w, "rm", "--cached", "-q", "-f", "--ignore-unmatch", "--", rel)  # -f: index only
+        if rc != 0:
+            return "stuck"
     if _sha_file(w, rel) == written_sha:
         os.remove(os.path.join(w, rel))
-        return True
-    return False
+        return "removed"
+    return "kept"
+
+
+def _stuck(rel, what, **details):
+    return AisepError("COMMIT_FAILED", f"{what}；回滚未完成：{rel} 仍在 index 和磁盘上",
+                      hint="下一次调用会报 DIRTY_WORKTREE + orphanApproval；人工恢复：" + _recover(rel),
+                      details=dict(details, orphanApproval=True, recover=_recover(rel)), retryable=False)
 
 
 # ---------------------------------------------------------------- the tool
@@ -348,6 +377,9 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
         rc, sym, _ = gitio.git(w, "symbolic-ref", "-q", "HEAD")
         if rc != 0:
             raise AisepError("DETACHED_HEAD", f"{w} 处于 detached HEAD")
+        if sym.strip() != f"refs/heads/{branch}":  # W was switched to another branch after locate_worktree
+            raise AisepError("CONFLICT", f"{w} 已不在分支 {branch} 上（现为 {sym.strip()}），未提交", retryable=True,
+                             details={"reason": "worktree-switched", "worktree": w, "head": sym.strip()})
         tip2 = gitio.git(w, "rev-parse", "HEAD")[1].strip()
         dirty = _dirty(w, tip2)
         if dirty:
@@ -402,9 +434,17 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
         data = text.encode("utf-8")
         written = hashlib.sha256(data).hexdigest()
         _write_new(w, rel, data)
-        gitio.git(w, "add", "--", rel)
+        rc, _, err = gitio.git(w, "add", "--", rel)
+        if rc != 0:  # nothing staged (git add takes index.lock or fails as a whole)
+            tail = "\n".join(err.strip().splitlines()[-50:])
+            if _unstage_and_maybe_delete(w, rel, written, staged=False) == "kept":
+                raise AisepError("CONFLICT", f"git add 失败，且 {rel} 已被改动：保留文件", retryable=False,
+                                 details={"output": tail})
+            raise AisepError("COMMIT_FAILED", "git add 失败，已删除新建的记录文件", details={"output": tail},
+                             retryable="index.lock" in tail)
         if _sha_file(w, rel) != written:
-            gitio.git(w, "rm", "--cached", "-q", "-f", "--ignore-unmatch", "--", rel)
+            if gitio.git(w, "rm", "--cached", "-q", "-f", "--ignore-unmatch", "--", rel)[0] != 0:
+                raise _stuck(rel, f"{rel} 在提交前被改动")
             raise AisepError("CONFLICT", f"{rel} 在提交前被改动，已从 index 移除、保留文件", retryable=True)
         msg = f"aisep: {gate} {decision} {rec_local}"
         cmd = ["git", "-C", w, "-c", "trailer.ifexists=add", "commit", "-q", "--only", "-m", msg,
@@ -413,9 +453,11 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
             cmd += ["--trailer", f"AISEP-Session: {act_in['sessionRef']}"]
         p = subprocess.run(cmd + ["--", rel], capture_output=True, text=True)
         if p.returncode != 0:  # step 8: rollback without `git restore`
-            removed = _unstage_and_maybe_delete(w, rel, written)
+            undone = _unstage_and_maybe_delete(w, rel, written)
             tail = "\n".join((p.stdout + p.stderr).strip().splitlines()[-50:])
-            if not removed:
+            if undone == "stuck":
+                raise _stuck(rel, "git commit 失败", output=tail)
+            if undone == "kept":
                 raise AisepError("CONFLICT", f"提交失败，且 {rel} 已被钩子或编辑器改动：保留文件、已移出 index",
                                  details={"output": tail}, retryable=False)
             raise AisepError("COMMIT_FAILED", "git commit 失败（钩子拒绝或 index.lock 被占用），已回滚",
@@ -426,7 +468,10 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
             if rc != 0:
                 raise AisepError("CONFLICT", f"批准提交 {a[:7]} 之上又有新提交，未自动撤回", retryable=False,
                                  hint="人工检查分支历史", details={"commit": a})
-            _unstage_and_maybe_delete(w, rel, written)
+            if _unstage_and_maybe_delete(w, rel, written) == "stuck":
+                raise AisepError("STALE_HEAD", f"提交期间分支有新提交，已撤回提交 {a[:7]}，但 {rel} 仍在 index 和磁盘上",
+                                 hint="人工恢复：" + _recover(rel), details={
+                                     "reason": "concurrent-commit", "orphanApproval": True, "recover": _recover(rel)})
             raise AisepError("STALE_HEAD", "提交期间分支有新提交，已撤回本次批准", details={"reason": "concurrent-commit"})
     return {"approval": {"iri": model_iri + rec_local, "file": rel},
             "activity": None if act_in is None else {"iri": act_iri, "reused": act_new is None},

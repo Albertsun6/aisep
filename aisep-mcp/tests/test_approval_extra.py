@@ -54,9 +54,10 @@ def test_write_lock_is_shared_with_the_write_tools(t):
     """T13: while a write tool holds the worktree's lock, record_approval answers LOCKED and commits nothing."""
     lock = os.path.join(t.git("rev-parse", "--absolute-git-dir"), writer.LOCK_NAME)
     holder = subprocess.Popen([sys.executable, "-c", textwrap.dedent(f"""
-        import fcntl, os, time
+        import fcntl, os, sys
         fd = os.open({lock!r}, os.O_RDWR | os.O_CREAT)
-        fcntl.flock(fd, fcntl.LOCK_EX); print("held", flush=True); time.sleep(60)""")], stdout=subprocess.PIPE, text=True)
+        fcntl.flock(fd, fcntl.LOCK_EX); print("held", flush=True); sys.stdin.read()""")],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)  # holds until we close its stdin, not for a duration
     try:
         assert holder.stdout.readline().strip() == "held"
         n = t.git("rev-list", "--all", "--count")
@@ -65,7 +66,7 @@ def test_write_lock_is_shared_with_the_write_tools(t):
         assert e.value.code == "LOCKED" and e.value.retryable
         assert t.git("rev-list", "--all", "--count") == n and t.git("status", "--porcelain") == ""
     finally:
-        holder.kill()
+        holder.stdin.close()
         holder.wait()
     assert call(t)["duplicate"] is False  # positive twin: lock released
 
@@ -112,3 +113,17 @@ def test_activity_with_same_session_and_head_on_another_branch_is_not_reused(t):
     r2 = call(t, branch="feat/y", gate="GateDesign", activity=act)
     assert r2["activity"]["reused"] is False and r2["activity"]["iri"] != r1["activity"]["iri"]
     assert 'aisep:branch "feat/y"' in t.git("show", f"{r2['commit']}:{r2['approval']['file']}")
+
+
+def test_main_ref_with_slash_is_protected(t):
+    """Review minor: mainRef release/1.0 resolves to refs/remotes/origin/release/1.0; branch release/1.0 is that main
+    branch and is refused, while a branch merely ending in its last segment (1.0) is not."""
+    t.git("branch", "release/1.0", "main")
+    t.git("update-ref", "refs/remotes/origin/release/1.0", "main")
+    with pytest.raises(AisepError) as e:
+        call(t, branch="release/1.0", mainRef="release/1.0")
+    assert e.value.code == "INVALID_ARGUMENT" and e.value.details.get("reason") == "protected-branch"
+    t.git("branch", "1.0", "main")
+    with pytest.raises(AisepError) as e:
+        call(t, branch="1.0", mainRef="release/1.0")
+    assert e.value.details.get("reason") != "protected-branch"
