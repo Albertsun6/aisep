@@ -4,3 +4,4 @@ rdflib==7.6.0
 pytest==9.2.0
 mcp==2.3.0
 jsonschema==4.26.0
+pytest-xdist==3.8.0
