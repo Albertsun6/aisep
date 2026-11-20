@@ -259,3 +259,22 @@ def index_flags(w):
 def sparse_checkout(w):
     rc, out, _ = git(w, "config", "--bool", "core.sparseCheckout")
     return rc == 0 and out.strip() == "true"
+
+
+def open_dir(root, reldir):
+    """fd of root/reldir opened component by component with O_NOFOLLOW (write side of §3.3's safe open): a symlink at
+    any level raises UnsafeFile('symlink'); a missing directory raises FileNotFoundError."""
+    dfd = os.open(_real(root), os.O_RDONLY | os.O_DIRECTORY)
+    for name in [p for p in reldir.split("/") if p]:
+        try:
+            fd = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=dfd)
+        except OSError as e:
+            if e.errno in (errno.ELOOP, errno.ENOTDIR):
+                st = os.stat(name, dir_fd=dfd, follow_symlinks=False)
+                os.close(dfd)
+                raise UnsafeFile("symlink" if stat.S_ISLNK(st.st_mode) else "not-regular") from None
+            os.close(dfd)
+            raise
+        os.close(dfd)
+        dfd = fd
+    return dfd

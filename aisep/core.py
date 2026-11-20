@@ -498,7 +498,7 @@ class Ctx:
             if shape == APPROVAL_SHAPE or focus is None or focus.value not in in_src:
                 continue  # only model content, never ontology individuals; approval records: approval_problems()
             text = re.sub(r"\{[?$](\w+)\}", lambda mm: short(b[mm.group(1)]) if b.get(mm.group(1)) is not None else "?", msg)
-            self.add(sev, "L1", f"{short(focus)}: {text}")
+            self.add(sev, "L1", f"{short(focus)}: {text}", focus=focus.value)
         for rec, msgs in sorted(self.approval_problems().items()):  # R3a: the same check the derivation uses
             if rec in in_src:
                 for msg in sorted(set(msgs)):
