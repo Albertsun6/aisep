@@ -2,3 +2,5 @@ pyoxigraph==0.5.13
 pyshacl==0.40.2
 rdflib==7.6.0
 pytest==9.2.0
+mcp==2.3.0
+jsonschema==4.26.0

@@ -1,0 +1,9 @@
+{
+  "name": "aisep-mcp-ts-client-tests",
+  "private": true,
+  "type": "module",
+  "description": "T34: the official TypeScript SDK client must receive every AISEP error as structuredContent.error (no InvalidParams from outputSchema validation)",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2"
+  }
+}

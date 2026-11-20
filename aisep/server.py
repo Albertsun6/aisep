@@ -1,0 +1,286 @@
+"""AISEP MCP server (docs/mcp-interface.md §3, §4, §7): one program, two transports.
+
+    python -m aisep.server --transport stdio|http [--profile agent|workbench|all] [--allow-root DIR ...]
+                           [--repo DIR] [--main-branch NAME] [--host 127.0.0.1] [--port 8765] [--allow-origin ORIGIN ...]
+
+Every tool is a plain function of aisep.tools / aisep.diff / aisep.write_tools; this module only lists them, validates
+the arguments against their inputSchema (additionalProperties: false), runs them and turns AisepError into a tool
+execution error (isError + structuredContent.error, §7.1). The server keeps no state between calls (§3.5)."""
+import argparse, io, json, os, sys, traceback
+
+import anyio
+import jsonschema
+import mcp_types as types
+from mcp.server.lowlevel import Server
+from mcp.server.stdio import stdio_server
+from mcp.server.transport_security import TransportSecuritySettings
+from mcp.shared.exceptions import MCPError
+from mcp_types.jsonrpc import INVALID_PARAMS
+
+from aisep import diff, tools, write_tools
+from aisep.errors import CODES, AisepError
+
+MAX_TEXT_LINES = 200
+LOOPBACK_HOSTS = ["127.0.0.1:*", "localhost:*", "[::1]:*"]
+CORS_HEADERS = "Content-Type, Accept, MCP-Protocol-Version, Mcp-Method, Mcp-Name"
+
+# ---------------------------------------------------------------- schemas
+
+S = lambda **kw: {"type": "string", **kw}
+B = {"type": "boolean"}
+REPO = S(description="仓库内任意路径（主 checkout 或 worktree）；缺省取服务器的 --repo")
+REF = S(description="分支、标签或 commit；不传则读工作区（含未提交改动）")
+MODEL = S(description="模型 IRI 或 slug，如 procurement")
+
+
+def obj(props, required=()):
+    return {"type": "object", "properties": props, "required": list(required), "additionalProperties": False}
+
+
+READ_IN = obj({"repo": REPO, "ref": REF, "model": MODEL})
+ERROR_OUT = obj({"error": obj({"code": S(enum=sorted(CODES)), "message": S(), "hint": S(), "retryable": B,
+                               "details": {"type": "object"}}, ["code", "message", "retryable"])}, ["error"])
+
+
+def out(*required):
+    """outputSchema = success ∪ error (§5.0): a success result has these keys (an error result has only `error`)."""
+    return {"type": "object", "oneOf": [{"type": "object", "required": list(required)}, ERROR_OUT]}
+
+
+ANN_READ = dict(read_only_hint=True, idempotent_hint=True, open_world_hint=False)
+ANN_ADD = dict(read_only_hint=False, destructive_hint=False, idempotent_hint=True, open_world_hint=False)
+ANN_DESTRUCTIVE = dict(read_only_hint=False, destructive_hint=True, idempotent_hint=True, open_world_hint=False)
+
+TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotations, profiles)
+    "model_check": (tools.model_check, "L0–L2 快速诊断（不是门禁结论）", READ_IN,
+                    out("partial", "summary", "findings", "source"), ANN_READ, {"agent"}),
+    "model_validate": (tools.model_validate, "L0 + L3（SHACL）诊断", READ_IN,
+                       out("partial", "summary", "findings", "source"), ANN_READ, {"agent"}),
+    "model_findings": (tools.model_findings, "L4 提示 + 当前全部 L0–L2 遗留违规（openViolations）", READ_IN,
+                       out("partial", "summary", "findings", "source", "openViolations"), ANN_READ, {"agent", "workbench"}),
+    "model_gate": (tools.model_gate, "L0–L4 门禁（提交与 CI 只认它）；FAIL 是正常结果", READ_IN,
+                   out("result", "summary", "findings", "source"), ANN_READ, {"agent", "workbench"}),
+    "model_query": (tools.model_query, "只读 SPARQL（SELECT/ASK/CONSTRUCT/DESCRIBE，拒绝 SERVICE）",
+                    obj({"sparql": S(), "limit": {"type": "integer", "minimum": 1, "maximum": tools.QUERY_LIMIT_MAX},
+                         "timeoutMs": {"type": "integer", "minimum": 1}, "allowPartial": B, "repo": REPO, "ref": REF},
+                        ["sparql"]), out("kind", "source"), ANN_READ, {"agent", "workbench"}),
+    "model_impact": (tools.model_impact, "影响面：沿依赖方向（depends）或双向（ripple）逐跳展开",
+                     obj({"focus": S(), "mode": S(enum=["depends", "ripple"]),
+                          "depth": {"type": "integer", "minimum": 1, "maximum": 10}, "allowInvalid": B,
+                          "repo": REPO, "ref": REF}, ["focus"]),
+                     out("focus", "items", "source"), ANN_READ, {"agent", "workbench"}),
+    "model_diff": (diff.model_diff, "模型语义差异：head 为 Git 引用（只比已提交）或 {worktree: 分支名}（含未提交）",
+                   obj({"head": {"oneOf": [S(), obj({"worktree": S()}, ["worktree"])]}, "base": S(), "mainRef": S(),
+                        "detail": S(enum=["summary", "items", "triples"]), "model": MODEL, "repo": REPO}, ["head"]),
+                   out("base", "head", "counts"), ANN_READ, {"agent", "workbench"}),
+    "model_add_element": (write_tools.model_add_element, "新增元素（写工作区，不提交；只拒绝新增违规）",
+                          obj({"model": MODEL, "type": S(), "prefLabel": S(), "altLabel": S(), "slug": S(),
+                               "definition": S(), "attributes": {"type": "array", "items": obj(
+                                   {"predicate": S(), "value": {"type": "object"}}, ["predicate", "value"])},
+                               "file": S(), "dryRun": B, "repo": REPO}, ["model", "type", "prefLabel"]),
+                          out("iri", "changed"), ANN_ADD, {"agent"}),
+    "model_add_relationship": (write_tools.model_add_relationship, "新增限定关系（不写直连三元组）",
+                               obj({"type": S(), "source": S(), "target": S(), "model": MODEL, "file": S(),
+                                    "dryRun": B, "repo": REPO}, ["type", "source", "target"]),
+                               out("iri", "changed"), ANN_ADD, {"agent"}),
+    "model_set_labels": (write_tools.model_set_labels, "改名称、英文名、定义（不动 IRI）；null 表示删除",
+                         obj({"iri": S(), "prefLabel": S(), "altLabel": {"type": ["string", "null"]},
+                              "definition": {"type": ["string", "null"]}, "dryRun": B, "repo": REPO}, ["iri"]),
+                         out("iri", "changed"), ANN_DESTRUCTIVE, {"agent"}),
+    "model_remove": (write_tools.model_remove, "删除元素/关系/视图；牵连时返回计划，需 cascade + planDigest",
+                     obj({"iri": S(), "cascade": B, "dryRun": B, "planDigest": S(), "repo": REPO}, ["iri"]),
+                     out("target", "planDigest"), ANN_DESTRUCTIVE, {"agent"}),
+}
+PROFILES = {"agent": "agent", "workbench": "workbench", "all": None}
+
+
+def listed(profile):
+    want = PROFILES[profile]
+    return [n for n, t in TOOLS.items() if want is None or want in t[5]]
+
+
+# ---------------------------------------------------------------- argument validation (§3.1: the SDK does not)
+
+def _rejected(err, acc):
+    if err.validator == "additionalProperties" and isinstance(err.instance, dict):
+        acc.update(set(err.instance) - set(err.schema.get("properties", {})))
+    elif err.validator == "required":
+        acc.update(n for n in err.validator_value if n not in (err.instance or {}))
+    elif err.context:
+        for sub in err.context:
+            _rejected(sub, acc)
+    elif err.absolute_path:
+        acc.add(str(err.absolute_path[0]))
+    return acc
+
+
+def validate_args(name, args):
+    schema = TOOLS[name][2]
+    errors = list(jsonschema.Draft202012Validator(schema).iter_errors(args))
+    if errors:
+        fields = set()
+        for e in errors:
+            _rejected(e, fields)
+        raise AisepError("INVALID_ARGUMENT", f"{name} 的参数不合规：{errors[0].message[:200]}",
+                         hint="按 inputSchema 修改参数", details={"rejectedFields": sorted(fields)})
+
+
+# ---------------------------------------------------------------- results (§5.0, §7.1)
+
+def _finding_lines(fs):
+    return [f"[{f['severity']}] {f['layer']} {f['message']}" for f in fs]
+
+
+def summary_text(name, res):
+    head = {"model_gate": lambda r: f"gate {r['result']}：违规 {r['summary']['violations']}，警告 {r['summary']['warnings']}",
+            "model_diff": lambda r: f"改动元素 {r['changedElementCount']}（触及 {r['touchedElementCount']}）"
+                                    + ("，含未提交" if r["head"].get("dirty") else "")
+                                    + ("，部分文件解析失败" if r.get("incomplete") else ""),
+            "model_impact": lambda r: f"影响面 {len(r['items'])} 个元素" + ("（模型不合法）" if r.get("invalidModel") else ""),
+            "model_query": lambda r: f"查询结果：{r['kind']}"}.get(name)
+    if head is None:
+        head = lambda r: f"{name} 完成" + (f"：{r['iri']}" if "iri" in r else "") + \
+            ("（无变化）" if r.get("changed") is False else "")
+    lines = [head(res)] + _finding_lines(res.get("findings", []))
+    if len(lines) > MAX_TEXT_LINES:
+        lines = lines[:MAX_TEXT_LINES] + [f"……其余 {len(lines) - MAX_TEXT_LINES} 行见 structuredContent"]
+    return "\n".join(lines)
+
+
+def error_result(e):
+    text = e.message + (f"\n提示：{e.hint}" if e.hint else "")
+    fs = e.details.get("findings") if isinstance(e.details, dict) else None
+    if fs:
+        text += "\n" + "\n".join(_finding_lines(fs)[:MAX_TEXT_LINES])
+    return types.CallToolResult(content=[types.TextContent(type="text", text=text)],
+                                structured_content={"error": e.to_dict()}, is_error=True)
+
+
+def call(cfg, name, args):
+    """Run one tool call synchronously; never raises for anything but an unknown tool (a protocol error)."""
+    try:
+        validate_args(name, args)
+        if os.environ.get("AISEP_MCP_FAULT") == name:  # test hook (T34): an uncaught exception inside a tool
+            raise RuntimeError("injected fault")
+        res = TOOLS[name][0](cfg, **args)
+        res = json.loads(json.dumps(res, ensure_ascii=False))  # plain JSON (no tuples or other Python-only values)
+        return types.CallToolResult(content=[types.TextContent(type="text", text=summary_text(name, res))],
+                                    structured_content=res, is_error=False)
+    except AisepError as e:
+        return error_result(e)
+    except Exception as e:  # noqa: BLE001 — §3.1: anything else is INTERNAL with a stderr summary, never a bare -32603
+        print(f"[aisep-mcp] INTERNAL in {name}: {e!r}\n{traceback.format_exc()}", file=sys.stderr, flush=True)
+        return error_result(AisepError("INTERNAL", f"服务器内部错误：{type(e).__name__}: {str(e)[:300]}"))
+
+
+# ---------------------------------------------------------------- the MCP server
+
+def build_server(cfg, profile="all"):
+    names = listed(profile)
+    tool_list = [types.Tool(name=n, description=TOOLS[n][1], input_schema=TOOLS[n][2], output_schema=TOOLS[n][3],
+                            annotations=types.ToolAnnotations(**TOOLS[n][4])) for n in names]
+
+    async def on_list_tools(ctx, params):
+        return types.ListToolsResult(tools=tool_list)
+
+    async def on_call_tool(ctx, params):
+        if params.name not in names:
+            raise MCPError(INVALID_PARAMS, f"Unknown tool: {params.name}")
+        return await anyio.to_thread.run_sync(call, cfg, params.name, dict(params.arguments or {}))
+
+    return Server("aisep", version="0.1.0", instructions="AISEP 架构模型仓库的 MCP 服务器（docs/mcp-interface.md）",
+                  on_list_tools=on_list_tools, on_call_tool=on_call_tool)
+
+
+def _started():  # test hook (T5): runs after the stdout diversion, before the SDK takes the streams
+    pass
+
+
+def run_stdio(server):
+    """§3.1: keep the real fd 1 as the JSON-RPC wire and point fd 1 at stderr BEFORE the SDK starts, so a stray print
+    or a C-level write anywhere (also outside a tool call) lands on stderr, never in the protocol stream."""
+    wire_out, wire_in = os.dup(1), os.dup(0)
+    os.dup2(2, 1)
+    null = os.open(os.devnull, os.O_RDONLY)
+    os.dup2(null, 0)
+    os.close(null)
+    _started()
+
+    async def main():
+        stdin = anyio.wrap_file(io.TextIOWrapper(os.fdopen(wire_in, "rb"), encoding="utf-8", errors="replace"))
+        stdout = anyio.wrap_file(io.TextIOWrapper(os.fdopen(wire_out, "wb"), encoding="utf-8", write_through=True))
+        async with stdio_server(stdin, stdout) as (read, write):
+            await server.run(read, write, server.create_initialization_options())
+    anyio.run(main)
+
+
+class OriginGate:
+    """§3.2 security: a request with an Origin outside the allow-list -> 403 (preflight included; never `*` or `null`).
+    Allowed origins get CORS headers and their OPTIONS preflight is answered here. No Origin (curl, local processes)
+    passes; Host is checked by the SDK's DNS-rebinding protection (loopback only)."""
+
+    def __init__(self, app, origins):
+        self.app, self.origins = app, set(origins)
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
+        origin = headers.get("origin")
+        if origin is not None and origin not in self.origins:
+            await send({"type": "http.response.start", "status": 403, "headers": [(b"content-type", b"text/plain")]})
+            return await send({"type": "http.response.body", "body": b"Origin not allowed"})
+        cors = [(b"access-control-allow-origin", origin.encode()), (b"vary", b"Origin")] if origin else []
+        if scope["method"] == "OPTIONS" and origin:
+            await send({"type": "http.response.start", "status": 204, "headers": cors + [
+                (b"access-control-allow-methods", b"POST, GET, DELETE, OPTIONS"),
+                (b"access-control-allow-headers", CORS_HEADERS.encode()), (b"access-control-max-age", b"600")]})
+            return await send({"type": "http.response.body", "body": b""})
+
+        async def send_cors(msg):
+            if msg["type"] == "http.response.start" and cors:
+                msg = dict(msg, headers=list(msg.get("headers", [])) + cors)
+            await send(msg)
+        return await self.app(scope, receive, send_cors)
+
+
+def http_app(server, origins, host="127.0.0.1"):
+    security = TransportSecuritySettings(enable_dns_rebinding_protection=True, allowed_hosts=LOOPBACK_HOSTS,
+                                         allowed_origins=sorted(origins))
+    return OriginGate(server.streamable_http_app(stateless_http=True, json_response=True,
+                                                 transport_security=security, host=host), origins)
+
+
+def parse_args(argv):
+    ap = argparse.ArgumentParser(prog="aisep-mcp")
+    ap.add_argument("--transport", choices=["stdio", "http"], default="stdio")
+    ap.add_argument("--profile", choices=sorted(PROFILES), default="agent")
+    ap.add_argument("--allow-root", action="append", default=[])
+    ap.add_argument("--repo")
+    ap.add_argument("--main-branch", default="main")
+    ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--allow-origin", action="append", default=[])
+    a = ap.parse_args(argv)
+    if a.host not in ("127.0.0.1", "::1", "localhost"):
+        ap.error("--host 只能是本机回环地址（§3.2）")
+    bad = [o for o in a.allow_origin if o in ("*", "null")]
+    if bad:
+        ap.error(f"--allow-origin 不能是 {bad}（§3.2）")
+    return a
+
+
+def main(argv=None):
+    a = parse_args(sys.argv[1:] if argv is None else argv)
+    cfg = tools.Config(allow_roots=tuple(os.path.realpath(r) for r in a.allow_root), repo=a.repo,
+                       main_branch=a.main_branch)
+    server = build_server(cfg, a.profile)
+    if a.transport == "stdio":
+        run_stdio(server)
+    else:
+        import uvicorn
+        uvicorn.run(http_app(server, a.allow_origin, a.host), host=a.host, port=a.port, log_level="warning")
+
+
+if __name__ == "__main__":
+    main()
