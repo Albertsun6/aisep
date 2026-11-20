@@ -96,8 +96,9 @@
 
 **怎么查已有批准记录**（"待批准关口"及其"已在分支批准、待合并"标记共用；口径与推导函数 `aisep/core.py` 的 `derive_approval_state`、`approval_problems` 一致）：
 
-- **查询条件**：`model_query` 在所读那份内容上（主分支：`ref` 不传；分支标记：`ref=branch`）选 `?rec a/rdfs:subClassOf* aisep:ApprovalRecord`，带出 `aisep:approves`、`aisep:gate`、`aisep:decision`、`aisep:approvedBy`、`aisep:evidence`、`prov:generatedAtTime`，`aisep:activity` 用 `OPTIONAL`；按模型筛加 `?rec arch:inModel <模型 IRI>`。记录可能在 `governance.ttl` 里，也可能在 `models/<slug>/governance/` 下一条一个文件（U2）；统一文件集合（§3.3，`aisep/gitio.py` 的 `model_files`）含子目录，查询不按文件区分。
-- **口径**：这样查出的是**全部**记录，含不合法的。只有 `approval_problems` 为空的记录参与推导，不合法的由 L1 报出（`model_check` 的发现项）、推导忽略并给 build Warning。对象的状态取各关口合法记录中 `prov:generatedAtTime`（时区归一，无时区按 UTC）最晚的一条的 `aisep:decision`，**不分关口**（§6.6）；同一最晚时刻有决定不同的合法记录 → 歧义，状态留在 `arch:Proposed`；有合法的 `dcterms:isReplacedBy` → `aisep:Superseded`。批准记录、AI 活动、`arch:Stakeholder` 自身不推导 approvalState（口径 A，PR #29）。
+- **查询条件**：`model_query` 在所读那份内容上（主分支：`ref` 不传；分支标记：`ref=branch`）选 `?rec a/rdfs:subClassOf* aisep:ApprovalRecord`，按模型筛加 `?rec arch:inModel <模型 IRI>`；其余属性 `aisep:approves`、`aisep:gate`、`aisep:decision`、`aisep:approvedBy`、`aisep:evidence`、`prov:generatedAtTime`、`aisep:activity` **全部用 `OPTIONAL`**，缺了某个属性的记录（多半不合法）照样列出。`aisep:approves` 多值，结果是每个对象一行，调用方按 `?rec` 聚合。记录可能在 `governance.ttl` 里，也可能在 `models/<slug>/governance/` 下一条一个文件（U2）；统一文件集合（§3.3，`aisep/gitio.py` 的 `model_files`）含子目录，查询不按文件区分。
+- **分支上的"已批准、待合并"**：分支上查出的记录含从主分支继承来的，按 `?rec` 的 IRI 减去主分支上已有的记录，剩下的才是本分支新增的。
+- **口径**：这样查出的是**全部**记录。哪条不合法以 `approval_problems` 的结果为准（记录 → 未通过的检查），它同时用于两处：推导忽略这些记录（并给 build Warning），L1 把它们报成 Violation（`model_check` 的发现项）。推导只用合法记录：对象的状态取各关口合法记录中 `prov:generatedAtTime`（时区归一，无时区按 UTC）最晚的一条，**不分关口**（§6.6），把它的 `aisep:decision` 映射成状态（`aisep:DecisionApproved` → `arch:Approved`，`aisep:DecisionRejected` → `aisep:Rejected`，`aisep/core.py` 的 `DECISION_STATE`），不是 decision 本身；同一最晚时刻有决定不同的合法记录 → 歧义，状态留在 `arch:Proposed`；有合法的 `dcterms:isReplacedBy` → `aisep:Superseded`。批准记录、AI 活动、`arch:Stakeholder` 自身不推导 approvalState（口径 A，PR #29）。
 - **用法**：工作台显示的状态只读推导出的 `arch:approvalState`（`ELEMENTS_QUERY`、`PENDING_QUERY`，§8），不用记录查询的结果自己重算；记录查询只用来列出"已有批准记录"（谁、哪个关口、批了什么、基于哪个提交）和分支上的"已批准、待合并"标记。
 
 ---
@@ -677,15 +678,15 @@
    - 用 `git worktree list --porcelain` 找 `branch` 检出在哪个 worktree（下称 W）。没有检出 → `BRANCH_NOT_CHECKED_OUT`（v1 不做无检出的底层提交：底层提交不跑钩子，"不跳过 pre-commit"就做不到）。
    - **校验 W**（§3.3）：`realpath(W)` 不在 `--allow-root` 之下 → `PATH_OUTSIDE_ROOT`；common dir 与 `repo` 不同 → `WORKTREE_NOT_FOUND`。否则服务器会对仓库外的目录、甚至另一个仓库执行 `git commit`。
    - **锁 W 的写锁**（§3.4 第 1 步），与 W 里代理的 `model_*` 写入互斥。
-   - W 不能是 detached HEAD；W 的模型文件集合（§3.3 统一口径）及其内容必须与 W 的 `HEAD` 完全一致（`git status --porcelain -- models/` 为空只是其必要条件），否则 `DIRTY_WORKTREE`（避免把别人的改动卷进来，也保证 pre-commit 的 gate 看到的模型就是"已提交 + 本次新建的记录文件"）。若与 `HEAD` 的差别恰好是 `governance/` 下一个未提交（未跟踪或只暂存）的新文件、内容是一条批准记录（可含活动），`details.orphanApproval: true`，hint 给出恢复命令（`git rm --cached` 并删除该文件；多半是上次调用在提交前被杀）。
+   - W 不能是 detached HEAD；W 的模型文件集合（§3.3 统一口径）及其内容必须与 W 的 `HEAD` 完全一致（`git status --porcelain -- models/` 为空只是其必要条件），否则 `DIRTY_WORKTREE`（避免把别人的改动卷进来，也保证 pre-commit 的 gate 看到的模型就是"已提交 + 本次新建的记录文件"）。若与 `HEAD` 的差别恰好是 `governance/` 下一个未提交的新文件（未跟踪、只暂存，或 intent-to-add 登记：`git status --porcelain` 显示 ` A`；判定按磁盘文件与 `HEAD` 比较，三种都覆盖）、内容是一条批准记录（可含活动），`details.orphanApproval: true`，hint 给出恢复命令（`git rm --cached -q --ignore-unmatch -- <文件> && rm -- <文件>`；多半是上次调用在提交前被杀）。
    - **锁内复验**：取 `git -C W rev-parse HEAD` 为 tip'，对它**重跑第 1 步的全部校验**（祖先、合并提交、逐提交 (a)(b)(c)、去重），记下 tip'。不过 → `STALE_HEAD`，不写。
-   - 新建记录文件（经 §3.3 安全打开，`O_CREAT | O_EXCL`，目标已存在 → `CONFLICT`），记下所写内容的 sha256 → `git add --intent-to-add -- <记录文件>`（只登记路径、不暂存内容；未跟踪的新文件不先登记，`git commit --only` 会报 pathspec 不匹配，执行会话实测）→ `git commit` 前再比一次 sha256，不等 → 从 index 移除该路径（`git rm --cached -q -- <记录文件>`）、保留文件、`CONFLICT` → `git commit --only -m "aisep: <gate> <decision> <记录短名>" --trailer "AISEP-Evidence: <evidence>" [--trailer "AISEP-Session: <sessionRef>"] -- models/<slug>/governance/<记录本地名>.ttl`（提交的是文件此刻的内容，钩子照常跑）。
+   - 新建记录文件（经 §3.3 安全打开，`O_CREAT | O_EXCL`，目标已存在 → `CONFLICT`），记下所写内容的 sha256 → `git add --intent-to-add -- <记录文件>`（只登记路径、不暂存内容；未跟踪的新文件不先登记，`git commit --only` 会报 pathspec 不匹配，执行会话实测）。登记失败（如 `index.lock` 被占用）→ 文件未被改动则删除它、报 `COMMIT_FAILED`（含 `index.lock` 时可重试），已被改动则保留、报 `CONFLICT`（不可重试；该出口的例外见 §7.2）→ `git commit` 前再比一次 sha256，不等 → 从 index 移除该路径（`git rm --cached -q -f --ignore-unmatch -- <记录文件>`）、保留文件、`CONFLICT` → `git -c trailer.ifexists=add commit -q --only -m "aisep: <gate> <decision> <记录本地名>" --trailer "AISEP-Evidence: <evidence>" [--trailer "AISEP-Session: <sessionRef>"] -- models/<slug>/governance/<记录本地名>.ttl`（提交的是文件此刻的内容，钩子照常跑）。
    - **为什么用 intent-to-add**（提交 `6b2d340`，测试 `aisep-mcp/tests/test_record_approval_review.py` 的 `test_agent_commit_between_add_and_commit`）：intent-to-add 条目不进 `write-tree`，登记到提交之间代理在 W 里用普通的 `git add <自己的文件>` + `git commit`，不会把批准记录一起带走；之后按下文"提交后核对父提交"撤回本次提交、报 `STALE_HEAD`。普通 `git add` 会让记录进入暂存区，被代理的普通提交带走（26e7f7e 上实测）。
-   - **风险**：intent-to-add 的路径算作已跟踪。登记到提交之间，代理执行 `git add -A` 或 `git commit -a`，会把这个尚未完成的记录文件一起提交进代理自己的提交（测试的 `commit-a` 一例）。服务器不回滚别人的提交：提交前核对、提交失败（第 8 步）、提交后核对这几处回滚之前，先看 W 的 `HEAD` 是否已跟踪该文件，是 → 不动 index 和文件，报 `CONFLICT`（`details.reason: "taken-by-other-commit"`，`details.commit` 为带走它的提交，`retryable=true`）；该提交不应包含记录时由人处理。代理侧的提交规范因此要求在有批准进行时不用 `git add -A`、`git commit -a`（同第 9 步）。
+   - **风险**：intent-to-add 的路径算作已跟踪。登记到提交之间，代理执行任何按目录或"全部已跟踪文件"暂存、提交的命令，如 `git add -A`、`git add -u`、`git add .`、`git commit -a`、`git commit -- <目录>`，都会把这个尚未完成的记录文件一起提交进代理自己的提交（测试覆盖了 `commit-a` 一例）。服务器不回滚别人的提交：提交前核对、提交失败（第 8 步）、提交后核对这几处回滚之前，先看 W 的 `HEAD` 是否已跟踪该文件，是 → 不动 index 和文件，报 `CONFLICT`（`details.reason: "taken-by-other-commit"`，`details.commit` 为带走它的提交，`retryable=true`）；该提交不应包含记录时由人处理。代理侧的提交规范因此要求：有批准进行时，只按具体文件路径暂存和提交（同第 9 步）。
    - **不加 `--no-verify`**，pre-commit 的 gate 照常跑。作者身份取仓库自己的 git 配置，服务器不改。
-   - **提交后核对父提交**：新提交记为 A。`A^` 必须等于 tip'。复验到 `git commit` 之间仍有毫秒级窗口，代理在此期间提交的 C 会让历史变成 tip'–C–A。不等时撤回本次提交：`git update-ref refs/heads/<branch> A^ A`（比较并交换，只在分支头仍是 A 时生效，C 原样保留）；从 index 移除记录文件（`git rm --cached -q -- <记录文件>`），文件仍等于本次写入的 sha256 时删除它（同第 8 步，不用 `git restore`）；然后报 `STALE_HEAD`（`details.reason: "concurrent-commit"`）。`update-ref` 的比较失败（A 之上又有新提交）→ 不再动分支，报 `CONFLICT`（不可重试），`details` 给出 A 和恢复提示，由人处理。不采用"临时 index + `commit-tree` + `update-ref` 原子提交"：它绕开仓库钩子，第一轮 #24 已否决。
-8. **回滚**：commit 失败（钩子拒绝、`index.lock` 被占用）→ 从 index 移除记录文件（`git rm --cached -q -- <记录文件>`）；文件仍等于本次写入的 sha256 时删除它；不等（钩子或编辑器改过）→ 保留文件，返回 `CONFLICT`，**不可重试**（保留的文件会让原样重试先撞上第 7 步的 `DIRTY_WORKTREE`，§7.2）。W 的 `HEAD` 已跟踪该文件时不回滚（第 7 步"风险"）；`git rm --cached` 本身失败时文件留在 index 和磁盘上，报 `COMMIT_FAILED`（`details.orphanApproval: true`，不可重试）。**不用** `git restore`（会抹掉未知的外部改动）。之后 `COMMIT_FAILED`，附钩子输出最后 50 行。
-9. **崩溃窗口如实写明**："新建记录文件"到"commit 结束"之间进程被杀，会留下一个未提交的记录文件。下一次调用在第 7 步以 `DIRTY_WORKTREE` + `orphanApproval` 报出来；pre-commit 不会拦它（记录本身合法），所以代理侧的提交规范要求不用 `git commit -a`。改用临时 index + `commit-tree` 能消除这个窗口，但会绕开仓库钩子，v1 不取。
+   - **提交后核对父提交**：新提交记为 A。`A^` 必须等于 tip'。复验到 `git commit` 之间仍有毫秒级窗口，代理在此期间提交的 C 会让历史变成 tip'–C–A。不等时撤回本次提交：`git update-ref refs/heads/<branch> A^ A`（比较并交换，只在分支头仍是 A 时生效，C 原样保留）；从 index 移除记录文件（`git rm --cached -q -f --ignore-unmatch -- <记录文件>`），文件仍等于本次写入的 sha256 时删除它（同第 8 步，不用 `git restore`）；然后报 `STALE_HEAD`（`details.reason: "concurrent-commit"`）。`update-ref` 的比较失败（A 之上又有新提交）→ 不再动分支，报 `CONFLICT`（不可重试），`details` 给出 A 和恢复提示，由人处理。不采用"临时 index + `commit-tree` + `update-ref` 原子提交"：它绕开仓库钩子，第一轮 #24 已否决。
+8. **回滚**：commit 失败（钩子拒绝、`index.lock` 被占用）→ 从 index 移除记录文件（`git rm --cached -q -f --ignore-unmatch -- <记录文件>`，`-f` 只动 index）；文件仍等于本次写入的 sha256 时删除它；不等（钩子或编辑器改过）→ 保留文件，返回 `CONFLICT`，**不可重试**（保留的文件会让原样重试先撞上第 7 步的 `DIRTY_WORKTREE`，§7.2）。W 的 `HEAD` 已跟踪该文件时不回滚（第 7 步"风险"）；`git rm --cached` 本身失败时文件留在 index 和磁盘上，报 `COMMIT_FAILED`（`details.orphanApproval: true`，不可重试）。**不用** `git restore`（会抹掉未知的外部改动）。之后 `COMMIT_FAILED`，附钩子输出最后 50 行。
+9. **崩溃窗口如实写明**："新建记录文件"到"commit 结束"之间进程被杀，会留下一个未提交的记录文件。下一次调用在第 7 步以 `DIRTY_WORKTREE` + `orphanApproval` 报出来；pre-commit 不会拦它（记录本身合法），所以代理侧的提交规范要求只按具体文件路径暂存和提交（第 7 步"风险"）。改用临时 index + `commit-tree` 能消除这个窗口，但会绕开仓库钩子，v1 不取。
 10. **批准之后再提交代码**（R2-13、U1、U3 已拍板）：第 1、7 步只管到本次提交为止，合并前的核对全部在下文"合并时校验"：
    - 之后分支上再有代码提交 → 合并时用同一判据拒绝，旧批准不会随合并进主线；
    - PR 修改了目标分支上已是 Approved 的元素，而本 PR 没有新增覆盖它的、结论为 Approved 的合法批准记录（关口不限，且须是该对象在合并结果中生效的那条；第四轮 R4-2、R4-3）→ 拒绝（U1，"改动已批准元素须重批"）；PR 删除了目标分支上已是 Approved 的元素 → 一律拒绝，提示改用 `owl:deprecated` + `dcterms:isReplacedBy` 退役（Q6④、§5.5"被批准过的元素删不掉，只能退役"；核对轮 1）；
@@ -863,7 +864,7 @@ C 的附带决定（同在 Q4，已拍板收紧）：`aisep:approvedBy` **只接
 1. `message`：中文一句话，点名对象（短名 + 类型），不写"invalid input"。
 2. `hint`：下一次调用怎么改，点名工具和参数，不写"请检查"。没有可行建议时省略。
 3. 有候选值就放进 `details.candidates`，省一次查询。
-4. `retryable` 只对 `LOCKED`、`CONFLICT`（没有留下现场的那些；回滚时保留了文件、撤回失败的除外，见 §7.2）、`WORKTREE_CHANGED`、`COMMIT_FAILED`（`index.lock` 被占用且已回滚时）、`QUERY_TIMEOUT` 为 true；其他原样重试没有意义。`PLAN_STALE` 不可重试：带同一个旧 `planDigest` 重试永远失败，要先重新 `dryRun`。
+4. `retryable` 只对 `LOCKED`、`CONFLICT`（回滚时保留了文件、撤回失败这两类除外，见 §7.2）、`WORKTREE_CHANGED`、`COMMIT_FAILED`（`index.lock` 被占用且已回滚时，例外见 §7.2）、`QUERY_TIMEOUT` 为 true；其他原样重试没有意义。`PLAN_STALE` 不可重试：带同一个旧 `planDigest` 重试永远失败，要先重新 `dryRun`。
 
 `content[0].text` 放同一句 `message` + `hint` + 发现项的 CLI 格式行。
 
@@ -875,23 +876,25 @@ C 的附带决定（同在 Q4，已拍板收紧）：`aisep:approvedBy` **只接
 | 定位 | `MODULES_NOT_IN_REF`、`PATH_OUTSIDE_ROOT`、`NOT_A_GIT_REPO`、`NOT_A_WORKTREE`、`MODEL_NOT_FOUND`、`ELEMENT_NOT_FOUND`、`REF_NOT_FOUND`、`BRANCH_NOT_CHECKED_OUT`、`WORKTREE_NOT_FOUND` | 否 |
 | 语义拒绝 | `PLAN_STALE`、`STALE_BASE`、`WRITE_REJECTED`、`REFERENCED`、`CASCADE_REQUIRED`、`PROTECTED_RESOURCE`、`IRI_EXISTS`、`MODEL_INVALID`（G9）、`GATE_FAILED`、`APPROVER_NOT_ALLOWED`、`AGENT_NOT_ALLOWED`、`STALE_HEAD` | 否 |
 | Git | `NO_MERGE_BASE`、`AMBIGUOUS_MERGE_BASE`、`DETACHED_HEAD`、`DIRTY_WORKTREE`、`COMMIT_FAILED` | `COMMIT_FAILED` 只在 `index.lock` 被占用、且已回滚时是；回滚未完成（`orphanApproval`）为否 |
-| 并发 | `LOCKED`、`CONFLICT`、`WORKTREE_CHANGED` | `LOCKED`、`WORKTREE_CHANGED` 是；`CONFLICT` 见下 |
+| 并发 | `LOCKED`、`CONFLICT`、`WORKTREE_CHANGED` | `LOCKED`、`WORKTREE_CHANGED` 是；`CONFLICT` 见表下 |
+| 解析 | `PARSE_FAILED`、`EDIT_UNSAFE`、`DIFF_PARSE_FAILED`、`DIFF_BNODE_UNSUPPORTED`、`QUERY_FAILED`、`QUERY_NOT_READONLY`、`QUERY_TIMEOUT` | 只有超时是 |
+| 其他 | `INTERNAL`（带 stderr 摘要） | 否 |
 
-**`CONFLICT` 的 retryable**：缺省为 true（`aisep/errors.py` 的 `RETRYABLE`）。**回滚时保留了文件的 `CONFLICT` 为 false**：文件被钩子或编辑器改过而保留，原样重试会先撞上 `DIRTY_WORKTREE`，没有意义（§7.1 第 4 条）。撤回失败、留下现场要人处理的也为 false。`record_approval`（`aisep/approval.py`）逐项：
+**`CONFLICT` 的 retryable**：缺省为 true（`aisep/errors.py` 的 `RETRYABLE`）。两类为 false：**回滚时保留了文件**（文件被钩子或编辑器改过而保留，原样重试会先撞上 `DIRTY_WORKTREE`，没有意义，§7.1 第 4 条）；**撤回失败**（提交或 index 条目留在原处，要人处理）。`record_approval`（`aisep/approval.py`）逐项：
 
 | 情形 | 现场 | 可重试 |
 |---|---|---|
 | 记录文件已存在（`O_EXCL`）；加锁后发现 W 已切到别的分支（`worktree-switched`，未写） | 未动 | 是 |
 | 记录被代理的提交带走（`taken-by-other-commit`，§5.9 第 7 步"风险"） | 不动 index 和文件 | 是 |
 | W 在校验期间被切走，落错的提交已撤回、记录文件已删除（`worktree-switched`） | 已清理 | 是 |
-| `git add` 失败或 `git commit` 失败，记录文件已被改动、保留（§5.9 第 8 步） | 保留文件 | **否** |
+| W 在校验期间被切走，落错的提交已撤回、记录文件已被改动而保留（`worktree-switched`） | 保留文件 | 实现现为是（`aisep/approval.py` `_misplaced` 末尾，与上一行同一出口）；与本节口径不一致，已报告、待定 |
+| `git add --intent-to-add` 失败或 `git commit` 失败，记录文件已被改动、保留（§5.9 第 8 步） | 保留文件 | **否** |
 | `git commit` 前 sha256 核对不等，已移出 index、保留文件（§5.9 第 7 步） | 保留文件 | 实现现为是（`aisep/approval.py` 提交前核对处）；与本节口径不一致，已报告、待定 |
 | 提交后撤回失败：`update-ref` 比较失败（A 之上又有新提交）；提交不在任何分支顶端（`commit-stacked`、`commit-not-found`）；落错的分支撤回失败；撤回后 `git rm --cached` 失败 | 留在分支或 index 上 | **否** |
 
-四个 `model_*` 写工具（`aisep/writer.py`，§3.4）：rename 前哈希核对不等 → `CONFLICT`，未覆盖，可重试；进程内回滚时发现文件又被改动、保留现场 → `CONFLICT`，实现现为可重试（缺省值），与本节口径不一致，已报告、待定。
+`COMMIT_FAILED`：`git commit` 失败且已回滚（记录已移出 index、文件已删除）时，输出含 `index.lock` 为可重试；`git rm --cached` 失败、回滚未完成（`orphanApproval`）为否。`git add --intent-to-add` 失败的出口只区分"文件被改动 → 上表 `CONFLICT`"，其余一律报 `COMMIT_FAILED`"已删除新建的记录文件"、含 `index.lock` 即可重试，不核对文件是否真的删了（回滚函数返回"已被别的提交跟踪"时文件仍在）；与本节口径不一致，已报告、待定。
 
-| 解析 | `PARSE_FAILED`、`EDIT_UNSAFE`、`DIFF_PARSE_FAILED`、`DIFF_BNODE_UNSUPPORTED`、`QUERY_FAILED`、`QUERY_NOT_READONLY`、`QUERY_TIMEOUT` | 只有超时是 |
-| 其他 | `INTERNAL`（带 stderr 摘要） | 否 |
+四个 `model_*` 写工具（`aisep/writer.py`，§3.4）：rename 前哈希核对不等 → `CONFLICT`，未覆盖，可重试；进程内回滚时发现文件又被改动、保留现场 → `CONFLICT`，实现现为可重试（缺省值），与本节口径不一致，已报告、待定。
 
 ### 7.3 发现项 Finding
 
@@ -1387,10 +1390,10 @@ T1 用保守正则（≤64、只含 `[a-zA-Z0-9_-]`）断言，不依赖具体�
 | `model.findings` | `model_findings` | §5.4 | `cmd_findings` L1006–1011、`l4` L853–890（含 R4）；`openViolations` 复用 `run_check` | EXISTS；`openViolations` 为新增 |
 | `model.query` | `model_query` | §5.6 | `cmd_query` L1014–1033、`onto_files` L179–186（载入 L220–221） | EXISTS（查询核心）；`limit`/`truncated`、拒绝 `SERVICE` 为新增 |
 | `model.impact` | `model_impact` | §5.7 | `cmd_impact` L1047–1076（G9 L1060–1071）、`impact` L895–931（依赖方向 `aisep:dependency` L899）、`expand` L1036–1044 | EXISTS；结构化路径、未知元素报错为新增 |
-| `governance.record_approval` | `governance_record_approval` | §5.9 | 已实现（S5，PR #24）：`aisep/approval.py` 的 `governance_record_approval`（第 1 步与锁内复验 `_stale` → `aisep/mergecheck.py` 的 `approval_commit_problems`；第 4 步去重 `_find_duplicate`、`_find_activity`；第 5 步新建记录文件 `_write_new`；第 7 步 `git add --intent-to-add` + `git commit --only`（提交 `6b2d340`）、提交后核对与撤回；第 8 步回滚 `_unstage_and_maybe_delete`）。校验与推导：`aisep/core.py` 的 `approval_problems`、`activity_problems`（G1：写入前与推导同一函数）、`derive_approval_state`（口径 A，PR #29：只给可被批准的元素推导 approvalState）；批准人按 Q4=C 拆为 `APPROVERS` / `NOT_APPROVERS`（`aisep/core.py`）。测试 `aisep-mcp/tests/test_record_approval.py`、`test_record_approval_review.py`、`test_approval_extra.py`、`test_derive_scope.py` | EXISTS |
+| `governance.record_approval` | `governance_record_approval` | §5.9 | 已实现（S5，PR #24）：`aisep/approval.py` 的 `governance_record_approval`（第 1 步与锁内复验 `_stale` → `aisep/mergecheck.py` 的 `approval_commit_problems`；第 4 步去重 `_find_duplicate`、`_find_activity`；第 5 步生成记录内容 `_record_file`；第 7 步新建记录文件 `_write_new`、`git add --intent-to-add` + `git commit --only`（提交 `6b2d340`）、提交后核对与撤回；第 8 步回滚 `_unstage_and_maybe_delete`）。校验与推导：`aisep/core.py` 的 `approval_problems`、`activity_problems`（G1：写入前与推导同一函数）、`derive_approval_state`（口径 A，PR #29：只给可被批准的元素推导 approvalState）；批准人按 Q4=C 拆为 `APPROVERS` / `NOT_APPROVERS`（`aisep/core.py`）。测试 `aisep-mcp/tests/test_record_approval.py`、`test_record_approval_review.py`、`test_approval_extra.py`、`test_derive_scope.py` | EXISTS |
 | `model.diff` | `model_diff` | §5.8 | 只可复用 `ox.parse` 用法（L207–218）、`short` L104–112、`model_graph_of` L470–475；实现：已实现（S3，PR #13）：`aisep/diff.py` 的 `model_diff`（Git 引用模式与 worktree 模式）。测试 `aisep-mcp/tests/test_diff.py`（T14、T15 等）、`test_server.py` | EXISTS |
 
-**全部工具共有的新建工作**：MCP 外壳（stdio + 本机 HTTP，§3.2）；把命令函数改为返回结构化结果（`report` L940–945 及各 `cmd_*`，§3.1）；§5.1 的写入流程、文件选择（含 `aisep#` 按 `aisep:loads` 判定的小函数）与新违规判定；§3.3 的仓库定位与统一文件集合（替换 `model_files` L936–937 的 glob）；§7 的错误模型。
+**全部工具共有的工作**（原列为新建，现已实现）：MCP 外壳（stdio + 本机 HTTP，§3.2）：`aisep/server.py`；结构化结果与 §7 的错误模型：`aisep/tools.py`、`aisep/errors.py`；§5.1 的写入流程与新违规判定：`aisep/writer.py`（`judge` 等）；文件选择（按 `aisep:loads` 判定声明模块）：`aisep/write_tools.py` 的 `declaring_module`、`default_element_file`、`default_relationship_file`；§3.3 的仓库定位与统一文件集合：`aisep/gitio.py` 的 `locate_repo`、`locate_worktree`、`model_files`（取代原型 `model_files` L936–937 的 glob，含 `governance/` 子目录，见下表 U2 行）。
 
 **第三轮新增的 GAP**（2026-11-20）：
 
