@@ -467,7 +467,7 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
         if a is not None and gitio.git(root, "rev-parse", f"{a}:{rel}")[1].strip() != blob:
             a = None  # the tip adds our file but not what we wrote: not taken for ours
         if a is None:  # W was switched during step 6: our commit sits on another branch (or detached)
-            raise _misplaced(w, root, branch, msg, rel, written, blob)
+            raise _misplaced(w, root, branch, msg, rel, written, blob, tip2)
         if gitio.git(w, "rev-parse", f"{a}^")[1].strip() != tip2:  # someone committed between re-check and commit
             rc, _, _ = gitio.git(w, "update-ref", f"refs/heads/{branch}", f"{a}^", a)
             if rc != 0:
@@ -505,15 +505,16 @@ def _name(msg):
     return msg.rsplit(" ", 1)[-1] + ".ttl"
 
 
-def _our_commit(w, root, msg, blob=None, branch=None):
-    """SHA of this call's commit when it is not the tip of refs/heads/<branch>: looked for among the tips of the other
-    branches, the recent history of W's HEAD and W's HEAD reflog (any of these may be missing: reflogs can be off or
-    expired), checked exactly with _adds_only."""
+def _our_commit(w, root, msg, blob, branch, tip2):
+    """SHA of this call's commit when it is not the tip of refs/heads/<branch>, checked exactly with _adds_only. Looked
+    for at the tips of all branches (W switched to another branch: our commit is that tip) and, without a fixed window
+    and without any reflog, along the first parents of refs/heads/<branch> and of W's HEAD back to tip2 (commits
+    stacked on ours, e.g. by a post-commit hook): there it is the first-parent descendant of tip2 whose parent is tip2."""
     name, seen = _name(msg), set()
     cands = gitio.git(root, "for-each-ref", "--format=%(objectname)", "refs/heads/")[1].split()
-    cands += gitio.git(w, "rev-list", "-n", "20", "HEAD")[1].split()
-    cands += [l.split("\0")[0] for l in gitio.git(w, "log", "-g", "-n", "50", "--format=%H%x00%gs", "HEAD")[1]
-              .splitlines() if l.split("\0")[-1].startswith("commit")]
+    for start in (f"refs/heads/{branch}", gitio.git(w, "rev-parse", "-q", "--verify", "HEAD")[1].strip()):
+        if start:  # oldest first: the commit right after tip2
+            cands += gitio.git(root, "rev-list", "--first-parent", "--ancestry-path", "--reverse", f"{tip2}..{start}")[1].split()[:1]
     for c in cands:
         if c not in seen:
             seen.add(c)
@@ -533,11 +534,11 @@ def _landed(w, root, branch, msg):
     return tip if _adds_only(root, tip, _name(msg)) else None
 
 
-def _misplaced(w, root, branch, msg, rel, written, blob):
+def _misplaced(w, root, branch, msg, rel, written, blob, tip2):
     """`git commit` moved whatever W had checked out. Take our commit (by SHA) back on the branches that point exactly
     at it, with a compare-and-swap update-ref (never refs/heads/<branch>), unstage and delete the record file,
     answer CONFLICT."""
-    a = _our_commit(w, root, msg, blob)
+    a = _our_commit(w, root, msg, blob, branch, tip2)
     out = gitio.git(root, "for-each-ref", "--format=%(refname)", f"--points-at={a}", "refs/heads/")[1] if a else ""
     wrong = [(r, a) for r in out.split() if r != f"refs/heads/{branch}"]  # only branches whose tip IS our commit
     details = {"reason": "worktree-switched", "worktree": w, "landedOn": [r for r, _ in wrong], "commit": a}
