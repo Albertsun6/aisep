@@ -15,10 +15,13 @@ class UnsafeFile(OSError):
     """A workspace file that must not be read: a symlink at any path level, or not a regular file."""
 
 
-# SEC-3: a directory inside a checkout that looks like a git dir (HEAD, objects/, refs/, config) must never be picked
-# up as a repository by implicit discovery: its config (core.fsmonitor, ...) would run. Only real worktrees (a .git
-# directory or a .git file) are discovered. Every git call of the server goes through these options.
-GIT = ("git", "-c", "safe.bareRepository=explicit")
+# SEC-3: `repo` may point into a directory planted in a checkout. (1) A directory shaped like a git dir (HEAD,
+# objects/, refs/, config) is never discovered as a repository (safe.bareRepository=explicit). (2) A nested
+# repository (a planted .git subdirectory) is discovered, but the one repository setting that runs a command on the
+# read commands the server uses (ls-files, rev-parse, ls-tree, archive, cat-file, ...) is core.fsmonitor: it is
+# switched off on the command line, which beats any repository config. Hooks and filters are not switched off: only
+# governance_record_approval's commit runs them, as the contract says (§4, §5.9). Every git call goes through GIT.
+GIT = ("git", "-c", "safe.bareRepository=explicit", "-c", "core.fsmonitor=false")
 
 
 def git(cwd, *args, binary=False):

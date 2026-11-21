@@ -13,6 +13,7 @@ from aisep import approval as A
 from aisep import core, gitio
 from aisep import tools as T
 from aisep.errors import AisepError
+from conftest import git
 from fixtures.topology import M, Topo
 from test_l4b_entry_validation import cfg, listener
 
@@ -35,9 +36,41 @@ def test_escaped_or_glued_service_is_refused(repo, sparql):
     assert not hits
 
 
+# 评审 #56 第一轮（blocker）：粘在关键字后的前缀名、伪 IRI 里的 SERVICE。pyoxigraph 都把它们读成 SERVICE 并真的外连。
+GLUED = {
+    "SERVICE:q": "PREFIX : <http://127.0.0.1:{port}/> SELECT * WHERE { SERVICE:q { ?a ?b ?c } }",
+    "OPTIONAL service:q": "PREFIX : <http://127.0.0.1:{port}/> SELECT * WHERE { OPTIONAL{ service:q { ?a ?b ?c } } }",
+    "伪IRI": "PREFIX : <http://127.0.0.1:{port}/> SELECT * WHERE { FILTER(1<2)SERVICE:q#>\n{ ?a ?b ?c } }",
+    "SERVICEex:q": "PREFIX ex: <http://127.0.0.1:{port}/> SELECT * WHERE { SERVICEex:q { ?a ?b ?c } }",
+    "伪IRI里的引号": "SELECT * WHERE { FILTER(1<2&&'>'=?x)SERVICE<http://127.0.0.1:{port}/q>{ ?a ?b ?c } #'\n}",
+    "真IRI里的引号": "SELECT * WHERE { OPTIONAL { ?s ?p <http://x.example/a'b> } SERVICE <http://127.0.0.1:{port}/q> { ?a ?b ?c } #'\n}",
+}
+
+
+@pytest.mark.parametrize("name", sorted(GLUED))
+def test_glued_service_really_connects_without_the_filter(name):
+    """前提：这些写法在不加过滤时 pyoxigraph 确实发起连接（否则下面的拒绝测试证明不了什么）。"""
+    import pyoxigraph as ox
+    with listener() as (port, hits):
+        try:
+            list(ox.Store().query(GLUED[name].replace("{port}", str(port))))
+        except Exception:  # noqa: BLE001 — 没有 HTTP 响应，pyoxigraph 报错；只看有没有连接
+            pass
+    assert hits, f"{name}：pyoxigraph 没有把它读成 SERVICE"
+
+
+@pytest.mark.parametrize("name", sorted(GLUED))
+def test_glued_service_is_refused(repo, name):
+    with listener() as (port, hits):
+        with pytest.raises(AisepError) as ei:
+            T.model_query(cfg(repo), GLUED[name].replace("{port}", str(port)))
+    assert ei.value.code == "QUERY_NOT_READONLY", ei.value.to_dict()
+    assert not hits
+
+
 @pytest.mark.parametrize("sparql", [
-    "PREFIX service: <https://x.example/> SELECT * WHERE { ?s service:p ?o }",
     "SELECT * WHERE { ?s ?p 'x'@en . _:service ?q ?r }",
+    "SELECT ?x WHERE { ?x a ?t FILTER(?t = am4:Service || ?t = <https://x.example/aService>) } ORDER BY ?x",
     'SELECT * WHERE { ?s ?p """a "service" b""" }',
 ])
 def test_more_service_mentions_are_not_refused(repo, sparql):
@@ -78,3 +111,21 @@ def test_approval_rejects_malformed_model_before_git(template, tmp_path, model):
 def test_short_keeps_slash_terminated_model_iri():
     assert core.short(M) == M
     assert core.short(M + "supplier") == "procurement:supplier"
+
+
+# 评审 #56 第一轮（major）：检出里的伪 .git 子目录（普通的嵌套仓库）也不能执行它 config 里的命令
+def test_sec3_nested_dotgit_dir_does_not_run_its_config(repo, tmp_path):
+    marker = tmp_path / "MARKER"
+    evil = repo / "models" / "evil"
+    evil.mkdir(parents=True)
+    git(evil, "init", "-q")
+    git(evil, "config", "core.fsmonitor", f"echo hit >> '{marker}'; false")
+    (evil / "x.ttl").write_text("")
+    err = None
+    for fn in (T.model_check, T.model_gate):
+        try:
+            fn(cfg(repo), repo=str(evil))
+        except Exception as e:  # noqa: BLE001 — 先判标记文件，再判异常类型
+            err = e
+        assert not marker.exists(), f"{fn.__name__}(repo=<伪 .git 子目录>) 执行了 core.fsmonitor；结果：{err!r}"
+        assert err is None or isinstance(err, AisepError), repr(err)

@@ -32,6 +32,10 @@ def loaded(cfg, repo=None, ref=None, model=None):
     root = gitio.locate_repo(repo, cfg.allow_roots, cfg.repo)
     with contextlib.ExitStack() as stack:
         if ref is None:
+            missing = [d for d in ("modules", "vendor") if not os.path.isdir(os.path.join(root, d))]
+            if missing:  # e.g. `repo` pointing at a nested repository planted in a checkout (SEC-3)
+                raise AisepError("MODULES_NOT_IN_REF", f"工作区 {root} 里没有 {'、'.join(m + '/' for m in missing)}，无法检查",
+                                 details={"repo": root, "missing": missing})
             base, files, commit = root, gitio.model_files(root), None
         else:
             commit = gitio.resolve_commit(root, ref)
@@ -158,23 +162,27 @@ def model_gate(cfg, repo=None, ref=None, model=None):
 
 _UPDATE_RE = re.compile(r"(?is)^(?:\s|#[^\n]*(?:\n|$)|PREFIX\s+[\w.-]*:\s*<[^>]*>|BASE\s*<[^>]*>)*"
                         r"(INSERT|DELETE|LOAD|CLEAR|CREATE|DROP|COPY|MOVE|ADD|WITH)\b")
-# MCP-1: SERVICE is looked for only where the SPARQL grammar can have a keyword. Strings, IRIs, comments, variables,
-# prefixed names / blank node labels and language tags are blanked out first (am4:Service, ?service, 'service' and
-# "# service" are data, not the keyword); what is left is matched WITHOUT word boundaries, so a keyword glued to a
-# number or punctuation still counts. SPARQL decodes \uXXXX / \UXXXXXXXX escapes anywhere in the query text before
-# parsing (pyoxigraph does: \u0053ERVICE is a real SERVICE), so both the raw and the decoded text are scanned.
-_NOT_KEYWORD = re.compile(r"""
-      '''(?:[^'\\]|\\.|'(?!''))*'''
-    | \"\"\"(?:[^"\\]|\\.|"(?!""))*\"\"\"
-    | '(?:[^'\\\n\r]|\\.)*'
-    | "(?:[^"\\\n\r]|\\.)*"
-    | <[^<>"{}|^`\\\x00-\x20]*>
-    | \#[^\n\r]*
-    | [?$]\w+
-    | @[A-Za-z]+(?:-[A-Za-z0-9]+)*
-    | (?:[^\W\d][\w.-]*)?:(?:[\w.:%-]|\\.)*
+# MCP-1: SERVICE counts only where the SPARQL grammar can read a keyword. The scanner walks the text token by token:
+# strings, comments, variables and language tags are skipped (?service, 'service', "# service" are data); a prefixed
+# name is skipped unless "service" could be read out of it as the keyword (its prefix contains it: SERVICE:q,
+# service:q, SERVICEex:q; or it follows '.', ':' or '\' inside the local name) - am4:Service and ex:aService are data.
+# An IRI-shaped token "<...>" is skipped as an IRI, but when it holds '(' ')' or a quote its '<' may be a less-than
+# (FILTER(1<2)SERVICE:q#>, FILTER(1<2&&'>'=?x)SERVICE...): both readings are scanned and either one finding the
+# keyword counts. Anything else is matched WITHOUT word boundaries (1SERVICE, )SERVICE). SPARQL decodes \uXXXX and
+# \UXXXXXXXX escapes anywhere in the query text before parsing (pyoxigraph does: the escaped form of "S" followed by
+# ERVICE is a real SERVICE), so the raw and the decoded text are both scanned. A doubtful token is read as the keyword.
+_TOKEN = re.compile(r"""
+      (?P<str> '''(?:[^'\\]|\\.|'(?!''))*''' | \"\"\"(?:[^"\\]|\\.|"(?!""))*\"\"\"
+             | '(?:[^'\\\n\r]|\\.)*' | "(?:[^"\\\n\r]|\\.)*" )
+    | (?P<iri> <[^<>"{}|^`\\\x00-\x20]*> )
+    | (?P<comment> \#[^\n\r]* )
+    | (?P<var> [?$]\w+ )
+    | (?P<lang> @[A-Za-z]+(?:-[A-Za-z0-9]+)* )
+    | (?P<bnode> _:[\w.-]* )
+    | (?P<pname> (?P<prefix>[^\W\d_][\w.-]*)?:(?P<local>(?:[\w.:%-]|\\.)*) )
     """, re.X)
 _ESCAPE_RE = re.compile(r"\\u([0-9A-Fa-f]{4})|\\U([0-9A-Fa-f]{8})")
+_GLUED_SERVICE = re.compile(r"(?i)[.:\\]service")
 
 
 def _decode_escapes(text):
@@ -184,8 +192,30 @@ def _decode_escapes(text):
     return _ESCAPE_RE.sub(one, text)
 
 
+def _scan_service(text):
+    """True when some reading of `text` has the SERVICE keyword. Positions reachable by any reading are visited in
+    order; a token's end (and, for a doubtful IRI, the position after its '<') becomes reachable."""
+    n, low, reach = len(text), text.lower(), {0}
+    for pos in range(n):
+        if pos not in reach:
+            continue
+        if low.startswith("service", pos):
+            return True
+        m = _TOKEN.match(text, pos)
+        kind = m.lastgroup if m else None
+        if m and m.group("pname") is not None:
+            if "service" in (m.group("prefix") or "").lower() or _GLUED_SERVICE.search(m.group("local")):
+                return True
+        elif kind == "lang" and "service" in m.group().lower():
+            return True
+        elif kind == "iri" and any(c in m.group() for c in "()'"):
+            reach.add(pos + 1)  # the '<' may be a less-than: rescan the token's inside as well
+        reach.add(m.end() if m and m.end() > pos else pos + 1)
+    return False
+
+
 def _has_service(sparql):
-    return any("service" in _NOT_KEYWORD.sub(" ", t).lower() for t in (sparql, _decode_escapes(sparql)))
+    return any(_scan_service(t) for t in (sparql, _decode_escapes(sparql)))
 
 
 def _term(v):
@@ -254,7 +284,7 @@ def model_query(cfg, sparql, limit=QUERY_LIMIT, timeoutMs=QUERY_TIMEOUT_MS, allo
             e = box["error"]
             if isinstance(e, SyntaxError) and _UPDATE_RE.match(sparql):
                 raise AisepError("QUERY_NOT_READONLY", "只接受 SELECT/ASK/CONSTRUCT/DESCRIBE，不接受更新语句")
-            if isinstance(e, (SyntaxError, OSError, ValueError)):
+            if isinstance(e, (SyntaxError, OSError, ValueError, RuntimeError)):  # RuntimeError: e.g. an unbound SERVICE endpoint
                 raise AisepError("QUERY_FAILED", f"查询失败：{e}", details={"parser": str(e)})
             raise e
         out.update(box["result"])
