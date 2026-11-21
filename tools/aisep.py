@@ -20,9 +20,15 @@ Engines: pyoxigraph for everything (parse, store, SPARQL, L1/L2/L4, build, impac
 """
 import os, sys
 
-# Before anything else is imported: take the checkout off sys.path and expose only the aisep/ package (tools/pyrun.py).
-# This file is itself named aisep, so its own directory must not stay on the path either.
-import pyrun  # noqa: E402,F401  (found in this script's directory, which pyrun then removes from sys.path)
+# Before anything else is imported: bytecode comes from a cache outside the checkout (a committed
+# __pycache__/*.pyc is never read), then tools/pyrun.py takes the checkout off sys.path and exposes only the aisep/
+# package, from .py source. pyrun is run from its source file rather than imported: `import pyrun` would also accept a
+# tools/pyrun.*.so or a sourceless pyrun.pyc. This file is itself named aisep, so its own directory leaves sys.path too.
+sys.pycache_prefix = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache"), "aisep-pycache")
+pyrun = sys.modules["pyrun"] = type(sys)("pyrun")
+pyrun.__file__ = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pyrun.py")
+with open(pyrun.__file__, encoding="utf-8") as _f:
+    exec(compile(_f.read(), pyrun.__file__, "exec"), pyrun.__dict__)
 
 ROOT = pyrun.ROOT
 
@@ -81,6 +87,14 @@ def cmd_validate(files, read=None):
     return 1 if v else 0
 
 
+def tracked_bytecode():
+    """Files in the Git index that Python can import in place of source: *.pyc / *.pyo, anything under __pycache__/,
+    and extension modules (*.so / *.pyd, which win over a .py of the same name). Empty outside a Git checkout."""
+    p = subprocess.run(["git", "-C", ROOT, "ls-files", "-z"], capture_output=True, text=True)
+    return [f for f in p.stdout.split("\0") if f and (f.endswith((".pyc", ".pyo", ".so", ".pyd"))
+                                                     or "/__pycache__/" in "/" + f)] if p.returncode == 0 else []
+
+
 def cmd_gate(files, read=None):
     """G10: the one CI / pre-commit entry point — L0..L4 atomically on one context (check + validate + findings),
     one combined summary, exit 1 if any layer reports a Violation."""
@@ -90,6 +104,9 @@ def cmd_gate(files, read=None):
         run_check(ctx)
         l3(ctx)
         l4(ctx)
+    for f in tracked_bytecode():
+        ctx.add("Violation", "L0", f"tracked bytecode / extension module {f}: Python can load it instead of the "
+                                   f"reviewed .py source; remove it from Git")
     layers = ("L0", "build", "L1", "L2", "L3", "L4")
     v, w, i = report(ctx, layers)
     per = " ".join(f"{l}={sum(1 for p in set(ctx.problems) if p[1] == l and p[0] == 'Violation')}" for l in layers)
