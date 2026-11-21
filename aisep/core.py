@@ -86,9 +86,9 @@ def parse_xsd_datetime(lex):
         return None
     try:
         t = datetime.fromisoformat(lex.replace("Z", "+00:00"))
-    except ValueError:
+        return t.astimezone(timezone.utc) if t.tzinfo else t.replace(tzinfo=timezone.utc)
+    except (ValueError, OverflowError):  # OverflowError: 0001-01-01T00:00:00+13:00 is before datetime.min in UTC
         return None
-    return t.astimezone(timezone.utc) if t.tzinfo else t.replace(tzinfo=timezone.utc)
 
 
 def short(v):
@@ -101,6 +101,15 @@ def short(v):
         if s.startswith(ns) and len(s) > len(ns):
             return f"{k}:{s[len(ns):]}"
     return s
+
+
+def _built_graph(m):
+    """Graph of a derived triple: BUILT_G + the member's model; a model value that is not a valid IRI (a literal
+    arch:inModel, reported by L3) goes to the 'none' graph instead of crashing the build."""
+    try:
+        return ox.NamedNode(BUILT_G + (m or "none"))
+    except ValueError:
+        return ox.NamedNode(BUILT_G + "none")
 
 
 def rel(path, root=ROOT):
@@ -233,7 +242,7 @@ class Ctx:
                                   ?x a ?t FILTER(isIRI(?t)) }}"""):
             self.asserted.setdefault(x, []).append(t)
         self.built = self.build_triples()
-        self.store.extend(ox.Quad(s, p, o, ox.NamedNode(BUILT_G + (m or "none"))) for s, p, o, m in self.built)
+        self.store.extend(ox.Quad(s, p, o, _built_graph(m)) for s, p, o, m in self.built)
 
     def rel(self, path):
         return rel(path, self.root)
@@ -325,7 +334,7 @@ class Ctx:
         out = []
         for r, c, s, t, m in self.relationships():
             u = self.nearest(c.value, self.uf)
-            if u:
+            if u and not isinstance(s, ox.Literal):  # a literal arch:source cannot be a subject (L3 reports it)
                 out.append((s, ox.NamedNode(u), t, m.value if m else None))
         in_model = {}
         for x, m in self.rows(f"""SELECT DISTINCT ?x ?m WHERE {{ GRAPH ?g {{ ?x arch:inModel ?m }} {self.src_graph_filter()} }}""", raw=True):
@@ -1054,14 +1063,42 @@ def run_check(ctx):
 
 
 def expand(ctx, name):
+    """slug:local, prefix:local or a full IRI -> a full IRI. The result is always a valid IRI (it is put into SPARQL
+    text and into ox.NamedNode by callers): anything else is INVALID_ARGUMENT, never a SPARQL syntax error."""
+    if not isinstance(name, str):
+        raise AisepError("INVALID_ARGUMENT", f"{name!r} 不是 IRI 或前缀名")
     if "://" in name:
-        return name.strip("<>")
-    p, _, local = name.partition(":")
-    if p not in ctx.prefixes and re.fullmatch(r"[\w-]+", p):
-        return f"{MODEL_BASE}{p}/{local}"  # the slug:local form that short() prints for model instances
-    if p not in ctx.prefixes:
-        raise AisepError("INVALID_ARGUMENT", f"unknown prefix '{p}:' (known: {', '.join(sorted(ctx.prefixes))})")
-    return ctx.prefixes[p] + local
+        iri = name.strip("<>")
+    else:
+        p, _, local = name.partition(":")
+        if p not in ctx.prefixes and re.fullmatch(r"[\w-]+", p):
+            iri = f"{MODEL_BASE}{p}/{local}"  # the slug:local form that short() prints for model instances
+        elif p not in ctx.prefixes:
+            raise AisepError("INVALID_ARGUMENT", f"unknown prefix '{p}:' (known: {', '.join(sorted(ctx.prefixes))})")
+        else:
+            iri = ctx.prefixes[p] + local
+    try:
+        ox.NamedNode(iri)
+    except ValueError as e:
+        raise AisepError("INVALID_ARGUMENT", f"{name!r} 不是合法的 IRI：{e}") from None
+    return iri
+
+
+MODEL_SLUG_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*")
+
+
+def model_slug(model):
+    """The ONE model-name rule of the MCP tools (write, read and approval paths): a bare slug or the full model IRI
+    (trailing '/' optional) -> the slug. Anything path-like ('procurement/', '../x', './x', '.../a/../b/') is
+    INVALID_ARGUMENT naming `model`; whether models/<slug>/ exists is the caller's MODEL_NOT_FOUND."""
+    slug = model
+    if isinstance(model, str) and model.startswith(MODEL_BASE):
+        slug = model[len(MODEL_BASE):]
+        slug = slug[:-1] if slug.endswith("/") else slug
+    if not isinstance(slug, str) or not MODEL_SLUG_RE.fullmatch(slug):
+        raise AisepError("INVALID_ARGUMENT", f"model {model!r} 须为模型 slug（^[A-Za-z0-9][A-Za-z0-9_-]*$）或完整模型 IRI",
+                         details={"model": model, "rejectedFields": ["model"]})
+    return slug
 
 
 def forget_paths(prefix):

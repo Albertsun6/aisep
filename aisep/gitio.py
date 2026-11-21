@@ -15,9 +15,22 @@ class UnsafeFile(OSError):
     """A workspace file that must not be read: a symlink at any path level, or not a regular file."""
 
 
+# SEC-3: `repo` may point into a directory planted in a checkout. A directory shaped like a git dir (HEAD, objects/,
+# refs/, config) is never discovered as a repository (safe.bareRepository=explicit); any other planted repository or
+# worktree is refused by locate_repo (_registered_worktree). core.fsmonitor is also switched off on every call
+# (command-line config beats repository config) as a second layer. Every git call of the server goes through GIT.
+GIT = ("git", "-c", "safe.bareRepository=explicit", "-c", "core.fsmonitor=false")
+
+
 def git(cwd, *args, binary=False):
-    p = subprocess.run(["git", "-C", cwd, *args], capture_output=True, text=not binary)
+    p = subprocess.run([*GIT, "-C", cwd, *args], capture_output=True, text=not binary)
     return p.returncode, p.stdout, p.stderr
+
+
+def bare_refused(stderr):
+    """git refused to discover a bare repository (safe.bareRepository=explicit): the path is a bare repo or a
+    directory shaped like one. The key name is not translated, unlike the rest of the message."""
+    return "safe.bareRepository" in (stderr or "")
 
 
 def _real(path):
@@ -27,6 +40,37 @@ def _real(path):
 def under(path, roots):
     rp = _real(path)
     return any(rp == _real(r) or rp.startswith(_real(r).rstrip(os.sep) + os.sep) for r in roots)
+
+
+def _registered_worktree(top, allow_roots):
+    """SEC-3: `top` must be a worktree its repository registered: the main worktree or one listed by
+    `git worktree list` (realpath compare). A .git directory or file planted in a checkout (a nested repository, a
+    `gitdir:` file pointing at another planted repository, a forged linked-worktree admin directory whose commondir
+    names the real .git) is refused; only `rev-parse` and `worktree list` have run in it, which run no configured
+    command. The main worktree must not lie inside the worktree of another repository under an allow-root (a planted
+    .git directory is the main worktree of its own planted repository). Submodules are refused too. Without
+    --allow-root nothing is checked (like the root check)."""
+    if not allow_roots:
+        return
+    common = _common_dir(top)
+    rc, out, _ = git(top, "worktree", "list", "--porcelain")
+    lines = out.split("\n") if rc == 0 else []
+    paths = [_real(line[len("worktree "):]) for line in lines if line.startswith("worktree ")]
+    hint = "repo 传仓库的主工作区或它登记过的 worktree；若 --allow-root 是一个更大的外层仓库，把它收窄到要用的仓库"
+    if common is None or not paths or top not in paths:
+        raise AisepError("NOT_A_GIT_REPO", f"{top} 不是它所在仓库登记过的工作区，不接受", hint=hint,
+                         details={"repo": top, "reason": "unregistered-worktree"})
+    d = os.path.dirname(paths[0])
+    while under(d, allow_roots):
+        rc, out, _ = git(d, "rev-parse", "--show-toplevel")
+        if rc == 0:
+            if _common_dir(out.strip()) != common:
+                raise AisepError("NOT_A_GIT_REPO", f"{top} 所属仓库嵌套在仓库 {_real(out.strip())} 的工作区里，不接受",
+                                 hint=hint, details={"repo": top, "reason": "nested-repository"})
+            break
+        if os.path.dirname(d) == d:
+            break
+        d = os.path.dirname(d)
 
 
 def locate_repo(repo=None, allow_roots=(), default=None):
@@ -41,6 +85,7 @@ def locate_repo(repo=None, allow_roots=(), default=None):
     if allow_roots and not under(top, allow_roots):
         raise AisepError("PATH_OUTSIDE_ROOT", f"{top} 不在服务器允许的根目录之下",
                          hint="用 --allow-root 启动服务器时把它加进去", details={"repo": top, "allowRoots": list(allow_roots)})
+    _registered_worktree(top, allow_roots)
     return top
 
 
@@ -94,6 +139,8 @@ def read_file(root, relpath):
     """Bytes of root/relpath, opened component by component from the realpath'd root with O_NOFOLLOW. Raises
     UnsafeFile('symlink' | 'not-regular') instead of following a link at any level or blocking on a FIFO."""
     parts = relpath.split("/")
+    if any(p in ("", ".", "..") for p in parts):  # never step out of root or name a directory as the file
+        raise UnsafeFile("not-normalised")
     dfd = os.open(_real(root), os.O_RDONLY | os.O_DIRECTORY)
     try:
         for i, name in enumerate(parts):
@@ -134,7 +181,8 @@ def snapshot(repo, commit):
     files = sorted(p for p in out.split("\0") if p.endswith(".ttl"))
     tmp = tempfile.mkdtemp(prefix="aisep-snap-")
     try:
-        p = subprocess.Popen(["git", "-C", repo, "archive", "--format=tar", commit, "--", *present], stdout=subprocess.PIPE)
+        p = subprocess.Popen([*GIT, "-C", repo, "archive", "--format=tar", commit, "--", *present],
+                             stdout=subprocess.PIPE)
         with tarfile.open(fileobj=p.stdout, mode="r|") as tar:
             tar.extractall(tmp, filter="data")
         if p.wait() != 0:
@@ -239,8 +287,8 @@ def commit_files(repo, commit, prefixes=("models/",)):
              if mode == "120000" or typ != "blob"}
     want = [(p, sha) for p, (mode, typ, sha) in sorted(meta.items()) if p not in files]
     if want:
-        p = subprocess.run(["git", "-C", repo, "cat-file", "--batch"], input="".join(f"{sha}\n" for _, sha in want).encode(),
-                           capture_output=True)
+        p = subprocess.run([*GIT, "-C", repo, "cat-file", "--batch"],
+                           input="".join(f"{sha}\n" for _, sha in want).encode(), capture_output=True)
         buf, pos = p.stdout, 0
         for path, _ in want:
             nl = buf.index(b"\n", pos)
@@ -264,8 +312,11 @@ def sparse_checkout(w):
 def open_dir(root, reldir):
     """fd of root/reldir opened component by component with O_NOFOLLOW (write side of §3.3's safe open): a symlink at
     any level raises UnsafeFile('symlink'); a missing directory raises FileNotFoundError."""
+    names = [p for p in reldir.split("/") if p]
+    if any(p in (".", "..") for p in names):  # never step out of root
+        raise UnsafeFile("not-normalised")
     dfd = os.open(_real(root), os.O_RDONLY | os.O_DIRECTORY)
-    for name in [p for p in reldir.split("/") if p]:
+    for name in names:
         try:
             fd = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=dfd)
         except OSError as e:

@@ -24,26 +24,24 @@ class Config:
 
 # ---------------------------------------------------------------- loading: workspace or a commit's snapshot (§3.3)
 
-def _model_slug(model):
-    if model.startswith(core.MODEL_BASE):
-        return model[len(core.MODEL_BASE):].strip("/").split("/")[0]
-    return model
-
-
 @contextlib.contextmanager
 def loaded(cfg, repo=None, ref=None, model=None):
     """Yields (ctx, source). Without ref: the worktree's files (§3.3 file set, safe open). With ref: that commit's
     models/ modules/ vendor/ materialised to a temp dir. model: only models/<slug>/ files."""
+    slug = None if model is None else core.model_slug(model)
     root = gitio.locate_repo(repo, cfg.allow_roots, cfg.repo)
     with contextlib.ExitStack() as stack:
         if ref is None:
+            missing = [d for d in ("modules", "vendor") if not os.path.isdir(os.path.join(root, d))]
+            if missing:  # e.g. `repo` pointing at a nested repository planted in a checkout (SEC-3)
+                raise AisepError("MODULES_NOT_IN_REF", f"工作区 {root} 里没有 {'、'.join(m + '/' for m in missing)}，无法检查",
+                                 details={"repo": root, "missing": missing})
             base, files, commit = root, gitio.model_files(root), None
         else:
             commit = gitio.resolve_commit(root, ref)
             base, files = stack.enter_context(gitio.snapshot(root, commit))
             stack.callback(core.forget_paths, base)
-        if model is not None:
-            slug = _model_slug(model)
+        if slug is not None:
             files = [f for f in files if f.startswith(f"models/{slug}/")]
             if not files:
                 raise AisepError("MODEL_NOT_FOUND", f"没有模型 {model}（models/{slug}/ 下没有 .ttl 文件）",
@@ -202,6 +200,8 @@ def _run_query(ctx, sparql, limit):
 def model_query(cfg, sparql, limit=QUERY_LIMIT, timeoutMs=QUERY_TIMEOUT_MS, allowPartial=False, repo=None, ref=None):
     if not isinstance(limit, int) or not 1 <= limit <= QUERY_LIMIT_MAX:
         raise AisepError("INVALID_ARGUMENT", f"limit 须为 1–{QUERY_LIMIT_MAX}", details={"rejectedFields": ["limit"]})
+    if not isinstance(sparql, str):
+        raise AisepError("INVALID_ARGUMENT", "sparql 须为字符串", details={"rejectedFields": ["sparql"]})
     if _SERVICE_RE.search(sparql):  # pyoxigraph would really send the HTTP request (F6)
         raise AisepError("QUERY_NOT_READONLY", "查询里有 SERVICE，不允许访问外部端点",
                          hint="去掉 SERVICE 子句，只查本地模型")
@@ -231,7 +231,8 @@ def model_query(cfg, sparql, limit=QUERY_LIMIT, timeoutMs=QUERY_TIMEOUT_MS, allo
             e = box["error"]
             if isinstance(e, SyntaxError) and _UPDATE_RE.match(sparql):
                 raise AisepError("QUERY_NOT_READONLY", "只接受 SELECT/ASK/CONSTRUCT/DESCRIBE，不接受更新语句")
-            if isinstance(e, (SyntaxError, OSError, ValueError)):
+            # RuntimeError: e.g. a variable SERVICE endpoint that the query never binds
+            if isinstance(e, (SyntaxError, OSError, ValueError, RuntimeError)):
                 raise AisepError("QUERY_FAILED", f"查询失败：{e}", details={"parser": str(e)})
             raise e
         out.update(box["result"])
@@ -262,7 +263,10 @@ def model_impact(cfg, focus, mode="depends", depth=3, allowInvalid=False, repo=N
             raise AisepError("MODEL_INVALID", f"模型有 {len(viol)} 个 L0–L2 违规，拒绝计算影响面",
                              hint="先修好违规；确需在不合法模型上看影响面时传 allowInvalid: true",
                              details={"findings": viol})
-        start = core.expand(ctx, focus)
+        try:
+            start = core.expand(ctx, focus)
+        except AisepError as e:
+            raise AisepError("INVALID_ARGUMENT", f"focus：{e.message}", details={"rejectedFields": ["focus"]}) from None
         if not ctx.types(start):
             raise AisepError("ELEMENT_NOT_FOUND", f"{core.short(start)} 不是已加载模型里的元素",
                              hint="从 details.candidates 里选一个 IRI 重试", details={"candidates": _candidates(ctx, start)})

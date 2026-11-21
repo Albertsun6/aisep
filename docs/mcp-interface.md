@@ -113,12 +113,13 @@
 
 | 输入 | 读的内容 | 谁用 |
 |---|---|---|
-| 不传 `ref` | `repo` 这个 worktree 的磁盘文件（含未提交改动） | 编码代理 |
+| 不传 `ref` | `repo` 这个 worktree 的磁盘文件（含未提交改动）。缺 `modules/` 或 `vendor/` 目录 → `MODULES_NOT_IN_REF`（目录在但内容不全仍可能报 `INTERNAL`） | 编码代理 |
 | `ref: "<分支/标签/sha>"` | 该 commit 的快照：先 `git ls-tree <commit> -- models modules vendor` 查哪些路径存在，再 `git archive` 存在的那些，解到系统临时目录，调用结束删除。缺 `modules/` 或 `vendor/`（附录 C 的独立模型仓库）→ `MODULES_NOT_IN_REF`，不静默改用服务器自带模块 | 工作台、`record_approval` 的 gate |
 
 - 快照里的 `modules/`、`vendor/` 也取自同一个 commit，所以"某 commit 上的 gate"可复现（vendor 8.4 MB，modules 0.9 MB；耗时在验收 T10 里量）。
 - `model_diff` 不物化快照：Git 引用模式只读 Git 对象；worktree 模式 base 侧读 Git 对象，head 侧读**按分支名定位到的那个工作区**的 `models/**/*.ttl`（§5.8）。它不用上表"不传 `ref` 读 `repo` 磁盘文件"的规则：读谁的工作区由 `head.worktree` 的分支名决定，与调用方从哪个 worktree 调用无关。
 - ref 安全：一律 `git rev-parse --verify --end-of-options <ref>^{commit}`；以 `-` 开头的 ref 直接 `INVALID_ARGUMENT`。
+- **`repo` 指向检出里伪造的仓库目录**（SEC-3）：形似 git 目录的普通目录（有 `HEAD`、`objects/`、`refs/`、`config`）不会被当成仓库（每次 git 调用都带 `-c safe.bareRepository=explicit`）：只读工具 → `NOT_A_GIT_REPO`，写工具 → `NOT_A_WORKTREE`。启动带 `--allow-root` 时，定位出的工作区顶层还必须是它所在仓库**登记过的工作区**：主工作区，或 `git worktree list` 列出的某个 linked worktree（realpath 比较）；主工作区又不能落在 `--allow-root` 之下另一个仓库的工作区里。否则 `NOT_A_GIT_REPO`（`details.reason`：`unregistered-worktree` 或 `nested-repository`）。这样挡住的有：检出里伪造的 `.git` 目录（嵌套仓库）、指回伪仓库的 `gitdir:` 文件（多层嵌套）、伪造的 linked worktree 管理目录（`commondir` 指向真 `.git`）、子模块。被拒之前，服务器在它里面只跑过 `rev-parse` 和 `worktree list`，这两条命令不执行任何配置里的命令。放在主检出里、登记过的 linked worktree（如 `.claude/worktrees/*`）照常可用。`--allow-root` 设成更大的外层仓库时，里面的仓库都会被当成嵌套仓库拒绝，应把它收窄到要用的仓库。不带 `--allow-root` 时不做这项检查（同根目录校验）。另外每次 git 调用都带 `-c core.fsmonitor=false`，作第二道防线。被接受的仓库自己配置的过滤器、钩子照常生效（`git archive` 快照、`model_diff` 的 `git status`、`governance_record_approval` 的提交）。
 - 多 worktree 不需要额外机制：同一仓库的 worktree 共享对象库和 refs，从哪个 worktree 调 `model_diff`（两种模式）、带 `ref` 的读取，结果都一样。
 - **按分支名定位出的 worktree 也要过根目录校验**（第二轮评审 R2-2、R2-19）：Git 允许 linked worktree 放在 `--allow-root` 之外，有仓库写权限的进程还能改 `.git/worktrees/<n>/gitdir` 让登记路径指向任意目录。所以 `model_diff` 的 worktree 模式（§5.8 第 0 步）和 `record_approval`（§5.9 第 7 步）定位出 W 后再做两项校验：`realpath(W)` 必须落在某个 `--allow-root` 之下，否则 `PATH_OUTSIDE_ROOT`；`git -C W rev-parse --git-common-dir` 的真实路径必须等于 `repo` 的 common dir，否则 `WORKTREE_NOT_FOUND`。
 - **工作区文件集合只有一个口径**（R2-16）：凡读工作区模型文件的地方（`model_check`/`validate`/`findings`/`gate` 不带 `ref` 时、写工具的基线、`model_diff` 的 worktree 模式、§5.9 的脏检查、仓库 pre-commit 钩子），文件集合一律 = `git ls-files -z -- models/`（已跟踪）∪ `git ls-files -z --others --exclude-standard -- models/`（未跟踪且未被忽略），只留 `.ttl`，含子目录里的文件（如每条批准记录一个文件的 `models/<slug>/governance/*.ttl`，§5.9 第 5 步，U2）；被忽略的文件和嵌套仓库里的文件不进入。原型缺省的 `glob(models/**/*.ttl, recursive=True)`（`aisep.py` 第 937 行）会读进被忽略文件、嵌套仓库，还会跟随目录链接，服务器不用它；钩子随之改用同一函数，否则 gate 校验的是一份不会被提交的内容。index 只用来确定文件集合，内容一律以磁盘为准。
@@ -198,7 +199,9 @@
 | `ref` | string | 只读工具可选（`model_diff` 用 `head`/`base`）；写工具**不接受** |
 | `mainRef` | string | 只有 `model_diff` 和 `record_approval` 用 |
 
-**IRI 输入**：接受完整 IRI，也接受原型 `short()` 打印的 `slug:local`（如 `procurement:quotation`），展开规则同原型 `expand()`。**输出**一律完整 IRI。
+**IRI 输入**：接受完整 IRI，也接受原型 `short()` 打印的 `slug:local`（如 `procurement:quotation`），展开规则同原型 `expand()`。展开结果必须是合法 IRI（含空格、`<>{}` 等字符的不算），否则 `INVALID_ARGUMENT`；IRI 先校验再用，不拼进 SPARQL 文本。**输出**一律完整 IRI。
+
+**模型名 `model`**（写工具、四个只读工具、`governance_record_approval` 共用一个口径）：裸 slug（`^[A-Za-z0-9][A-Za-z0-9_-]*$`）或完整模型 IRI（末尾 `/` 可有可无）。其他形状（`procurement/`、`./procurement`、`../x`、`…/procurement/../x/`）→ `INVALID_ARGUMENT`，`details.rejectedFields` 含 `model`，不可重试；形状合法但没有 `models/<slug>/`（含大小写不符）→ `MODEL_NOT_FOUND`。
 
 **公共输出**（`structuredContent`；每个工具声明 `outputSchema`）
 
@@ -212,7 +215,7 @@
 
 **`outputSchema` 是成功与错误两种形状的联合**：`oneOf: [<成功形状>, {type: object, required: ["error"], properties: {error: <ErrorEnvelope>}}]`。规范要求有 `outputSchema` 时 `structuredContent` 必须符合它；TS SDK v1 客户端在 `isError: true` 时照样校验，不符会抛 `InvalidParams`，§7.1 的 `code`、`hint` 就丢了。验收 T34 用 TS SDK 的 `Client.callTool` 对每个错误码各验一例。
 
-`content[0].text` 放同一结果的简短中文摘要，加原型 CLI 格式的发现项行（代理直接读得懂）。**有意偏离**规范的 SHOULD（"同时把 structuredContent 序列化成 JSON 放进 TextContent"）：代理读摘要比读 JSON 省 token，客户端都能读 `structuredContent`。体量上限见 §3.5。
+`content[0].text` 放同一结果的简短中文摘要，加原型 CLI 格式的发现项行（代理直接读得懂）。文本内容里的控制字符与行分隔符按 `\n`、`\uXXXX` 转义（模型文本不能在摘要里伪造独立的一行），`structuredContent` 保持原文。**有意偏离**规范的 SHOULD（"同时把 structuredContent 序列化成 JSON 放进 TextContent"）：代理读摘要比读 JSON 省 token，客户端都能读 `structuredContent`。体量上限见 §3.5。
 
 ### 5.1 写入流程（四个 `model_*` 写工具共用）
 
@@ -254,13 +257,13 @@
 
 | 字段 | 必填 | 说明 |
 |---|---|---|
-| `model` | ✔ | 模型 IRI 或 slug（`procurement`） |
-| `type` | ✔ | 类 IRI 或前缀名；必须是已加载模块的具体类，或模型里的单父类特化（R1、G6） |
-| `prefLabel` | ✔ | 写成 `skos:prefLabel "…"@zh` |
+| `model` | ✔ | 模型 IRI 或 slug（`procurement`），口径见 §5.0 |
+| `type` | ✔ | 类 IRI 或前缀名；必须是已加载模块的具体类，或模型里的单父类特化（R1、G6）。批准记录、AI 活动（`aisep:ApprovalRecord`、`aisep:AgentActivity` 及其子类）→ `PROTECTED_RESOURCE` |
+| `prefLabel` | ✔ | 写成 `skos:prefLabel "…"@zh`。prefLabel/altLabel 不含控制字符、换行与 U+2028/2029，≤200 字符；definition 只允许 `\n`（`\r\n`、`\t` 都拒绝），≤4000 字符；违反 → `INVALID_ARGUMENT` |
 | `altLabel` | — | 写成 `skos:altLabel "…"@en` |
 | `slug` | 条件 | `^[A-Za-z][A-Za-z0-9]*$`（允许大写开头，例子里已有 UML 类 `QuotationEntity`）。不给时由 `altLabel` 转 camelCase；两者都没有 → `INVALID_ARGUMENT`（不自动拼音） |
 | `definition` | — | `skos:definition "…"@zh` |
-| `attributes` | — | `[{predicate, value: {iri} \| {value, datatype?, lang?}}]`，用于 `aisep:priority`、`aisep:path` 这类属性。合法与否由候选图上的 L1 闭世界规则（G7）判定，不另写白名单 |
+| `attributes` | — | `[{predicate, value: {iri} \| {value, datatype?, lang?}}]`，用于 `aisep:priority`、`aisep:path` 这类属性。合法与否由候选图上的 L1 闭世界规则（G7）判定，不另写白名单。不能含 `rdf:type`；写 skos:prefLabel / altLabel / definition 时受同样的标签约束；不合法的 IRI、语言标签或值 → `INVALID_ARGUMENT` |
 | `file`、`dryRun` | — | §5.1 |
 
 **IRI**：`{model}{slug}`。
@@ -275,7 +278,7 @@
 
 ### 5.3 `model_add_relationship`
 
-**输入**：`model?`（缺省取源端元素的模型）、`type`（限定关系类）、`source`、`target`、`file?`、`dryRun?`。
+**输入**：`model?`（缺省取源端元素的模型）、`type`（限定关系类；为批准记录、AI 活动时 `PROTECTED_RESOURCE`）、`source`、`target`、`file?`、`dryRun?`。
 
 **IRI（§3）**：`{model}rel-{源slug}-{直连谓词本地名}-{目标slug}`。
 - 直连谓词取该类最近的 `arch:unqualifiedForm`（同原型 `Ctx.nearest`）。
@@ -398,7 +401,7 @@
 
 ### 5.6 `model_query`
 
-- **输入**：`sparql`（必填）、`limit`（缺省 1000，最大 10000）、`timeoutMs`（缺省 10000）、公共字段。
+- **输入**：`sparql`（必填）、`limit`（缺省 1000，最大 10000）、`timeoutMs`（缺省 10000，最大 60000）、公共字段。
 - **图**：构建后的图 + 全部本体 + 全部对齐（同原型 `cmd_query`，`use_default_graph_as_union=True`）。原型预声明的前缀都可用。
 - **只读的落实**：
   - 只调 `Store.query`，从不调 `Store.update`。Update 语句解析失败（F5）→ `QUERY_NOT_READONLY`，message 写"只接受 SELECT/ASK/CONSTRUCT/DESCRIBE"。
@@ -416,6 +419,7 @@
 - **G9**：先跑 L0–L2（同原型 `cmd_impact`）。
   - 有违规且 `allowInvalid: false` → `MODEL_INVALID`，`details.findings` 列出违规。
   - `allowInvalid: true` → 照算，结果带 `invalidModel: { violations: n }`，工作台必须醒目展示（对应原型的横幅）。
+- **focus 不是合法 IRI 或前缀名**（§5.0）→ `INVALID_ARGUMENT`，`details.rejectedFields` 含 `focus`。
 - **focus 不是元素** → `ELEMENT_NOT_FOUND`，`details.candidates` 给名称或 slug 最接近的最多 5 个。**与原型不同**（F4），有意变更。
 - **输出**：
 
@@ -597,7 +601,7 @@
 | 字段 | 必填 | 规则 | 工作台从哪取 | 写成 |
 |---|---|---|---|---|
 | `agent` | ✔ | 已有模型元素 IRI，判定同 `prov:wasAssociatedWith`（§6） | AO `harness` 映射到模型里的代理元素（D5） | `prov:wasAssociatedWith` |
-| `sessionRef` | ✔ | 非空字符串，不透明 | AO `session.id` | `aisep:sessionRef` |
+| `sessionRef` | ✔ | 不透明，1–200 个可见 ASCII 字符（`!`–`~`，不含空白与换行；它原样进提交的 `AISEP-Session` trailer），否则 `INVALID_ARGUMENT` | AO `session.id` | `aisep:sessionRef` |
 | `branch` | — | 给了必须与顶层 `branch` 完全相同，否则 `INVALID_ARGUMENT` | — | `aisep:branch`（取顶层值，即分支短名，不含 `refs/heads/`，与 `pull_request.head.ref` 同形） |
 | `startedAt` | ✔ | 严格 xsd:dateTime（同原型 `parse_xsd_datetime`） | AO 会话创建时间 | `prov:startedAtTime` |
 | `endedAt` | — | 缺省 = 服务器当前时间（UTC）；开始不晚于结束 | — | `prov:endedAtTime` |
@@ -739,7 +743,7 @@ CI 设为受保护分支的必需检查，PR 每次更新都跑；合并前由�
 | `definition` | — | 新的 `skos:definition "…"@zh`，替换现有的 `@zh` 定义；传 `null` 表示删除 |
 | `dryRun` | — | §5.1 |
 
-- 字段名与 `model_add_element` 一致（§5.2）。三个字段至少给一个，否则 `INVALID_ARGUMENT`；未给出的字段保持不变。别的语言的标签不动。
+- 字段名与标签约束都与 `model_add_element` 一致（§5.2）。三个字段至少给一个，否则 `INVALID_ARGUMENT`；未给出的字段保持不变。别的语言的标签不动。
 - 不接受 `file`：改的是主语已有的三元组，位置由现有文件决定。被替换的三元组在哪个文件，新值就写回哪个文件；要新增一个原来没有的属性（如第一次加定义）时，写进该主语 `rdf:type` 三元组所在的文件。
 
 **前置检查**
