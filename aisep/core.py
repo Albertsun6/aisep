@@ -4,7 +4,7 @@ server (docs/mcp-interface.md §3.1). Functions return data and raise AisepError
 Engines: pyoxigraph for everything (parse, store, SPARQL, L1/L2/L4, build, impact); pyshacl only for L3.
 """
 import glob, os, re, threading
-from collections import deque
+from collections import OrderedDict, deque
 from datetime import datetime, timezone
 
 import pyoxigraph as ox
@@ -822,7 +822,8 @@ def sparql_constraints(path):
 
 # ------------------------------------------------------------------ L3 (pyshacl)
 
-_RDFLIB = {}
+_RDFLIB = OrderedDict()  # LRU: a long-running MCP server gates many commits, each version of a file adds entries
+_RDFLIB_MAX = 128  # one validate of the repo uses ~30 entries, so a few snapshots' worth stay warm
 _PREPARED = {}  # (query text, initNs) -> rdflib prepared Query
 
 
@@ -848,6 +849,9 @@ def rdflib_graph(kind, files):
                 if re.search(r"\bMINUS\s*\{", sel):  # upstream core-shapes: MINUS == FILTER NOT EXISTS there (vars bound)
                     g.set((c, SH.select, Literal(re.sub(r"\bMINUS\s*\{", "FILTER NOT EXISTS {", sel))))
         _RDFLIB[key] = g
+        if len(_RDFLIB) > _RDFLIB_MAX:
+            _RDFLIB.popitem(last=False)
+    _RDFLIB.move_to_end(key)
     return _RDFLIB[key]
 
 
@@ -878,7 +882,7 @@ def l3(ctx):
     """Serialised process-wide: the MCP server runs tools in threads, and rdflib's SPARQL parser is not thread-safe —
     pyparsing's _trim_arity learns each parse action's arity on its first calls by catching TypeErrors, so concurrent
     first parses raise TypeErrors and can leave a parse action permanently mis-learned (every later L3 fails). The
-    caches above are only touched under this lock too. L3 is pure Python, so the GIL left no parallelism to lose."""
+    caches above are only touched under this lock too (so the LRU bookkeeping needs no lock of its own). L3 is pure Python, so the GIL left no parallelism to lose."""
     with _L3_LOCK:
         _l3(ctx)
 
@@ -918,7 +922,11 @@ def _l3(ctx):
             sev = str(report.value(r, SH.resultSeverity)).split("#")[-1]
             focus, path = report.value(r, SH.focusNode), report.value(r, SH.resultPath)
             msg = report.value(r, SH.resultMessage) or f"constraint {short(str(report.value(r, SH.sourceConstraintComponent)))}"
-            lab = data.value(focus, SKOS.prefLabel) if focus is not None else None
+            # several prefLabels (what some shapes report) → pick deterministically, @zh first like Ctx.label;
+            # Graph.value() returns whichever the hash-seeded store yields first
+            lab = min(data.objects(focus, SKOS.prefLabel) if focus is not None else (), default=None,
+                      key=lambda l: (not (getattr(l, "language", None) or "").startswith("zh"),
+                                     getattr(l, "language", None) or "", str(l)))
             ctx.add(sev, "L3", f"[{name}] {short(str(focus))}{' (' + str(lab) + ')' if lab else ''}"
                     f"{' path=' + short(str(path)) if path is not None else ''}: {msg}")
 
