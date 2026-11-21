@@ -162,63 +162,7 @@ def model_gate(cfg, repo=None, ref=None, model=None):
 
 _UPDATE_RE = re.compile(r"(?is)^(?:\s|#[^\n]*(?:\n|$)|PREFIX\s+[\w.-]*:\s*<[^>]*>|BASE\s*<[^>]*>)*"
                         r"(INSERT|DELETE|LOAD|CLEAR|CREATE|DROP|COPY|MOVE|ADD|WITH)\b")
-# MCP-1: SERVICE counts only where the SPARQL grammar can read a keyword. The scanner walks the text token by token:
-# strings, comments, variables and language tags are skipped (?service, 'service', "# service" are data); a prefixed
-# name is skipped unless "service" could be read out of it as the keyword (its prefix contains it: SERVICE:q,
-# service:q, SERVICEex:q; or it follows '.', ':' or '\' inside the local name) - am4:Service and ex:aService are data.
-# An IRI-shaped token "<...>" is skipped as an IRI, but when it holds '(' ')' or a quote its '<' may be a less-than
-# (FILTER(1<2)SERVICE:q#>, FILTER(1<2&&'>'=?x)SERVICE...): both readings are scanned and either one finding the
-# keyword counts. Anything else is matched WITHOUT word boundaries (1SERVICE, )SERVICE), on the text itself (not on
-# a lower-cased copy, whose indexes shift after U+0130). The SPARQL spec allows \uXXXX / \UXXXXXXXX codepoint escapes
-# anywhere in the query text; pyoxigraph 0.5 does not decode them in keyword position (SyntaxError, no request), but
-# the decoded text is scanned as well, as a safety margin. A doubtful token is read as the keyword. The differential
-# fuzz test (test_l4b_extra.py) checks that whatever this lets through, pyoxigraph never sends a request for.
-_TOKEN = re.compile(r"""
-      (?P<str> '''(?:[^'\\]|\\.|'(?!''))*''' | \"\"\"(?:[^"\\]|\\.|"(?!""))*\"\"\"
-             | '(?:[^'\\\n\r]|\\.)*' | "(?:[^"\\\n\r]|\\.)*" )
-    | (?P<iri> <[^<>"{}|^`\\\x00-\x20]*> )
-    | (?P<comment> \#[^\n\r]* )
-    | (?P<var> [?$]\w+ )
-    | (?P<lang> @[A-Za-z]+(?:-[A-Za-z0-9]+)* )
-    | (?P<bnode> _:[\w.-]* )
-    | (?P<pname> (?P<prefix>[^\W\d_][\w.-]*)?:(?P<local>(?:[\w.:%-]|\\.)*) )
-    """, re.X)
-_ESCAPE_RE = re.compile(r"\\u([0-9A-Fa-f]{4})|\\U([0-9A-Fa-f]{8})")
-_GLUED_SERVICE = re.compile(r"(?i)[.:\\]service")
-_SERVICE = re.compile(r"(?i)service")  # matched on the text itself: str.lower() can change the length (U+0130)
-
-
-def _decode_escapes(text):
-    def one(m):
-        n = int(m.group(1) or m.group(2), 16)
-        return chr(n) if n <= 0x10FFFF else m.group(0)
-    return _ESCAPE_RE.sub(one, text)
-
-
-def _scan_service(text):
-    """True when some reading of `text` has the SERVICE keyword. Positions reachable by any reading are visited in
-    order; a token's end (and, for a doubtful IRI, the position after its '<') becomes reachable."""
-    n, reach = len(text), {0}
-    for pos in range(n):
-        if pos not in reach:
-            continue
-        if _SERVICE.match(text, pos):
-            return True
-        m = _TOKEN.match(text, pos)
-        kind = m.lastgroup if m else None
-        if m and m.group("pname") is not None:
-            if _SERVICE.search(m.group("prefix") or "") or _GLUED_SERVICE.search(m.group("local")):
-                return True
-        elif kind == "lang" and _SERVICE.search(m.group()):
-            return True
-        elif kind == "iri" and any(c in m.group() for c in "()'"):
-            reach.add(pos + 1)  # the '<' may be a less-than: rescan the token's inside as well
-        reach.add(m.end() if m and m.end() > pos else pos + 1)
-    return False
-
-
-def _has_service(sparql):
-    return any(_scan_service(t) for t in (sparql, _decode_escapes(sparql)))
+_SERVICE_RE = re.compile(r"(?i)\bSERVICE\b")
 
 
 def _term(v):
@@ -258,7 +202,7 @@ def model_query(cfg, sparql, limit=QUERY_LIMIT, timeoutMs=QUERY_TIMEOUT_MS, allo
         raise AisepError("INVALID_ARGUMENT", f"limit 须为 1–{QUERY_LIMIT_MAX}", details={"rejectedFields": ["limit"]})
     if not isinstance(sparql, str):
         raise AisepError("INVALID_ARGUMENT", "sparql 须为字符串", details={"rejectedFields": ["sparql"]})
-    if _has_service(sparql):  # pyoxigraph would really send the HTTP request (F6)
+    if _SERVICE_RE.search(sparql):  # pyoxigraph would really send the HTTP request (F6)
         raise AisepError("QUERY_NOT_READONLY", "查询里有 SERVICE，不允许访问外部端点",
                          hint="去掉 SERVICE 子句，只查本地模型")
     with loaded(cfg, repo, ref) as (ctx, source):
@@ -287,7 +231,8 @@ def model_query(cfg, sparql, limit=QUERY_LIMIT, timeoutMs=QUERY_TIMEOUT_MS, allo
             e = box["error"]
             if isinstance(e, SyntaxError) and _UPDATE_RE.match(sparql):
                 raise AisepError("QUERY_NOT_READONLY", "只接受 SELECT/ASK/CONSTRUCT/DESCRIBE，不接受更新语句")
-            if isinstance(e, (SyntaxError, OSError, ValueError, RuntimeError)):  # RuntimeError: e.g. an unbound SERVICE endpoint
+            # RuntimeError: e.g. a variable SERVICE endpoint that the query never binds
+            if isinstance(e, (SyntaxError, OSError, ValueError, RuntimeError)):
                 raise AisepError("QUERY_FAILED", f"查询失败：{e}", details={"parser": str(e)})
             raise e
         out.update(box["result"])

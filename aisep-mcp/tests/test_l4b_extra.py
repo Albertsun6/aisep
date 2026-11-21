@@ -1,6 +1,6 @@
 """L4-B 补充回归：先行测试（test_l4b_entry_validation.py）之外、实现时发现或顺带守护的几条。
 
-- SERVICE 判定对 SPARQL 的码点转义额外保守（pyoxigraph 0.5 并不在关键字位置解码转义，拒绝只是多一道保险）；粘连写法、伪 IRI；差分模糊
+- SERVICE 判定（与 main 相同的 \\bSERVICE\\b）对评审 #56 里的粘连写法、伪 IRI、字符串与 IRI 内转义仍拒绝；差分模糊
 - gitio.read_file / open_dir 拒绝 `.`、`..`、空段
 - 批准路径与读工具共用模型 slug 校验
 - SEC-3：检出里伪造的嵌套仓库不执行它的 fsmonitor、过滤器
@@ -19,31 +19,15 @@ from fixtures.topology import M, Topo
 from test_l4b_entry_validation import cfg, listener
 
 
-U = "\\u"  # built by concatenation: a SPARQL codepoint escape, kept out of Python's own string escapes
-
-
-@pytest.mark.parametrize("sparql", [
-    "SELECT * WHERE { " + U + "0053ERVICE <http://127.0.0.1:{port}/q> { ?a ?b ?c } }",
-    "SELECT * WHERE { " + U + "0073ervice <http://127.0.0.1:{port}/q> { ?a ?b ?c } }",
-    r"SELECT * WHERE { \U00000053ERVICE <http://127.0.0.1:{port}/q> { ?a ?b ?c } }",
-    "SELECT * WHERE { ?s ?p " + U + "0027x' . SERVICE <http://127.0.0.1:{port}/q> { ?a ?b ?c } }",
-    "SELECT * WHERE { BIND(1 AS ?n) FILTER(1<2)SERVICE<http://127.0.0.1:{port}/q>{ ?a ?b ?c } }",
-])
-def test_escaped_or_glued_service_is_refused(repo, sparql):
-    with listener() as (port, hits):
-        with pytest.raises(AisepError) as ei:
-            T.model_query(cfg(repo), sparql.replace("{port}", str(port)))
-    assert ei.value.code == "QUERY_NOT_READONLY", ei.value.to_dict()
-    assert not hits
-
-
 # 评审 #56 第一轮（blocker）：粘在关键字后的前缀名、伪 IRI 里的 SERVICE。pyoxigraph 都把它们读成 SERVICE 并真的外连。
 GLUED = {
     "SERVICE:q": "PREFIX : <http://127.0.0.1:{port}/> SELECT * WHERE { SERVICE:q { ?a ?b ?c } }",
     "OPTIONAL service:q": "PREFIX : <http://127.0.0.1:{port}/> SELECT * WHERE { OPTIONAL{ service:q { ?a ?b ?c } } }",
     "伪IRI": "PREFIX : <http://127.0.0.1:{port}/> SELECT * WHERE { FILTER(1<2)SERVICE:q#>\n{ ?a ?b ?c } }",
-    "SERVICEex:q": "PREFIX ex: <http://127.0.0.1:{port}/> SELECT * WHERE { SERVICEex:q { ?a ?b ?c } }",
     "伪IRI里的引号": "SELECT * WHERE { FILTER(1<2&&'>'=?x)SERVICE<http://127.0.0.1:{port}/q>{ ?a ?b ?c } #'\n}",
+    # 评审 #56 第三轮：字符串与 IRI 里的转义（pyoxigraph 在这两处解码 \uXXXX），旧扫描器把后面的 SERVICE 当成注释吞掉
+    "字符串与IRI内转义": ("SELECT * WHERE { BIND(\"\\u0022#\" AS ?z) VALUES ?u {<http://x.example/A\\u0023A>} "
+                   "SERVICE <http://127.0.0.1:{port}/q> {?a ?b ?c}\n}"),
     "真IRI里的引号": "SELECT * WHERE { OPTIONAL { ?s ?p <http://x.example/a'b> } SERVICE <http://127.0.0.1:{port}/q> { ?a ?b ?c } #'\n}",
 }
 
@@ -67,15 +51,6 @@ def test_glued_service_is_refused(repo, name):
             T.model_query(cfg(repo), GLUED[name].replace("{port}", str(port)))
     assert ei.value.code == "QUERY_NOT_READONLY", ei.value.to_dict()
     assert not hits
-
-
-@pytest.mark.parametrize("sparql", [
-    "SELECT * WHERE { ?s ?p 'x'@en . _:service ?q ?r }",
-    "SELECT ?x WHERE { ?x a ?t FILTER(?t = am4:Service || ?t = <https://x.example/aService>) } ORDER BY ?x",
-    'SELECT * WHERE { ?s ?p """a "service" b""" }',
-])
-def test_more_service_mentions_are_not_refused(repo, sparql):
-    assert T.model_query(cfg(repo), sparql)["kind"] == "select"
 
 
 @pytest.mark.parametrize("rel", ["models/../models/procurement/am4.ttl", "./models/procurement/am4.ttl",
@@ -174,14 +149,18 @@ def test_fsmonitor_is_off_for_every_git_call(tmp_path):
     assert marker.exists(), "夹具：不加开关时 git 确实会跑这个 fsmonitor"
 
 
-# 评审 #56 第二轮：差分模糊。词法判定三轮被绕过，这里用 pyoxigraph 自己当判据：凡 _has_service 放行的查询，
-# pyoxigraph 执行时都不能发起连接；被拒的抽样执行，确认这批变形里确有真会外连的（否则测试证明不了什么）。
+# 评审 #56 第二、三轮：差分模糊。以 pyoxigraph 自己为判据：凡 _SERVICE_RE 放行的查询，pyoxigraph 执行时都不能发起连接；
+# 被拒的抽样执行，确认这批变形里确有真会外连的。判定是 main 原样的 \bSERVICE\b；放宽判定（MCP-1，另一个 PR）时它自动守住不漏。
 _I = chr(0x130)  # İ：lower() 后变成两个码点
 _PADS = ["", " ", "# c\n", "# " + _I * 12 + "\n", "#" + _I * 30 + "\n",
          "PREFIX x: <http://x.example/" + _I * 40 + "> ", "BASE <http://x.example/" + _I * 9 + "/> "]
 _KEYWORDS = ["SERVICE", "service", "SeRvIcE", "\\" + "u0053ERVICE", chr(0x17F) + "ervice"]
+_E = "\\"  # 一个字面反斜杠：SPARQL 的码点转义
 _BEFORE = [" ", "{}", "BIND(1 AS ?x)", "FILTER(1<2)", "OPTIONAL{}", "?s ?p ?o .", "FILTER(1<2&&'>'=?y)",
-           "BIND('" + _I * 20 + "' AS ?w)"]
+           "BIND('" + _I * 20 + "' AS ?w)",
+           # 字符串与 IRI 内的转义（评审 #56 第三轮的维度）：解出引号、#、> 后改变后文的切分
+           'BIND("' + _E + 'u0022#" AS ?z) ', "VALUES ?u {<http://x.example/A" + _E + "u0023A>} ",
+           "BIND('" + _E + "u0027' AS ?z) ", "VALUES ?u {<http://x.example/A" + _E + "u0041>} "]
 _AFTER = [" ", "", " SILENT ", "#c\n", "\t"]
 _ENDPOINTS = ["<http://127.0.0.1:{port}/q>", ":q", "?e"]
 
@@ -209,12 +188,67 @@ def _run(q):
 def test_service_filter_differential_fuzz():
     import time
     with listener() as (port, hits), listener() as (port2, hits2):
-        passed = [q for q in _fuzz_queries(port) if not T._has_service(q)]
+        passed = [q for q in _fuzz_queries(port) if not T._SERVICE_RE.search(q)]
         for q in passed:
             _run(q)
-        refused = [q for q in _fuzz_queries(port2) if T._has_service(q)]
+        refused = [q for q in _fuzz_queries(port2) if T._SERVICE_RE.search(q)]
         for q in refused[::25]:
             _run(q)
         time.sleep(0.3)  # listener 线程记账
     assert not hits, f"{len(hits)} 次连接来自被放行的查询；放行的共 {len(passed)} 条"
     assert hits2, "抽样执行的被拒查询一次也没外连：这批变形测不到真 SERVICE"
+
+
+# 评审 #56 第三轮：两层嵌套（gitdir 文件指回被拒的伪仓库）、伪造的 linked worktree 管理目录（commondir 指向真 .git，
+# 主仓库开着 extensions.worktreeConfig，管理目录里的 config.worktree 会被读）都要被拒，且不执行其中的过滤器
+def _two_level(repo, marker):
+    evil = _planted_repo(repo, marker)
+    sub = evil / "sub"
+    sub.mkdir()
+    (sub / ".git").write_text("gitdir: ../.git\n")
+    return sub
+
+
+def _forged_linked_worktree(repo, marker):
+    import shutil
+    git(repo, "config", "extensions.worktreeConfig", "true")
+    adm = repo / "models" / "adm"
+    adm.mkdir(parents=True)
+    wt = repo / "models" / "fakewt"
+    for d in ("modules", "vendor", "models/procurement"):
+        shutil.copytree(repo / d, wt / d)
+    (wt / ".gitattributes").write_text("*.ttl filter=x\n")
+    (wt / ".git").write_text(f"gitdir: {adm}\n")
+    (adm / "HEAD").write_text(git(repo, "rev-parse", "HEAD").strip() + "\n")
+    (adm / "commondir").write_text(os.path.relpath(repo / ".git", adm) + "\n")
+    (adm / "gitdir").write_text(f"{wt / '.git'}\n")
+    cmd = f"echo hit >> '{marker}'; cat"
+    (adm / "config.worktree").write_text(f"[filter \"x\"]\n\tsmudge = {cmd}\n\tclean = {cmd}\n")
+    return wt
+
+
+FORGED = {"two-level": _two_level, "forged-linked-worktree": _forged_linked_worktree}
+
+
+@pytest.mark.parametrize("call", ["model_check", "model_check(ref)", "model_diff(worktree)"])
+@pytest.mark.parametrize("kind", sorted(FORGED))
+def test_sec3_forged_worktrees_are_refused(repo, tmp_path, kind, call):
+    marker = tmp_path / "MARKER"
+    target = FORGED[kind](repo, marker)
+    assert git(target, "rev-parse", "--show-toplevel").strip() == os.path.realpath(target), "夹具：git 把它当成工作区"
+    assert not marker.exists()
+    err = None
+    try:
+        CALLS[call](cfg(repo), target)
+    except Exception as e:  # noqa: BLE001 — 先判标记文件，再判异常类型
+        err = e
+    assert not marker.exists(), f"{call}(repo=<{kind}>) 执行了过滤器；结果：{err!r}"
+    assert isinstance(err, AisepError) and err.code == "NOT_A_GIT_REPO", repr(err)
+
+
+def test_registered_worktree_inside_main_checkout_is_accepted(repo):
+    """正向：放在主检出工作区内部、登记过的 linked worktree（本机 .claude/worktrees/* 的布局）照常可用。"""
+    wt = repo / ".claude" / "worktrees" / "x"
+    git(repo, "worktree", "add", "-q", "-b", "x", str(wt))
+    assert T.model_check(cfg(repo), repo=str(wt))["summary"]["violations"] == 0
+    assert T.model_check(cfg(repo), repo=str(repo))["summary"]["violations"] == 0

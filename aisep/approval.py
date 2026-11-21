@@ -571,7 +571,8 @@ def _our_commit(w, root, msg, blob, branch, tip2):
 
 
 def _blob_id(w, data):
-    return subprocess.run([*gitio.GIT, "-C", w, "hash-object", "--stdin"], input=data, capture_output=True).stdout.decode().strip()
+    return subprocess.run([*gitio.GIT, "-C", w, "hash-object", "--stdin"], input=data,
+                          capture_output=True).stdout.decode().strip()
 
 
 def _landed(w, root, branch, msg):

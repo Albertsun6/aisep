@@ -16,10 +16,9 @@ class UnsafeFile(OSError):
 
 
 # SEC-3: `repo` may point into a directory planted in a checkout. A directory shaped like a git dir (HEAD, objects/,
-# refs/, config) is never discovered as a repository (safe.bareRepository=explicit); a planted .git subdirectory (a
-# nested repository) is refused by locate_repo (_refuse_nested) before any command that could run its config. core.fsmonitor is also
-# switched off on every call (command-line config beats repository config) as a second layer. Every git call of the
-# server goes through GIT.
+# refs/, config) is never discovered as a repository (safe.bareRepository=explicit); any other planted repository or
+# worktree is refused by locate_repo (_registered_worktree). core.fsmonitor is also switched off on every call
+# (command-line config beats repository config) as a second layer. Every git call of the server goes through GIT.
 GIT = ("git", "-c", "safe.bareRepository=explicit", "-c", "core.fsmonitor=false")
 
 
@@ -43,26 +42,35 @@ def under(path, roots):
     return any(rp == _real(r) or rp.startswith(_real(r).rstrip(os.sep) + os.sep) for r in roots)
 
 
-def _common_dir_of(path):
-    rc, out, _ = git(path, "rev-parse", "--path-format=absolute", "--git-common-dir")
-    return _real(out.strip()) if rc == 0 else None
-
-
-def _refuse_nested(top, allow_roots):
-    """SEC-3: a repository whose toplevel lies inside the working tree of ANOTHER repository that is itself under an
-    allow-root (a .git directory planted in a checkout) is refused after only `rev-parse` has run in it, so its
-    config (fsmonitor, filters, hooks) never executes. A linked worktree inside the main checkout shares the main
-    checkout's common dir and is allowed. Without --allow-root there is no root to protect and nothing is checked."""
+def _registered_worktree(top, allow_roots):
+    """SEC-3: `top` must be a worktree its repository registered: the main worktree or one listed by
+    `git worktree list` (realpath compare). A .git directory or file planted in a checkout (a nested repository, a
+    `gitdir:` file pointing at another planted repository, a forged linked-worktree admin directory whose commondir
+    names the real .git) is refused; only `rev-parse` and `worktree list` have run in it, which run no configured
+    command. The main worktree must not lie inside the worktree of another repository under an allow-root (a planted
+    .git directory is the main worktree of its own planted repository). Submodules are refused too. Without
+    --allow-root nothing is checked (like the root check)."""
     if not allow_roots:
         return
-    parent = os.path.dirname(top)
-    rc, out, _ = git(parent, "rev-parse", "--show-toplevel")
-    if rc != 0 or not under(out.strip(), allow_roots):
-        return
-    outer = _common_dir_of(parent)
-    if outer is None or outer != _common_dir_of(top):
-        raise AisepError("NOT_A_GIT_REPO", f"{top} 是嵌套在仓库 {_real(out.strip())} 工作区里的另一个仓库，不接受",
-                         hint="repo 传外层仓库或它的 worktree", details={"repo": top, "reason": "nested-repository"})
+    common = _common_dir(top)
+    rc, out, _ = git(top, "worktree", "list", "--porcelain")
+    lines = out.split("\n") if rc == 0 else []
+    paths = [_real(line[len("worktree "):]) for line in lines if line.startswith("worktree ")]
+    hint = "repo 传仓库的主工作区或它登记过的 worktree；若 --allow-root 是一个更大的外层仓库，把它收窄到要用的仓库"
+    if common is None or not paths or top not in paths:
+        raise AisepError("NOT_A_GIT_REPO", f"{top} 不是它所在仓库登记过的工作区，不接受", hint=hint,
+                         details={"repo": top, "reason": "unregistered-worktree"})
+    d = os.path.dirname(paths[0])
+    while under(d, allow_roots):
+        rc, out, _ = git(d, "rev-parse", "--show-toplevel")
+        if rc == 0:
+            if _common_dir(out.strip()) != common:
+                raise AisepError("NOT_A_GIT_REPO", f"{top} 所属仓库嵌套在仓库 {_real(out.strip())} 的工作区里，不接受",
+                                 hint=hint, details={"repo": top, "reason": "nested-repository"})
+            break
+        if os.path.dirname(d) == d:
+            break
+        d = os.path.dirname(d)
 
 
 def locate_repo(repo=None, allow_roots=(), default=None):
@@ -77,7 +85,7 @@ def locate_repo(repo=None, allow_roots=(), default=None):
     if allow_roots and not under(top, allow_roots):
         raise AisepError("PATH_OUTSIDE_ROOT", f"{top} 不在服务器允许的根目录之下",
                          hint="用 --allow-root 启动服务器时把它加进去", details={"repo": top, "allowRoots": list(allow_roots)})
-    _refuse_nested(top, allow_roots)
+    _registered_worktree(top, allow_roots)
     return top
 
 
@@ -173,7 +181,8 @@ def snapshot(repo, commit):
     files = sorted(p for p in out.split("\0") if p.endswith(".ttl"))
     tmp = tempfile.mkdtemp(prefix="aisep-snap-")
     try:
-        p = subprocess.Popen([*GIT, "-C", repo, "archive", "--format=tar", commit, "--", *present], stdout=subprocess.PIPE)
+        p = subprocess.Popen([*GIT, "-C", repo, "archive", "--format=tar", commit, "--", *present],
+                             stdout=subprocess.PIPE)
         with tarfile.open(fileobj=p.stdout, mode="r|") as tar:
             tar.extractall(tmp, filter="data")
         if p.wait() != 0:
@@ -278,8 +287,8 @@ def commit_files(repo, commit, prefixes=("models/",)):
              if mode == "120000" or typ != "blob"}
     want = [(p, sha) for p, (mode, typ, sha) in sorted(meta.items()) if p not in files]
     if want:
-        p = subprocess.run([*GIT, "-C", repo, "cat-file", "--batch"], input="".join(f"{sha}\n" for _, sha in want).encode(),
-                           capture_output=True)
+        p = subprocess.run([*GIT, "-C", repo, "cat-file", "--batch"],
+                           input="".join(f"{sha}\n" for _, sha in want).encode(), capture_output=True)
         buf, pos = p.stdout, 0
         for path, _ in want:
             nl = buf.index(b"\n", pos)
