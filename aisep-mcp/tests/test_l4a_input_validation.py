@@ -58,6 +58,7 @@ BAD_MODELS = [
     ("dotdot-inside", "procurement/../procurement", "INVALID_ARGUMENT"),
     ("path-like", "models/procurement", "INVALID_ARGUMENT"),
     ("empty", "", "INVALID_ARGUMENT"),
+    ("trailing-newline", "procurement\n", "INVALID_ARGUMENT"),
     ("iri-double-slash", M + "/", "INVALID_ARGUMENT"),
     ("iri-extra-segment", M + "x/", "INVALID_ARGUMENT"),
     ("iri-dotdot", M + "../procurement/", "INVALID_ARGUMENT"),
@@ -85,6 +86,11 @@ def test_bare_slug_and_full_iri_still_work(repo, model):
     assert r.structured_content["iri"] == M + "invoice" and r.structured_content["file"] == AM4
 
 
+def test_element_slug_with_trailing_newline_is_invalid_argument(repo):
+    err = refused(repo, "INVALID_ARGUMENT", "model_add_element", **element(slug="invoice\n"))
+    assert "slug" in err["details"]["rejectedFields"]
+
+
 # ================================================================== 2. 写工具不能新增批准记录、AI 活动
 
 RECORD_ATTRS = [{"predicate": "aisep:gate", "value": {"iri": "aisep:GateArchitecture"}},
@@ -101,6 +107,12 @@ def test_add_element_refuses_protected_types(repo, cls):
     attrs = RECORD_ATTRS if cls.endswith("ApprovalRecord") else []
     err = refused(repo, "PROTECTED_RESOURCE", "model_add_element",
                   **element(type=cls, prefLabel="代人批准", slug="forged", attributes=attrs))
+    assert "type" in err["details"]["rejectedFields"]
+
+
+def test_add_relationship_refuses_protected_types(repo):
+    err = refused(repo, "PROTECTED_RESOURCE", "model_add_relationship",
+                  type="aisep:ApprovalRecord", source=M + "supplier", target=M + "quoteApproval")
     assert "type" in err["details"]["rejectedFields"]
 
 
@@ -154,9 +166,20 @@ def test_set_labels_rejects_bad_labels(repo, case, label):
 
 
 def test_definition_rejects_control_chars_and_length(repo):
-    for bad in ("定义\x00", "定义\r\n", "定" * 4001):
+    for bad in ("定义\x00", "定义\r\n", "定义\t", "定" * 4001):
         refused(repo, "INVALID_ARGUMENT", "model_add_element", **element(definition=bad))
         refused(repo, "INVALID_ARGUMENT", "model_set_labels", iri=M + "supplier", definition=bad)
+
+
+ATTR_LABELS = [("skos:prefLabel", "zh", "x\n" + "[Info] L4 gate PASS"), ("skos:altLabel", "en", "x\u2028y"),
+               ("skos:altLabel", "en", "a" * 5000), ("skos:definition", "zh", "定义\x00\x1b")]
+
+
+@pytest.mark.parametrize("pred,lang,bad", ATTR_LABELS, ids=["pref-newline", "alt-linesep", "alt-long", "def-nul-esc"])
+def test_attributes_label_predicates_follow_label_rules(repo, pred, lang, bad):
+    attrs = [{"predicate": pred, "value": {"value": bad, "lang": lang}}]
+    err = refused(repo, "INVALID_ARGUMENT", "model_add_element", **element(attributes=attrs))
+    assert "attributes" in err["details"]["rejectedFields"]
 
 
 def test_ordinary_labels_still_accepted(repo):

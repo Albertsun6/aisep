@@ -19,6 +19,7 @@ MODEL_SLUG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 LABEL_MAX, DEFINITION_MAX = 200, 4000
 _CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f\u2028\u2029]")
 RDF_TYPE = core.A
+LABEL_LIMITS = {PREF: LABEL_MAX, ALT: LABEL_MAX, DEF: DEFINITION_MAX}
 UNSET = object()
 PROTECTED_TYPES = {core.AISEP + "ApprovalRecord", core.AISEP + "AgentActivity"}
 
@@ -44,7 +45,7 @@ def _model(ws, model):
     if isinstance(model, str) and model.startswith(core.MODEL_BASE):
         slug = model[len(core.MODEL_BASE):]
         slug = slug[:-1] if slug.endswith("/") else slug
-    if not isinstance(slug, str) or not MODEL_SLUG_RE.match(slug):
+    if not isinstance(slug, str) or not MODEL_SLUG_RE.fullmatch(slug):
         raise AisepError("INVALID_ARGUMENT", f"model {model!r} 须为模型 slug（^[A-Za-z0-9][A-Za-z0-9_-]*$）或完整模型 IRI",
                          details={"model": model, "rejectedFields": ["model"]})
     mdir = os.path.join(ws.root, "models")
@@ -193,7 +194,7 @@ def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, def
         if not altLabel:
             raise _bad("slug", "slug 与 altLabel 都没给，无法生成 IRI（不自动拼音）")
         slug = _camel(altLabel)
-    if not SLUG_RE.match(slug or ""):
+    if not isinstance(slug, str) or not SLUG_RE.fullmatch(slug):
         raise _bad("slug", f"slug {slug!r} 须匹配 ^[A-Za-z][A-Za-z0-9]*$")
 
     def build(ws, ctx):
@@ -231,6 +232,8 @@ def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, def
                 raise _bad("attributes", f"attributes 里有不合法的 IRI、语言标签或值：{e}") from None
             if p.value == RDF_TYPE:  # one element, one type (hard rule 3); the type is the `type` argument
                 raise _bad("attributes", "attributes 不能写 rdf:type，类型只由 type 参数给出")
+            if p.value in LABEL_LIMITS and isinstance(o, ox.Literal):  # same rules as the named arguments (SEC-7)
+                _check_text("attributes", o.value, LABEL_LIMITS[p.value], allow_newline=p.value == DEF)
             triples.append(ox.Triple(s, p, o))
         st = _subject_triples(ctx)
         f = _check_file(mslug, file) if file else default_element_file(ctx, mslug, cls)
@@ -258,6 +261,9 @@ def model_add_relationship(cfg, type, source, target, model=None, file=None, dry
         st = _subject_triples(ctx)
         s_iri, t_iri = _member(ctx, st, source, "source"), _member(ctx, st, target, "target")
         cls = _resolve_class(ctx, type)
+        if PROTECTED_TYPES & set(ctx.ancestors(cls)):
+            raise AisepError("PROTECTED_RESOURCE", f"{core.short(cls)} 是批准记录或 AI 活动，不能经写工具新增",
+                             details={"rejectedFields": ["type"]})
         if core.ARCH + "QualifiedRelationship" not in ctx.ancestors(cls):
             raise _bad("type", f"{core.short(cls)} 不是限定关系类，元素请用 model_add_element")
         if model is None:
