@@ -71,7 +71,8 @@ jobs:
         run: |
           echo "fixtures=$FIXTURES pytest-shard=$SHARDS"
           test "$FIXTURES" = success && test "$SHARDS" = success
-  # 合并检查负例（Albert 2026-11-21 定：进 CI，但不是必需检查）。合并前本地跑仍按 AGENTS.md「分支与合并」第 2 条。
+  # 合并检查负例（Albert 2026-11-21 定：进 CI，但不是必需检查）。涉及 mergecheck 的 PR 合并前核对 PR 头上本 job 的结论，
+  # 合并后核对 push 到 main 的那次（ADR-022，AGENTS.md「分支与合并」）；PR 改了 .github/workflows/** 或 CI 不可用时才在本地跑。
   # PR 和 push 到 main 都跑、不加路径过滤，以后升为必需检查时每个 PR 都有它的结果。--durations 留实测耗时。
   negatives:
     runs-on: ubuntu-latest

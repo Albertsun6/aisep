@@ -6,6 +6,9 @@
 清单逐个记录 vendor/ 下的文件（MANIFEST.json 自身除外）：SHA256、来源 URL、抓取时间、许可证及其出处、owl:versionInfo，
 以及是否被加载、被谁加载。核对四件事：文件集合与清单一致、每个文件的 SHA256 一致、清单与 meta.linked.archi/SHA256SUMS
 一致、"被加载"与加载代码一致（模块清单的 aisep:loads / aisep:shapesFile，加上 aisep/core.py 写死的 RT_FILE）。
+
+残余风险：check 只核对内部一致性，信任锚是仓库里的 MANIFEST.json 与 SHA256SUMS 本身；把文件、SHA256SUMS、
+MANIFEST.json 三处一起协调改掉，check 照样通过。防线是 vendor/ 的改动在 diff 里可见、并经合并前评审。
 """
 import hashlib, json, os, sys
 

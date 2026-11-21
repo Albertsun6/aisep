@@ -613,7 +613,7 @@
 
 1. **分支头校验**（不论有没有 activity）：设 tip = `branch` 当前头。
    - headCommit 必须是 tip 的祖先（或等于 tip），否则 `STALE_HEAD`。
-   - headCommit..tip 之间**逐个提交**检查，不看净差异（先加后删的净差异可能为空）。范围内有合并提交（`git rev-list --min-parents=2 headCommit..tip` 非空）→ 直接 `STALE_HEAD`，不去定义"与哪个父提交比"（R2-9：取 first-parent 会漏掉侧分支带进来的代码提交）。其余每个中间提交（恰有一个父提交）必须同时满足：(a) 恰好一个 `AISEP-Evidence` trailer，其值等于该提交新增的那条批准记录的 `aisep:evidence`（第三轮 A）；(b) 相对父提交**恰好新增一个文件**，不修改、不删除、不改名任何已有文件（含 `governance.ttl`；U2），新文件路径匹配 `models/<slug>/governance/[^/]+\.ttl`（只收 `.ttl`，不进子目录），文件模式为 `100644`（符号链接 `120000`、可执行 `100755` 都不算）（不限于本次调用的 `model`：同一分支先批准模型 A、再批准模型 B 时，A 的批准提交也要能过，R2-18）；(c) 该提交与其父提交的**源图差异**（复用 `model_diff` 的分组，§5.8，按 (b) 中那个模型计算）只有新增主语：**恰好一条** `aisep:ApprovalRecord`，另可带至多一个被它经 `aisep:activity` 引用的 `aisep:AgentActivity`，没有任何修改或删除（核对轮 6）。另直接解析 (b) 中的新文件本身（不靠并集图差异）：其中的主语只能是 (c) 中那条记录及其可选活动，每个主语的全部三元组都在该文件里，且文件名去掉 `.ttl` 等于记录 IRI 去掉 `{model}` 前缀的本地名（第四轮 R4-8：新文件复制一条已有记录、再加一条新记录，复制部分在图差异里消失）。新文件里有空白节点（作主语或宾语）或 RDF 1.2 三元组项 → 不是批准提交；空白节点无人引用、被共享或成环，使源图差异本身算不出（`DIFF_BNODE_UNSUPPORTED`，§5.8）时，同样判为不是批准提交，不抛异常。合并时校验在 PR 头、目标分支头、合并结果任一侧图差异算不出时都失败关闭：报一条 `check-error`，另对 `T..H` 中每个带 `AISEP-Evidence` trailer 的提交跑本判据，不合格的报 `not-approval-commit`（`aisep/mergecheck.py` 的 `_bnode_fallback`）。
+   - headCommit..tip 之间**逐个提交**检查，不看净差异（先加后删的净差异可能为空）。范围内有合并提交（`git rev-list --min-parents=2 headCommit..tip` 非空）→ 直接 `STALE_HEAD`，不去定义"与哪个父提交比"（R2-9：取 first-parent 会漏掉侧分支带进来的代码提交）。其余每个中间提交（恰有一个父提交）必须同时满足：(a) 恰好一个 `AISEP-Evidence` trailer，其值等于该提交新增的那条批准记录的 `aisep:evidence`（第三轮 A）；(b) 相对父提交**恰好新增一个文件**，不修改、不删除、不改名任何已有文件（含 `governance.ttl`；U2），新文件路径匹配 `models/<slug>/governance/[^/]+\.ttl`（只收 `.ttl`，不进子目录），文件模式为 `100644`（符号链接 `120000`、可执行 `100755` 都不算）（不限于本次调用的 `model`：同一分支先批准模型 A、再批准模型 B 时，A 的批准提交也要能过，R2-18）；(c) 该提交与其父提交的**源图差异**（复用 `model_diff` 的分组，§5.8，按 (b) 中那个模型计算）只有新增主语：**恰好一条** `aisep:ApprovalRecord`，另可带至多一个被它经 `aisep:activity` 引用的 `aisep:AgentActivity`，没有任何修改或删除（核对轮 6）。另直接解析 (b) 中的新文件本身（不靠并集图差异）：其中的主语只能是 (c) 中那条记录及其可选活动，每个主语的全部三元组都在该文件里，且文件名去掉 `.ttl` 等于记录 IRI 去掉 `{model}` 前缀的本地名（第四轮 R4-8：新文件复制一条已有记录、再加一条新记录，复制部分在图差异里消失）。新文件里有空白节点（作主语或宾语）或 RDF 1.2 三元组项 → 不是批准提交；空白节点无人引用、被共享或成环，使源图差异本身算不出（`DIFF_BNODE_UNSUPPORTED`，§5.8）时，同样判为不是批准提交，不抛异常。合并时校验在 PR 头、目标分支头、合并结果任一侧图差异算不出时都失败关闭：报一条 `check-error`，另对 `T..H` 中每个带 `AISEP-Evidence` trailer 的提交跑本判据，不合格的报 `not-approval-commit`（`aisep/mergecheck.py` 的 `_bnode_fallback`）；检查项 3、7 为记录的 evidence 提交另建的一侧算不出时，同样失败关闭，但只报一条 `check-error`，不跑逐提交判据。
    - 上面"无合并提交 + 每个提交满足 (a)(b)(c)"下称**批准提交判据**。合并时 CI 调用同一个函数（见下文"合并时校验"）。
    - **有效内容提交**（核对轮 4）：从某个提交沿第一个父提交回溯，跳过满足 (a)(b)(c) 的提交，得到的第一个提交。它是 mainRef（CI 中为 T）的祖先或等于它时，按"主线提交"处理。本步的"主线提交的批准"、合并时校验检查项 3、批准专用 PR 判定统一用它。理由：发布批准分支上的批准提交 A 不在主线上，但它只比 R 多一条记录；不这样算，对 A 补批 `GateArchitecture` 就绕过了 U4①。
    - 任何一条不满足 → `STALE_HEAD`，`details: {tip, offendingCommit, reason}`，工作台提示"分支有新提交，请刷新差异后再批"（Q3=A 已拍板）。
@@ -847,7 +847,7 @@ C 的附带决定（同在 Q4，已拍板收紧）：`aisep:approvedBy` **只接
 3. 有候选值就放进 `details.candidates`，省一次查询。
 4. `retryable` 只对 `LOCKED`、`CONFLICT`（回滚时保留了文件（kept）、记录已被别的提交带走（taken）、撤回失败这三类除外，见 §7.2）、`WORKTREE_CHANGED`、`COMMIT_FAILED`（`index.lock` 被占用且已回滚时）、`QUERY_TIMEOUT` 为 true；其他原样重试没有意义。`PLAN_STALE` 不可重试：带同一个旧 `planDigest` 重试永远失败，要先重新 `dryRun`。
 
-`content[0].text` 放同一句 `message` + `hint` + 发现项的 CLI 格式行。
+`content[0].text` 放同一句 `message` + `hint` + 发现项的 CLI 格式行，控制字符与行分隔符的转义同 §5.0。
 
 ### 7.2 错误码
 
@@ -1071,7 +1071,7 @@ export const APPROVAL_STATE_IRI: Record<string, ApprovalState> = {
 
 ## 9. 需要改动的规范条文（可直接替换）
 
-已移至 [`docs/history/mcp-interface-mirrors.md`](history/mcp-interface-mirrors.md) 的「§9」，原文未改。
+已移至 [`docs/history/mcp-interface-mirrors.md`](history/mcp-interface-mirrors.md) 的「§9」，原文未改。这些改文已落入元模型规范（`docs/metamodel-spec.md`），现行条文以它为准。
 
 ---
 

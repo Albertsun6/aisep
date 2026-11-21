@@ -2,7 +2,7 @@
 
 状态：§14 的 D1–D10 已于 2026-11-19 全部按建议拍板（ADR-011）；v0.3 = v0.2 + 三轮审计和第二次 GPT 评审之后补的 R1–R4、G1–G10，全部已在原型里实现并验证。v0.4 = v0.3 + “AI 进行中”的数据来源（ADR-013）：新增 `aisep:AgentActivity`（§6.7）、批准记录的 `aisep:activity`（§6.6）、MCP 的 `model.diff` 与 `governance.record_approval` 改动（§8.3）；AgentActivity 与 `model.diff`、`governance.record_approval` 已在《MCP Server 接口设计》中定稿（ADR-014）。依据：`spike-linked-archi/spike-result.md`（第一步结论）、《方法论总纲（草案1）》§6/§6a、《AISEP 架构原则》、`decisions.md`（ADR-003/004/007/008/009/010）。
 基线：Linked.Archi core 0.6.0 + ArchiMate 4.0（vendored，按 SHA256 锁定）。命名空间先用占位符 `https://aisep.example/`，第三步建正式仓库前统一替换。
-原型：`metamodel-prototype/`（179 项测试全部通过，详见 §15）。修订与辩论记录见附录 B，已知限制见附录 C。
+原型：`metamodel-prototype/`（179 项测试全部通过，详见 [`docs/history/metamodel-spec-prototype-and-revisions.md`](history/metamodel-spec-prototype-and-revisions.md) 的「§15」）。修订与辩论记录见同一文件的「附 B」，已知限制见本文附 C。
 
 ## 0. 一页摘要
 
