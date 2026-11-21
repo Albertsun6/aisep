@@ -1,7 +1,7 @@
 # 固定查询：代码位置 → 业务能力 → 需求 → 验收标准 → 测试用例 → 测试结果
 # 从一个 aisep:CodeLocation（按仓库与路径定位）出发，沿 aisep:Implementation 到设计元素、沿 am4:Realization（含子类）
 # 到能力；再找实现同一能力的流程所实现的需求、需求聚合的验收标准、验证它们的测试用例，以及测试用例的结果（可选）
-# 和结果的被测提交（aisep:testedCommit，可选，验证扩展 v0.3.0）。DISTINCT：多条实现或实现路径汇到同一能力时不出重复行。
+# 和结果的被测提交（aisep:testedCommit，可选，验证扩展 v0.3.0）。DISTINCT：多条实现或实现路径汇到同一能力时不出重复行；投影 ?cap，同名的不同能力不会被合成一行。
 # 只用限定关系资源（arch:source / arch:target），不依赖直连三元组。
 # 粒度提醒：模型里代码只连到限界上下文，需求只连到流程，两者在「能力」处汇合，所以会列出同一能力下所有需求的测试，
 # 不只是这段代码的。
@@ -14,7 +14,7 @@ PREFIX arch:   <https://meta.linked.archi/core#>
 PREFIX am4:    <https://meta.linked.archi/archimate4/onto#>
 PREFIX aisep:  <https://aisep.example/ont/aisep#>
 
-SELECT DISTINCT ?code ?capLabel ?req ?reqLabel ?ac ?tc ?tcLabel ?result ?verdict ?at ?commit WHERE {
+SELECT DISTINCT ?code ?cap ?capLabel ?req ?reqLabel ?ac ?tc ?tcLabel ?result ?verdict ?at ?commit WHERE {
   ?code schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
         aisep:path "scripts/aisep-dev.mjs" .
   ?impl a/rdfs:subClassOf* aisep:Implementation ; arch:source ?code ; arch:target ?design .
