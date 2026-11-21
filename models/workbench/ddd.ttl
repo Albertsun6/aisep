@@ -1,0 +1,27 @@
+@prefix : <https://aisep.example/model/workbench/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix ddd: <https://aisep.example/ont/ddd#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix am4: <https://meta.linked.archi/archimate4/onto#> .
+
+:governanceSubdomain a ddd:Subdomain ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "治理与批准"@zh ;
+    skos:altLabel "Governance and approval"@en ;
+    ddd:subdomainType ddd:Core .
+
+:rel-gateApprovalFlow-realizes-governanceSubdomain a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gateApprovalFlow ;
+    arch:target :governanceSubdomain .
+
+:workbenchGovernanceBC a ddd:BoundedContext ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "工作台治理上下文"@zh ;
+    skos:altLabel "Workbench governance"@en ;
+    ddd:contextType ddd:Application .
+
+:rel-workbenchGovernanceBC-implements-governanceSubdomain a ddd:SubdomainImplementation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :workbenchGovernanceBC ;
+    arch:target :governanceSubdomain .

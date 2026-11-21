@@ -1,0 +1,17 @@
+@prefix : <https://aisep.example/model/workbench/> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+:approvalProgressCode a aisep:CodeLocation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准进度展示前端代码"@zh ;
+    skos:altLabel "Approval progress UI code"@en ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    aisep:path "frontend/src/renderer/aisep/data/approval-progress.ts" .
+
+:rel-approvalProgressCode-implements-workbenchGovernanceBC a aisep:Implementation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :approvalProgressCode ;
+    arch:target :workbenchGovernanceBC .
