@@ -14,7 +14,7 @@
     skos:prefLabel   "代码与交付追溯扩展"@zh ;
     skos:altLabel    "Code and delivery traceability extension"@en ;
     aisep:moduleKind aisep:Extension ;
-    owl:versionInfo  "0.2.0" ;
+    owl:versionInfo  "0.2.1" ;
     aisep:loads      "vendor/meta.linked.archi/ttl/core.ttl" ,
                      "vendor/meta.linked.archi/ttl/archimate4_onto.ttl" ,
                      "modules/ext-code/onto.ttl" ;

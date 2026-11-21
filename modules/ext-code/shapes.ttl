@@ -37,6 +37,7 @@
         sh:maxCount 1 ;
         sh:datatype xsd:string ;
         sh:pattern "^swh:1:(cnt|dir|rev|rel|snp):[0-9a-f]{40}(;.+)?$" ;
+        sh:not [ sh:pattern "\\n" ] ;   # pyshacl (Python re) lets $ match before a final newline: "<SWHID>\n" would pass
         sh:message "EC4: aisep:swhid is optional, at most one, and must be a SWHID (swh:1:<cnt|dir|rev|rel|snp>:<40 hex>[;qualifiers])." ;
         sh:severity sh:Violation ;
     ] .

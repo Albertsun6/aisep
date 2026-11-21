@@ -157,7 +157,7 @@
         sh:datatype xsd:string ;
         sh:pattern "^[0-9a-f]{40}$|^sha256:[0-9a-f]{64}$" ;   # same regex as the aisep-core ApprovalRecordShape (L1)
         sh:not [ sh:pattern "\\n" ] ;   # pyshacl (Python re) lets $ match before a final newline: "<40 hex>\n" would pass
-        sh:message "EG16: an ApprovalRecord has exactly one aisep:evidence, an xsd:string: a 40-hex git commit id or sha256:<64 hex> report hash of the approved version (required since v0.2.1)." ;
+        sh:message "EG16: an ApprovalRecord has exactly one aisep:evidence, an xsd:string: a 40-hex git commit id or sha256:<64 hex> report hash of the approved version (required since metamodel spec v0.2.1, rule R3)." ;
         sh:severity sh:Violation ;
     ] .
 
@@ -209,6 +209,7 @@
         sh:minCount 1 ; sh:maxCount 1 ;
         sh:datatype xsd:string ;
         sh:pattern "^[0-9a-f]{40}$" ;
+        sh:maxLength 40 ;   # pyshacl (Python re) lets $ match before a final newline: "<40 hex>\n" would pass the pattern
         sh:message "EG22: an AgentActivity has exactly one aisep:baseCommit, a 40-hex git commit id (the merge-base)." ;
         sh:severity sh:Violation ;
     ] ;

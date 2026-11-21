@@ -15,7 +15,7 @@
 
 <https://aisep.example/ont/aisep/ext-code> a owl:Ontology ;
     rdfs:label "AISEP code and delivery traceability extension"@en ;
-    owl:versionInfo "0.1.0" .
+    owl:versionInfo "0.1.1" .
 
 # A node (location in a source repository). An arch:Element so it can be the source of a qualified
 # relationship and so the closed-world rules apply. NOT an am4:Artifact: the repository is a property
