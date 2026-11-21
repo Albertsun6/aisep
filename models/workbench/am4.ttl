@@ -8,3 +8,20 @@
 
 <https://aisep.example/model/workbench/> a arch:Model ;
     skos:prefLabel "AISEP 工作台"@zh ; skos:altLabel "AISEP Workbench"@en .
+
+:reqApprovalProgress a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "工作台展示批准进度"@zh ;
+    skos:altLabel "Show approval progress in the workbench"@en ;
+    skos:definition "工作台显示一次批准走到 待批准、已批准待推送、已推送待合并、已合入 的哪一步；进度一律从 Git 推导，不保存进行中状态（ADR-013）。"@zh ;
+    aisep:priority aisep:Must .
+
+:gateApprovalFlow a am4:Process ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "关口批准流转"@zh ;
+    skos:altLabel "Gate approval flow"@en .
+
+:rel-gateApprovalFlow-realizes-reqApprovalProgress a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gateApprovalFlow ;
+    arch:target :reqApprovalProgress .

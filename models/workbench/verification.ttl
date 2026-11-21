@@ -1,0 +1,27 @@
+@prefix : <https://aisep.example/model/workbench/> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix am4: <https://meta.linked.archi/archimate4/onto#> .
+
+:acProgressFourStages a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准进度的四个阶段都能从 Git 推导并显示"@zh ;
+    skos:altLabel "All four approval progress stages are derived from Git and shown"@en ;
+    aisep:gherkin "Given 一个带待批准关口的分支\nWhen 批准记录被提交、推送、合入主分支\nThen 工作台依次显示 待批准、已批准待推送、已推送待合并、已合入" .
+
+:rel-reqApprovalProgress-aggregates-acProgressFourStages a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApprovalProgress ;
+    arch:target :acProgressFourStages .
+
+:tcApprovalProgressStages a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准进度四阶段推导测试"@zh ;
+    skos:altLabel "Approval progress four-stage derivation test"@en ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/data/approval-progress.test.ts 中的测试：从 Git 状态推导出四个阶段。"@zh .
+
+:rel-tcApprovalProgressStages-verifies-acProgressFourStages a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcApprovalProgressStages ;
+    arch:target :acProgressFourStages .
