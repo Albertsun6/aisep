@@ -103,6 +103,49 @@ def test_t1_guard_samples_make_no_connection_without_classifier(repo, monkeypatc
     assert not hits
 
 
+def test_service_to_external_name_is_killed_before_resolving(repo, monkeypatch):
+    """外部主机名的 SERVICE：关掉词法判定后，子进程在解析域名（第一个 socket）时就被终止，报联网尝试而不是解析失败。"""
+    import uuid
+    monkeypatch.setattr(T, "_SERVICE_CLAUSE_RE", re.compile(r"(?!)"))
+    with pytest.raises(AisepError) as ei:
+        T.model_query(cfg(repo), "SELECT * WHERE { SERVICE <http://%s.invalid/q> { ?a ?b ?c } }" % uuid.uuid4().hex)
+    assert ei.value.code == "QUERY_NOT_READONLY", ei.value.to_dict()
+
+
+# 评审 #63（major）：main 的 \bSERVICE\b 放行、文本里含 service 的合法查询，本 PR 也必须放行
+MAIN_PASSES = {
+    "前缀servicedesk": "PREFIX servicedesk: <http://x/> SELECT * { ?s servicedesk:id ?o }",
+    "前缀serviceOnt": "PREFIX serviceOnt: <urn:s:> SELECT ?x WHERE { ?x a serviceOnt:Thing }",
+    "IRI里的services与端口": "SELECT * { ?s ?p <http://services.acme.com:8443/x> }",
+    "字面量servicenow:": 'SELECT * WHERE { BIND("servicenow:INC1" AS ?x) }',
+    "字面量services:": "SELECT * WHERE { BIND('services: a' AS ?x) }",
+    "注释services:": "# services: none\nASK { ?s ?p ?o }",
+}
+_MAIN_RE = re.compile(r"(?i)\bSERVICE\b")  # main 上的判定
+
+
+@pytest.mark.parametrize("name", sorted(MAIN_PASSES))
+def test_queries_main_accepts_are_accepted(repo, name):
+    q = MAIN_PASSES[name]
+    assert not _MAIN_RE.search(q), "前提：main 放行它"
+    r = T.model_query(cfg(repo), q)
+    assert r["kind"] in ("select", "ask")
+
+
+def test_classifier_refuses_a_subset_of_what_main_refused():
+    """词法判定只收窄：凡它拒的，main 的 \\bSERVICE\\b 也拒（对样例、护栏、模糊语料与随机变异逐条比对）。"""
+    import random
+    from test_l4b_entry_validation import TEXT_WITH_SERVICE
+    from test_l4b_extra import _fuzz_queries, _mutate
+    corpus = [q.replace("{port}", "1") for q in (*BYPASS.values(), *REAL_SERVICE.values())]
+    corpus += [*MAIN_PASSES.values(), *TEXT_WITH_SERVICE.values(), *_fuzz_queries(1)]
+    rng = random.Random(63)
+    corpus += [_mutate(rng, rng.choice(corpus)) for _ in range(5000)]
+    extra = [q for q in corpus if T._SERVICE_CLAUSE_RE.search(q) and not _MAIN_RE.search(q)]
+    assert not extra, extra[:5]
+    assert not any(T._SERVICE_CLAUSE_RE.search(q) for q in MAIN_PASSES.values())
+
+
 # 不靠 pyoxigraph：施加同一个限制后，子进程自己用各种 socket 去连；进程必须被终止、零连接
 _PROBES = {
     "tcp": "s = socket.socket(); s.connect(('127.0.0.1', PORT))",
@@ -110,6 +153,8 @@ _PROBES = {
     "ipv6": "socket.socket(socket.AF_INET6).connect(('::1', PORT))",
     "unix": "socket.socket(socket.AF_UNIX).connect(UPATH)",
     "dns": "socket.getaddrinfo('localhost', PORT)",
+    # 外部域名（评审 #63）：用 .invalid（RFC 6761，解析器不外查）；限制下在发出任何报文之前就被终止
+    "dns-external": "import uuid; socket.getaddrinfo(uuid.uuid4().hex + '.invalid', 80)",
 }
 
 

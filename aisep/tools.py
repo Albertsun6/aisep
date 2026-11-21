@@ -165,9 +165,10 @@ _UPDATE_RE = re.compile(r"(?is)^(?:\s|#[^\n]*(?:\n|$)|PREFIX\s+[\w.-]*:\s*<[^>]*
 
 # Only picks the error code (QUERY_NOT_READONLY before running), not a safety check: whatever it misses still cannot
 # reach the network, because the query runs in querybox's network-less child (issue #60). Narrower than the old
-# \bSERVICE\b so that am4:Service, ?service, 'service' and comments pass: SERVICE as its own token, followed by
-# SILENT, an IRI, a variable or a prefixed name.
-_SERVICE_CLAUSE_RE = re.compile(r"(?i)(?<![\w?$:])SERVICE(?=\s*(?:SILENT\b|[<?$:]|[^\W\d][\w.-]*:))")
+# \bSERVICE\b (everything it matches, the old one matched too): SERVICE as its own token, followed by an IRI, a
+# variable or an empty prefix, or by whitespace and SILENT or a prefixed name. am4:Service, ?service, servicedesk:x,
+# 'service' pass; SERVICEex:q is not caught here, the child is killed when it connects (QUERY_NOT_READONLY as well).
+_SERVICE_CLAUSE_RE = re.compile(r"(?i)(?<![\w?$:])SERVICE(?=\s*[<?$:]|\s+(?:SILENT\b|[^\W\d][\w.-]*:))")
 
 
 def _run_query(ctx, sparql, limit, timeout_s):
