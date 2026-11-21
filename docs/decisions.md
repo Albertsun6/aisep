@@ -151,3 +151,10 @@
   - R7（维持现状）第四轮负例 `test_merge_check_negatives.py` 仍不进 CI（Albert 2026-11-20 的取舍不变）；「涉及 mergecheck 的 PR 合并前须在本地跑它」从 `gate.yml` 的注释搬进 `AGENTS.md` 合并条款。
 - **理由**：分支保护不要求分支最新，目标分支前进后必需检查不重跑，重算、复核、合并后核验由工具实现了却没进合并流程（R2）；视图不可被批准，把视图从属算进元素会让调整视图触发对元素的重批（R3）；把模型、ADR 计入缺省 Proposed 需要改推导和关口查询，收益小，规范括号只需与实现对齐（R4）；负例单跑约 21 分钟，按路径触发的必需 job 成本高于收益，但本地必跑的要求要放到执行合并的人会读的地方（R7）。详见第四轮复评报告。
 - **后果**：R2、R7 仍只靠执行合并的人照做，没有机制强制，登记规范附录 C；R3 的口径下，视图在未批准模型里时，没有检查项能看到已批准元素的视图从属变化，登记附录 C。同轮不需拍板的修订一并落地：规范 §6.7 活动复用键改为 `(sessionRef, headCommit, branch)`（R5）；规范附录 C、接口文档与 `gate.yml` 注释里「脚本未实现」「必需检查只有 gate」的过时说法改为现状（必需检查 `gate`、`mergecheck`、`pytest`，脚本已实现）（R6）。R1（批准提交判据放行空白节点主语）改代码，另行处理。
+
+## ADR-018 · 2026-11-21
+
+- **状态**：已采纳（Albert 2026-11-21 拍板，经协调会话转达）
+- **决策**：删除 `vendor/` 中未被使用、且未声明许可的文件，不算规范 §11 所说的"升级上游"，不需要批准记录，走普通 PR。判断是否声明了许可，要同时看文件自身（`cc:license`、`dcterms:license` 等）和上游 catalog 按数据集的声明（`ttl/catalog.ttl` 中 `dcat:Dataset` 的 `dcterms:license`）。本次按此只删除 `vendor/meta.linked.archi/llms.txt`，来源与理由见该目录的 `REMOVED.txt`。
+- **理由**：仓库已公开并采用 Apache-2.0，没有许可声明的第三方文件会带来许可风险。`llms.txt` 不来自 `ttl/` 那次抓取，自身没有许可声明，catalog 里也没有它的条目，AISEP 也没有任何地方引用它。PR #31 的 NOTICE 只看了文件自身的 `cc:license`，把另外 14 个文件也算作无许可：其中 `catalog.ttl` 用 `dcterms:license` 声明了 CC BY 4.0；其余 13 个由 `catalog.ttl` 按数据集逐一声明为 CC BY 4.0。这 14 个都保留。
+- **后果**：被删文件记入 `REMOVED.txt`；`FETCHED_AT`、`fetch.log`、`urls.txt`、`SHA256SUMS` 不变。`NOTICE` 把那 13 个文件改列为"许可由 catalog.ttl 按数据集声明为 CC BY 4.0"。以后核对 vendor 许可，两处声明都要看。

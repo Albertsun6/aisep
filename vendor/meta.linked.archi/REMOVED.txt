@@ -1,0 +1,12 @@
+Files removed from this directory after it was first committed.
+
+FETCHED_AT, fetch.log and urls.txt are kept unchanged as the record of the
+ttl/ fetch.
+
+2026-11-21  Removed llms.txt (decision: docs/decisions.md ADR-018).
+            It was not part of the ttl/ fetch: it is not in urls.txt,
+            fetch.log or SHA256SUMS. It was committed with this directory in
+            e7c4119 and held the text of https://meta.linked.archi/llms.txt.
+            It carries no license statement, has no entry in ttl/catalog.ttl,
+            and nothing in AISEP (module manifests, code, models, tests, docs)
+            references it.
