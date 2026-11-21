@@ -15,3 +15,15 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :approvalProgressCode ;
     arch:target :workbenchGovernanceBC .
+
+:devLauncherCode a aisep:CodeLocation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "工作台一键启动脚本"@zh ;
+    skos:altLabel "Workbench one-step launcher script"@en ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    aisep:path "scripts/aisep-dev.mjs" .
+
+:rel-devLauncherCode-implements-workbenchLauncherBC a aisep:Implementation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :devLauncherCode ;
+    arch:target :workbenchLauncherBC .

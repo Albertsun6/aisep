@@ -25,3 +25,91 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :tcApprovalProgressStages ;
     arch:target :acProgressFourStages .
+
+:acNestedScanDepthLimited a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "嵌套检出扫描限制下探深度"@zh ;
+    skos:altLabel "Nested-checkout scan is depth-limited"@en ;
+    aisep:gherkin "Given 专用检出下第 4 层目录 a/b/c/d 是一个 git 检出，第 5 层目录 a/b/c/d2/e 是另一个 git 检出\nWhen 预览模式启动检查扫描嵌套检出\nThen 报告 a/b/c/d，不报告 a/b/c/d2/e（检出目录相对专用检出超过 4 层的不下探）" .
+
+:acNestedScanSkipsDependencyDirs a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "嵌套检出扫描跳过依赖目录"@zh ;
+    skos:altLabel "Nested-checkout scan skips dependency directories"@en ;
+    aisep:gherkin "Given 专用检出下 node_modules/pkg 是一个 git 检出，.claude/worktrees/x 是一个 git worktree（该路径被 .gitignore 忽略）\nWhen 预览模式启动检查扫描嵌套检出\nThen 不报告也不进入 node_modules，仍然报告 .claude/worktrees/x（跳过的是固定的依赖目录名单，至少含 node_modules，不按 .gitignore 跳过）" .
+
+:acNestedScanNoSymlinks a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "嵌套检出扫描不跟随符号链接"@zh ;
+    skos:altLabel "Nested-checkout scan does not follow symbolic links"@en ;
+    aisep:gherkin "Given 专用检出下有一个指向其上级目录的目录符号链接 up，上级目录里另有一个 git 检出 other\nWhen 预览模式启动检查扫描嵌套检出\nThen 报告为空，不报告经由 up 看到的任何检出，扫描不进入 up" .
+
+:acNestedScanNotSelf a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "不把专用检出自身报成嵌套检出"@zh ;
+    skos:altLabel "The dedicated checkout itself is never reported as a nested checkout"@en ;
+    aisep:gherkin "Given 专用检出的上级目录只含专用检出自己，专用检出下有一个指向该上级目录的目录符号链接 up\nWhen 预览模式启动检查扫描嵌套检出\nThen 报告为空；报告里任何一项的真实路径都不等于专用检出自身的真实路径" .
+
+:rel-reqNestedCheckoutScan-aggregates-acNestedScanDepthLimited a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqNestedCheckoutScan ;
+    arch:target :acNestedScanDepthLimited .
+
+:rel-reqNestedCheckoutScan-aggregates-acNestedScanSkipsDependencyDirs a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqNestedCheckoutScan ;
+    arch:target :acNestedScanSkipsDependencyDirs .
+
+:rel-reqNestedCheckoutScan-aggregates-acNestedScanNoSymlinks a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqNestedCheckoutScan ;
+    arch:target :acNestedScanNoSymlinks .
+
+:rel-reqNestedCheckoutScan-aggregates-acNestedScanNotSelf a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqNestedCheckoutScan ;
+    arch:target :acNestedScanNotSelf .
+
+:tcNestedScanDepthLimited a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "嵌套检出扫描限深度测试"@zh ;
+    skos:altLabel "Nested-checkout scan depth-limit test"@en ;
+    skos:definition "aisep-workbench 仓库 scripts/aisep-dev.test.mjs 中标题以「嵌套检出扫描：第 4 层的检出照报，第 5 层不下探」开头的测试（node --test）。"@zh .
+
+:rel-tcNestedScanDepthLimited-verifies-acNestedScanDepthLimited a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcNestedScanDepthLimited ;
+    arch:target :acNestedScanDepthLimited .
+
+:tcNestedScanSkipsDependencyDirs a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "嵌套检出扫描跳过依赖目录测试"@zh ;
+    skos:altLabel "Nested-checkout scan dependency-dir skip test"@en ;
+    skos:definition "aisep-workbench 仓库 scripts/aisep-dev.test.mjs 中标题以「嵌套检出扫描：跳过 node_modules，被 .gitignore 忽略的 .claude/worktrees 照扫」开头的测试（node --test）。"@zh .
+
+:rel-tcNestedScanSkipsDependencyDirs-verifies-acNestedScanSkipsDependencyDirs a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcNestedScanSkipsDependencyDirs ;
+    arch:target :acNestedScanSkipsDependencyDirs .
+
+:tcNestedScanNoSymlinks a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "嵌套检出扫描不跟随符号链接测试"@zh ;
+    skos:altLabel "Nested-checkout scan symlink test"@en ;
+    skos:definition "aisep-workbench 仓库 scripts/aisep-dev.test.mjs 中标题以「嵌套检出扫描：不跟随指向上级目录的符号链接」开头的测试（node --test）。"@zh .
+
+:rel-tcNestedScanNoSymlinks-verifies-acNestedScanNoSymlinks a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcNestedScanNoSymlinks ;
+    arch:target :acNestedScanNoSymlinks .
+
+:tcNestedScanNotSelf a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "专用检出自身不被误判测试"@zh ;
+    skos:altLabel "Dedicated checkout not misreported test"@en ;
+    skos:definition "aisep-workbench 仓库 scripts/aisep-dev.test.mjs 中标题以「嵌套检出扫描：不把专用检出自身报成嵌套检出」开头的测试（node --test）。"@zh .
+
+:rel-tcNestedScanNotSelf-verifies-acNestedScanNotSelf a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcNestedScanNotSelf ;
+    arch:target :acNestedScanNotSelf .
