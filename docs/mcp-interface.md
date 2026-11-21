@@ -212,6 +212,7 @@
 | `model_gate` | `model.gate`（**新增**） | true | — | true | `gate` | 复用 |
 | `model_impact` | `model.impact` | true | — | true | `impact` | 复用；路径结构化；未知元素报错（有意变更） |
 | `model_diff` | `model.diff` | true | — | true（Git 引用模式结果只随 commit 变；worktree 模式结果随工作区内容变，但调用本身不改任何东西） | 无 | **新实现**；`head` 可为 Git 引用或 `{worktree: <分支名>}`（§5.8） |
+| `model_branches` | 无（工作台专用，不对应规范 §8.3 的操作） | true | — | true（结果只随引用变；调用本身不改任何东西，不 fetch） | 无 | **新实现**：列本地分支及其 Git 事实，供工作台进关口页（§5.11） |
 | `model_add_element` | `model.add_element` | false | false | true（同参数重放 = 无变化） | 无 | **新实现**（校验复用 `check`） |
 | `model_add_relationship` | `model.add_relationship` | false | false | true（同类型同端点 = 返回已有） | 无 | **新实现**（校验复用 `check`） |
 | `model_remove` | `model.remove` | false | **true** | true（带 `planDigest` 重放、目标已不在 → 成功，`changed:false, alreadyAbsent:true`，同 add 的 `changed:false`） | 无（§8.2 未原型化） | **新实现** |
@@ -222,8 +223,8 @@
 
 | 画像 | 列出 |
 |---|---|
-| `agent` | 除 `governance_record_approval` 外全部 |
-| `workbench` | `model_query`、`model_findings`、`model_gate`、`model_impact`、`model_diff`、`governance_record_approval` |
+| `agent` | 除 `governance_record_approval`、`model_branches` 外全部 |
+| `workbench` | `model_query`、`model_findings`、`model_gate`、`model_impact`、`model_diff`、`model_branches`、`governance_record_approval` |
 | `all` | 全部（测试用） |
 
 画像**不是安全边界**：代理可以直接手写 Turtle 伪造批准记录，真正的约束是代码评审和分支保护。画像只防"顺手调用"。
@@ -804,6 +805,28 @@ CI 设为受保护分支的必需检查，PR 每次更新都跑；合并前由�
 **校验层**：候选图 L0–L2。会用到的规则：LabelShape（`modules/aisep-core/shapes.ttl` 第 73 行，恰好一个 `@zh` 名称）、G7 闭世界谓词（`l1_closed_predicates`）。
 
 **对 diff 的影响**：改名后 `model_diff` 报该元素 `modified`，`changedPredicates` 只含被改的标签谓词（T15 已覆盖"只改 prefLabel"）。
+
+### 5.11 `model_branches`（工作台入口）
+
+2026-11-21 加入（L7）。工作台首页「待批准关口」区据此列出有模型改动的分支，整行链接到该分支的关口页。只返回 Git 事实，不算差异、不跑 gate；进度阶段由工作台自己推导。实现在 `aisep/branches.py`，契约测试 `aisep-mcp/tests/test_l7_model_branches.py`。
+
+**输入**：只有通用的 `repo`（§5.0）。主分支取服务器的 `--main-branch`，按 §3.3 的规则解析（先远端跟踪分支）。
+
+**输出**：`{ branches: [{branch, head, remoteHead, unpushed, mergedIntoMain, hasModelChanges}], main: {ref, commit} }`。`branches` 是全部本地分支（`refs/heads/*`），按名字排序，主分支自己也在里面；工作台自己筛选。
+
+| 字段 | 说明 |
+|---|---|
+| `branch` | 本地分支短名（不带 `refs/heads/`），与 `governance_record_approval` 的 `branch` 入参同一写法 |
+| `head` | 本地分支头，40 位十六进制 |
+| `remoteHead` | `refs/remotes/origin/<branch>` 的提交；没有这个远端跟踪分支时为 `null` |
+| `unpushed` | 本地分支头不是 `remoteHead` 的祖先（本地有远端没有的提交）时为 `true`；没有远端跟踪分支也算 `true` |
+| `mergedIntoMain` | 本地分支头是主分支（`main.commit`）的祖先 |
+| `hasModelChanges` | 从主分支与分支头的 merge-base 到分支头，改动了 `models/` 下的 `.ttl`（`diff-tree`，不认改名）；两者没有共同祖先时看分支头是否含 `models/` 下的 `.ttl`。已合入的分支通常为 `false` |
+| `main` | 解析出的主分支：`ref` 为完整引用名，`commit` 为其提交 |
+
+**只读、离线**：只用 plumbing 命令（`for-each-ref`、`merge-base`、`diff-tree`、`ls-tree`），不改工作区、索引和引用，**不 fetch**。远端跟踪分支是上次 fetch 留下的样子；要看远端最新状态，由调用方先 fetch。分支 worktree 里未提交的改动不算（看 `model_diff` 的 worktree 模式）。
+
+**错误**：`NOT_A_GIT_REPO`、`PATH_OUTSIDE_ROOT`、`REF_NOT_FOUND`（找不到主分支）。
 
 ---
 
