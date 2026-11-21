@@ -405,12 +405,14 @@
 - **图**：构建后的图 + 全部本体 + 全部对齐（同原型 `cmd_query`，`use_default_graph_as_union=True`）。原型预声明的前缀都可用。
 - **只读的落实**：
   - 只调 `Store.query`，从不调 `Store.update`。Update 语句解析失败（F5）→ `QUERY_NOT_READONLY`，message 写"只接受 SELECT/ASK/CONSTRUCT/DESCRIBE"。
-  - 文本里出现 `SERVICE` 关键字（词法判断）→ `QUERY_NOT_READONLY`。原因：pyoxigraph 会真的发 HTTP 请求（F6）。
+  - 不访问网络（F6，issue #60）：pyoxigraph 遇到 `SERVICE` 会真的发 HTTP 请求，所以查询在一个无网络的子进程里执行（`aisep/querybox.py`）。Linux 用 seccomp、macOS 用 sandbox，限制在读入查询之前生效，查询一旦尝试建立网络连接，子进程即被终止，不发出请求 → `QUERY_NOT_READONLY`。这条保证不看查询文本。限制建立不了或确认不了（其他平台、内核不支持）时不执行查询 → `INTERNAL`。超时后子进程被杀掉。
+  - 文本里有 `SERVICE` 子句的写法（关键字单独成词，后接 IRI、变量或冒号，或隔空白后接 `SILENT`、前缀名）→ 不执行，直接 `QUERY_NOT_READONLY`。这条词法判断只决定错误码，不承担安全；它拒的写法都在原先 `\bSERVICE\b` 所拒的范围内，`am4:Service`、`?service`、`servicedesk:id` 这类前缀名照常放行。字面量或注释里出现形如子句的 `service <…`、`service: …` 仍会被拒。
+  - `timeoutMs` 从启动子进程算起，含子进程启动与载入模型（本机约 0.05–0.1 秒），过小的值会让本来很快的查询超时。
 - **输出**（完整 IRI，不用 CLI 的缩写）：
   - SELECT：`{ kind: "select", variables, rows: [{ var: { type: "iri"|"literal"|"bnode", value, datatype?, lang? } }], truncated }`
   - ASK：`{ kind: "ask", value: boolean }`
   - CONSTRUCT/DESCRIBE：`{ kind: "triples", triples: [[s, p, o]], truncated }`
-- **错误**：`QUERY_FAILED`（带解析器原文和行列号）、`QUERY_NOT_READONLY`、`QUERY_TIMEOUT`、`PARSE_FAILED`。
+- **错误**：`QUERY_FAILED`（带解析器原文和行列号）、`QUERY_NOT_READONLY`、`QUERY_TIMEOUT`、`PARSE_FAILED`、`INTERNAL`（无网络子进程建立不了）。
 - L0 不过时**默认拒绝**：`PARSE_FAILED`，`details` 列出解析失败的文件。否则查询跑在少了文件的图上，调用方会把部分结果当完整结果。要诊断时传 `allowPartial: true`：照查，结果带 `partial: true` 和 `skippedFiles`，`findings` 里带 L0 违规。**与原型不同**（原型照查不提示），有意变更；P9 约束的是 gate 判定，不涉及查询。
 
 ### 5.7 `model_impact`

@@ -2,7 +2,7 @@
 
 每条对应评估（~/Desktop/AISEP/评估-20261121/findings.json）里的一条缺陷，在 9430999 上应当失败。标记方式见
 fixtures/defect.py：只有测试明确认出那条缺陷时才是 XFAIL；函数不存在、改名、抛别的异常都按失败报出。
-L4-B 修好了除 MCP-1 以外的全部缺陷并摘掉了对应的 `@L4B` 标记；MCP-1 的标记仍在（见该测试的注释）。名字带 guard 的是护栏。
+L4-B 修好了除 MCP-1 以外的全部缺陷并摘掉了对应的 `@L4B` 标记；MCP-1 由 issue #60 的 PR（查询在无网络子进程里执行）修好并摘标记。名字带 guard 的是护栏。
 
 - MCP-1：model_query 的 SERVICE 词法过滤误杀 am4:Service、字面量、变量名、注释
 - CORE-1 / SEC-5 / CORE-V1：model_impact 的 focus 拼进 SPARQL，可注入 SERVICE
@@ -78,7 +78,6 @@ TEXT_WITH_SERVICE = {
 }
 
 
-@L4B("MCP-1")  # L4-B 没修：评审 #56 四轮后，SERVICE 判定退回到「文本里出现 service 就拒」，误拒留给沙箱执行查询的 PR
 @pytest.mark.parametrize("name", sorted(TEXT_WITH_SERVICE))
 def test_mcp1_query_mentioning_service_is_not_refused(repo, name):
     q = TEXT_WITH_SERVICE[name]
