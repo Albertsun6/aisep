@@ -242,8 +242,8 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
 **事后补批与「批准专用 PR」**
 
 - 「批准专用 PR」（ADR-021 第 1 款）只适用于发布关口：被批准提交 E 已在 `main` 上，它的有效内容提交是主线提交，按 U4① 只能批 `GateRelease`，批其他关口时批准工具报 `mainline-head-gate-not-release`（`aisep/approval.py`），`mergecheck` 同样拒。所以架构等分支关口的批准要跟着内容改动走，合并后发现批准记录有瑕疵（如批准人选错），不能用批准专用 PR 补批。
-- 规范留了一条形式上的路：从 `main` 拉分支，先加一个非批准提交（可以是空提交），使有效内容提交不在主线上，再批（`docs/mcp-interface.md` §5.9「普通 PR 不要求带批准记录」一段、`docs/metamodel-spec.md` 附 C）。这样的 PR 不是批准专用 PR，要走合并前评审。这条路本期未实跑。
-- Albert 2026-11-22 定：#68 不补批，旧记录留着，等下一次真实内容改动时在那次关口里重新覆盖。
+- 规范为主线上的 Proposed 元素留了一条形式上的路：从 `main` 拉分支，先加一个非批准提交（可以是空提交），使有效内容提交不在主线上，再批（`docs/mcp-interface.md` §5.9「普通 PR 不要求带批准记录」一段、`docs/metamodel-spec.md` 附 C）。规范没有专门讲已批准元素的重批，按判据推，同样的做法也能过批准工具和 `mergecheck`；这是外推，本期未实跑。这样的 PR 不是批准专用 PR，要走合并前评审。
+- Albert 2026-11-22 定：#68 不补批，维持现状。
 
 **回写测试结果**
 
