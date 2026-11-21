@@ -177,7 +177,7 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
   ?cap a/rdfs:subClassOf* am4:Capability ; skos:prefLabel ?capLabel } ORDER BY ?code
 ```
 
-这条查询已存为 `docs/queries/code-to-capability.rq`。`model_query` 在无网络的子进程里执行，查询里的 `SERVICE` 子句发不出请求，写了会被拒（`QUERY_NOT_READONLY`）；`am4:Service`、`?service` 这类前缀名和变量照常可用（规则见 `docs/mcp-interface.md` 的 `model_query` 一节）。
+这条查询已存为 `docs/queries/code-to-capability.rq`。`model_query` 在无网络的子进程里执行，查询里的 `SERVICE` 子句发不出请求，写了会被拒（`QUERY_NOT_READONLY`）；`am4:Service`、`?service` 这类前缀名和变量照常可用；但字面量或注释里出现形如子句的 `service <…`、`service: …` 仍会被拒（规则见 `docs/mcp-interface.md` 的 `model_query` 一节）。
 
 ### 10.5 固定顺序：写模型并提交 → 评审修完 → 批准 → 推送 → 合并
 
