@@ -12,7 +12,8 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
   aisep.py query  FILE.rq|'SPARQL' [model files...]   -> over build graph + all ontologies + all alignments
   aisep.py impact <element IRI or prefixed name> [--mode depends|ripple] [--depth N] [--allow-invalid] [model files...]
                                           (spec §9; runs L1+L2 first and refuses an invalid model unless --allow-invalid)
-  aisep.py test                        -> every modules/*/tests fixture + tests/acceptance/*.py; exit 1 on failure
+  aisep.py test [--no-pytest]          -> every modules/*/tests fixture + tests/acceptance/*.py + aisep-mcp/tests (pytest);
+                                          exit 1 on failure. --no-pytest skips aisep-mcp/tests (CI runs it in its own job)
 Default model files = models/**/*.ttl. Problem lines start with [Violation], [Warning] or [Info].
 
 Engines: pyoxigraph for everything (parse, store, SPARQL, L1/L2/L4, build, impact); pyshacl only for L3.
@@ -231,7 +232,7 @@ def run_pytest(tests_dir):
     return rows
 
 
-def cmd_test():
+def cmd_test(no_pytest=False):
     mods = discover()
     results = []
     t0 = time.time()
@@ -253,7 +254,8 @@ def cmd_test():
         p = subprocess.run([sys.executable, py], cwd=ROOT, capture_output=True, text=True, timeout=900)
         tail = (p.stdout + p.stderr).strip().splitlines()
         results.append(("acceptance", os.path.basename(py), "script", p.returncode == 0, tail[-1][:160] if tail else ""))
-    results += run_pytest(os.path.join(ROOT, "aisep-mcp", "tests"))
+    if not no_pytest:
+        results += run_pytest(os.path.join(ROOT, "aisep-mcp", "tests"))
     w = max([len(r[0]) for r in results] + [6]), max([len(r[1]) for r in results] + [7])
     print(f"{'module':<{w[0]}}  {'fixture':<{w[1]}}  kind     result  detail")
     for mod, fx, kind, ok, detail in results:
@@ -268,7 +270,9 @@ def main(argv):
         print(__doc__); return 2
     cmd, args = argv[0], argv[1:]
     if cmd == "test":
-        return cmd_test()
+        if args not in ([], ["--no-pytest"]):
+            print(__doc__); return 2
+        return cmd_test(no_pytest=bool(args))
     if cmd == "impact":
         return cmd_impact(args)
     if cmd == "query":
