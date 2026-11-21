@@ -380,14 +380,17 @@ def write_files(root, edits, before):
             for _, dfd, _, _, _ in staged:
                 os.fsync(dfd)
         except BaseException:
+            # finish the rollback first, skipping (keeping) every file changed from outside since our rename: only
+            # those are left half-written, and details.keptFiles lists them all, not just the first one met
+            kept = []
             for f, dfd, name, data in reversed(done):
                 try:
                     now = gitio.read_file(root, f)
                 except OSError:
                     now = None
                 if sha(now) != sha(data):
-                    raise AisepError("CONFLICT", f"回滚时发现 {f} 又被改动，保留现场", details={"file": f, "kept": True},
-                                     retryable=False)
+                    kept.append(f)
+                    continue
                 if before.get(f) is None:
                     os.unlink(name, dir_fd=dfd)
                 else:
@@ -398,6 +401,9 @@ def write_files(root, edits, before):
                         fh.flush()
                         os.fsync(fh.fileno())
                     os.rename(f".{name}.aisep-restore", name, src_dir_fd=dfd, dst_dir_fd=dfd)
+            if kept:
+                raise AisepError("CONFLICT", f"回滚时发现 {', '.join(kept)} 又被改动，保留现场（其余文件已回滚）",
+                                 details={"file": kept[0], "kept": True, "keptFiles": kept}, retryable=False)
             raise
     finally:
         for f, dfd, tmp, name, data in staged:

@@ -21,7 +21,7 @@
    - CI 的全部必需检查通过（当前为 `gate`、`mergecheck`、`pytest`；以分支保护设置为准）；
    - 独立评审通过：由一个没参与该 PR 实现、也没写它测试的 agent 评审 PR 头提交，没有阻塞问题；评审之后又加了提交，就要对新的头重新评审；
    - 只由**协调会话**执行合并。开 PR 的会话只开 PR、回报，不自己合并；
-   - 涉及 mergecheck 的 PR（改到 `aisep/mergecheck.py`、`aisep/diff.py`、`aisep/approval.py`，或 `aisep/core.py` 的批准核对与 approvalState 推导）合并前，须在本地跑第四轮负例 `$PY -m pytest -q -n auto aisep-mcp/tests/test_merge_check_negatives.py` 并全绿。CI 的 `pytest` 不跑这个文件（单跑约 21 分钟，Albert 2026-11-20 拍板），这是唯一的保障（ADR-017）；
+   - 涉及 mergecheck 的 PR（改到 `aisep/mergecheck.py`、`aisep/diff.py`、`aisep/approval.py`、`aisep/gitio.py`、`aisep/tools.py`，或 `aisep/core.py` 的批准核对与 approvalState 推导）合并前，须在本地跑第四轮负例 `$PY -m pytest -q -n auto aisep-mcp/tests/test_merge_check_negatives.py` 并全绿。CI 的 `pytest` 不跑这个文件（单跑约 21 分钟，Albert 2026-11-20 拍板），这是唯一的保障（ADR-017）；
    - 合并按下面三步执行（接口文档 §5.9「合并前重算」、第四轮 R4-11、ADR-017）。H 是评审过的 PR 头（`gh pr view N --json headRefOid,headRefName`），`<分支>` 是 PR 源分支名：
      1. **合并前重算**：`git fetch origin` 后跑 `$PY -m aisep.mergecheck --pr-head H --head-ref <分支> --target main`。`--target main` 取远端跟踪分支 `origin/main`，所以必须先 fetch。输出里的 `T` 就是重算用的目标分支头。退出码不是 0（`problems` 非空）就不合。
      2. **复核目标分支没动**：`$PY -m aisep.mergecheck --target main --target-unchanged T`。它用 `ls-remote` 比对远端，输出 `targetUnchanged: false`（退出码 1）时，说明 main 已经前进，回到第 1 步重算。
