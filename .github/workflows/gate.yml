@@ -106,4 +106,4 @@ jobs:
           git fetch --no-tags origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
           git fetch --no-tags origin "${{ github.event.pull_request.head.sha }}"
       # 不用 `python -m`：它把仓库根放在 sys.path 最前，PR 在根目录放一个 pyoxigraph.py 就能让本检查变绿（tools/pyrun.py）
-      - run: python tools/pyrun.py aisep.mergecheck --github-event "$GITHUB_EVENT_PATH"
+      - run: python -P tools/pyrun.py aisep.mergecheck --github-event "$GITHUB_EVENT_PATH"
