@@ -20,12 +20,11 @@ Engines: pyoxigraph for everything (parse, store, SPARQL, L1/L2/L4, build, impac
 """
 import os, sys
 
-# sys.path: this file is named aisep, so its own directory must not be on the path, or `import aisep` finds it instead of
-# the aisep/ package. The repo root goes last, after the standard library and installed packages, so a file in the root
-# (say a fake pyshacl.py) cannot stand in for one of them; see tools/pyrun.py.
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_unsafe = {os.path.realpath(p) for p in (ROOT, os.path.dirname(os.path.abspath(__file__)), os.getcwd())}
-sys.path[:] = [p for p in sys.path if os.path.realpath(p or ".") not in _unsafe] + [ROOT]
+# Before anything else is imported: take the checkout off sys.path and expose only the aisep/ package (tools/pyrun.py).
+# This file is itself named aisep, so its own directory must not stay on the path either.
+import pyrun  # noqa: E402,F401  (found in this script's directory, which pyrun then removes from sys.path)
+
+ROOT = pyrun.ROOT
 
 import glob, subprocess, tempfile, time  # noqa: E402
 from xml.etree import ElementTree  # noqa: E402
