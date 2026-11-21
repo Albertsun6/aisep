@@ -160,13 +160,13 @@
 
 | 输入 | 读的内容 | 谁用 |
 |---|---|---|
-| 不传 `ref` | `repo` 这个 worktree 的磁盘文件（含未提交改动） | 编码代理 |
+| 不传 `ref` | `repo` 这个 worktree 的磁盘文件（含未提交改动）。缺 `modules/` 或 `vendor/` 目录 → `MODULES_NOT_IN_REF`（目录在但内容不全仍可能报 `INTERNAL`） | 编码代理 |
 | `ref: "<分支/标签/sha>"` | 该 commit 的快照：先 `git ls-tree <commit> -- models modules vendor` 查哪些路径存在，再 `git archive` 存在的那些，解到系统临时目录，调用结束删除。缺 `modules/` 或 `vendor/`（附录 C 的独立模型仓库）→ `MODULES_NOT_IN_REF`，不静默改用服务器自带模块 | 工作台、`record_approval` 的 gate |
 
 - 快照里的 `modules/`、`vendor/` 也取自同一个 commit，所以"某 commit 上的 gate"可复现（vendor 8.4 MB，modules 0.9 MB；耗时在验收 T10 里量）。
 - `model_diff` 不物化快照：Git 引用模式只读 Git 对象；worktree 模式 base 侧读 Git 对象，head 侧读**按分支名定位到的那个工作区**的 `models/**/*.ttl`（§5.8）。它不用上表"不传 `ref` 读 `repo` 磁盘文件"的规则：读谁的工作区由 `head.worktree` 的分支名决定，与调用方从哪个 worktree 调用无关。
 - ref 安全：一律 `git rev-parse --verify --end-of-options <ref>^{commit}`；以 `-` 开头的 ref 直接 `INVALID_ARGUMENT`。
-- **`repo` 指向检出里伪造的仓库目录**（SEC-3）：服务器的每次 git 调用都带 `-c safe.bareRepository=explicit -c core.fsmonitor=false`。形似 git 目录的普通目录（有 `HEAD`、`objects/`、`refs/`、`config`）不会被当成仓库：只读工具 → `NOT_A_GIT_REPO`，写工具 → `NOT_A_WORKTREE`。伪造的 `.git` 子目录（嵌套仓库）仍会被当成仓库，但服务器只读、写工具用到的 git 命令里，会执行仓库配置中命令的只有 `core.fsmonitor`，已在命令行关掉；这样的目录通常没有 `modules/`、`vendor/` → `MODULES_NOT_IN_REF`。钩子与过滤器不关：只有 `governance_record_approval` 的提交会跑它们（§4、§5.9）。
+- **`repo` 指向检出里伪造的仓库目录**（SEC-3）：形似 git 目录的普通目录（有 `HEAD`、`objects/`、`refs/`、`config`）不会被当成仓库（每次 git 调用都带 `-c safe.bareRepository=explicit`）：只读工具 → `NOT_A_GIT_REPO`，写工具 → `NOT_A_WORKTREE`。伪造的 `.git` 子目录（嵌套仓库）：定位时它的工作区顶层若落在另一个仓库的工作区里、那个仓库也在某个 `--allow-root` 之下、两者的 common dir 又不同，就 `NOT_A_GIT_REPO`（`details.reason: "nested-repository"`），在它里面只跑过 `rev-parse`，它配置里的 fsmonitor、过滤器（`git archive` 的 smudge、`git status` 的 clean）、钩子都不会执行。放在主检出里的 linked worktree 与主检出共用 common dir，不受影响；子模块会被拒。不带 `--allow-root` 启动时不做这项检查（同根目录校验）。另外每次 git 调用都带 `-c core.fsmonitor=false`，作第二道防线。被接受的仓库自己配置的过滤器、钩子照常生效（`git archive` 快照、`governance_record_approval` 的提交）。
 - 多 worktree 不需要额外机制：同一仓库的 worktree 共享对象库和 refs，从哪个 worktree 调 `model_diff`（两种模式）、带 `ref` 的读取，结果都一样。
 - **按分支名定位出的 worktree 也要过根目录校验**（第二轮评审 R2-2、R2-19）：Git 允许 linked worktree 放在 `--allow-root` 之外，有仓库写权限的进程还能改 `.git/worktrees/<n>/gitdir` 让登记路径指向任意目录。所以 `model_diff` 的 worktree 模式（§5.8 第 0 步）和 `record_approval`（§5.9 第 7 步）定位出 W 后再做两项校验：`realpath(W)` 必须落在某个 `--allow-root` 之下，否则 `PATH_OUTSIDE_ROOT`；`git -C W rev-parse --git-common-dir` 的真实路径必须等于 `repo` 的 common dir，否则 `WORKTREE_NOT_FOUND`。
 - **工作区文件集合只有一个口径**（R2-16）：凡读工作区模型文件的地方（`model_check`/`validate`/`findings`/`gate` 不带 `ref` 时、写工具的基线、`model_diff` 的 worktree 模式、§5.9 的脏检查、仓库 pre-commit 钩子），文件集合一律 = `git ls-files -z -- models/`（已跟踪）∪ `git ls-files -z --others --exclude-standard -- models/`（未跟踪且未被忽略），只留 `.ttl`，含子目录里的文件（如每条批准记录一个文件的 `models/<slug>/governance/*.ttl`，§5.9 第 5 步，U2）；被忽略的文件和嵌套仓库里的文件不进入。原型缺省的 `glob(models/**/*.ttl, recursive=True)`（`aisep.py` 第 937 行）会读进被忽略文件、嵌套仓库，还会跟随目录链接，服务器不用它；钩子随之改用同一函数，否则 gate 校验的是一份不会被提交的内容。index 只用来确定文件集合，内容一律以磁盘为准。
@@ -452,7 +452,7 @@
 - **图**：构建后的图 + 全部本体 + 全部对齐（同原型 `cmd_query`，`use_default_graph_as_union=True`）。原型预声明的前缀都可用。
 - **只读的落实**：
   - 只调 `Store.query`，从不调 `Store.update`。Update 语句解析失败（F5）→ `QUERY_NOT_READONLY`，message 写"只接受 SELECT/ASK/CONSTRUCT/DESCRIBE"。
-  - 文本里出现 `SERVICE` 关键字（词法判断）→ `QUERY_NOT_READONLY`。原因：pyoxigraph 会真的发 HTTP 请求（F6）。判断逐个词法单元走：字符串、注释、变量、语言标签跳过，所以 `?service`、`'service'`、`# service` 照常可查；前缀名一般跳过（`am4:Service`、`ex:aService` 可查），但前缀里含 service（`SERVICE:q`、`service:q`、`SERVICEex:q`、`PREFIX myservice:` 的用法）或本地名里 service 紧跟 `.`、`:`、`\` 时按关键字算（pyoxigraph 会把 `SERVICE:q` 读成 SERVICE）；`<…>` 形状的单元按 IRI 跳过，但含 `(`、`)` 或引号时它的 `<` 可能是小于号，两种读法都判；其余文本不按词边界匹配。对解码 `\uXXXX`/`\UXXXXXXXX` 转义前后的文本各判一次（SPARQL 在解析前解码转义，`\u0053ERVICE` 就是 `SERVICE`）。拿不准的一律按关键字算（宁可误拒）。
+  - 文本里出现 `SERVICE` 关键字（词法判断）→ `QUERY_NOT_READONLY`。原因：pyoxigraph 会真的发 HTTP 请求（F6）。判断逐个词法单元走：字符串、注释、变量、语言标签跳过，所以 `?service`、`'service'`、`# service` 照常可查；前缀名一般跳过（`am4:Service`、`ex:aService` 可查），但前缀里含 service（`SERVICE:q`、`service:q`、`SERVICEex:q`、`PREFIX myservice:` 的用法）或本地名里 service 紧跟 `.`、`:`、`\` 时按关键字算（pyoxigraph 会把 `SERVICE:q` 读成 SERVICE）；`<…>` 形状的单元按 IRI 跳过，但含 `(`、`)` 或引号时它的 `<` 可能是小于号，两种读法都判；其余文本不按词边界匹配（直接在原文上比较，不在 `lower()` 后的副本上比，`İ` 小写后长度会变）。SPARQL 规范允许在查询任意位置写 `\uXXXX`/`\UXXXXXXXX` 码点转义；pyoxigraph 0.5 不在关键字位置解码它（报语法错误，不外连），解码后的文本仍额外判一次，只为保守。拿不准的一律按关键字算（宁可误拒）。
 - **输出**（完整 IRI，不用 CLI 的缩写）：
   - SELECT：`{ kind: "select", variables, rows: [{ var: { type: "iri"|"literal"|"bnode", value, datatype?, lang? } }], truncated }`
   - ASK：`{ kind: "ask", value: boolean }`

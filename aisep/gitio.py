@@ -15,12 +15,11 @@ class UnsafeFile(OSError):
     """A workspace file that must not be read: a symlink at any path level, or not a regular file."""
 
 
-# SEC-3: `repo` may point into a directory planted in a checkout. (1) A directory shaped like a git dir (HEAD,
-# objects/, refs/, config) is never discovered as a repository (safe.bareRepository=explicit). (2) A nested
-# repository (a planted .git subdirectory) is discovered, but the one repository setting that runs a command on the
-# read commands the server uses (ls-files, rev-parse, ls-tree, archive, cat-file, ...) is core.fsmonitor: it is
-# switched off on the command line, which beats any repository config. Hooks and filters are not switched off: only
-# governance_record_approval's commit runs them, as the contract says (§4, §5.9). Every git call goes through GIT.
+# SEC-3: `repo` may point into a directory planted in a checkout. A directory shaped like a git dir (HEAD, objects/,
+# refs/, config) is never discovered as a repository (safe.bareRepository=explicit); a planted .git subdirectory (a
+# nested repository) is refused by locate_repo (_refuse_nested) before any command that could run its config. core.fsmonitor is also
+# switched off on every call (command-line config beats repository config) as a second layer. Every git call of the
+# server goes through GIT.
 GIT = ("git", "-c", "safe.bareRepository=explicit", "-c", "core.fsmonitor=false")
 
 
@@ -44,6 +43,28 @@ def under(path, roots):
     return any(rp == _real(r) or rp.startswith(_real(r).rstrip(os.sep) + os.sep) for r in roots)
 
 
+def _common_dir_of(path):
+    rc, out, _ = git(path, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    return _real(out.strip()) if rc == 0 else None
+
+
+def _refuse_nested(top, allow_roots):
+    """SEC-3: a repository whose toplevel lies inside the working tree of ANOTHER repository that is itself under an
+    allow-root (a .git directory planted in a checkout) is refused after only `rev-parse` has run in it, so its
+    config (fsmonitor, filters, hooks) never executes. A linked worktree inside the main checkout shares the main
+    checkout's common dir and is allowed. Without --allow-root there is no root to protect and nothing is checked."""
+    if not allow_roots:
+        return
+    parent = os.path.dirname(top)
+    rc, out, _ = git(parent, "rev-parse", "--show-toplevel")
+    if rc != 0 or not under(out.strip(), allow_roots):
+        return
+    outer = _common_dir_of(parent)
+    if outer is None or outer != _common_dir_of(top):
+        raise AisepError("NOT_A_GIT_REPO", f"{top} 是嵌套在仓库 {_real(out.strip())} 工作区里的另一个仓库，不接受",
+                         hint="repo 传外层仓库或它的 worktree", details={"repo": top, "reason": "nested-repository"})
+
+
 def locate_repo(repo=None, allow_roots=(), default=None):
     """Toplevel (realpath) of the worktree containing `repo` (else `default`, else cwd); must lie under an allow-root."""
     path = repo or default or os.getcwd()
@@ -56,6 +77,7 @@ def locate_repo(repo=None, allow_roots=(), default=None):
     if allow_roots and not under(top, allow_roots):
         raise AisepError("PATH_OUTSIDE_ROOT", f"{top} 不在服务器允许的根目录之下",
                          hint="用 --allow-root 启动服务器时把它加进去", details={"repo": top, "allowRoots": list(allow_roots)})
+    _refuse_nested(top, allow_roots)
     return top
 
 

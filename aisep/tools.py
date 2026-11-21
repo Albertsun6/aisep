@@ -168,9 +168,11 @@ _UPDATE_RE = re.compile(r"(?is)^(?:\s|#[^\n]*(?:\n|$)|PREFIX\s+[\w.-]*:\s*<[^>]*
 # service:q, SERVICEex:q; or it follows '.', ':' or '\' inside the local name) - am4:Service and ex:aService are data.
 # An IRI-shaped token "<...>" is skipped as an IRI, but when it holds '(' ')' or a quote its '<' may be a less-than
 # (FILTER(1<2)SERVICE:q#>, FILTER(1<2&&'>'=?x)SERVICE...): both readings are scanned and either one finding the
-# keyword counts. Anything else is matched WITHOUT word boundaries (1SERVICE, )SERVICE). SPARQL decodes \uXXXX and
-# \UXXXXXXXX escapes anywhere in the query text before parsing (pyoxigraph does: the escaped form of "S" followed by
-# ERVICE is a real SERVICE), so the raw and the decoded text are both scanned. A doubtful token is read as the keyword.
+# keyword counts. Anything else is matched WITHOUT word boundaries (1SERVICE, )SERVICE), on the text itself (not on
+# a lower-cased copy, whose indexes shift after U+0130). The SPARQL spec allows \uXXXX / \UXXXXXXXX codepoint escapes
+# anywhere in the query text; pyoxigraph 0.5 does not decode them in keyword position (SyntaxError, no request), but
+# the decoded text is scanned as well, as a safety margin. A doubtful token is read as the keyword. The differential
+# fuzz test (test_l4b_extra.py) checks that whatever this lets through, pyoxigraph never sends a request for.
 _TOKEN = re.compile(r"""
       (?P<str> '''(?:[^'\\]|\\.|'(?!''))*''' | \"\"\"(?:[^"\\]|\\.|"(?!""))*\"\"\"
              | '(?:[^'\\\n\r]|\\.)*' | "(?:[^"\\\n\r]|\\.)*" )
@@ -183,6 +185,7 @@ _TOKEN = re.compile(r"""
     """, re.X)
 _ESCAPE_RE = re.compile(r"\\u([0-9A-Fa-f]{4})|\\U([0-9A-Fa-f]{8})")
 _GLUED_SERVICE = re.compile(r"(?i)[.:\\]service")
+_SERVICE = re.compile(r"(?i)service")  # matched on the text itself: str.lower() can change the length (U+0130)
 
 
 def _decode_escapes(text):
@@ -195,18 +198,18 @@ def _decode_escapes(text):
 def _scan_service(text):
     """True when some reading of `text` has the SERVICE keyword. Positions reachable by any reading are visited in
     order; a token's end (and, for a doubtful IRI, the position after its '<') becomes reachable."""
-    n, low, reach = len(text), text.lower(), {0}
+    n, reach = len(text), {0}
     for pos in range(n):
         if pos not in reach:
             continue
-        if low.startswith("service", pos):
+        if _SERVICE.match(text, pos):
             return True
         m = _TOKEN.match(text, pos)
         kind = m.lastgroup if m else None
         if m and m.group("pname") is not None:
-            if "service" in (m.group("prefix") or "").lower() or _GLUED_SERVICE.search(m.group("local")):
+            if _SERVICE.search(m.group("prefix") or "") or _GLUED_SERVICE.search(m.group("local")):
                 return True
-        elif kind == "lang" and "service" in m.group().lower():
+        elif kind == "lang" and _SERVICE.search(m.group()):
             return True
         elif kind == "iri" and any(c in m.group() for c in "()'"):
             reach.add(pos + 1)  # the '<' may be a less-than: rescan the token's inside as well
