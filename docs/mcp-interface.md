@@ -746,7 +746,7 @@ CI 设为受保护分支的必需检查，PR 每次更新都跑；合并前由�
 
 批准专用 PR **只免"再过 AISEP 关口"**：上面"合并时校验"的全部检查项、合并前重算和下文的发布标签检查照跑。第三轮 I（只能批准与主线当前内容一致的版本，内容已变须重新选 R）已并入检查项 7：批准专用 PR 的 M 只比 T 多记录文件，"evidence 快照与 M 一致"即被批准对象在 `evidence..T` 之间未被修改或删除（核对轮 5）。不满足判定条件的按普通 PR 处理。判定由 CI 执行，负例见 T39。
 
-批准专用 PR **仍须人工 PR 批准**（AGENTS.md「批准 #N」，U4②）。信任模型同 §4：判据只验证提交的形状，不验证批准是否真由工作台和真人做出；有写权限的人或代理照样能手写一个合法形状的批准提交，挡住它的是人工 PR 批准与分支保护。不引入签名或托管平台审批证明（第三轮 A 部分接受）。
+批准专用 PR 按 ADR-021 第 1 款合并：协调会话机械核对它只含一个从被批准提交拉出的合法批准提交、`mergecheck` 通过后即合并，不需要独立评审（原为「仍须人工 PR 批准」，U4②）。信任模型同 §4：判据只验证提交的形状，不验证批准是否真由工作台和真人做出；有写权限的人或代理照样能手写一个合法形状的批准提交，挡住它的是「AI 不得新增批准记录」的硬规则与分支保护。不引入签名或托管平台审批证明（第三轮 A 部分接受）。
 
 **发布关口**（R2-15 已拍板：短命批准分支 + PR，受保护分支不开例外；第三轮 J、K、L、N 修订）
 
@@ -1425,7 +1425,7 @@ T1 用保守正则（≤64、只含 `[a-zA-Z0-9_-]`）断言，不依赖具体�
 
 | 项 | 本文 | 现状 | 状态 |
 |---|---|---|---|
-| 合并时校验与合并前重算的检查脚本（口径、检查项 1–7（第 7 项见 T38 核对轮负例、T39 第三轮 I；第四轮 R4-12）、批准专用 PR 判定、发布标签检查；CI 与执行合并的人共用一个脚本） | §5.9"合并时校验""合并前重算""批准专用 PR""发布关口"第 4 步 | 已实现（S6，PR #18）：`aisep/mergecheck.py` 的 `merge_check`（口径、检查项 1–7、批准专用 PR 判定 `classify_pr`、发布标签检查）、`approval_commit_problems`（第 1 步判据，`record_approval` 共用）、合并前重算的 `target_unchanged`（R4-11 ②）与 `post_merge_verify`（R4-11 ③），命令行 `python -m aisep.mergecheck`；`.github/workflows/gate.yml` 的 `mergecheck` job 跑在 PR 上，已与 `gate` 并列为 main 的必需检查。负例 `aisep-mcp/tests/test_merge_check_negatives.py` 全部通过 | EXISTS |
+| 合并时校验与合并前重算的检查脚本（口径、检查项 1–7（第 7 项见 T38 核对轮负例、T39 第三轮 I；第四轮 R4-12）、批准专用 PR 判定、发布标签检查；CI 与执行合并的人共用一个脚本） | §5.9"合并时校验""合并前重算""批准专用 PR""发布关口"第 4 步 | 已实现（S6，PR #18）：`aisep/mergecheck.py` 的 `merge_check`（口径、检查项 1–7、批准专用 PR 判定 `classify_pr`、发布标签检查）、`approval_commit_problems`（第 1 步判据，`record_approval` 共用）、合并前重算的 `target_unchanged`（R4-11 ②）与 `post_merge_verify`（R4-11 ③），命令行 `python -P tools/pyrun.py aisep.mergecheck`；`.github/workflows/gate.yml` 的 `mergecheck` job 跑在 PR 上，已与 `gate` 并列为 main 的必需检查。负例 `aisep-mcp/tests/test_merge_check_negatives.py` 全部通过 | EXISTS |
 | `approves` 目标类型校验（第四轮 R4-5，ADR-016） | 规范 §6.6、§5.9 输入表 | 已实现（S6，PR #18）：`approval_problems`（`aisep/core.py`）对存在的目标核对允许集合（带 `arch:inModel` 的 `arch:Element`，不含限定关系、ApprovalRecord、AgentActivity、Stakeholder；`arch:Model`；`ad:Decision`），不合法的记录 L1 报出、推导忽略；目标不存在的按原口径 | EXISTS |
 | 批准记录文件形状检查（第四轮 R4-8） | §5.9 第 1 步 | 已实现（S6，PR #18）：判据函数（`aisep/mergecheck.py` 的 `_commit_shape`）直接解析新增文件，核对主语集合、主语三元组全在该文件内、文件名等于记录本地名 | EXISTS |
 | 记录文件放在 `models/<slug>/governance/` 子目录（U2） | §3.3、§5.1、§5.9 第 1、5、7、8 步 | 已实现：读取侧统一文件集合 `aisep/gitio.py` 的 `model_files`（`git ls-files` 含子目录，测试 `aisep-mcp/tests/test_gitio.py`）；判据 (b) 的路径匹配 `aisep/mergecheck.py` 的 `RECORD_FILE`（只认 `models/<slug>/governance/` 下一层的新增文件）；记录文件的新建、intent-to-add 登记与回滚 `aisep/approval.py`（`GOV_DIR`、`_write_new`、`_unstage_and_maybe_delete`，S5，PR #24）。测试 `aisep-mcp/tests/test_u2_governance_dir.py`（gate、diff、推导都读到子目录里的记录）、T43（`test_record_approval.py`、`test_merge_check_negatives.py`） | EXISTS |
