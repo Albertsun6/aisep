@@ -78,9 +78,11 @@ AISEP 是以 AI 辅助贯穿全过程软件研发（SDLC）的工程体系。目
 - [x] 在 github.com/linked-archi 确认 meta-core 的 LICENSE
 - [x] 执行《AISEP 第一步：Linked.Archi 可行性验证清单》（已单独成文），产出 spike-result.md（结果见 spike-result.md）
 - [x] 已决定：直接采用 Linked.Archi 本体
-- [ ] 细化元模型四部分：元素骨架、关系骨架、视图、记法定义（记法定义最有技术含量）
-- [ ] 在 AISEP 文件夹搭建仓库骨架：目录结构、CLAUDE.md / AGENTS.md 规则文件、各阶段文档模板与提示词
-- [ ] 写架构原则文档，按裁剪后的 ADM 启动架构愿景与业务架构
+- [x] 细化元模型四部分：元素骨架、关系骨架、视图、记法定义（记法定义最有技术含量）（见 `docs/metamodel-spec.md` §4–§6，模块在 `modules/`）
+- [x] 在 AISEP 文件夹搭建仓库骨架：目录结构、CLAUDE.md / AGENTS.md 规则文件、各阶段文档模板与提示词（各阶段模板与提示词在 `docs/adm/<阶段>/`）
+- [x] 写架构原则文档（`docs/principles.md`）
+- [ ] 按裁剪后的 ADM 启动架构愿景与业务架构：模板与提示词已备（`docs/adm/01-vision/`、`docs/adm/02-business/`），还没有真实系统走过这两个阶段；§10 的第一条链路有意跳过愿景阶段
+- [ ] 走通第一条端到端链路，按 §10 的出口标准逐条给出证据
 
 ## 6a. 跨记法对齐设计（已决策）
 
@@ -97,15 +99,117 @@ AISEP 是以 AI 辅助贯穿全过程软件研发（SDLC）的工程体系。目
 
 模块三分法（沿用 Linked.Archi）：建模语言贡献可实例化的元素与关系类型；扩展贡献可挂在任何元素上的横切属性（决策、质量属性、成本、治理状态、测试覆盖）；框架层（TOGAF ADM 等）定义过程与交付物。
 
-待设计：DDD 记法的元素类型、关系类型及其到 ArchiMate 4.0 的对齐公理。
-待验证：跨记法追溯（BPMN→ArchiMate→DDD→UML→测试）本次 spike 未覆盖，需单独验证。
+~~待设计：DDD 记法的元素类型、关系类型及其到 ArchiMate 4.0 的对齐公理。~~ 已完成：见 `docs/metamodel-spec.md` §6.4，模块在 `modules/ddd/`。
+~~待验证：跨记法追溯（BPMN→ArchiMate→DDD→UML→测试）本次 spike 未覆盖，需单独验证。~~ 已在元模型原型上验证：一条通用查询从测试用例经 ArchiMate、DDD 走到代码，BPMN、UML 节点作为 refines 分支挂在路径旁（`docs/metamodel-spec.md` §7.1、§15）。真实模型上的验证见 §10。
 
 ## 9. 执行路线与分工
 
-三步走，每步有明确产出：
+四步走，每步有明确产出：
 
 1. 验证可行性（半天到两天）：拉取 Linked.Archi，跑通"手写模型 → SHACL 校验 → SPARQL 查询 → Claude Code 读写"最小闭环。产出 spike-result.md。
 2. 定元模型规范：基于验证结果写元模型设计文档，明确三原语骨架、第一批支持的记法及其追溯关系。
 3. 搭 AISEP 仓库骨架与架构原则文档，然后按裁剪后的 ADM 进入架构愿景和业务架构。
+4. 第一条端到端链路：用一条真实小需求把"AI 经 MCP 写模型 → 从代码查回业务能力 → 人在工作台批准 → 合入主干"走通一遍。入口、出口标准与步骤见 §10。
 
 分工原则：探讨、决策、方法论文档在对话中完成；拉代码、装环境、跑校验、改文件等执行类工作交给 Claude Code，在 AISEP 目录下以本文档和验证清单为任务输入。关键节点（许可证判断、选型通过与否）由本人拍板。设计会话不直接产出文件，所有文件的新建和修改均由执行会话完成，设计会话以交接话术形式提出。
+
+## 10. 第四步：第一条端到端链路
+
+目的：证明三处集成都有真实调用，而不只是测试通过——AI 经 MCP 写模型、固定查询从代码位置查回业务能力、工作台批准写回模型仓库。
+
+### 10.1 载体与裁剪
+
+- **载体**：工作台自身的一条小需求（自举），Albert 2026-11-21 定为"批准进度展示"。代码在 `aisep-workbench` 仓库，模型与批准在本仓库。
+- **新建模型目录**，不动 `models/procurement/` 示例。根命名空间继续用占位符 `https://aisep.example/`，以后统一迁移。（在途：PR #43 建的是 `models/workbench/`，尚未合入 `main`。）
+- **只建追溯必需的元素**：需求 + 验收标准 → 流程 → 能力（子域）→ 限界上下文 → 代码位置 + 实现关系 → 测试用例 + 验证关系。
+- **已知裁剪**：架构愿景、路线图阶段本次不走；不建 BPMN、UML 节点，所以整条链不需要 `arch:refines`。以后若加 BPMN 或 UML 节点并被代码或测试指向，必须 refines 到枢纽元素（`docs/metamodel-spec.md` §7.2）。
+
+推荐的元素与关系（类型都已在 `main` 的模块里）：
+
+| 元素 | 类型 | 关系（源 → 目标） | §7.1 类别 |
+|---|---|---|---|
+| 需求 | `am4:Requirement`，带 `aisep:priority` | — | — |
+| 验收标准 | `aisep:AcceptanceCriterion`，带 `aisep:gherkin` | `am4:Aggregation` 需求 → 验收标准 | 枢纽关系 |
+| 流程 | `am4:Process` | `am4:Realization` 流程 → 需求 | 枢纽关系 |
+| 能力 | `ddd:Subdomain`（是 `am4:Capability` 的子类） | `am4:Realization` 流程 → 子域 | 枢纽关系 |
+| 限界上下文 | `ddd:BoundedContext` | `ddd:SubdomainImplementation` 限界上下文 → 子域 | 枢纽关系 |
+| 代码位置 | `aisep:CodeLocation` | `aisep:Implementation` 代码位置 → 限界上下文 | 追溯关系 |
+| 测试用例 | `aisep:TestCase` | `aisep:Verification` 测试用例 → 验收标准 | 追溯关系 |
+
+每个元素都带中文 `skos:prefLabel`，否则工作台里看不到名字。写入层只拒绝新增的 L0–L2 违规；语义上不该有的连接（例如代码位置直接实现需求）写入层不拦，要靠评审把关。
+
+### 10.2 入口标准
+
+- 编码代理里已启用项目的 `aisep` MCP 服务器，`tools/list` 返回 agent 画像的 11 个工具（启用方法见 `README.md`）。
+- 从最新 `origin/main` 开 `claude/<主题>` 分支的 worktree，在 worktree 里起服务；不从落后的主检出起服务。
+- 新模型目录已手写：一个 `arch:Model` 声明和一个人类 `arch:Stakeholder`（带 `arch:inModel` 和中文 `prefLabel`，照 `models/procurement/governance.ttl` 写）。MCP 写工具建不了模型本身：目录不存在时报 `MODEL_NOT_FOUND`；目录在但没有 `arch:Model` 声明时，写入能成功，`gate` 报 L3 违规（`arch:inModel` 须指向 `arch:Model`）。
+- 载体需求已定。
+
+### 10.3 实现与测试两段怎么落进模型
+
+**实现**：
+
+- 代码位置是 `aisep:CodeLocation`：恰好一个 `schema:codeRepository`（仓库 URL，写成 IRI）、恰好一个 `aisep:path`（字符串）；`aisep:symbol`、`aisep:swhid` 可选，后者可以把位置锚定到具体提交（`modules/ext-code/shapes.ttl` EC1–EC4）。
+- 用 `aisep:Implementation` 从代码位置连到它实现的设计元素（本链路是限界上下文）。目标必须是模型元素（EC6）。
+- 代码文件不必已经存在，可以先登记计划中的路径，代码写好后路径即生效。
+- 代码与模型分属两个仓库，追溯只靠代码位置里的仓库地址和路径，两边的 PR 之间没有机制关联。
+
+**测试**：
+
+- 测试用例是 `aisep:TestCase`，用 `aisep:Verification` 连到它验证的验收标准。两步要连着写：只有测试用例、没有验证关系时 `gate` 报 EV1 违规。
+- Must 级需求没有测试时，`gate` 给 L4 Warning（不阻断）。
+- **测试结果暂不写入。** 元模型里已有 `aisep:TestResult`（`aisep:resultOf` 指向测试用例、`aisep:verdict`、`prov:generatedAtTime`），但代码没写、测试没真实跑过之前不写结果，免得模型里出现虚构证据。
+
+### 10.4 固定追溯查询
+
+把"代码位置 → 设计元素 → 业务能力"的查询存成固定查询文件，经 `model_query` 真实调用。查询按限定关系资源遍历，类型判断走 `rdf:type/rdfs:subClassOf*`：
+
+```sparql
+SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
+  ?i a/rdfs:subClassOf* aisep:Implementation ; arch:source ?code ; arch:target ?design .
+  ?code schema:codeRepository ?repo ; aisep:path ?path ; arch:inModel <模型 IRI> .
+  ?design skos:prefLabel ?designLabel .
+  ?r a/rdfs:subClassOf* am4:Realization ; arch:source ?design ; arch:target ?cap .
+  ?cap a/rdfs:subClassOf* am4:Capability ; skos:prefLabel ?capLabel } ORDER BY ?code
+```
+
+`model_query` 拒绝含 `SERVICE` 字样的查询，目前会误伤 `am4:Service` 和含 "service" 的字面量；查询里避开这个词。（在途：PR #43 把查询存为 `docs/queries/code-to-capability.rq`，尚未合入。）
+
+### 10.5 固定顺序：写模型并提交 → 评审修完 → 批准 → 推送 → 合并
+
+1. **写模型并提交**：代理在 worktree 里经 MCP 调 `model_add_element`、`model_add_relationship`（先 `dryRun` 再真实写入）。写工具只改工作区、不提交；代理跑 `gate` 为 PASS 后，按明确路径暂存并提交，推送，开 PR。
+2. **评审修完**：独立评审这次模型改动，修完，CI 绿。返工都在这一步做完。
+3. **批准**：Albert 在工作台关口页点批准。批准工具 `governance_record_approval` 只在 workbench 画像里，编码代理看不到也不能代批。它在分支检出的工作区新建一个批准记录文件并提交一次，`evidence` 是被批准的头提交。只批元素，不把 `arch:Model` 本身列进 `approves`，否则以后每次往这个模型加东西都要重批。被批准的内容提交不能已经在 `main` 上，否则只能批 `GateRelease`，所以批准必须在合并之前。
+4. **推送**：推送批准提交，PR 头前进到批准提交。只多一个批准提交的新头不再重评，由 `mergecheck` 核对它的形状。
+5. **合并**：按 `AGENTS.md`「分支与合并」的三步（合并前重算、复核目标分支没动、合并与合并后核验）执行。
+
+**批准之后分支不能再动。** `mergecheck` 要求从 `evidence` 到分支头之间只有批准提交，批准的内容在 `evidence` 和合并结果之间也不能变：
+
+| 批准之后的动作 | `mergecheck` 的结论 |
+|---|---|
+| 再加任何内容提交 | `not-approval-commit`（若仍拿旧的头提交去批，批准工具报 `STALE_HEAD`） |
+| 把 `main` 合进分支 | `merge-commit-in-range` |
+| rebase、amend、squash | `evidence-not-ancestor` |
+| 被批准的元素在合并结果里变了 | `approved-content-drifted` |
+
+所以"评审修完"必须在"批准"之前。批准之后若必须返工，只能在新的头上重批：同一关口、`approves` 覆盖旧记录、时间更晚，旧记录就不再参与检查。批准之前合 `main` 或 rebase 都没问题。
+
+### 10.6 出口标准
+
+每条都能跑命令或看页面证伪：
+
+1. `git log -- models/<新模型>` 里有经 MCP 写入产生的提交，回报附工具调用记录。
+2. 固定查询从一个真实代码位置返回对应的业务能力。
+3. `models/<新模型>/governance/` 下有一条由工作台触发的批准记录，`evidence` 是真实提交。
+4. 合并后，工作台"架构全景"里这些元素显示为已批准。
+5. 整个过程由 Albert 在真实窗口里操作过一遍，不是只有测试通过。
+
+本期还要让批准之后的进度可见：待批准 → 已批准待推送 → 已推送待合并 → 已合入，全部从 Git 推导，不存进行中状态（ADR-013）。（在途：工作台的进度展示与一键启动脚本都还没有合入。）
+
+### 10.7 后续能力放在哪一期
+
+- **一期**：统一模型仓库 + MCP Server（ADR-008），工作台与编码代理都是它的客户端。代码仓库、CI/CD 先用 GitHub 和现成工具，平台只做关联与追溯（§5）。
+- **本期**（Albert 2026-11-21 定）：第一条链路、批准进度展示、待批准关口到关口页的入口、一键启动脚本。
+- **由模型生成代码**：未定。第一条链路里代码由人或代理照常写，模型只登记代码位置。
+- **测试结果回写模型**：未定。本期不写 `aisep:TestResult`（§10.3）。
+- **DevOps 延伸**（CI/CD、部署发布进追溯链）：未定。元模型已有 `aisep:Deployable`（`aisep:packageUrl`），但不在本期链路里。
