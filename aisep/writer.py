@@ -14,6 +14,7 @@ from aisep.errors import AisepError
 TTL = ox.RdfFormat.TURTLE
 LOCK_NAME = "aisep-write.lock"
 XSD_STRING = core.NS["xsd"] + "string"
+MODEL_PATH = re.compile(r"models/[A-Za-z0-9][A-Za-z0-9_-]*(/[^/]+)+")
 
 
 def sha(b):
@@ -412,6 +413,16 @@ def write_files(root, edits, before):
             os.close(dfd)
 
 
+def check_paths(plan):
+    """Every file a plan touches is a normalised repo-relative models/<slug>/... path: no empty, '.' or '..' segment, no
+    leading '/'. The write tools build these paths from validated slugs; this is the last line before the disk."""
+    for key in ("edits", "removed", "added"):
+        for f in plan.get(key) or {}:
+            if not isinstance(f, str) or not MODEL_PATH.fullmatch(f) or any(x in (".", "..") for x in f.split("/")):
+                raise AisepError("INVALID_ARGUMENT", f"要写的路径 {f!r} 不是规范化的 models/<slug>/ 路径，未写入",
+                                 details={"file": f})
+
+
 def transaction(cfg, repo, build, dry_run=False):
     """Run one write. build(ws, base_ctx) -> dict(result=…, edits={rel: text}, removed={rel: {(s,p,o)}},
     added={rel: [Triple]}) or dict(result=…, edits={}) for a no-op (changed:false)."""
@@ -425,6 +436,7 @@ def transaction(cfg, repo, build, dry_run=False):
                              details={"findings": _findings(base_ctx, ("L0",))})
         core.run_check(base_ctx)
         plan = build(ws, base_ctx)
+        check_paths(plan)
         result = plan["result"]
         if not plan["edits"]:
             findings, _, pre = judge(base_ctx, base_ctx)
