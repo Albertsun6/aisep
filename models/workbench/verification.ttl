@@ -5,6 +5,7 @@
 @prefix am4: <https://meta.linked.archi/archimate4/onto#> .
 @prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix schema: <https://schema.org/> .
 
 :acProgressFourStages a aisep:AcceptanceCriterion ;
     arch:inModel <https://aisep.example/model/workbench/> ;
@@ -119,42 +120,50 @@
 :trNestedScanDepthLimited1e77676 a aisep:TestResult ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "嵌套检出扫描限深度测试：通过（aisep-main 1e77676）"@zh ;
-    skos:altLabel "Nested-checkout scan DepthLimited test: passed (aisep-main 1e77676)"@en ;
+    skos:altLabel "Nested-checkout scan depth limit test: passed (aisep-main 1e77676)"@en ;
     skos:definition "aisep-workbench 仓库 aisep-main 分支提交 1e7767633c25e31d02c5182acd8b97460a63749c（合并 PR #17）上，GitHub Actions CI 运行 44911752843 的 config 任务（136868890031）「Test CI scripts」步骤里，node --test 测试「嵌套检出扫描：第 4 层的检出照报，第 5 层不下探」通过，耗时 14.08 毫秒；时间取该测试结果行的日志时间。"@zh ;
     aisep:resultOf :tcNestedScanDepthLimited ;
     aisep:verdict aisep:VerdictPassed ;
     prov:generatedAtTime "2026-11-21T14:01:40Z"^^xsd:dateTime ;
-    skos:note "ciJob=https://github.com/Albertsun6/aisep-workbench/actions/runs/44911752843/job/136868890031 ; commit=1e7767633c25e31d02c5182acd8b97460a63749c ; repo=https://github.com/Albertsun6/aisep-workbench" .
+    aisep:testedCommit "1e7767633c25e31d02c5182acd8b97460a63749c" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/44911752843> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
 
 :trNestedScanSkipsDependencyDirs1e77676 a aisep:TestResult ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "嵌套检出扫描跳过依赖目录测试：通过（aisep-main 1e77676）"@zh ;
-    skos:altLabel "Nested-checkout scan SkipsDependencyDirs test: passed (aisep-main 1e77676)"@en ;
+    skos:altLabel "Nested-checkout scan skips dependency directories test: passed (aisep-main 1e77676)"@en ;
     skos:definition "aisep-workbench 仓库 aisep-main 分支提交 1e7767633c25e31d02c5182acd8b97460a63749c（合并 PR #17）上，GitHub Actions CI 运行 44911752843 的 config 任务（136868890031）「Test CI scripts」步骤里，node --test 测试「嵌套检出扫描：跳过 node_modules，被 .gitignore 忽略的 .claude/worktrees 照扫」通过，耗时 29.15 毫秒；时间取该测试结果行的日志时间。"@zh ;
     aisep:resultOf :tcNestedScanSkipsDependencyDirs ;
     aisep:verdict aisep:VerdictPassed ;
     prov:generatedAtTime "2026-11-21T14:01:40Z"^^xsd:dateTime ;
-    skos:note "ciJob=https://github.com/Albertsun6/aisep-workbench/actions/runs/44911752843/job/136868890031 ; commit=1e7767633c25e31d02c5182acd8b97460a63749c ; repo=https://github.com/Albertsun6/aisep-workbench" .
+    aisep:testedCommit "1e7767633c25e31d02c5182acd8b97460a63749c" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/44911752843> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
 
 :trNestedScanNoSymlinks1e77676 a aisep:TestResult ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "嵌套检出扫描不跟随符号链接测试：通过（aisep-main 1e77676）"@zh ;
-    skos:altLabel "Nested-checkout scan NoSymlinks test: passed (aisep-main 1e77676)"@en ;
+    skos:altLabel "Nested-checkout scan does not follow symlinks test: passed (aisep-main 1e77676)"@en ;
     skos:definition "aisep-workbench 仓库 aisep-main 分支提交 1e7767633c25e31d02c5182acd8b97460a63749c（合并 PR #17）上，GitHub Actions CI 运行 44911752843 的 config 任务（136868890031）「Test CI scripts」步骤里，node --test 测试「嵌套检出扫描：不跟随指向上级目录的符号链接」通过，耗时 9.09 毫秒；时间取该测试结果行的日志时间。"@zh ;
     aisep:resultOf :tcNestedScanNoSymlinks ;
     aisep:verdict aisep:VerdictPassed ;
     prov:generatedAtTime "2026-11-21T14:01:40Z"^^xsd:dateTime ;
-    skos:note "ciJob=https://github.com/Albertsun6/aisep-workbench/actions/runs/44911752843/job/136868890031 ; commit=1e7767633c25e31d02c5182acd8b97460a63749c ; repo=https://github.com/Albertsun6/aisep-workbench" .
+    aisep:testedCommit "1e7767633c25e31d02c5182acd8b97460a63749c" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/44911752843> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
 
 :trNestedScanNotSelf1e77676 a aisep:TestResult ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "专用检出自身不被误判测试：通过（aisep-main 1e77676）"@zh ;
-    skos:altLabel "Nested-checkout scan NotSelf test: passed (aisep-main 1e77676)"@en ;
+    skos:altLabel "Nested-checkout scan does not report the dedicated checkout itself test: passed (aisep-main 1e77676)"@en ;
     skos:definition "aisep-workbench 仓库 aisep-main 分支提交 1e7767633c25e31d02c5182acd8b97460a63749c（合并 PR #17）上，GitHub Actions CI 运行 44911752843 的 config 任务（136868890031）「Test CI scripts」步骤里，node --test 测试「嵌套检出扫描：不把专用检出自身报成嵌套检出」通过，耗时 14.86 毫秒；时间取该测试结果行的日志时间。"@zh ;
     aisep:resultOf :tcNestedScanNotSelf ;
     aisep:verdict aisep:VerdictPassed ;
     prov:generatedAtTime "2026-11-21T14:01:40Z"^^xsd:dateTime ;
-    skos:note "ciJob=https://github.com/Albertsun6/aisep-workbench/actions/runs/44911752843/job/136868890031 ; commit=1e7767633c25e31d02c5182acd8b97460a63749c ; repo=https://github.com/Albertsun6/aisep-workbench" .
+    aisep:testedCommit "1e7767633c25e31d02c5182acd8b97460a63749c" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/44911752843> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
 
 
 
