@@ -165,8 +165,6 @@
     aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/44911752843> ;
     schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
 
-
-
 :acCoverageUnknownConfirm a aisep:AcceptanceCriterion ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "读不到批准记录时退回确认框"@zh ;
@@ -191,14 +189,10 @@
     skos:altLabel "Coverage unknown falls back to confirmation test"@en ;
     skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「repeat approval guard: coverage unknown」下的测试：读不到批准记录时批准与驳回经确认框后可点。"@zh .
 
-
-
 :rel-reqApprovalProgress-aggregates-acCoverageUnknownConfirm a am4:Aggregation ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :reqApprovalProgress ;
     arch:target :acCoverageUnknownConfirm .
-
-
 
 :rel-tcRepeatApprovalCoverageUnknown-verifies-acCoverageUnknownConfirm a aisep:Verification ;
     arch:inModel <https://aisep.example/model/workbench/> ;

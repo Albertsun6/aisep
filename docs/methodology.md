@@ -160,7 +160,7 @@ AISEP 是以 AI 辅助贯穿全过程软件研发（SDLC）的工程体系。目
 - Must 级需求没有测试时，`gate` 给 L4 Warning（不阻断）。
 - **测试结果：第二条链路起，回写真实 CI 的结果。** 测试结果是 `aisep:TestResult`（`aisep:resultOf` 指向测试用例，`aisep:verdict` 取 `aisep:VerdictScheme` 的一个值，`prov:generatedAtTime` 为 `xsd:dateTime`）。只写真实跑过的结果：代码 PR 合入后，取代码仓库主干上那次合并的 CI 运行，按日志写，一个测试用例一条结果（日志只给文件级结果时怎么写，见 §10.8），经 MCP 写工具新增，走普通模型 PR，不需要批准，合入后推导为 Proposed。代码没写、测试没真实跑过之前不写结果，免得模型里出现虚构证据。第一条链路没有写结果；第二条链路的 4 个结果见 `models/workbench/verification.ttl` 的 `tr*1e77676`，第三条链路的 3 个结果见同一文件的 `tr*79f4f4b`，都用下文的运行出处属性记提交与 CI 运行。
 - **测试用例怎么对上测试代码**：元模型里测试用例没有指向测试文件或测试名的属性，只能在 `skos:definition` 里写明测试文件和测试标题，测试代码照抄标题。测试用例批准后，标题就不能再改，否则要重新批准。
-- **测试结果的运行出处（验证扩展 v0.3.0 起）。** 测试结果用三个可选属性记下这次运行：`aisep:testedCommit`（被测提交，40 位小写十六进制）、`aisep:ciRun`（CI 运行网址，IRI）、`schema:codeRepository`（代码仓库网址，IRI），各至多一个（`modules/ext-verification/shapes.ttl` EV11–EV13）。前两个只能写在测试结果上（EV14），不能借用到代码位置、测试用例等元素上。固定查询可以直接取到提交号，不再从 `skos:note` 的字面量里解析。（此前没有这些属性，运行与提交只能写进 `skos:note` 的固定格式 `ciJob=… ; commit=… ; repo=…`。）
+- **测试结果的运行出处（验证扩展 v0.3.0 起）。** 测试结果用三个可选属性记下这次运行：`aisep:testedCommit`（被测提交，40 位小写十六进制）、`aisep:ciRun`（产出该结果的 CI 运行或作业的网址，如 GitHub Actions 的 run 或 job 网址，IRI）、`schema:codeRepository`（代码仓库网址，IRI），各至多一个（`modules/ext-verification/shapes.ttl` EV11–EV13）。前两个只能写在测试结果上（EV14），不能借用到代码位置、测试用例等元素上。固定查询可以直接取到提交号，不再从 `skos:note` 的字面量里解析。（此前没有这些属性，运行与提交只能写进 `skos:note` 的固定格式 `ciJob=… ; commit=… ; repo=…`。）
 - **元模型限制：代码位置批准后补不了提交锚点。** `aisep:swhid` 的定义域只有 `aisep:CodeLocation`。代码位置在写代码之前就登记并批准了，之后补 `swhid` 就是改已批准元素，所以批准过的代码位置补不上提交锚点。提交信息改由测试结果承载（`aisep:testedCommit`，见上一条）：从代码位置经固定查询走到测试结果，就能拿到被测的提交；没有测试结果的代码位置仍然没有提交锚点。
 - 从代码位置查到测试结果的固定查询是 `docs/queries/code-to-tests.rq`：代码位置 → 设计元素 → 能力 → 需求 → 验收标准 → 测试用例 → 测试结果。代码只连到限界上下文、需求只连到流程，两者在能力处汇合，所以会列出同一能力下所有需求的测试。
 
@@ -177,7 +177,7 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
   ?cap a/rdfs:subClassOf* am4:Capability ; skos:prefLabel ?capLabel } ORDER BY ?code
 ```
 
-这条查询已存为 `docs/queries/code-to-capability.rq`。`model_query` 在无网络的子进程里执行，查询里的 `SERVICE` 子句发不出请求，写了会被拒（`QUERY_NOT_READONLY`）；`am4:Service`、`?service` 这类前缀名和变量照常可用（规则见 `docs/mcp-interface.md` 的 `model_query` 一节）。
+这条查询已存为 `docs/queries/code-to-capability.rq`。`model_query` 在无网络的子进程里执行，查询里的 `SERVICE` 子句发不出请求，写了会被拒（`QUERY_NOT_READONLY`）；`am4:Service`、`?service` 这类前缀名和变量照常可用；但字面量或注释里出现形如子句的 `service <…`、`service: …` 仍会被拒（规则见 `docs/mcp-interface.md` 的 `model_query` 一节）。
 
 ### 10.5 固定顺序：写模型并提交 → 评审修完 → 批准 → 推送 → 合并
 
@@ -242,7 +242,7 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
 **事后补批与「批准专用 PR」**
 
 - 「批准专用 PR」（ADR-021 第 1 款）只适用于发布关口：被批准提交 E 已在 `main` 上，它的有效内容提交是主线提交，按 U4① 只能批 `GateRelease`，批其他关口时批准工具报 `mainline-head-gate-not-release`（`aisep/approval.py`），`mergecheck` 同样拒。所以架构等分支关口的批准要跟着内容改动走，合并后发现批准记录有瑕疵（如批准人选错），不能用批准专用 PR 补批。
-- 规范为主线上的 Proposed 元素留了一条形式上的路：从 `main` 拉分支，先加一个非批准提交（可以是空提交），使有效内容提交不在主线上，再批（`docs/mcp-interface.md` §5.9「普通 PR 不要求带批准记录」一段、`docs/metamodel-spec.md` 附 C）。规范没有专门讲已批准元素的重批，按判据推，同样的做法也能过批准工具和 `mergecheck`；这是外推，本期未实跑。这样的 PR 不是批准专用 PR，要走合并前评审。
+- 规范为主线上的 Proposed 元素留了一条形式上的路：从 `main` 拉分支，先加一个非批准提交（可以是空提交），使有效内容提交不在主线上，再批（`docs/mcp-interface.md` §5.9「普通 PR 不要求带批准记录」一段、`docs/metamodel-spec.md` 附 C）。规范讲过改内容后的重批（U1，`docs/mcp-interface.md` §5.9 检查项 6），没有专门讲不改内容、只为更正批准记录而对已批准元素重批，按判据推，同样的做法也能过批准工具和 `mergecheck`；这是外推，本期未实跑。这样的 PR 不是批准专用 PR，要走合并前评审。
 - Albert 2026-11-22 定：#68 不补批，维持现状。
 
 **回写测试结果**
