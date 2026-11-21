@@ -58,19 +58,6 @@ def commit_all(path, msg="c"):
     return git(path, "rev-parse", "HEAD")
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _pycache_outside_home(tmp_path_factory):
-    """tools/aisep.py and tools/pyrun.py keep bytecode under $XDG_CACHE_HOME/aisep-pycache, mirrored by source path;
-    every test repo is a new path, so point that cache at this run's temp root instead of ~/.cache."""
-    old = os.environ.get("XDG_CACHE_HOME")
-    os.environ["XDG_CACHE_HOME"] = str(tmp_path_factory.getbasetemp().parent / "xdg-cache")
-    yield
-    if old is None:
-        os.environ.pop("XDG_CACHE_HOME", None)
-    else:
-        os.environ["XDG_CACHE_HOME"] = old
-
-
 @pytest.fixture(scope="session")
 def template(tmp_path_factory):
     t = tmp_path_factory.mktemp("template")

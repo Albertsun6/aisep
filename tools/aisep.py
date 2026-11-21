@@ -20,11 +20,10 @@ Engines: pyoxigraph for everything (parse, store, SPARQL, L1/L2/L4, build, impac
 """
 import os, sys
 
-# Before anything else is imported: bytecode comes from a cache outside the checkout (a committed
-# __pycache__/*.pyc is never read), then tools/pyrun.py takes the checkout off sys.path and exposes only the aisep/
-# package, from .py source. pyrun is run from its source file rather than imported: `import pyrun` would also accept a
-# tools/pyrun.*.so or a sourceless pyrun.pyc. This file is itself named aisep, so its own directory leaves sys.path too.
-sys.pycache_prefix = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache"), "aisep-pycache")
+# Before anything else is imported: tools/pyrun.py takes the checkout off sys.path and exposes only the aisep/ package,
+# compiled from .py source (no __pycache__, no extension module). pyrun is run from its source file rather than
+# imported: `import pyrun` would also accept a tools/pyrun.*.so or a tools/__pycache__/pyrun.*.pyc. This file is itself
+# named aisep, so its own directory leaves sys.path too.
 pyrun = sys.modules["pyrun"] = type(sys)("pyrun")
 pyrun.__file__ = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pyrun.py")
 with open(pyrun.__file__, encoding="utf-8") as _f:
@@ -91,8 +90,10 @@ def tracked_bytecode():
     """Files in the Git index that Python can import in place of source: *.pyc / *.pyo, anything under __pycache__/,
     and extension modules (*.so / *.pyd, which win over a .py of the same name). Empty outside a Git checkout."""
     p = subprocess.run(["git", "-C", ROOT, "ls-files", "-z"], capture_output=True, text=True)
-    return [f for f in p.stdout.split("\0") if f and (f.endswith((".pyc", ".pyo", ".so", ".pyd"))
-                                                     or "/__pycache__/" in "/" + f)] if p.returncode == 0 else []
+    # case-insensitive: macOS and Windows file systems open aisep/__PYCACHE__/x.PYC as __pycache__/x.pyc; any path
+    # component named __pycache__ counts, including a symlink of that name (listed without a trailing slash)
+    bad = lambda f: f.endswith((".pyc", ".pyo", ".so", ".pyd")) or "__pycache__" in f.split("/")
+    return [f for f in p.stdout.split("\0") if f and bad(f.lower())] if p.returncode == 0 else []
 
 
 def cmd_gate(files, read=None):
