@@ -18,13 +18,19 @@ Default model files = models/**/*.ttl. Problem lines start with [Violation], [Wa
 
 Engines: pyoxigraph for everything (parse, store, SPARQL, L1/L2/L4, build, impact); pyshacl only for L3.
 """
-import glob, os, subprocess, sys, tempfile, time
-from xml.etree import ElementTree
+import os, sys
 
-import pyoxigraph as ox
+# Before anything else is imported: take the checkout off sys.path and expose only the aisep/ package (tools/pyrun.py).
+# This file is itself named aisep, so its own directory must not stay on the path either.
+import pyrun  # noqa: E402,F401  (found in this script's directory, which pyrun then removes from sys.path)
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)  # the aisep/ library package; this file has the same name, so the repo root must come first
+ROOT = pyrun.ROOT
+
+import glob, subprocess, tempfile, time  # noqa: E402
+from xml.etree import ElementTree  # noqa: E402
+
+import pyoxigraph as ox  # noqa: E402
+
 from aisep.core import (AISEP, ARCH, Ctx, dependencies, discover, expand, impact, l3, l4, rel,  # noqa: E402
                         run_check, short, shown)
 from aisep import gitio  # noqa: E402
