@@ -14,7 +14,7 @@
 
 <https://aisep.example/ont/aisep/ext-verification> a owl:Ontology ;
     rdfs:label "AISEP verification extension"@en ;
-    owl:versionInfo "0.3.0" .
+    owl:versionInfo "0.3.1" .
 
 ########## Classes ##########
 

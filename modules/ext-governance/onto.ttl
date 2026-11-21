@@ -16,7 +16,7 @@
 
 <https://aisep.example/ont/aisep/ext-governance> a owl:Ontology ;
     rdfs:label "AISEP governance and quality extension"@en ;
-    owl:versionInfo "0.2.0" .
+    owl:versionInfo "0.2.1" .
 
 aisep:value a owl:DatatypeProperty ;
     rdfs:domain arch:QualityMeasure ; rdfs:range xsd:decimal ;

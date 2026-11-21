@@ -67,6 +67,7 @@
         sh:maxCount 1 ;
         sh:datatype xsd:string ;
         sh:pattern "^[0-9a-f]{40}$" ;   # same regex as EG23 aisep:headCommit and the commit branch of EG16
+        sh:maxLength 40 ;   # pyshacl (Python re) lets $ match before a final newline: "<40 hex>\n" would pass the pattern
         sh:message "EV11: aisep:testedCommit is optional, at most one, an xsd:string holding a 40-hex git commit id." ;
         sh:severity sh:Violation ;
     ] ;
