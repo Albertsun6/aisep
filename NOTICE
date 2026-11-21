@@ -12,14 +12,14 @@ vendor/meta.linked.archi/
   vendor/meta.linked.archi/fetch.log and FETCHED_AT; files removed since are
   listed in REMOVED.txt). These files are NOT
   covered by the Apache License; each file keeps the license it declares in its
-  own cc:license statement, which is one of:
+  own cc:license or dcterms:license statements, which is one of:
     - Creative Commons Attribution 4.0 (CC BY 4.0)
     - Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)
     - Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
   Creators are named in each file's dcterms:creator statements.
 
-  Fifteen fetched files that declared no license of their own and were not
-  used by AISEP have been removed (see vendor/meta.linked.archi/REMOVED.txt).
+  Fourteen files in which no license statement was found and which AISEP does
+  not use have been removed (see vendor/meta.linked.archi/REMOVED.txt).
 
   ttl/backstage_onto.ttl and ttl/backstage_metamodel.ttl quote Backstage
   documentation, Copyright The Backstage Authors, licensed under the Apache

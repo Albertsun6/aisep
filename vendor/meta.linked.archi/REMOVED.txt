@@ -1,14 +1,24 @@
-Files removed after the fetch recorded in FETCHED_AT / fetch.log / urls.txt.
-FETCHED_AT, fetch.log and urls.txt are kept unchanged as the record of what
-was fetched; SHA256SUMS lists only the files still present.
+Files removed from this directory after it was first committed.
 
-2026-11-21  Removed 15 files that NOTICE listed as declaring no license of
-            their own and that no AISEP module manifest, code, model, test or
-            doc references (decision by Albert: delete unused unlicensed
-            vendor files; keep only what is used):
+FETCHED_AT, fetch.log and urls.txt are kept unchanged as the record of the
+ttl/ fetch; SHA256SUMS lists only the ttl/ files still present.
+
+2026-11-21  Removed 14 files that are not referenced by any AISEP module
+            manifest, code, model, test or doc, and in which no license
+            statement was found (checked for cc:license, dcterms:license,
+            schema:license, dc/dcterms rights, SPDX identifiers and
+            creativecommons.org license URLs). Decision: docs/decisions.md
+            ADR-018. Recorded here so the deletion is traceable:
+
   llms.txt
-  ttl/admit_onto.ttl
-  ttl/catalog.ttl
+      Not part of the ttl/ fetch: it is not in urls.txt, fetch.log or the
+      original SHA256SUMS. It was committed with the directory in e7c4119
+      (the text of https://meta.linked.archi/llms.txt).
+  ttl/admit_onto.ttl            (fetched from https://meta.linked.archi/admit/onto)
+      NOTE: ttl/admit_metamodel.ttl (arch:modelConcepts, line 56) and
+      ttl/admit_tax.ttl still point to its namespace
+      https://meta.linked.archi/admit/onto# . Restore admit_onto.ttl
+      (re-fetch it) before using admit_metamodel.ttl or admit_tax.ttl.
   ttl/examples_archimate3.2-questions_.ttl
   ttl/examples_archimate4-questions_.ttl
   ttl/examples_archimate4-viewpoint_.ttl
@@ -21,3 +31,7 @@ was fetched; SHA256SUMS lists only the files still present.
   ttl/examples_nordfreight_.ttl
   ttl/examples_payflow_.ttl
   ttl/examples_uml_.ttl
+      (each fetched from the matching https://meta.linked.archi/examples/<name>/
+      URL in urls.txt)
+
+ttl/catalog.ttl was kept: it declares CC BY 4.0 with dcterms:license.
