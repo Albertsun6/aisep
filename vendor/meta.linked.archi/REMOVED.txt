@@ -10,3 +10,18 @@ ttl/ fetch.
             It carries no license statement, has no entry in ttl/catalog.ttl,
             and nothing in AISEP (module manifests, code, models, tests, docs)
             references it.
+
+2026-11-21  Removed ttl/archimate3_onto.ttl, ttl/archimate3_onto_3.0.ttl and
+            ttl/archimate3_onto_3.1.ttl, and removed every skos:definition and
+            skos:scopeNote statement (176) from ttl/archimate4_onto.ttl
+            (decision: Albert, 2026-11-21, recorded in the PR that made this
+            change). Their definition and scope-note text is largely
+            word-for-word text of the ArchiMate Specification, copyright The
+            Open Group, which the CC BY licenses declared in these files cannot
+            cover: about two thirds of the removed words of archimate4_onto.ttl,
+            and 33-93% of the text of the three archimate3_onto files, match the
+            ArchiMate 3.1 Specification verbatim. The three archimate3_onto
+            files are not loaded by AISEP. In archimate4_onto.ttl nothing else
+            changed: parsed as RDF, the new file is the old one minus exactly
+            those 176 triples. SHA256SUMS lists the modified file's new hash
+            and no longer lists the removed files.

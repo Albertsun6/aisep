@@ -36,6 +36,19 @@ vendor/meta.linked.archi/
     ttl/examples_payflow_.ttl
     ttl/examples_uml_.ttl
 
+  ttl/archimate4_onto.ttl has been modified: its skos:definition and
+  skos:scopeNote statements were removed (see REMOVED.txt), because that text
+  largely quoted the ArchiMate Specification. The ArchiMate files here are
+  derived from the ArchiMate Specification, which is copyright The Open Group
+  and is not covered by the licenses above or by the Apache License.
+
   ttl/backstage_onto.ttl and ttl/backstage_metamodel.ttl quote Backstage
   documentation, Copyright The Backstage Authors, licensed under the Apache
   License, Version 2.0.
+
+Trademarks
+----------
+
+ArchiMate and TOGAF are registered trademarks of The Open Group.
+UML is a registered trademark and BPMN is a trademark of Object Management
+Group, Inc. AISEP is not affiliated with or endorsed by either organization.
