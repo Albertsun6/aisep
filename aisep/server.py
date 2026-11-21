@@ -6,7 +6,7 @@
 Every tool is a plain function of aisep.tools / aisep.diff / aisep.write_tools; this module only lists them, validates
 the arguments against their inputSchema (additionalProperties: false), runs them and turns AisepError into a tool
 execution error (isError + structuredContent.error, §7.1). The server keeps no state between calls (§3.5)."""
-import argparse, io, json, os, sys, traceback
+import argparse, io, json, os, re, sys, traceback
 
 import anyio
 import jsonschema
@@ -21,6 +21,8 @@ from aisep import approval, diff, tools, write_tools
 from aisep.errors import CODES, AisepError
 
 MAX_TEXT_LINES = 200
+QUERY_TIMEOUT_MAX = 60000  # ms; a query thread that times out is not killed, so the wait is bounded here
+_LINE_BREAKING = re.compile(r"[\x00-\x1f\x7f-\x9f\u2028\u2029]")
 LOOPBACK_HOSTS = ["127.0.0.1:*", "localhost:*", "[::1]:*"]
 CORS_HEADERS = "Content-Type, Accept, MCP-Protocol-Version, Mcp-Method, Mcp-Name"
 
@@ -64,7 +66,7 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
                    out("result", "summary", "findings", "source"), ANN_READ, {"agent", "workbench"}),
     "model_query": (tools.model_query, "只读 SPARQL（SELECT/ASK/CONSTRUCT/DESCRIBE，拒绝 SERVICE）",
                     obj({"sparql": S(), "limit": {"type": "integer", "minimum": 1, "maximum": tools.QUERY_LIMIT_MAX},
-                         "timeoutMs": {"type": "integer", "minimum": 1}, "allowPartial": B, "repo": REPO, "ref": REF},
+                         "timeoutMs": {"type": "integer", "minimum": 1, "maximum": QUERY_TIMEOUT_MAX}, "allowPartial": B, "repo": REPO, "ref": REF},
                         ["sparql"]), out("kind", "source"), ANN_READ, {"agent", "workbench"}),
     "model_impact": (tools.model_impact, "影响面：沿依赖方向（depends）或双向（ripple）逐跳展开",
                      obj({"focus": S(), "mode": S(enum=["depends", "ripple"]),
@@ -141,8 +143,16 @@ def validate_args(name, args):
 
 # ---------------------------------------------------------------- results (§5.0, §7.1)
 
+def one_line(s):
+    """Model text (labels, literals, IRIs) reaches the text content inside finding messages; escape every control and
+    line-separator character so it can never start a line of its own (e.g. a forged "gate PASS", SEC-7). The structured
+    content keeps the original text."""
+    return _LINE_BREAKING.sub(lambda m: {"\n": "\\n", "\r": "\\r", "\t": "\\t"}.get(m.group(), f"\\u{ord(m.group()):04x}"),
+                              str(s))
+
+
 def _finding_lines(fs):
-    return [f"[{f['severity']}] {f['layer']} {f['message']}" for f in fs]
+    return [one_line(f"[{f['severity']}] {f['layer']} {f['message']}") for f in fs]
 
 
 def summary_text(name, res):
@@ -155,14 +165,14 @@ def summary_text(name, res):
     if head is None:
         head = lambda r: f"{name} 完成" + (f"：{r['iri']}" if "iri" in r else "") + \
             ("（无变化）" if r.get("changed") is False else "")
-    lines = [head(res)] + _finding_lines(res.get("findings", []))
+    lines = [one_line(head(res))] + _finding_lines(res.get("findings", []))
     if len(lines) > MAX_TEXT_LINES:
         lines = lines[:MAX_TEXT_LINES] + [f"……其余 {len(lines) - MAX_TEXT_LINES} 行见 structuredContent"]
     return "\n".join(lines)
 
 
 def error_result(e):
-    text = e.message + (f"\n提示：{e.hint}" if e.hint else "")
+    text = one_line(e.message) + (f"\n提示：{one_line(e.hint)}" if e.hint else "")
     fs = e.details.get("findings") if isinstance(e.details, dict) else None
     if fs:
         text += "\n" + "\n".join(_finding_lines(fs)[:MAX_TEXT_LINES])

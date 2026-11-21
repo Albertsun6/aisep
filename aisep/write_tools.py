@@ -15,6 +15,10 @@ SUBCLASS = core.NS["rdfs"] + "subClassOf"
 MODULE_FILE = {"am4": "am4.ttl", "bpmn": "bpmn.ttl", "uml": "uml.ttl", "ddd": "ddd.ttl", "ext-code": "code.ttl",
                "ext-verification": "verification.ttl"}  # everything else -> governance.ttl (§5.1 table)
 SLUG_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]*$")
+MODEL_SLUG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+LABEL_MAX, DEFINITION_MAX = 200, 4000
+_CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f\u2028\u2029]")
+RDF_TYPE = core.A
 UNSET = object()
 PROTECTED_TYPES = {core.AISEP + "ApprovalRecord", core.AISEP + "AgentActivity"}
 
@@ -33,10 +37,30 @@ def _bad(field, msg):
 
 
 def _model(ws, model):
-    slug = model[len(core.MODEL_BASE):].strip("/").split("/")[0] if model.startswith(core.MODEL_BASE) else model
-    if not slug or not os.path.isdir(os.path.join(ws.root, "models", slug)):
+    """A bare slug or the full model IRI (with or without its trailing '/'); anything path-like is an argument error,
+    and the slug must name an existing models/<slug>/ directory with exactly that spelling (case-insensitive file
+    systems would otherwise accept 'Procurement')."""
+    slug = model
+    if isinstance(model, str) and model.startswith(core.MODEL_BASE):
+        slug = model[len(core.MODEL_BASE):]
+        slug = slug[:-1] if slug.endswith("/") else slug
+    if not isinstance(slug, str) or not MODEL_SLUG_RE.match(slug):
+        raise AisepError("INVALID_ARGUMENT", f"model {model!r} 须为模型 slug（^[A-Za-z0-9][A-Za-z0-9_-]*$）或完整模型 IRI",
+                         details={"model": model, "rejectedFields": ["model"]})
+    mdir = os.path.join(ws.root, "models")
+    if slug not in (os.listdir(mdir) if os.path.isdir(mdir) else ()) or not os.path.isdir(os.path.join(mdir, slug)):
         raise AisepError("MODEL_NOT_FOUND", f"没有模型 {model}（models/{slug}/ 不存在）", details={"model": model})
     return slug, f"{core.MODEL_BASE}{slug}/"
+
+
+def _check_text(field, v, limit, allow_newline=False):
+    """Labels are one line of plain text: no control or line-separator characters (a label must not be able to forge a
+    separate line in a tool's text output, SEC-7), at most `limit` characters. A definition may hold newlines."""
+    bad = _CONTROL.search(v.replace("\n", "") if allow_newline else v)
+    if bad:
+        raise _bad(field, f"{field} 不能含控制字符或换行（U+{ord(bad.group()):04X}）")
+    if len(v) > limit:
+        raise _bad(field, f"{field} 最长 {limit} 个字符（现为 {len(v)}）")
 
 
 def _pfx(ws, f, model_iri):
@@ -157,6 +181,14 @@ def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, def
     _no_extra(extra)
     if not isinstance(prefLabel, str) or not prefLabel.strip():
         raise _bad("prefLabel", "prefLabel 不能为空")
+    _check_text("prefLabel", prefLabel, LABEL_MAX)
+    for name, v in (("altLabel", altLabel), ("definition", definition)):
+        if v is not None and not isinstance(v, str):
+            raise _bad(name, f"{name} 须为字符串")
+    if altLabel:
+        _check_text("altLabel", altLabel, LABEL_MAX)
+    if definition:
+        _check_text("definition", definition, DEFINITION_MAX, allow_newline=True)
     if slug is None:
         if not altLabel:
             raise _bad("slug", "slug 与 altLabel 都没给，无法生成 IRI（不自动拼音）")
@@ -167,6 +199,9 @@ def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, def
     def build(ws, ctx):
         mslug, model_iri = _model(ws, model)
         cls = _resolve_class(ctx, type)
+        if PROTECTED_TYPES & set(ctx.ancestors(cls)):  # approval records and AI activities never come from a write tool
+            raise AisepError("PROTECTED_RESOURCE", f"{core.short(cls)} 是批准记录或 AI 活动，不能经写工具新增",
+                             hint="批准只能由批准人经 governance_record_approval 记录", details={"rejectedFields": ["type"]})
         if core.ARCH + "QualifiedRelationship" in ctx.ancestors(cls):
             raise _bad("type", f"{core.short(cls)} 是关系类，请用 model_add_relationship")
         iri = model_iri + slug
@@ -182,15 +217,21 @@ def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, def
             if not isinstance(a, dict) or set(a) != {"predicate", "value"} or not isinstance(a["value"], dict):
                 raise _bad("attributes", "attributes 每项须为 {predicate, value}")
             v = a["value"]
-            if set(v) == {"iri"}:
-                o = ox.NamedNode(core.expand(ctx, v["iri"]))
-            elif "value" in v and set(v) <= {"value", "datatype", "lang"}:
-                o = ox.Literal(v["value"], language=v.get("lang")) if v.get("lang") else \
-                    ox.Literal(v["value"], datatype=ox.NamedNode(core.expand(ctx, v["datatype"]))) if v.get("datatype") else \
-                    ox.Literal(v["value"])
-            else:
-                raise _bad("attributes", "attributes.value 须为 {iri} 或 {value, datatype?, lang?}")
-            triples.append(ox.Triple(s, ox.NamedNode(core.expand(ctx, a["predicate"])), o))
+            try:  # pyoxigraph rejects a bad IRI, language tag or non-string value with ValueError/TypeError (MCP-5)
+                if set(v) == {"iri"}:
+                    o = ox.NamedNode(core.expand(ctx, v["iri"]))
+                elif "value" in v and set(v) <= {"value", "datatype", "lang"}:
+                    o = ox.Literal(v["value"], language=v.get("lang")) if v.get("lang") else \
+                        ox.Literal(v["value"], datatype=ox.NamedNode(core.expand(ctx, v["datatype"]))) if v.get("datatype") else \
+                        ox.Literal(v["value"])
+                else:
+                    raise _bad("attributes", "attributes.value 须为 {iri} 或 {value, datatype?, lang?}")
+                p = ox.NamedNode(core.expand(ctx, a["predicate"]))
+            except (ValueError, TypeError) as e:
+                raise _bad("attributes", f"attributes 里有不合法的 IRI、语言标签或值：{e}") from None
+            if p.value == RDF_TYPE:  # one element, one type (hard rule 3); the type is the `type` argument
+                raise _bad("attributes", "attributes 不能写 rdf:type，类型只由 type 参数给出")
+            triples.append(ox.Triple(s, p, o))
         st = _subject_triples(ctx)
         f = _check_file(mslug, file) if file else default_element_file(ctx, mslug, cls)
         pfx = _pfx(ws, f, model_iri)
@@ -262,6 +303,10 @@ def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET
     for name, v in (("altLabel", altLabel), ("definition", definition)):
         if v is not UNSET and v is not None and (not isinstance(v, str) or not v.strip()):
             raise _bad(name, f"{name} 须为非空字符串，或 null 表示删除")
+    for name, v, limit in (("prefLabel", prefLabel, LABEL_MAX), ("altLabel", altLabel, LABEL_MAX),
+                           ("definition", definition, DEFINITION_MAX)):
+        if isinstance(v, str):
+            _check_text(name, v, limit, allow_newline=name == "definition")
 
     def build(ws, ctx):
         st = _subject_triples(ctx)
