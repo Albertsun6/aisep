@@ -158,7 +158,7 @@ AISEP 是以 AI 辅助贯穿全过程软件研发（SDLC）的工程体系。目
 
 - 测试用例是 `aisep:TestCase`，用 `aisep:Verification` 连到它验证的验收标准。两步要连着写：只有测试用例、没有验证关系时 `gate` 报 EV1 违规。
 - Must 级需求没有测试时，`gate` 给 L4 Warning（不阻断）。
-- **测试结果：第二条链路起，回写真实 CI 的结果。** 测试结果是 `aisep:TestResult`（`aisep:resultOf` 指向测试用例，`aisep:verdict` 取 `aisep:VerdictScheme` 的一个值，`prov:generatedAtTime` 为 `xsd:dateTime`）。只写真实跑过的结果：代码 PR 合入后，取代码仓库主干上那次合并的 CI 运行，按日志里每条测试的结果行逐条写，经 MCP 写工具新增，走普通模型 PR，不需要批准，合入后推导为 Proposed。代码没写、测试没真实跑过之前不写结果，免得模型里出现虚构证据。第一条链路没有写结果；第二条链路的 4 个结果见 `models/workbench/verification.ttl` 的 `tr*1e77676`。
+- **测试结果：第二条链路起，回写真实 CI 的结果。** 测试结果是 `aisep:TestResult`（`aisep:resultOf` 指向测试用例，`aisep:verdict` 取 `aisep:VerdictScheme` 的一个值，`prov:generatedAtTime` 为 `xsd:dateTime`）。只写真实跑过的结果：代码 PR 合入后，取代码仓库主干上那次合并的 CI 运行，按日志写，一个测试用例一条结果（日志只给文件级结果时怎么写，见 §10.8），经 MCP 写工具新增，走普通模型 PR，不需要批准，合入后推导为 Proposed。代码没写、测试没真实跑过之前不写结果，免得模型里出现虚构证据。第一条链路没有写结果；第二条链路的 4 个结果见 `models/workbench/verification.ttl` 的 `tr*1e77676`，第三条链路的 3 个结果见同一文件的 `tr*79f4f4b`，都用下文的运行出处属性记提交与 CI 运行。
 - **测试用例怎么对上测试代码**：元模型里测试用例没有指向测试文件或测试名的属性，只能在 `skos:definition` 里写明测试文件和测试标题，测试代码照抄标题。测试用例批准后，标题就不能再改，否则要重新批准。
 - **测试结果的运行出处（验证扩展 v0.3.0 起）。** 测试结果用三个可选属性记下这次运行：`aisep:testedCommit`（被测提交，40 位小写十六进制）、`aisep:ciRun`（CI 运行网址，IRI）、`schema:codeRepository`（代码仓库网址，IRI），各至多一个（`modules/ext-verification/shapes.ttl` EV11–EV13）。前两个只能写在测试结果上（EV14），不能借用到代码位置、测试用例等元素上。固定查询可以直接取到提交号，不再从 `skos:note` 的字面量里解析。（此前没有这些属性，运行与提交只能写进 `skos:note` 的固定格式 `ciJob=… ; commit=… ; repo=…`。）
 - **元模型限制：代码位置批准后补不了提交锚点。** `aisep:swhid` 的定义域只有 `aisep:CodeLocation`。代码位置在写代码之前就登记并批准了，之后补 `swhid` 就是改已批准元素，所以批准过的代码位置补不上提交锚点。提交信息改由测试结果承载（`aisep:testedCommit`，见上一条）：从代码位置经固定查询走到测试结果，就能拿到被测的提交；没有测试结果的代码位置仍然没有提交锚点。
@@ -215,5 +215,43 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
 - **一期**：统一模型仓库 + MCP Server（ADR-008），工作台与编码代理都是它的客户端。代码仓库、CI/CD 先用 GitHub 和现成工具，平台只做关联与追溯（§5）。
 - **本期**（Albert 2026-11-21 定）：第一条链路、批准进度展示、待批准关口到关口页的入口、一键启动脚本。
 - **由模型生成代码**：未定。第一条链路里代码由人或代理照常写，模型只登记代码位置。
-- **测试结果回写模型**：第二条链路起，回写真实 CI 的测试结果（§10.3）。测试结果指不到 CI 运行或提交的限制已解决：验证扩展 v0.3.0 给测试结果加了 `aisep:testedCommit`、`aisep:ciRun`（Albert 2026-11-21 定）。代码位置批准后补不上 `swhid` 的限制保留，提交信息由测试结果承载。
+- **测试结果回写模型**：第二条链路起，回写真实 CI 的测试结果（§10.3）。测试结果指不到 CI 运行或提交的限制已解决：验证扩展 v0.3.0 给测试结果加了 `aisep:testedCommit`、`aisep:ciRun`（Albert 2026-11-21 定）。代码位置批准后补不上 `swhid` 的限制保留，提交信息由测试结果承载。第二、三条链路的回写都已用这两个属性（§10.3、§10.8）。
+- **改已批准元素**：第三条链路实跑过一次（§10.8）。目前只有名称、英文名、定义有写入口（`model_set_labels`），其他属性的修改入口未定。
 - **DevOps 延伸**（CI/CD、部署发布进追溯链）：未定。元模型已有 `aisep:Deployable`（`aisep:packageUrl`），但不在本期链路里。
+
+### 10.8 第三条链路：改已批准元素并重批
+
+前两条链路只新增元素。第三条链路的载体是「关口页重复批准防护」：改一个已批准的需求（`reqApprovalProgress` 的定义），补验收标准和测试用例，重批，写代码，再回写测试结果（模型 aisep PR #68、#71，代码 aisep-workbench PR #20）。
+
+**改已批准元素：写入口与把关**
+
+- 已批准元素目前只能经 `model_set_labels` 改名称、英文名和定义（`docs/mcp-interface.md` §5.10）。写工具不拦已批准元素，`gate` 照常 PASS；把关在合并：`mergecheck` 报 `unapproved-change-to-approved`，要求同一 PR 里有一条覆盖该元素、结论为 Approved 的新批准记录（#68 批准前实跑：`problems` 只有这一条，退出码 1）。
+- 其他属性（验收标准的 `aisep:gherkin`、需求的 `aisep:priority`、代码位置的 `aisep:path` 等）没有写入口：`model_add_element` 对已存在的 IRI 报 `IRI_EXISTS`；`model_remove` 遇到 `aisep:approves` 的引用报 `REFERENCED`（§5.5），被批准过的元素只能退役。本 PR 新增、尚未批准的元素可以先 `model_remove`（`cascade: true`，带 dryRun 返回的 `planDigest`）再用同一 IRI 重加，连带的关系也按原 IRI 重加（#68 第二个提交就是这么改的）。
+- 动手前对被改元素跑 `model_impact`，`depends`、`ripple` 两种模式都跑，结果写进 PR 描述（#68：depends 5 项、ripple 11 项）。
+- 关口页「模型改动」表里，被改元素是「修改」行，`changedPredicates` 只列被改的谓词（#68：新增 7、修改 1，只改了 `skos:definition`）。
+
+**顺序：评审在批准前做完，批准后冻结**
+
+- 评审必须在批准之前做完。#68 首轮评审提出的两处语义问题（验收标准缺「批准之后没有内容改动」的前提；「覆盖」按单条记录还是同关口并集算）都改在批准之前，改完重评一次（第二个提交 `101ddaf`）。批准之后再改内容就得再批一次（§10.5 的表）。
+- 批准之后分支冻结。批准提交推送前，执行线核对三件事：它只有一个父提交且等于评审过的头；只新增一个 `models/<slug>/governance/` 下的文件；`AISEP-Evidence` trailer 等于评审过的头。协调会话再按 `AGENTS.md`「分支与合并」第 2 条做批准提交豁免核对。批准到合并后核验通过之间，不往该分支推任何提交。
+
+**批准人要选被批模型自己的干系人**
+
+- 批准工具和全仓库 `gate` 接受任意模型的 `arch:Stakeholder` 作批准人。#68 的批准记录（`approval-20261121155736-architecture-101ddaf`）选了 procurement 示例模型的 `chiefArchitect` 来批 workbench 的元素：全仓库视图合法；只看 workbench 模型时看不到这个干系人，报 EG13，推导批准状态时也不计入这条记录。服务端的跟踪在 aisep issue #73；工作台关口页已改为只列被批模型的干系人、不默认选中（aisep-workbench PR #22）。
+
+**事后补批与「批准专用 PR」**
+
+- 「批准专用 PR」（ADR-021 第 1 款）只适用于发布关口：被批准提交 E 已在 `main` 上，它的有效内容提交是主线提交，按 U4① 只能批 `GateRelease`，批其他关口时批准工具报 `mainline-head-gate-not-release`（`aisep/approval.py`），`mergecheck` 同样拒。所以架构等分支关口的批准要跟着内容改动走，合并后发现批准记录有瑕疵（如批准人选错），不能用批准专用 PR 补批。
+- 规范为主线上的 Proposed 元素留了一条形式上的路：从 `main` 拉分支，先加一个非批准提交（可以是空提交），使有效内容提交不在主线上，再批（`docs/mcp-interface.md` §5.9「普通 PR 不要求带批准记录」一段、`docs/metamodel-spec.md` 附 C）。规范没有专门讲已批准元素的重批，按判据推，同样的做法也能过批准工具和 `mergecheck`；这是外推，本期未实跑。这样的 PR 不是批准专用 PR，要走合并前评审。
+- Albert 2026-11-22 定：#68 不补批，维持现状。
+
+**回写测试结果**
+
+- 3 个测试用例的结果是 `tr*79f4f4b`（`models/workbench/verification.ttl`，PR #71），用 `aisep:testedCommit`、`aisep:ciRun`、`schema:codeRepository` 记运行出处（§10.3）。
+- 工作台 CI 的 vitest 只打印文件级结果，不逐条打印测试名。测试用例的测试块落在通过的文件里，只能推出块内各条通过，结果的定义里要写明这是推出的。一个测试用例写一条结果。
+
+**遗留**
+
+1. 工作台前端判断「批准提交」只经 `model_diff` 看 `models/` 里的改动，`mergecheck` 要求整个提交只新增一个文件，两者不完全一致：另外改了 `models/` 以外文件的提交会被前端当成批准提交，偏向少批（aisep-workbench issue #21）。
+2. 第一条链路的 `tcApprovalProgressStages` 至今没有测试结果。
+3. 批准人不必属于被批模型（aisep issue #73，见上）。
