@@ -1,0 +1,16 @@
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/workbench/> .
+
+:approval-20261121092334-architecture-58e5129 a aisep:ApprovalRecord ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "架构决策批准：批准进度的四个阶段都能从 Git 推导并显示等 7 项"@zh ;
+    aisep:gate aisep:GateArchitecture ;
+    aisep:decision aisep:DecisionApproved ;
+    aisep:approvedBy <https://aisep.example/model/workbench/projectLead> ;
+    aisep:approves <https://aisep.example/model/workbench/acProgressFourStages> , <https://aisep.example/model/workbench/approvalProgressCode> , <https://aisep.example/model/workbench/gateApprovalFlow> , <https://aisep.example/model/workbench/governanceSubdomain> , <https://aisep.example/model/workbench/reqApprovalProgress> , <https://aisep.example/model/workbench/tcApprovalProgressStages> , <https://aisep.example/model/workbench/workbenchGovernanceBC> ;
+    aisep:evidence "58e51298b0f778e6d81dceceac41fbe680eaac1a" ;
+    prov:generatedAtTime "2026-11-21T09:23:34Z"^^xsd:dateTime .
