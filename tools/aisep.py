@@ -212,7 +212,7 @@ def run_pytest(tests_dir):
         return []
     with tempfile.TemporaryDirectory() as tmp:
         xml = os.path.join(tmp, "junit.xml")
-        try:  # the suite takes ~30 min on a busy machine (merge-check negatives alone ~21 min)
+        try:  # the merge-check negatives take most of the time; CI's `negatives` job prints their real timing
             p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", f"--junitxml={xml}",
                                 tests_dir], cwd=ROOT, capture_output=True, text=True, timeout=7200)
         except subprocess.TimeoutExpired:

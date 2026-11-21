@@ -3,9 +3,14 @@ on:
   pull_request:
   push:
     branches: [main]
+# 同一个 PR 推新提交时取消它进行中的旧运行；main 上的运行按 sha 分组，不取消。
+concurrency:
+  group: gate-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -16,10 +21,10 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - run: python tools/aisep.py gate
-  # aisep-mcp/tests 的 pytest（Albert 2026-11-20 拍板：负例除外）。
-  # test_merge_check_negatives.py 单跑约 21 分钟，等提速后再纳入；在那之前按 AGENTS.md「分支与合并」第 2 条在本地跑。
-  pytest:
+  # 元模型夹具（modules/*/tests）+ tests/acceptance/*.py；aisep-mcp/tests 由下面的分片跑，这里 --no-pytest 跳过
+  fixtures:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,16 +34,64 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: python -m pytest -q -p no:cacheprovider aisep-mcp/tests --ignore=aisep-mcp/tests/test_merge_check_negatives.py
-      # 元模型夹具（modules/*/tests）+ tests/acceptance/*.py；aisep-mcp/tests 已由上一步跑，这里 --no-pytest 跳过
-      # 上一步失败也照跑，免得一处失败遮住另一处（PR #32 评审）
-      - if: success() || failure()
-        run: python tools/aisep.py test --no-pytest
+      - run: python tools/aisep.py test --no-pytest
+  # aisep-mcp/tests 分 3 片并行（负例除外，见下面的 negatives）。分片由 conftest.py 按用例 nodeid 的 crc32 取模，
+  # 新增测试自动归片；3 片的用例数之和等于不分片时的总数。
+  pytest-shard:
+    name: pytest-shard (${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
+    env:
+      AISEP_SHARD: ${{ matrix.shard }}/3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q -p no:cacheprovider --durations=15 aisep-mcp/tests --ignore=aisep-mcp/tests/test_merge_check_negatives.py
+  # 必需检查 `pytest`（分支保护里的名字不变）：汇总夹具和各分片。必须 if: always() 并逐个判 success：
+  # 不这样写，依赖失败时本 job 会被跳过，而被跳过的必需检查 GitHub 当作通过。
+  pytest:
+    if: always()
+    needs: [fixtures, pytest-shard]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          FIXTURES: ${{ needs.fixtures.result }}
+          SHARDS: ${{ needs.pytest-shard.result }}
+        run: |
+          echo "fixtures=$FIXTURES pytest-shard=$SHARDS"
+          test "$FIXTURES" = success && test "$SHARDS" = success
+  # 合并检查负例（Albert 2026-11-21 定：进 CI，但不是必需检查）。合并前本地跑仍按 AGENTS.md「分支与合并」第 2 条。
+  # PR 和 push 到 main 都跑、不加路径过滤，以后升为必需检查时每个 PR 都有它的结果。--durations 留实测耗时。
+  negatives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q -p no:cacheprovider --durations=30 aisep-mcp/tests/test_merge_check_negatives.py
   # §5.9 合并时校验（切片 S6）。单独一个 job，与 gate、pytest 同为 main 的必需检查。
   # 口径：H = pull_request.head.sha（不用 GITHUB_SHA）；T = 刚 fetch 的远端主分支；M 在 T 上本地合并生成。
   mergecheck:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:

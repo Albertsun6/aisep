@@ -1,6 +1,6 @@
 """Shared fixtures (docs/mcp-interface.md §11): every test works in a fresh `git init` under tmp_path holding copies of
 models/procurement, modules/, vendor/ (and tools/ + aisep/ so the CLI can run there); the real checkout is never touched."""
-import os, shutil, subprocess, sys
+import os, shutil, subprocess, sys, zlib
 
 import pytest
 
@@ -16,6 +16,25 @@ for _k, _v in (("maintenance.auto", "false"), ("gc.auto", "0")):
     os.environ[f"GIT_CONFIG_KEY_{_n}"], os.environ[f"GIT_CONFIG_VALUE_{_n}"] = _k, _v
     _n += 1
 os.environ["GIT_CONFIG_COUNT"] = str(_n)
+
+
+def pytest_collection_modifyitems(config, items):
+    """CI sharding: AISEP_SHARD="i/n" keeps the test cases whose nodeid hashes (crc32) to i mod n. A new test lands in a
+    shard by itself, with no list to maintain; unset, every test runs. Under xdist each worker collects and filters alike."""
+    spec = os.environ.get("AISEP_SHARD")
+    if not spec:
+        return
+    try:
+        i, n = (int(x) for x in spec.split("/"))
+        assert 0 <= i < n
+    except (ValueError, AssertionError):
+        raise pytest.UsageError(f"AISEP_SHARD must be 'i/n' with 0 <= i < n, got {spec!r}")
+    keep, drop = [], []
+    for t in items:
+        (keep if zlib.crc32(t.nodeid.encode()) % n == i else drop).append(t)
+    if drop:
+        config.hook.pytest_deselected(items=drop)
+    items[:] = keep
 
 
 def git(cwd, *args, check=True):
