@@ -180,7 +180,7 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
 1. **写模型并提交**：代理在 worktree 里经 MCP 调 `model_add_element`、`model_add_relationship`（先 `dryRun` 再真实写入）。写工具只改工作区、不提交；代理跑 `gate` 为 PASS 后，按明确路径暂存并提交，推送，开 PR。
 2. **评审修完**：独立评审这次模型改动，修完，CI 绿。返工都在这一步做完。
 3. **批准**：Albert 在工作台关口页点批准。批准工具 `governance_record_approval` 只在 workbench 画像里，编码代理看不到也不能代批。它在分支检出的工作区新建一个批准记录文件并提交一次，`evidence` 是被批准的头提交。只批元素，不把 `arch:Model` 本身列进 `approves`，否则以后每次往这个模型加东西都要重批。被批准的内容提交不能已经在 `main` 上，否则只能批 `GateRelease`，所以批准必须在合并之前。
-4. **推送**：推送批准提交，PR 头前进到批准提交。只多一个批准提交的新头不再重评，由 `mergecheck` 核对它的形状。
+4. **推送**：推送批准提交，PR 头前进到批准提交。按现行 `AGENTS.md` 对新头重新评审（在途：批准提交豁免待 ADR-019 合入，以合入后的 `AGENTS.md` 为准）。
 5. **合并**：按 `AGENTS.md`「分支与合并」的三步（合并前重算、复核目标分支没动、合并与合并后核验）执行。
 
 **批准之后分支不能再动。** `mergecheck` 要求从 `evidence` 到分支头之间只有批准提交，批准的内容在 `evidence` 和合并结果之间也不能变：
@@ -189,7 +189,7 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
 |---|---|
 | 再加任何内容提交 | `not-approval-commit`（若仍拿旧的头提交去批，批准工具报 `STALE_HEAD`） |
 | 把 `main` 合进分支 | `merge-commit-in-range` |
-| rebase、amend、squash | `evidence-not-ancestor` |
+| rebase、squash，或 amend 被批准的提交（改写 `evidence` 及之前的历史） | `evidence-not-ancestor` |
 | 被批准的元素在合并结果里变了 | `approved-content-drifted` |
 
 所以"评审修完"必须在"批准"之前。批准之后若必须返工，只能在新的头上重批：同一关口、`approves` 覆盖旧记录、时间更晚，旧记录就不再参与检查。批准之前合 `main` 或 rebase 都没问题。

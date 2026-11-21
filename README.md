@@ -32,7 +32,7 @@ claude mcp list
 sh tools/aisep-mcp
 ```
 
-它在当前 worktree 里起服务，等价于 `python -m aisep.server --transport stdio --profile agent --allow-root <主检出> --repo <当前 worktree>`，每行收发一条 JSON-RPC 消息（先 `initialize`，再 `notifications/initialized`，然后 `tools/list` / `tools/call`）。
+它在当前 worktree 里起服务（worktree 须在主检出目录之下，因为 `--allow-root` 固定为主检出，否则报 `PATH_OUTSIDE_ROOT`），等价于 `python -m aisep.server --transport stdio --profile agent --allow-root <主检出> --repo <当前 worktree>`，每行收发一条 JSON-RPC 消息（先 `initialize`，再 `notifications/initialized`，然后 `tools/list` / `tools/call`）。
 
 **4. 工具清单与画像**（以 `aisep/server.py` 的 `TOOLS` 为准）：
 
@@ -45,7 +45,7 @@ sh tools/aisep-mcp
 - 批准工具 `governance_record_approval` **不在 agent 画像里**，编码代理看不到它。批准记录只能由 Albert 本人做出（`AGENTS.md`「分支与合并」），经工作台关口页触发（`docs/mcp-interface.md`）。
 - `model_check`、`model_validate` 只做快速诊断；提交和 CI 只认 `gate`，读 `model_gate` 的结论看返回里的 `structuredContent.result`。
 - 写工具只改工作区、不提交。写完跑 `gate`，再按明确路径暂存、提交。
-- 工作台用的 HTTP 方式：`python -m aisep.server --transport http --profile workbench --allow-root <目录> --allow-origin <工作台页面来源>`，只绑本机回环地址，来源不在白名单的请求返回 403。
+- 工作台用的 HTTP 方式：`python -m aisep.server --transport http --profile workbench --allow-root <目录> --allow-origin <工作台页面来源>`，只绑本机回环地址，带 `Origin` 且不在白名单的请求返回 403，不带 `Origin` 的本机请求放行。
 
 **5. 新建模型**：写工具建不了模型本身。新模型目录 `models/<slug>/` 要先手写一个 `arch:Model` 声明（IRI 为 `https://aisep.example/model/<slug>/`，带中文 `skos:prefLabel`），之后才能经 MCP 往里写元素。目录不存在时写工具报 `MODEL_NOT_FOUND`；目录在但没有声明时写入能成功，`gate` 报 L3 违规。
 
