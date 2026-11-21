@@ -36,6 +36,20 @@ vendor/meta.linked.archi/
     ttl/examples_payflow_.ttl
     ttl/examples_uml_.ttl
 
+  The ArchiMate ontologies in this directory (ttl/archimate*.ttl) are derived
+  from the ArchiMate Specification, Copyright The Open Group. Much of the
+  definition and scope-note text (skos:definition, skos:scopeNote) in
+  ttl/archimate4_onto.ttl and ttl/archimate3_onto*.ttl reproduces text of that
+  specification. That text remains the copyright of The Open Group; it is not
+  covered by the Creative Commons licenses declared in these files or by the
+  Apache License of this repository.
+
   ttl/backstage_onto.ttl and ttl/backstage_metamodel.ttl quote Backstage
   documentation, Copyright The Backstage Authors, licensed under the Apache
   License, Version 2.0.
+
+Trademarks
+----------
+
+ArchiMate and TOGAF are registered trademarks of The Open Group.
+AISEP is not affiliated with or endorsed by The Open Group.
