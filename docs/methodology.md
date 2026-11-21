@@ -160,8 +160,8 @@ AISEP 是以 AI 辅助贯穿全过程软件研发（SDLC）的工程体系。目
 - Must 级需求没有测试时，`gate` 给 L4 Warning（不阻断）。
 - **测试结果：第二条链路起，回写真实 CI 的结果。** 测试结果是 `aisep:TestResult`（`aisep:resultOf` 指向测试用例，`aisep:verdict` 取 `aisep:VerdictScheme` 的一个值，`prov:generatedAtTime` 为 `xsd:dateTime`）。只写真实跑过的结果：代码 PR 合入后，取代码仓库主干上那次合并的 CI 运行，按日志里每条测试的结果行逐条写，经 MCP 写工具新增，走普通模型 PR，不需要批准，合入后推导为 Proposed。代码没写、测试没真实跑过之前不写结果，免得模型里出现虚构证据。第一条链路没有写结果；第二条链路的 4 个结果见 `models/workbench/verification.ttl` 的 `tr*1e77676`。
 - **测试用例怎么对上测试代码**：元模型里测试用例没有指向测试文件或测试名的属性，只能在 `skos:definition` 里写明测试文件和测试标题，测试代码照抄标题。测试用例批准后，标题就不能再改，否则要重新批准。
-- **元模型限制一：测试结果指不到 CI 运行或提交。** 模型文件里的谓词须是已声明的（封闭谓词，G7），而没有哪个已声明的属性能让测试结果指向 CI 运行或代码提交：`rdfs:seeAlso` 写入时被拒；`aisep:evidence`、`aisep:headCommit` 的定义域分别是 `aisep:ApprovalRecord`、`aisep:AgentActivity`，不能借用。现在只能把运行与提交写成字面量：`skos:definition` 用文字写，`skos:note` 用固定格式 `ciJob=<任务 URL> ; commit=<40 位提交号> ; repo=<仓库 URL>`。查询取不到结构化的提交号。
-- **元模型限制二：提交锚点只能写在代码位置上。** `aisep:swhid` 的定义域只有 `aisep:CodeLocation`。代码位置在写代码之前就登记并批准了，之后补 `swhid` 就是改已批准元素，所以批准过的代码位置补不上提交锚点。
+- **测试结果的运行出处（验证扩展 v0.3.0 起）。** 测试结果用三个可选属性记下这次运行：`aisep:testedCommit`（被测提交，40 位小写十六进制）、`aisep:ciRun`（CI 运行网址，IRI）、`schema:codeRepository`（代码仓库网址，IRI），各至多一个（`modules/ext-verification/shapes.ttl` EV11–EV13）。前两个只能写在测试结果上（EV14），不能借用到代码位置、测试用例等元素上。固定查询可以直接取到提交号，不再从 `skos:note` 的字面量里解析。（此前没有这些属性，运行与提交只能写进 `skos:note` 的固定格式 `ciJob=… ; commit=… ; repo=…`。）
+- **元模型限制：代码位置批准后补不了提交锚点。** `aisep:swhid` 的定义域只有 `aisep:CodeLocation`。代码位置在写代码之前就登记并批准了，之后补 `swhid` 就是改已批准元素，所以批准过的代码位置补不上提交锚点。提交信息改由测试结果承载（`aisep:testedCommit`，见上一条）：从代码位置经固定查询走到测试结果，就能拿到被测的提交；没有测试结果的代码位置仍然没有提交锚点。
 - 从代码位置查到测试结果的固定查询是 `docs/queries/code-to-tests.rq`：代码位置 → 设计元素 → 能力 → 需求 → 验收标准 → 测试用例 → 测试结果。代码只连到限界上下文、需求只连到流程，两者在能力处汇合，所以会列出同一能力下所有需求的测试。
 
 ### 10.4 固定追溯查询
@@ -177,7 +177,7 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
   ?cap a/rdfs:subClassOf* am4:Capability ; skos:prefLabel ?capLabel } ORDER BY ?code
 ```
 
-`model_query` 拒绝含 `SERVICE` 字样的查询，目前会误伤 `am4:Service` 和含 "service" 的字面量；查询里避开这个词。（在途：PR #43 把查询存为 `docs/queries/code-to-capability.rq`，尚未合入。）
+这条查询已存为 `docs/queries/code-to-capability.rq`。`model_query` 在无网络的子进程里执行，查询里的 `SERVICE` 子句发不出请求，写了会被拒（`QUERY_NOT_READONLY`）；`am4:Service`、`?service` 这类前缀名和变量照常可用（规则见 `docs/mcp-interface.md` 的 `model_query` 一节）。
 
 ### 10.5 固定顺序：写模型并提交 → 评审修完 → 批准 → 推送 → 合并
 
@@ -215,5 +215,5 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
 - **一期**：统一模型仓库 + MCP Server（ADR-008），工作台与编码代理都是它的客户端。代码仓库、CI/CD 先用 GitHub 和现成工具，平台只做关联与追溯（§5）。
 - **本期**（Albert 2026-11-21 定）：第一条链路、批准进度展示、待批准关口到关口页的入口、一键启动脚本。
 - **由模型生成代码**：未定。第一条链路里代码由人或代理照常写，模型只登记代码位置。
-- **测试结果回写模型**：第二条链路起，回写真实 CI 的测试结果（§10.3）。元模型的两处限制（测试结果指不到 CI 运行或提交；代码位置批准后补不上 `swhid`）改不改，未定。
+- **测试结果回写模型**：第二条链路起，回写真实 CI 的测试结果（§10.3）。测试结果指不到 CI 运行或提交的限制已解决：验证扩展 v0.3.0 给测试结果加了 `aisep:testedCommit`、`aisep:ciRun`（Albert 2026-11-21 定）。代码位置批准后补不上 `swhid` 的限制保留，提交信息由测试结果承载。
 - **DevOps 延伸**（CI/CD、部署发布进追溯链）：未定。元模型已有 `aisep:Deployable`（`aisep:packageUrl`），但不在本期链路里。

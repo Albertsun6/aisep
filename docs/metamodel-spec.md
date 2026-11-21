@@ -137,6 +137,7 @@
 - `aisep:Verification`（限定关系，TestCase → 任意元素），直连谓词 `aisep:verifies`。
 - `aisep:AcceptanceCriterion` ⊑ `am4:Requirement`：通过 `am4:Aggregation` 从属于父需求（表里可以直接画），可选 `aisep:gherkin`。
 - `aisep:TestResult`：`aisep:resultOf` → TestCase；`aisep:verdict` ∈ {Passed, Failed, Blocked, Skipped, Error}；`prov:generatedAtTime`。
+  - 可选的运行出处（模块 v0.3.0）：`aisep:testedCommit`（被测提交，40 位小写十六进制字符串，写法同 `aisep:headCommit`）、`aisep:ciRun`（CI 运行网址，IRI）、`schema:codeRepository`（代码仓库网址，IRI），各至多一个（EV11–EV13）。`aisep:testedCommit`、`aisep:ciRun` 只能写在 TestResult 上（EV14）；提交锚点挂在每次运行的结果上，不改已批准的代码位置。
 - `aisep:priority` ∈ {Must, Should, Could, Wont}（MoSCoW），挂在需求上。**只有 Must 级**的需求或验收标准没有 TestCase 时，才算追溯缺口（L4）。
 - 概念名用 `skos:exactMatch` 对到 OSLC QM/RM；不导入 OSLC。
 

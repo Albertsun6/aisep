@@ -4,11 +4,12 @@
 @prefix prov:  <http://www.w3.org/ns/prov#> .
 @prefix arch:  <https://meta.linked.archi/core#> .
 @prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix schema: <https://schema.org/> .
 @prefix aisep: <https://aisep.example/ont/aisep#> .
 @prefix :      <https://aisep.example/shapes/ext-verification#> .
 
 # L3 shapes for the verification extension (spec §6.5). SHACL Core only.
-# Each message starts with a rule id (EV1..EV10); every rule has a valid and an invalid fixture in tests/.
+# Each message starts with a rule id (EV1..EV14); every rule has a valid and an invalid fixture in tests/.
 # Shapes read the qualified relationship resources (arch:source/arch:target), never the generated direct
 # triples, so they give the same answer before and after `aisep build`.
 
@@ -59,7 +60,37 @@
         sh:datatype xsd:dateTime ;
         sh:message "EV6: a TestResult must have exactly one prov:generatedAtTime typed xsd:dateTime." ;
         sh:severity sh:Violation ;
+    ] ;
+    # ---- Run provenance (v0.3.0), all optional ----
+    sh:property [
+        sh:path aisep:testedCommit ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^[0-9a-f]{40}$" ;   # same regex as EG23 aisep:headCommit and the commit branch of EG16
+        sh:message "EV11: aisep:testedCommit is optional, at most one, an xsd:string holding a 40-hex git commit id." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aisep:ciRun ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "EV12: aisep:ciRun is optional, at most one, and an IRI (the CI run URL), not a literal." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path schema:codeRepository ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "EV13: schema:codeRepository on a TestResult is optional, at most one, and an IRI (the repository URL)." ;
+        sh:severity sh:Violation ;
     ] .
+
+# rdfs:domain is not enforced: the run-provenance properties are TestResult attributes only.
+:RunProvenanceDomainShape a sh:NodeShape ;
+    sh:targetSubjectsOf aisep:testedCommit , aisep:ciRun ;
+    sh:class aisep:TestResult ;
+    sh:message "EV14: aisep:testedCommit and aisep:ciRun may only be stated on an aisep:TestResult." ;
+    sh:severity sh:Violation .
 
 :AcceptanceCriterionShape a sh:NodeShape ;
     sh:targetClass aisep:AcceptanceCriterion ;

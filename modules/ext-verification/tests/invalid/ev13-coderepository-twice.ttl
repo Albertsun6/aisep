@@ -1,0 +1,36 @@
+# expect: EV13:
+# Invalid: two repositories on one TestResult; a run is of one repository.
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix schema: <https://schema.org/> .
+@prefix arch:   <https://meta.linked.archi/core#> .
+@prefix am4:    <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep:  <https://aisep.example/ont/aisep#> .
+@prefix :       <https://aisep.example/model/ext-verification-test/> .
+
+:model a arch:Model ;
+    skos:prefLabel "验证扩展测试模型"@zh .
+
+:quoteSvc a am4:ApplicationComponent ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务"@zh .
+
+:tc a aisep:TestCase ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务测试"@zh .
+
+:ver a aisep:Verification ;
+    arch:inModel :model ;
+    arch:source :tc ;
+    arch:target :quoteSvc .
+
+:tr a aisep:TestResult ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务测试 运行结果"@zh ;
+    aisep:resultOf :tc ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-19T10:00:00Z"^^xsd:dateTime ;
+    aisep:testedCommit "0123456789abcdef0123456789abcdef01234567" ;
+    aisep:ciRun <https://ci.example.com/acme/quote-service/runs/42> ;
+    schema:codeRepository <https://git.example.com/acme/quote-service> , <https://git.example.com/acme/quote-mirror> .
