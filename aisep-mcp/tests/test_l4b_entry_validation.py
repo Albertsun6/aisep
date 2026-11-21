@@ -193,12 +193,14 @@ def test_mcp2_guard_session_ref_with_cr_refused(template, tmp_path):
 # ================================================================== CORE-2：畸形模型让 gate 崩溃
 
 _MI = f"<{M}>"
-MALFORMED = {  # 名称: (Turtle 主体, 出错的主语 local name, main 上抛出的异常类型)
-    "inModel字面量": (':zz1 a am4:BusinessActor ; arch:inModel "some model" ; skos:prefLabel "x"@zh .', "zz1", ValueError),
+MALFORMED = {  # 名称: (Turtle 主体, 出错的主语 local name, main 上抛出的异常类型, 其消息里的关键字)
+    "inModel字面量": (':zz1 a am4:BusinessActor ; arch:inModel "some model" ; skos:prefLabel "x"@zh .', "zz1", ValueError,
+                  "Invalid IRI"),
     "source字面量": (f':zz2 a am4:Serving ; arch:inModel {_MI} ; arch:source "lit" ; arch:target :supplier .', "zz2",
-                   TypeError),
+                   TypeError, "NamedNode | BlankNode"),
     "时间溢出": (f':zz4 a aisep:ApprovalRecord ; arch:inModel {_MI} ; aisep:approves :supplier ; '
-             f'prov:generatedAtTime "0001-01-01T00:00:00+13:00"^^xsd:dateTime .', "zz4", OverflowError),
+             f'prov:generatedAtTime "0001-01-01T00:00:00+13:00"^^xsd:dateTime .', "zz4", OverflowError,
+             "out of range"),
 }
 BAD_FILE = "models/procurement/zz.ttl"
 
@@ -206,13 +208,15 @@ BAD_FILE = "models/procurement/zz.ttl"
 @L4B("CORE-2")
 @pytest.mark.parametrize("name", sorted(MALFORMED))
 def test_core2_malformed_model_gives_violation_not_internal(repo, name):
-    body, local, crash = MALFORMED[name]
+    body, local, crash, words = MALFORMED[name]
     with open(os.path.join(str(repo), BAD_FILE), "w", encoding="utf-8") as f:
         f.write(PREFIXES + body + "\n")
     fn = T.model_gate
     try:
         r = fn(cfg(repo))
     except crash as e:
+        if words not in str(e):
+            raise
         expect(False, f"gate 抛出 {type(e).__name__}: {e}（经 MCP 是 INTERNAL），没有报违规")
     assert r["result"] == "FAIL"
     hit = [f for f in r["findings"] if f["severity"] == "Violation" and (f["file"] == BAD_FILE or f["focus"] == M + local)]

@@ -15,6 +15,8 @@
   - `hasModelChanges`：相对主分支的 merge-base，分支改动了 `models/` 下的 .ttl。已合入的分支不作要求。
   - 主分支自己是否出现在列表里不作要求。
 - 只读：不改工作区、索引、引用，也不 fetch（不产生 FETCH_HEAD、不改远端跟踪引用）。
+  索引也在哈希里：`git status`、带工作区的 `git diff` 可能顺手刷新并重写 index，实现里用 plumbing 命令
+  （for-each-ref、rev-parse、merge-base、diff-tree 等），或设 `GIT_OPTIONAL_LOCKS=0`。
 
 实现时摘掉下面的 `L7` 标记（strict：不摘会 XPASS 失败）。只有「工具未注册」被当作 XFAIL；工具注册之后任何断言失败都按失败报出。
 """
