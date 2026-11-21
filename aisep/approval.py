@@ -12,6 +12,7 @@ from aisep.errors import AisepError
 
 AISEP, ARCH, PROV = core.AISEP, core.ARCH, core.NS["prov"]
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
+SESSION_REF_RE = re.compile(r"[!-~]{1,200}")
 ACTIVITY_KEYS = {"agent", "sessionRef", "startedAt", "endedAt", "branch", "label"}
 GOV_DIR = "governance"
 
@@ -52,6 +53,8 @@ def _check_activity(activity, branch, now):
     for k in ("agent", "sessionRef", "startedAt"):
         if not isinstance(activity.get(k), str) or not activity[k].strip():
             raise _bad(f"activity.{k}", f"activity.{k} 必填且非空")
+    if not SESSION_REF_RE.fullmatch(activity["sessionRef"]):  # MCP-2: it becomes a commit trailer verbatim
+        raise _bad("activity.sessionRef", "activity.sessionRef 只接受可见 ASCII 字符（不含空白与换行），最长 200 个字符")
     if activity.get("branch") is not None and activity["branch"] != branch:
         raise _bad("activity.branch", f"activity.branch {activity['branch']!r} 与 branch {branch!r} 不同")
     start = core.parse_xsd_datetime(activity["startedAt"])
@@ -320,6 +323,7 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
         raise _bad("approves", "approves 须为非空数组")
     if slug is not None and not re.fullmatch(r"[a-z0-9][a-z0-9-]*", slug):
         raise _bad("slug", "slug 只接受小写字母、数字和 -")
+    core.model_slug(model)  # MCP-5: the same model-name rule as the write and read tools, before any git work
     root = gitio.locate_repo(repo, cfg.allow_roots, cfg.repo)
     main_full, main_commit = gitio.resolve_main(root, mainRef or cfg.main_branch)
     _check_branch(root, branch, main_full)
@@ -346,7 +350,7 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
 
     # step 3 + input checks on the headCommit snapshot (the gate the human approves is THIS content)
     with tools.loaded(cfg, repo=root, ref=head) as (ctx, _):
-        mslug = model[len(core.MODEL_BASE):].strip("/").split("/")[0] if model.startswith(core.MODEL_BASE) else model
+        mslug = core.model_slug(model)
         model_iri = f"{core.MODEL_BASE}{mslug}/"
         if not any(ctx.rel(f).startswith(f"models/{mslug}/") for f in ctx.sources):
             raise AisepError("MODEL_NOT_FOUND", f"{head[:7]} 里没有模型 {model}", details={"model": model})
@@ -482,7 +486,7 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
                                  details={"reason": "file-deleted-before-commit"})
             raise _kept("CONFLICT", f"{rel} 在提交前被改动，已从 index 移除、保留文件", rel)
         msg = f"aisep: {gate} {decision} {rec_local}"
-        cmd = ["git", "-C", w, "-c", "trailer.ifexists=add", "commit", "-q", "--only", "-m", msg,
+        cmd = [*gitio.GIT, "-C", w, "-c", "trailer.ifexists=add", "commit", "-q", "--only", "-m", msg,
                "--trailer", f"AISEP-Evidence: {head}"]
         if act_in is not None:
             cmd += ["--trailer", f"AISEP-Session: {act_in['sessionRef']}"]
@@ -567,7 +571,7 @@ def _our_commit(w, root, msg, blob, branch, tip2):
 
 
 def _blob_id(w, data):
-    return subprocess.run(["git", "-C", w, "hash-object", "--stdin"], input=data, capture_output=True).stdout.decode().strip()
+    return subprocess.run([*gitio.GIT, "-C", w, "hash-object", "--stdin"], input=data, capture_output=True).stdout.decode().strip()
 
 
 def _landed(w, root, branch, msg):

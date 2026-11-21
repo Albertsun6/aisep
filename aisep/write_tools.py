@@ -15,7 +15,6 @@ SUBCLASS = core.NS["rdfs"] + "subClassOf"
 MODULE_FILE = {"am4": "am4.ttl", "bpmn": "bpmn.ttl", "uml": "uml.ttl", "ddd": "ddd.ttl", "ext-code": "code.ttl",
                "ext-verification": "verification.ttl"}  # everything else -> governance.ttl (§5.1 table)
 SLUG_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]*$")
-MODEL_SLUG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 LABEL_MAX, DEFINITION_MAX = 200, 4000
 _CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f\u2028\u2029]")
 RDF_TYPE = core.A
@@ -41,13 +40,7 @@ def _model(ws, model):
     """A bare slug or the full model IRI (with or without its trailing '/'); anything path-like is an argument error,
     and the slug must name an existing models/<slug>/ directory with exactly that spelling (case-insensitive file
     systems would otherwise accept 'Procurement')."""
-    slug = model
-    if isinstance(model, str) and model.startswith(core.MODEL_BASE):
-        slug = model[len(core.MODEL_BASE):]
-        slug = slug[:-1] if slug.endswith("/") else slug
-    if not isinstance(slug, str) or not MODEL_SLUG_RE.fullmatch(slug):
-        raise AisepError("INVALID_ARGUMENT", f"model {model!r} 须为模型 slug（^[A-Za-z0-9][A-Za-z0-9_-]*$）或完整模型 IRI",
-                         details={"model": model, "rejectedFields": ["model"]})
+    slug = core.model_slug(model)
     mdir = os.path.join(ws.root, "models")
     if slug not in (os.listdir(mdir) if os.path.isdir(mdir) else ()) or not os.path.isdir(os.path.join(mdir, slug)):
         raise AisepError("MODEL_NOT_FOUND", f"没有模型 {model}（models/{slug}/ 不存在）", details={"model": model})
@@ -230,6 +223,10 @@ def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, def
                 p = ox.NamedNode(core.expand(ctx, a["predicate"]))
             except (ValueError, TypeError) as e:
                 raise _bad("attributes", f"attributes 里有不合法的 IRI、语言标签或值：{e}") from None
+            except AisepError as e:  # core.expand refused an IRI or prefix (its own error names no field)
+                if "rejectedFields" in e.details:
+                    raise
+                raise _bad("attributes", f"attributes 里有不合法的 IRI 或前缀名：{e.message}") from None
             if p.value == RDF_TYPE:  # one element, one type (hard rule 3); the type is the `type` argument
                 raise _bad("attributes", "attributes 不能写 rdf:type，类型只由 type 参数给出")
             if p.value in LABEL_LIMITS and isinstance(o, ox.Literal):  # same rules as the named arguments (SEC-7)

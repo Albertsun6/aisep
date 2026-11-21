@@ -262,8 +262,8 @@ def lock(root):
 
 def locate_worktree_root(cfg, repo):
     path = repo or cfg.repo or os.getcwd()
-    rc, out, _ = gitio.git(path, "rev-parse", "--is-bare-repository")
-    if rc == 0 and out.strip() == "true":
+    rc, out, err = gitio.git(path, "rev-parse", "--is-bare-repository")
+    if (rc == 0 and out.strip() == "true") or gitio.bare_refused(err):
         raise AisepError("NOT_A_WORKTREE", f"{path} 是裸仓库，没有工作区可写")
     return gitio.locate_repo(repo, cfg.allow_roots, cfg.repo)
 

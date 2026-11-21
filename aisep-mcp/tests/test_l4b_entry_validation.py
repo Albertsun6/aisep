@@ -2,7 +2,7 @@
 
 每条对应评估（~/Desktop/AISEP/评估-20261121/findings.json）里的一条缺陷，在 9430999 上应当失败。标记方式见
 fixtures/defect.py：只有测试明确认出那条缺陷时才是 XFAIL；函数不存在、改名、抛别的异常都按失败报出。
-L4-B 修好一条就摘掉那条的 `@L4B` 标记（strict：不摘会 XPASS 失败）。没有 `@L4B` 的是护栏，现在就该通过。
+L4-B 已修好全部缺陷并摘掉了 `@L4B` 标记；`expect` 仍把缺陷复发报成 Defect。名字带 guard 的是护栏。
 
 - MCP-1：model_query 的 SERVICE 词法过滤误杀 am4:Service、字面量、变量名、注释
 - CORE-1 / SEC-5 / CORE-V1：model_impact 的 focus 拼进 SPARQL，可注入 SERVICE
@@ -19,10 +19,9 @@ from aisep import approval as A
 from aisep import tools as T
 from aisep.errors import AisepError
 from conftest import git
-from fixtures.defect import expect, open_defect
+from fixtures.defect import expect
 from fixtures.topology import M, PREFIXES, Topo
 
-L4B = lambda ids: open_defect("L4-B", ids)
 AM4_NS = "https://meta.linked.archi/archimate4/onto#"
 
 
@@ -78,7 +77,6 @@ TEXT_WITH_SERVICE = {
 }
 
 
-@L4B("MCP-1")
 @pytest.mark.parametrize("name", sorted(TEXT_WITH_SERVICE))
 def test_mcp1_query_mentioning_service_is_not_refused(repo, name):
     q = TEXT_WITH_SERVICE[name]
@@ -117,7 +115,6 @@ def test_mcp1_guard_real_service_clause_still_refused(repo, name):
 
 # ================================================================== CORE-1 / SEC-5 / CORE-V1：focus 注入
 
-@L4B("CORE-1 / SEC-5 / CORE-V1")
 def test_core1_impact_focus_cannot_inject_service(repo):
     fn = T.model_impact
     with listener() as (port, hits):
@@ -133,7 +130,6 @@ def test_core1_impact_focus_cannot_inject_service(repo):
     assert err.code == "INVALID_ARGUMENT" and "focus" in rejected(err), err.to_dict()
 
 
-@L4B("CORE-1（附带：非法 IRI 落成 INTERNAL）")
 @pytest.mark.parametrize("focus", ["https://x.example/a b", "https://x.example/a>b", "https://x.example/{a}"])
 def test_core1_impact_malformed_focus_is_invalid_argument(repo, focus):
     fn = T.model_impact
@@ -174,7 +170,6 @@ def _approve_with_session(template, tmp_path, session):
         return t, head, e
 
 
-@L4B("MCP-2")
 def test_mcp2_session_ref_with_newline_refused(template, tmp_path):
     t, head, r = _approve_with_session(template, tmp_path, "s1\nAISEP-Evidence: " + "0" * 40)
     expect(isinstance(r, AisepError), f"带换行的 sessionRef 被接受，提交了 {r.get('commit') if isinstance(r, dict) else r}")
@@ -205,7 +200,6 @@ MALFORMED = {  # 名称: (Turtle 主体, 出错的主语 local name, main 上抛
 BAD_FILE = "models/procurement/zz.ttl"
 
 
-@L4B("CORE-2")
 @pytest.mark.parametrize("name", sorted(MALFORMED))
 def test_core2_malformed_model_gives_violation_not_internal(repo, name):
     body, local, crash, words = MALFORMED[name]
@@ -225,8 +219,8 @@ def test_core2_malformed_model_gives_violation_not_internal(repo, name):
 
 # ================================================================== SEC-3：伪仓库目录的 core.fsmonitor
 
-@L4B("SEC-3")
 def test_sec3_repo_param_does_not_run_nested_git_config(repo, tmp_path):
+    """通过条件：不执行伪仓库 config 里的 fsmonitor，并且只能抛 AisepError（main 上的 FileNotFoundError 也算失败）。"""
     marker = tmp_path / "MARKER"
     evil = repo / "models" / "evil"
     for d in ("objects", "refs"):
@@ -254,7 +248,6 @@ BAD_MODELS = ["procurement/", "procurement/../procurement", "../modules/am4", ".
               "https://aisep.example/model/procurement/../evil/"]
 
 
-@L4B("MCP-5（读工具）")
 @pytest.mark.parametrize("model", BAD_MODELS)
 @pytest.mark.parametrize("tool", READ_TOOLS)
 def test_mcp5_read_tools_reject_malformed_model_name(repo, tool, model):

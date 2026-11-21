@@ -24,16 +24,11 @@ class Config:
 
 # ---------------------------------------------------------------- loading: workspace or a commit's snapshot (§3.3)
 
-def _model_slug(model):
-    if model.startswith(core.MODEL_BASE):
-        return model[len(core.MODEL_BASE):].strip("/").split("/")[0]
-    return model
-
-
 @contextlib.contextmanager
 def loaded(cfg, repo=None, ref=None, model=None):
     """Yields (ctx, source). Without ref: the worktree's files (§3.3 file set, safe open). With ref: that commit's
     models/ modules/ vendor/ materialised to a temp dir. model: only models/<slug>/ files."""
+    slug = None if model is None else core.model_slug(model)
     root = gitio.locate_repo(repo, cfg.allow_roots, cfg.repo)
     with contextlib.ExitStack() as stack:
         if ref is None:
@@ -42,8 +37,7 @@ def loaded(cfg, repo=None, ref=None, model=None):
             commit = gitio.resolve_commit(root, ref)
             base, files = stack.enter_context(gitio.snapshot(root, commit))
             stack.callback(core.forget_paths, base)
-        if model is not None:
-            slug = _model_slug(model)
+        if slug is not None:
             files = [f for f in files if f.startswith(f"models/{slug}/")]
             if not files:
                 raise AisepError("MODEL_NOT_FOUND", f"没有模型 {model}（models/{slug}/ 下没有 .ttl 文件）",
@@ -164,7 +158,34 @@ def model_gate(cfg, repo=None, ref=None, model=None):
 
 _UPDATE_RE = re.compile(r"(?is)^(?:\s|#[^\n]*(?:\n|$)|PREFIX\s+[\w.-]*:\s*<[^>]*>|BASE\s*<[^>]*>)*"
                         r"(INSERT|DELETE|LOAD|CLEAR|CREATE|DROP|COPY|MOVE|ADD|WITH)\b")
-_SERVICE_RE = re.compile(r"(?i)\bSERVICE\b")
+# MCP-1: SERVICE is looked for only where the SPARQL grammar can have a keyword. Strings, IRIs, comments, variables,
+# prefixed names / blank node labels and language tags are blanked out first (am4:Service, ?service, 'service' and
+# "# service" are data, not the keyword); what is left is matched WITHOUT word boundaries, so a keyword glued to a
+# number or punctuation still counts. SPARQL decodes \uXXXX / \UXXXXXXXX escapes anywhere in the query text before
+# parsing (pyoxigraph does: \u0053ERVICE is a real SERVICE), so both the raw and the decoded text are scanned.
+_NOT_KEYWORD = re.compile(r"""
+      '''(?:[^'\\]|\\.|'(?!''))*'''
+    | \"\"\"(?:[^"\\]|\\.|"(?!""))*\"\"\"
+    | '(?:[^'\\\n\r]|\\.)*'
+    | "(?:[^"\\\n\r]|\\.)*"
+    | <[^<>"{}|^`\\\x00-\x20]*>
+    | \#[^\n\r]*
+    | [?$]\w+
+    | @[A-Za-z]+(?:-[A-Za-z0-9]+)*
+    | (?:[^\W\d][\w.-]*)?:(?:[\w.:%-]|\\.)*
+    """, re.X)
+_ESCAPE_RE = re.compile(r"\\u([0-9A-Fa-f]{4})|\\U([0-9A-Fa-f]{8})")
+
+
+def _decode_escapes(text):
+    def one(m):
+        n = int(m.group(1) or m.group(2), 16)
+        return chr(n) if n <= 0x10FFFF else m.group(0)
+    return _ESCAPE_RE.sub(one, text)
+
+
+def _has_service(sparql):
+    return any("service" in _NOT_KEYWORD.sub(" ", t).lower() for t in (sparql, _decode_escapes(sparql)))
 
 
 def _term(v):
@@ -202,7 +223,9 @@ def _run_query(ctx, sparql, limit):
 def model_query(cfg, sparql, limit=QUERY_LIMIT, timeoutMs=QUERY_TIMEOUT_MS, allowPartial=False, repo=None, ref=None):
     if not isinstance(limit, int) or not 1 <= limit <= QUERY_LIMIT_MAX:
         raise AisepError("INVALID_ARGUMENT", f"limit 须为 1–{QUERY_LIMIT_MAX}", details={"rejectedFields": ["limit"]})
-    if _SERVICE_RE.search(sparql):  # pyoxigraph would really send the HTTP request (F6)
+    if not isinstance(sparql, str):
+        raise AisepError("INVALID_ARGUMENT", "sparql 须为字符串", details={"rejectedFields": ["sparql"]})
+    if _has_service(sparql):  # pyoxigraph would really send the HTTP request (F6)
         raise AisepError("QUERY_NOT_READONLY", "查询里有 SERVICE，不允许访问外部端点",
                          hint="去掉 SERVICE 子句，只查本地模型")
     with loaded(cfg, repo, ref) as (ctx, source):
@@ -262,7 +285,10 @@ def model_impact(cfg, focus, mode="depends", depth=3, allowInvalid=False, repo=N
             raise AisepError("MODEL_INVALID", f"模型有 {len(viol)} 个 L0–L2 违规，拒绝计算影响面",
                              hint="先修好违规；确需在不合法模型上看影响面时传 allowInvalid: true",
                              details={"findings": viol})
-        start = core.expand(ctx, focus)
+        try:
+            start = core.expand(ctx, focus)
+        except AisepError as e:
+            raise AisepError("INVALID_ARGUMENT", f"focus：{e.message}", details={"rejectedFields": ["focus"]}) from None
         if not ctx.types(start):
             raise AisepError("ELEMENT_NOT_FOUND", f"{core.short(start)} 不是已加载模型里的元素",
                              hint="从 details.candidates 里选一个 IRI 重试", details={"candidates": _candidates(ctx, start)})
