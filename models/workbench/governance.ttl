@@ -1,0 +1,10 @@
+# AISEP 工作台模型 — 治理部分。
+# 手写的只有人类批准人（不是 aisep:AIAgent）。批准记录只能由批准人本人在工作台关口页做出，不在这里手写。
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/workbench/> .
+
+:projectLead a arch:Stakeholder ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "项目负责人"@zh ; skos:altLabel "Project Lead"@en .

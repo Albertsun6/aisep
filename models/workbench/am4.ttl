@@ -1,0 +1,10 @@
+# AISEP 工作台模型 — ArchiMate 4.0（枢纽）部分。
+# 第一条端到端链路的载体需求「批准进度展示」。只有 arch:Model 声明是手写的；元素与关系一律经 MCP 写工具写入。
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/workbench/> .
+
+<https://aisep.example/model/workbench/> a arch:Model ;
+    skos:prefLabel "AISEP 工作台"@zh ; skos:altLabel "AISEP Workbench"@en .
