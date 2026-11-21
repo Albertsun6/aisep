@@ -18,10 +18,15 @@
 ## 分支与合并（一律走 PR）
 1. **不直接推 `main`**：改动在 `claude/<主题>` 分支上做（用 worktree：`.claude/worktrees/<主题>`），推送后开 PR 到 `main`。
 2. **自动合并（Albert 2026-11-20 定）**：PR 不再逐个等 Albert 批准，满足下面全部条件就合并：
-   - CI 的全部必需检查通过（当前为 `gate`、`mergecheck`；以分支保护设置为准）；
+   - CI 的全部必需检查通过（当前为 `gate`、`mergecheck`、`pytest`；以分支保护设置为准）；
    - 独立评审通过：由一个没参与该 PR 实现、也没写它测试的 agent 评审 PR 头提交，没有阻塞问题；评审之后又加了提交，就要对新的头重新评审；
    - 只由**协调会话**执行合并。开 PR 的会话只开 PR、回报，不自己合并；
-   - 合并提交写明「自动合并：必需检查通过、独立评审通过（评审要点）」，并用 `--match-head-commit` 锁定评审过的头提交。
+   - 涉及 mergecheck 的 PR（改到 `aisep/mergecheck.py`、`aisep/diff.py`、`aisep/approval.py`，或 `aisep/core.py` 的批准核对与 approvalState 推导）合并前，须在本地跑第四轮负例 `$PY -m pytest -q -n auto aisep-mcp/tests/test_merge_check_negatives.py` 并全绿。CI 的 `pytest` 不跑这个文件（单跑约 21 分钟，Albert 2026-11-20 拍板），这是唯一的保障（ADR-017）；
+   - 合并按下面三步执行（接口文档 §5.9「合并前重算」、第四轮 R4-11、ADR-017）。H 是评审过的 PR 头（`gh pr view N --json headRefOid,headRefName`），`<分支>` 是 PR 源分支名：
+     1. **合并前重算**：`git fetch origin` 后跑 `$PY -m aisep.mergecheck --pr-head H --head-ref <分支> --target main`。`--target main` 取远端跟踪分支 `origin/main`，所以必须先 fetch。输出里的 `T` 就是重算用的目标分支头。退出码不是 0（`problems` 非空）就不合。
+     2. **复核目标分支没动**：`$PY -m aisep.mergecheck --target main --target-unchanged T`。它用 `ls-remote` 比对远端，输出 `targetUnchanged: false`（退出码 1）时，说明 main 已经前进，回到第 1 步重算。
+     3. **合并与合并后核验**：`gh pr merge N --merge --match-head-commit H`。合并后 `git fetch origin`，取新的 main 头 M，跑 `$PY -m aisep.mergecheck --post-merge M --t-used T --pr-head H --head-ref <分支>`。不通过（退出码 1）就立即开 revert PR，并报告 Albert。
+   - 合并提交说明写明「自动合并：必需检查通过、独立评审通过（评审要点）」，并记下 T、H 以及第 1、2 步的结果（如「合并前重算：T=…，H=…，problems=[]；targetUnchanged=true」）。第 3 步的核验结果在合并后才有，写进 PR 评论。
    Albert 在会话里明确说「先别合 #N」时，就不合。这一条只管代码与文档 PR 的合并；**模型里的批准记录（`ApprovalRecord`）仍只能由 Albert 本人做出**，AI 不得以他的名义新增批准记录。
 3. **用合并提交**：`gh pr merge --merge`，不用 squash / rebase，保留分支上的提交可达（关口回看历史批准依赖 commit 可达，见 `docs/mcp-interface.md`）。
 4. **PR 即锁**：开工前看开着的 PR；某文件已在别的 PR 里被改，就不碰它，去那个 PR 留言或等合并。
