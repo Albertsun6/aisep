@@ -1,0 +1,16 @@
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/workbench/> .
+
+:approval-20261121134619-architecture-0cb83bf a aisep:ApprovalRecord ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "架构决策批准：嵌套检出扫描限制下探深度等 11 项"@zh ;
+    aisep:gate aisep:GateArchitecture ;
+    aisep:decision aisep:DecisionApproved ;
+    aisep:approvedBy <https://aisep.example/model/workbench/projectLead> ;
+    aisep:approves <https://aisep.example/model/workbench/acNestedScanDepthLimited> , <https://aisep.example/model/workbench/acNestedScanNoSymlinks> , <https://aisep.example/model/workbench/acNestedScanNotSelf> , <https://aisep.example/model/workbench/acNestedScanSkipsDependencyDirs> , <https://aisep.example/model/workbench/devLauncherCode> , <https://aisep.example/model/workbench/reqNestedCheckoutScan> , <https://aisep.example/model/workbench/tcNestedScanDepthLimited> , <https://aisep.example/model/workbench/tcNestedScanNoSymlinks> , <https://aisep.example/model/workbench/tcNestedScanNotSelf> , <https://aisep.example/model/workbench/tcNestedScanSkipsDependencyDirs> , <https://aisep.example/model/workbench/workbenchLauncherBC> ;
+    aisep:evidence "0cb83bf7ed1b92871a45fff08b151a2857784c36" ;
+    prov:generatedAtTime "2026-11-21T13:46:19Z"^^xsd:dateTime .
