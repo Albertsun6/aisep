@@ -1,0 +1,28 @@
+# expect: EV14:
+# modules: ext-code
+# Invalid: tested commit stated on a CodeLocation (approved, long-lived) instead of on a TestResult of one run.
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix arch:   <https://meta.linked.archi/core#> .
+@prefix am4:    <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep:  <https://aisep.example/ont/aisep#> .
+@prefix :       <https://aisep.example/model/ext-verification-test/> .
+
+:model a arch:Model ;
+    skos:prefLabel "验证扩展测试模型"@zh .
+
+:quoteSvc a am4:ApplicationComponent ;
+    arch:inModel :model ;
+    skos:prefLabel "报价服务"@zh .
+
+:loc a aisep:CodeLocation ;
+    arch:inModel :model ;
+    skos:prefLabel "报价审批代码"@zh ;
+    schema:codeRepository <https://git.example.com/acme/quote-service> ;
+    aisep:path "src/quote/approval.py" ;
+    aisep:testedCommit "0123456789abcdef0123456789abcdef01234567" .
+
+:impl a aisep:Implementation ;
+    arch:inModel :model ;
+    arch:source :loc ;
+    arch:target :quoteSvc .
