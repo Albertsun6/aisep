@@ -236,3 +236,39 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :tcRepeatApprovalOtherGateOrReject ;
     arch:target :acOtherGateOrRejectAllowed .
+
+:trRepeatApprovalSameSelection79f4f4b a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "同一选择重复批准被禁用测试：通过（aisep-main 79f4f4b）"@zh ;
+    skos:altLabel "Same-selection repeat approval is blocked test: passed (aisep-main 79f4f4b)"@en ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 79f4f4b853864f5c9c0a135210a1770464b312f2（合并 PR #20）上，GitHub Actions CI 运行 44924597097（push 触发）：「frontend / vitest (2)」任务（136907856469）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（24 tests，无跳过、无失败），日志时间 2026-11-21T16:28:54Z，其中 describe「repeat approval guard: same selection」2 条；「frontend / vitest (1)」任务（136907856417）里 frontend/src/renderer/aisep/data/approval-progress.test.ts 整个文件通过（24 tests），其中 describe「approval coverage」10 条，日志时间 2026-11-21T16:30:48Z。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出块内各条通过；时间取两个文件中较晚的一个。"@zh ;
+    aisep:resultOf :tcRepeatApprovalSameSelection ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-21T16:30:48Z"^^xsd:dateTime ;
+    aisep:testedCommit "79f4f4b853864f5c9c0a135210a1770464b312f2" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/44924597097> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
+
+:trRepeatApprovalOtherGateOrReject79f4f4b a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "换关口、新元素、驳回与内容改动后仍可操作测试：通过（aisep-main 79f4f4b）"@zh ;
+    skos:altLabel "Another gate, a new element, a rejection or new content stays possible test: passed (aisep-main 79f4f4b)"@en ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 79f4f4b853864f5c9c0a135210a1770464b312f2（合并 PR #20）上，GitHub Actions CI 运行 44924597097（push 触发）：「frontend / vitest (2)」任务（136907856469）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（24 tests，无跳过、无失败），日志时间 2026-11-21T16:28:54Z，其中 describe「repeat approval guard: other gate or reject」4 条。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出块内各条通过。"@zh ;
+    aisep:resultOf :tcRepeatApprovalOtherGateOrReject ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-21T16:28:54Z"^^xsd:dateTime ;
+    aisep:testedCommit "79f4f4b853864f5c9c0a135210a1770464b312f2" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/44924597097> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
+
+:trRepeatApprovalCoverageUnknown79f4f4b a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "读不到批准记录时退回确认框测试：通过（aisep-main 79f4f4b）"@zh ;
+    skos:altLabel "Coverage unknown falls back to confirmation test: passed (aisep-main 79f4f4b)"@en ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 79f4f4b853864f5c9c0a135210a1770464b312f2（合并 PR #20）上，GitHub Actions CI 运行 44924597097（push 触发）：「frontend / vitest (2)」任务（136907856469）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（24 tests，无跳过、无失败），日志时间 2026-11-21T16:28:54Z，其中 describe「repeat approval guard: coverage unknown」1 条。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出块内各条通过。"@zh ;
+    aisep:resultOf :tcRepeatApprovalCoverageUnknown ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-21T16:28:54Z"^^xsd:dateTime ;
+    aisep:testedCommit "79f4f4b853864f5c9c0a135210a1770464b312f2" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/44924597097> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
