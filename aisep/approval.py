@@ -286,6 +286,14 @@ def _stuck(rel, what, **details):
                       details=dict(details, orphanApproval=True, recover=_recover(rel)), retryable=False)
 
 
+def _kept(code, msg, rel, **details):
+    """Every "kept" exit (record file changed by someone else, kept on disk, out of the index): not retryable — an
+    unchanged retry meets DIRTY_WORKTREE + orphanApproval."""
+    return AisepError(code, msg, retryable=False,
+                      hint=f"{rel} 已被别人改过，保留未删；人工检查后清理（{_recover(rel)}），再重新批准",
+                      details=dict(details, fileKept=True, recover=_recover(rel)))
+
+
 # ---------------------------------------------------------------- the tool
 
 def _states(ctx, iris):
@@ -452,9 +460,11 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
         rc, _, err = gitio.git(w, "add", "--intent-to-add", "--", rel)
         if rc != 0:  # nothing staged (git add takes index.lock or fails as a whole)
             tail = "\n".join(err.strip().splitlines()[-50:])
-            if _unstage_and_maybe_delete(w, rel, written, staged=False) == "kept":
-                raise AisepError("CONFLICT", f"git add 失败，且 {rel} 已被改动：保留文件", retryable=False,
-                                 details={"output": tail})
+            undone = _unstage_and_maybe_delete(w, rel, written, staged=False)
+            if undone == "taken":
+                raise _taken(w, rel, "git add 失败", output=tail)
+            if undone == "kept":
+                raise _kept("CONFLICT", f"git add 失败，且 {rel} 已被改动：保留文件", rel, output=tail)
             raise AisepError("COMMIT_FAILED", "git add 失败，已删除新建的记录文件", details={"output": tail},
                              retryable="index.lock" in tail)
         if _sha_file(w, rel) != written:
@@ -463,8 +473,7 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
                 raise _taken(w, rel, f"{rel} 在提交前被改动")
             if undone == "stuck":
                 raise _stuck(rel, f"{rel} 在提交前被改动")
-            raise AisepError("CONFLICT", f"{rel} 在提交前被改动，已从 index 移除、保留文件", retryable=False,
-                             hint=f"人工检查保留的 {rel}（已被别人改过，不自动删除）；处理后再重新批准", details={"fileKept": True})
+            raise _kept("CONFLICT", f"{rel} 在提交前被改动，已从 index 移除、保留文件", rel)
         msg = f"aisep: {gate} {decision} {rec_local}"
         cmd = ["git", "-C", w, "-c", "trailer.ifexists=add", "commit", "-q", "--only", "-m", msg,
                "--trailer", f"AISEP-Evidence: {head}"]
@@ -479,8 +488,8 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
             if undone == "stuck":
                 raise _stuck(rel, "git commit 失败", output=tail)
             if undone == "kept":
-                raise AisepError("CONFLICT", f"提交失败，且 {rel} 已被钩子或编辑器改动：保留文件、已移出 index",
-                                 details={"output": tail}, retryable=False)
+                raise _kept("CONFLICT", f"提交失败，且 {rel} 已被钩子或编辑器改动：保留文件、已移出 index", rel,
+                            output=tail)
             raise AisepError("COMMIT_FAILED", "git commit 失败（钩子拒绝或 index.lock 被占用），已回滚",
                              details={"output": tail}, retryable="index.lock" in tail)
         blob = _blob_id(w, data)
@@ -501,6 +510,9 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
                 raise AisepError("STALE_HEAD", f"提交期间分支有新提交，已撤回提交 {a[:7]}，但 {rel} 仍在 index 和磁盘上",
                                  hint="人工恢复：" + _recover(rel), details={
                                      "reason": "concurrent-commit", "orphanApproval": True, "recover": _recover(rel)})
+            if undone == "kept":
+                raise _kept("STALE_HEAD", f"提交期间分支有新提交，已撤回提交 {a[:7]}；{rel} 已被改动，保留在磁盘上、已移出 index",
+                            rel, reason="concurrent-commit")
             raise AisepError("STALE_HEAD", "提交期间分支有新提交，已撤回本次批准", details={"reason": "concurrent-commit"})
     return {"approval": {"iri": model_iri + rec_local, "file": rel},
             "activity": None if act_in is None else {"iri": act_iri, "reused": act_new is None},
@@ -585,8 +597,8 @@ def _misplaced(w, root, branch, msg, rel, written, blob, tip2):
         raise AisepError("CONFLICT", f"{w} 在校验期间被切走，已撤回落错的提交，但 {rel} 仍在 index 和磁盘上", retryable=False,
                          hint="人工恢复：" + _recover(rel), details=dict(details, orphanApproval=True, recover=_recover(rel)))
     if undone == "kept":
-        raise AisepError("CONFLICT", f"{w} 在校验期间被切走，已撤回落错的提交，但 {rel} 已被改动：保留文件、已移出 index",
-                         retryable=False, hint=f"人工检查保留的 {rel}（已被别人改过，不自动删除）；处理后再重新批准", details=dict(details, fileKept=True))
+        raise _kept("CONFLICT", f"{w} 在校验期间被切走，已撤回落错的提交，但 {rel} 已被改动：保留文件、已移出 index", rel,
+                    **details)
     raise AisepError("CONFLICT", f"{w} 在校验期间被切到别的分支，已撤回落错的批准提交，{branch} 未改动", retryable=True,
                      details=details)
 
