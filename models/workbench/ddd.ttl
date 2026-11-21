@@ -25,3 +25,15 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :workbenchGovernanceBC ;
     arch:target :governanceSubdomain .
+
+:workbenchLauncherBC a ddd:BoundedContext ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "工作台本地启动与预检上下文"@zh ;
+    skos:altLabel "Workbench local launch and preflight"@en ;
+    skos:definition "一键启动脚本所在的上下文：起 aisep MCP 服务与工作台网页版，区分预览模式与批准模式的 allow-root，批准前只读预检。语言是进程、端口、专用检出、allow-root，与关口页的关口、批准记录、进度不同，所以和工作台治理上下文分开。"@zh ;
+    ddd:contextType ddd:Application .
+
+:rel-workbenchLauncherBC-implements-governanceSubdomain a ddd:SubdomainImplementation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :workbenchLauncherBC ;
+    arch:target :governanceSubdomain .

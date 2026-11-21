@@ -25,3 +25,15 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :gateApprovalFlow ;
     arch:target :reqApprovalProgress .
+
+:reqNestedCheckoutScan a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "预览模式的嵌套检出检查有界且准确"@zh ;
+    skos:altLabel "Bounded and accurate nested-checkout check in preview mode"@en ;
+    skos:definition "一键启动脚本在预览模式启动时，检查专用检出里面有没有别的 git 检出（有就拒绝启动，免得上面的分支在预览模式下能被批准）。这项检查必须在有限时间内结束且结果准确：限制下探深度、跳过依赖目录、不跟随符号链接、不把专用检出自身当成另一个检出。"@zh ;
+    aisep:priority aisep:Must .
+
+:rel-gateApprovalFlow-realizes-reqNestedCheckoutScan a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gateApprovalFlow ;
+    arch:target :reqNestedCheckoutScan .
