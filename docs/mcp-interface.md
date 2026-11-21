@@ -179,7 +179,7 @@
   2. 写前哈希核对：读入时记下目标文件 sha256；rename 前再算一次，不等就 `CONFLICT`（可重试）。**这不是真正的比较并交换**（R2-3）：外部编辑器、普通 `git` 命令不遵守 `aisep-write.lock`，在"核对哈希"与 `rename` 之间写入的内容会被静默覆盖。这个窗口只有毫秒级，v1 接受，列为已知限制（§9 附录 C）；不采用原子交换（Linux `renameat2(RENAME_EXCHANGE)`、macOS `renamex_np(RENAME_SWAP)`）再核对换出旧文件的做法：平台相关，换回时还有同样的窗口。T13 加一例：在核对之后、rename 之前注入外部写入，断言结果如上所述（被覆盖），证明文档如实。
   3. 替换：写临时文件 → `fsync` → `rename`。多个文件先全部写成临时文件，再依次 rename；进程内中途失败用内存里的原字节恢复，恢复前先比对文件仍等于本次写入后的哈希，不等就保留现场、报 `CONFLICT`，**不可重试**，`details.kept: true`（PR #34；`aisep/writer.py` 回滚处）。
   4. **不是崩溃原子的**：进程在两次 rename 之间被杀（SIGKILL、宿主断开时杀子进程、断电），工作区会停在部分写入。服务器无状态，不做恢复日志；兜底是 pre-commit 的 gate（部分写入通常留下悬空引用，L1 报错）和 `git diff` 人工恢复。验收 T13 注入 SIGKILL 证明 gate 能拦住。
-- `record_approval` 的提交另受 Git 自己的 `index.lock` 保护，拿不到报 `COMMIT_FAILED`；只在回滚完成、且输出含 `index.lock` 时可重试，回滚未完成（`orphanApproval`）不可重试（§7.2）。
+- `record_approval` 的提交另受 Git 自己的 `index.lock` 保护，拿不到报 `COMMIT_FAILED`；只在回滚完成、且输出含 `index.lock` 时可重试，回滚未完成（`orphanApproval`）不可重试（§7.2）。（例外：main 现状下 `git add --intent-to-add` 失败时，即使记录已被别的提交带走（taken）、并未回滚，也照样报 `COMMIT_FAILED`，含 `index.lock` 时判为可重试；见 §7.2 表下 `COMMIT_FAILED` 一段。）
 
 ### 3.5 无状态的落实
 
@@ -876,7 +876,7 @@ C 的附带决定（同在 Q4，已拍板收紧）：`aisep:approvedBy` **只接
 | 参数 | `INVALID_ARGUMENT`、`UNKNOWN_TYPE`、`ABSTRACT_TYPE`、`INVALID_DATETIME`、`ACTIVITY_TIME_ORDER`、`GATE_UNKNOWN` | 否 |
 | 定位 | `MODULES_NOT_IN_REF`、`PATH_OUTSIDE_ROOT`、`NOT_A_GIT_REPO`、`NOT_A_WORKTREE`、`MODEL_NOT_FOUND`、`ELEMENT_NOT_FOUND`、`REF_NOT_FOUND`、`BRANCH_NOT_CHECKED_OUT`、`WORKTREE_NOT_FOUND` | 否 |
 | 语义拒绝 | `PLAN_STALE`、`STALE_BASE`、`WRITE_REJECTED`、`REFERENCED`、`CASCADE_REQUIRED`、`PROTECTED_RESOURCE`、`IRI_EXISTS`、`MODEL_INVALID`（G9）、`GATE_FAILED`、`APPROVER_NOT_ALLOWED`、`AGENT_NOT_ALLOWED`、`STALE_HEAD` | 否 |
-| Git | `NO_MERGE_BASE`、`AMBIGUOUS_MERGE_BASE`、`DETACHED_HEAD`、`DIRTY_WORKTREE`、`COMMIT_FAILED` | `COMMIT_FAILED` 只在 `index.lock` 被占用、且已回滚时是；回滚未完成（`orphanApproval`）为否 |
+| Git | `NO_MERGE_BASE`、`AMBIGUOUS_MERGE_BASE`、`DETACHED_HEAD`、`DIRTY_WORKTREE`、`COMMIT_FAILED` | `COMMIT_FAILED` 只在 `index.lock` 被占用、且已回滚时是；回滚未完成（`orphanApproval`）为否（例外：main 现状下 `git add --intent-to-add` 失败遇到 taken 时未回滚，仍报 `COMMIT_FAILED`，含 `index.lock` 即为是；见本表下 `COMMIT_FAILED` 一段） |
 | 并发 | `LOCKED`、`CONFLICT`、`WORKTREE_CHANGED` | `LOCKED`、`WORKTREE_CHANGED` 是；`CONFLICT` 见表下 |
 | 解析 | `PARSE_FAILED`、`EDIT_UNSAFE`、`DIFF_PARSE_FAILED`、`DIFF_BNODE_UNSUPPORTED`、`QUERY_FAILED`、`QUERY_NOT_READONLY`、`QUERY_TIMEOUT` | 只有超时是 |
 | 其他 | `INTERNAL`（带 stderr 摘要） | 否 |
@@ -1065,7 +1065,7 @@ export const APPROVAL_STATE_IRI: Record<string, ApprovalState> = {
 	"https://aisep.example/ont/aisep#Superseded": "Superseded",
 };
 // 推导范围是口径 A（Albert 已定，#29 已实现，见规范 §6.6）：aisep:ApprovalRecord、aisep:AgentActivity、arch:Stakeholder 都没有 approvalState。
-// 两条固定查询（D4：只是工作台的固定 SPARQL，不是新工具），缺省读主分支（ELEMENTS_QUERY 另按 ref=branch 读会话分支，用于"已批准、待合并"标记，§2）、都排除 aisep:ApprovalRecord 与 aisep:AgentActivity 的实例
+// 两条固定查询（D4：只是工作台的固定 SPARQL，不是新工具），缺省读主分支（"已批准、待合并"标记另按 ref=branch 读会话分支：选法同 ELEMENTS_QUERY，另加 arch:Model 实例本身，§2）、都排除 aisep:ApprovalRecord 与 aisep:AgentActivity 的实例
 // （它们也是 arch:Element、也有 inModel 和 zh 名称，实测：采购例子里 approval-20261119-arch-baseline）：
 // - ELEMENTS_QUERY（架构全景）：选有 arch:inModel 和 zh 名称的主语；arch:approvalState 用 OPTIONAL。缺失 → 显示"无批准状态"
 //   （如 Stakeholder），**不**当作 Proposed：那个状态不是推导给出的，违背 P4。
