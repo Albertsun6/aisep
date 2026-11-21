@@ -14,7 +14,7 @@
 
 <https://aisep.example/ont/aisep/ext-verification> a owl:Ontology ;
     rdfs:label "AISEP verification extension"@en ;
-    owl:versionInfo "0.2.0" .
+    owl:versionInfo "0.3.0" .
 
 ########## Classes ##########
 
@@ -75,6 +75,20 @@ aisep:verdict a owl:ObjectProperty ;
     skos:definition "Outcome of the run; one concept of aisep:VerdictScheme. Timestamp: prov:generatedAtTime."@en ;
     # oslc_qm:status is a provider-defined literal; ours is a closed SKOS scheme.
     skos:closeMatch <http://open-services.net/ns/qm#status> .
+
+# Provenance of one run (v0.3.0): which commit was tested and which CI run produced the result. The repository is
+# schema:codeRepository (an authoring-profile predicate, G7). Both optional; EV11–EV14 in shapes.ttl. They anchor a
+# result to a commit without touching the (approved, long-lived) aisep:CodeLocation.
+aisep:testedCommit a owl:DatatypeProperty ;
+    rdfs:domain aisep:TestResult ;
+    rdfs:range xsd:string ;
+    skos:prefLabel "被测提交"@zh , "tested commit"@en ;
+    skos:definition "The 40-hex git commit id the run tested (same form as aisep:headCommit)."@en .
+
+aisep:ciRun a owl:ObjectProperty ;
+    rdfs:domain aisep:TestResult ;
+    skos:prefLabel "CI 运行"@zh , "CI run"@en ;
+    skos:definition "IRI of the CI run (e.g. a GitHub Actions run or job URL) that produced the result."@en .
 
 ########## Verdict scheme ##########
 
