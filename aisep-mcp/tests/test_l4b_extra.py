@@ -1,6 +1,6 @@
 """L4-B 补充回归：先行测试（test_l4b_entry_validation.py）之外、实现时发现或顺带守护的几条。
 
-- SERVICE 判定（与 main 相同的 \\bSERVICE\\b）对评审 #56 里的粘连写法、伪 IRI、字符串与 IRI 内转义仍拒绝；差分模糊
+- 评审 #56 里的粘连写法、伪 IRI、字符串与 IRI 内转义：查询进程无网络（issue #60），都报 QUERY_NOT_READONLY 且零连接；差分模糊
 - gitio.read_file / open_dir 拒绝 `.`、`..`、空段
 - 批准路径与读工具共用模型 slug 校验
 - SEC-3：检出里伪造的嵌套仓库不执行它的 fsmonitor、过滤器
@@ -149,8 +149,9 @@ def test_fsmonitor_is_off_for_every_git_call(tmp_path):
     assert marker.exists(), "夹具：不加开关时 git 确实会跑这个 fsmonitor"
 
 
-# 评审 #56 第二、三轮：差分模糊。以 pyoxigraph 自己为判据：凡 _SERVICE_RE 放行的查询，pyoxigraph 执行时都不能发起连接；
-# 被拒的抽样执行，确认这批变形里确有真会外连的。判定是 main 原样的 \bSERVICE\b；放宽判定（MCP-1，另一个 PR）时它自动守住不漏。
+# 评审 #56 第二、三轮：差分模糊。原先以词法判定为对象；issue #60 起查询在无网络子进程里执行、不再识别文本，判据改成：
+# 抽样的每条变形查询（加随机字符级变异）经 querybox.run（model_query 用的同一函数）执行，无论被接受还是报错都零连接；
+# 同一批里抽一部分直接交给进程内的 pyoxigraph，确认这批变形里确有真会外连的。
 _I = chr(0x130)  # İ：lower() 后变成两个码点
 _PADS = ["", " ", "# c\n", "# " + _I * 12 + "\n", "#" + _I * 30 + "\n",
          "PREFIX x: <http://x.example/" + _I * 40 + "> ", "BASE <http://x.example/" + _I * 9 + "/> "]
@@ -185,18 +186,40 @@ def _run(q):
         pass
 
 
-def test_service_filter_differential_fuzz():
-    import time
+_MUT = ["SERVICE", "service", " ", "#", "\n", "'", '"', "<", ">", ":", "{", "}", _E + "u0053", _E + "u0022", _I, "?e "]
+
+
+def _mutate(rng, q):
+    for _ in range(rng.randint(1, 4)):
+        i = rng.randrange(len(q) + 1)
+        q = q[:i] + rng.choice(_MUT) + q[i + rng.choice((0, 0, 1)):]
+    return q
+
+
+def test_service_differential_fuzz():
+    import random, time
+    from aisep import querybox
+    import pyoxigraph as ox
+    seed = random.randrange(2 ** 32)
+    rng = random.Random(seed)
     with listener() as (port, hits), listener() as (port2, hits2):
-        passed = [q for q in _fuzz_queries(port) if not T._SERVICE_RE.search(q)]
-        for q in passed:
-            _run(q)
-        refused = [q for q in _fuzz_queries(port2) if T._SERVICE_RE.search(q)]
-        for q in refused[::25]:
-            _run(q)
+        pick = sorted(rng.sample(range(len(list(_fuzz_queries(0)))), 150))
+        base = [list(_fuzz_queries(p)) for p in (port, port2)]
+        mutated = [_mutate(random.Random(seed + i), base[0][i]) for i in pick]
+        queries = [base[0][i] for i in pick] + mutated
+        outcomes = {}
+        for q in queries:
+            try:
+                querybox.run(ox.Store(), q, {}, 10, 10)
+                outcomes["accepted"] = outcomes.get("accepted", 0) + 1
+            except Exception as e:  # noqa: BLE001 — 只看有没有连接；结果分布写进失败信息
+                outcomes[type(e).__name__] = outcomes.get(type(e).__name__, 0) + 1
+        for i in pick[::5]:
+            _run(base[1][i])
         time.sleep(0.3)  # listener 线程记账
-    assert not hits, f"{len(hits)} 次连接来自被放行的查询；放行的共 {len(passed)} 条"
-    assert hits2, "抽样执行的被拒查询一次也没外连：这批变形测不到真 SERVICE"
+    assert not hits, f"{len(hits)} 次连接来自无网络子进程里执行的查询（seed={seed}，结果分布 {outcomes}）"
+    assert hits2, f"抽样直接交给 pyoxigraph 的变形一次也没外连：这批变形测不到真 SERVICE（seed={seed}）"
+    assert outcomes.get("NetworkAttempt"), f"没有一条被认出为联网尝试（seed={seed}，{outcomes}）"
 
 
 # 评审 #56 第三轮：两层嵌套（gitdir 文件指回被拒的伪仓库）、伪造的 linked worktree 管理目录（commondir 指向真 .git，

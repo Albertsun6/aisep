@@ -1,12 +1,12 @@
 """The read-only MCP tools as plain functions (docs/mcp-interface.md §5.4, §5.6, §5.7): model_check, model_validate,
 model_findings, model_gate, model_query, model_impact. Each returns the tool's structuredContent (a dict) or raises
 AisepError; the MCP shell (aisep/server.py) only wraps them. Judgement is the prototype's (aisep/core.py) unchanged."""
-import contextlib, difflib, os, re, threading, time
+import contextlib, difflib, os, re, time
 from dataclasses import dataclass
 
 import pyoxigraph as ox
 
-from aisep import core, gitio
+from aisep import core, gitio, querybox
 from aisep.errors import AisepError
 
 LAYERS = ("L0", "build", "L1", "L2", "L3", "L4")
@@ -162,39 +162,16 @@ def model_gate(cfg, repo=None, ref=None, model=None):
 
 _UPDATE_RE = re.compile(r"(?is)^(?:\s|#[^\n]*(?:\n|$)|PREFIX\s+[\w.-]*:\s*<[^>]*>|BASE\s*<[^>]*>)*"
                         r"(INSERT|DELETE|LOAD|CLEAR|CREATE|DROP|COPY|MOVE|ADD|WITH)\b")
-_SERVICE_RE = re.compile(r"(?i)\bSERVICE\b")
+
+# Only picks the error code (QUERY_NOT_READONLY before running), not a safety check: whatever it misses still cannot
+# reach the network, because the query runs in querybox's network-less child (issue #60). Narrower than the old
+# \bSERVICE\b so that am4:Service, ?service, 'service' and comments pass: SERVICE as its own token, followed by
+# SILENT, an IRI, a variable or a prefixed name.
+_SERVICE_CLAUSE_RE = re.compile(r"(?i)(?<![\w?$:])SERVICE(?=\s*(?:SILENT\b|[<?$:]|[^\W\d][\w.-]*:))")
 
 
-def _term(v):
-    if isinstance(v, ox.NamedNode):
-        return {"type": "iri", "value": v.value}
-    if isinstance(v, ox.BlankNode):
-        return {"type": "bnode", "value": v.value}
-    t = {"type": "literal", "value": v.value}
-    if v.language:
-        t["lang"] = v.language
-    else:
-        t["datatype"] = v.datatype.value
-    return t
-
-
-def _run_query(ctx, sparql, limit):
-    res = ctx.store.query(sparql, prefixes=ctx.prefixes, use_default_graph_as_union=True)
-    if isinstance(res, (ox.QueryBoolean, bool)):
-        return {"kind": "ask", "value": bool(res)}
-    rows = []
-    if isinstance(res, ox.QueryTriples):
-        for tr in res:
-            if len(rows) == limit:
-                return {"kind": "triples", "triples": rows, "truncated": True}
-            rows.append([_term(tr.subject), _term(tr.predicate), _term(tr.object)])
-        return {"kind": "triples", "triples": rows, "truncated": False}
-    names = [v.value for v in res.variables]
-    for sol in res:
-        if len(rows) == limit:
-            return {"kind": "select", "variables": names, "rows": rows, "truncated": True}
-        rows.append({n: _term(sol[n]) for n in names if sol[n] is not None})
-    return {"kind": "select", "variables": names, "rows": rows, "truncated": False}
+def _run_query(ctx, sparql, limit, timeout_s):
+    return querybox.run(ctx.store, sparql, ctx.prefixes, limit, timeout_s)
 
 
 def model_query(cfg, sparql, limit=QUERY_LIMIT, timeoutMs=QUERY_TIMEOUT_MS, allowPartial=False, repo=None, ref=None):
@@ -202,8 +179,8 @@ def model_query(cfg, sparql, limit=QUERY_LIMIT, timeoutMs=QUERY_TIMEOUT_MS, allo
         raise AisepError("INVALID_ARGUMENT", f"limit 须为 1–{QUERY_LIMIT_MAX}", details={"rejectedFields": ["limit"]})
     if not isinstance(sparql, str):
         raise AisepError("INVALID_ARGUMENT", "sparql 须为字符串", details={"rejectedFields": ["sparql"]})
-    if _SERVICE_RE.search(sparql):  # pyoxigraph would really send the HTTP request (F6)
-        raise AisepError("QUERY_NOT_READONLY", "查询里有 SERVICE，不允许访问外部端点",
+    if _SERVICE_CLAUSE_RE.search(sparql):
+        raise AisepError("QUERY_NOT_READONLY", "查询里有 SERVICE 子句，不允许访问外部端点",
                          hint="去掉 SERVICE 子句，只查本地模型")
     with loaded(cfg, repo, ref) as (ctx, source):
         out = {"source": source}
@@ -214,28 +191,22 @@ def model_query(cfg, sparql, limit=QUERY_LIMIT, timeoutMs=QUERY_TIMEOUT_MS, allo
                                  hint="修好这些文件；只为诊断时传 allowPartial: true",
                                  details={"files": skipped, "findings": _findings(ctx, ("L0",))})
             out.update(partial=True, skippedFiles=skipped, findings=_findings(ctx, ("L0",)))
-        box = {}
-
-        def work():
-            try:
-                box["result"] = _run_query(ctx, sparql, limit)
-            except BaseException as e:  # noqa: BLE001 — re-raised in the caller's thread
-                box["error"] = e
-
-        th = threading.Thread(target=work, daemon=True)
-        th.start()
-        th.join(timeoutMs / 1000)
-        if th.is_alive():  # the worker cannot be interrupted; it is abandoned (daemon) and its result discarded
-            raise AisepError("QUERY_TIMEOUT", f"查询超过 {timeoutMs} 毫秒", hint="加 LIMIT 或收窄模式后重试")
-        if "error" in box:
-            e = box["error"]
-            if isinstance(e, SyntaxError) and _UPDATE_RE.match(sparql):
-                raise AisepError("QUERY_NOT_READONLY", "只接受 SELECT/ASK/CONSTRUCT/DESCRIBE，不接受更新语句")
-            # RuntimeError: e.g. a variable SERVICE endpoint that the query never binds
-            if isinstance(e, (SyntaxError, OSError, ValueError, RuntimeError)):
-                raise AisepError("QUERY_FAILED", f"查询失败：{e}", details={"parser": str(e)})
-            raise e
-        out.update(box["result"])
+        try:
+            result = _run_query(ctx, sparql, limit, timeoutMs / 1000)
+        except querybox.NetworkAttempt:
+            raise AisepError("QUERY_NOT_READONLY", "查询试图访问外部端点（SERVICE），执行查询的进程已被终止，没有发出请求",
+                             hint="去掉 SERVICE 子句，只查本地模型") from None
+        except querybox.Timeout:
+            raise AisepError("QUERY_TIMEOUT", f"查询超过 {timeoutMs} 毫秒", hint="加 LIMIT 或收窄模式后重试") from None
+        except querybox.Unavailable as e:
+            raise AisepError("INTERNAL", f"本机无法建立无网络的查询进程，查询未执行：{e}") from None
+        except SyntaxError as e:
+            if _UPDATE_RE.match(sparql):
+                raise AisepError("QUERY_NOT_READONLY", "只接受 SELECT/ASK/CONSTRUCT/DESCRIBE，不接受更新语句") from None
+            raise AisepError("QUERY_FAILED", f"查询失败：{e}", details={"parser": str(e)}) from None
+        except (OSError, ValueError, RuntimeError) as e:  # RuntimeError: e.g. a variable SERVICE endpoint never bound
+            raise AisepError("QUERY_FAILED", f"查询失败：{e}", details={"parser": str(e)}) from None
+        out.update(result)
     out.setdefault("findings", [])
     return out
 
