@@ -326,9 +326,14 @@ class Ctx:
             u = self.nearest(c.value, self.uf)
             if u:
                 out.append((s, ox.NamedNode(u), t, m.value if m else None))
-        in_model = {}
-        for x, m in self.rows(f"""SELECT DISTINCT ?x ?m WHERE {{ GRAPH ?g {{ ?x arch:inModel ?m }} {self.src_graph_filter()} }}"""):
-            in_model.setdefault(x, m)
+        in_model, blanks = {}, set()
+        for x, m in self.rows(f"""SELECT DISTINCT ?x ?m WHERE {{ GRAPH ?g {{ ?x arch:inModel ?m }} {self.src_graph_filter()} }}""", raw=True):
+            if isinstance(x, ox.NamedNode):
+                in_model.setdefault(x.value, m.value)
+            elif x.value not in blanks:  # X1: a model member must be an IRI (spec §3); report, do not crash the build
+                blanks.add(x.value)
+                self.add("Violation", "build", f"blank node _:{x.value} carries arch:inModel {short(m)}: a model member "
+                         "must be an IRI (spec §3); it is left out of the build")
         for x, m in in_model.items():
             o = self.module_of(x)
             if o:
@@ -446,6 +451,12 @@ class Ctx:
         for rec, x in self.rows(f"""SELECT DISTINCT ?rec ?x WHERE {{ GRAPH ?g {{ ?rec aisep:approves ?x }} {self.src_graph_filter()}
                 ?rec a/rdfs:subClassOf* aisep:ApprovalRecord FILTER(isIRI(?x)) }}"""):
             if x not in subjects:
+                # 第四轮复评 OWN-1: a metamodel term (typed in the ontology graphs, not a source subject) exists but
+                # is not approvable; only a target typed nowhere keeps the "does not exist" reading above
+                if self.rows(f"SELECT ?t WHERE {{ GRAPH ?g {{ <{x}> a ?t }} {self.onto_graph_filter()} }} LIMIT 1"):
+                    bad.setdefault(rec, []).append(
+                        f"AISEP: aisep:approves {short(x)} is a metamodel term, not a model element, arch:Model or ADR "
+                        "— it cannot be approved (第四轮 R4-5, spec §6.6).")
                 continue
             anc = {a for t in src_types.get(x, ()) for a in self.ancestors(t)}
             element = (x in self.asserted and ARCH + "Element" in anc and not anc & {
@@ -934,9 +945,10 @@ def _l3(ctx):
 # ------------------------------------------------------------------ L4
 
 def l4(ctx):
+    # X1: blank-node members are a build Violation already; member queries below interpolate IRIs, so skip blanks
     # spec §6.5: only Must-priority requirements / acceptance criteria are trace gaps when unverified
     for x, m in ctx.rows("""SELECT DISTINCT ?x ?m WHERE { ?x arch:inModel ?m ; a/rdfs:subClassOf* am4:Requirement ;
-                                                          aisep:priority aisep:Must .
+                                                          aisep:priority aisep:Must . FILTER(isIRI(?x))
             FILTER NOT EXISTS { ?v a/rdfs:subClassOf* aisep:Verification ; arch:target ?x }
             FILTER NOT EXISTS { ?g a/rdfs:subClassOf* am4:Aggregation ; arch:source ?x ; arch:target ?ac .
                                 ?v2 a/rdfs:subClassOf* aisep:Verification ; arch:target ?ac } }"""):
@@ -967,7 +979,7 @@ def l4(ctx):
         ctx.add("Warning", "L4", f"{short(r)}: arch:Refines {short(s)} -> {short(t)} targets a node that is "
                 f"{'replaced (dcterms:isReplacedBy)' if repl else 'owl:deprecated'}; migrate the trace link to the "
                 f"replacing node ({', '.join(repl) or 'none declared'})")
-    for x, t in ctx.rows("""SELECT DISTINCT ?x ?t WHERE { ?x arch:inModel ?m ; a ?t . ?t rdfs:subClassOf* arch:Element .
+    for x, t in ctx.rows("""SELECT DISTINCT ?x ?t WHERE { ?x arch:inModel ?m ; a ?t . ?t rdfs:subClassOf* arch:Element . FILTER(isIRI(?x))
             FILTER NOT EXISTS { ?r arch:source|arch:target ?x }
             FILTER NOT EXISTS { { ?x ?p ?y } UNION { ?y ?p ?x } ?y arch:inModel ?m2 . FILTER(?p != arch:inModel) } }"""):
         ctx.add("Info", "L4", f"{short(x)} ({ctx.label(x)}, {short(t)}): isolated element — no relationship or link to another model member")
