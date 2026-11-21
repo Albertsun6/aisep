@@ -386,7 +386,8 @@ def write_files(root, edits, before):
                 except OSError:
                     now = None
                 if sha(now) != sha(data):
-                    raise AisepError("CONFLICT", f"回滚时发现 {f} 又被改动，保留现场", details={"file": f})
+                    raise AisepError("CONFLICT", f"回滚时发现 {f} 又被改动，保留现场", details={"file": f, "kept": True},
+                                     retryable=False)
                 if before.get(f) is None:
                     os.unlink(name, dir_fd=dfd)
                 else:
