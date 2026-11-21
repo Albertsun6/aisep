@@ -1,0 +1,9 @@
+# 人写的顶层依赖清单（锁定的来源）。改这里，然后按 requirements.txt 文件头的命令重新生成锁定文件；
+# 不要手改 requirements.txt。
+pyoxigraph==0.5.13
+pyshacl==0.40.2
+rdflib==7.6.0
+pytest==9.2.0
+mcp==2.3.0
+jsonschema==4.26.0
+pytest-xdist==3.8.0
