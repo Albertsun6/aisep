@@ -17,7 +17,7 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python tools/aisep.py gate
   # aisep-mcp/tests 的 pytest（Albert 2026-11-20 拍板：负例除外）。
-  # test_merge_check_negatives.py 单跑约 21 分钟，等提速后再纳入；在那之前，涉及 mergecheck 的 PR 合并前须在本地跑它。
+  # test_merge_check_negatives.py 单跑约 21 分钟，等提速后再纳入；在那之前按 AGENTS.md「分支与合并」第 2 条在本地跑。
   pytest:
     runs-on: ubuntu-latest
     steps:
@@ -32,7 +32,7 @@ jobs:
       - run: python -m pytest -q -p no:cacheprovider aisep-mcp/tests --ignore=aisep-mcp/tests/test_merge_check_negatives.py
       # 元模型夹具（modules/*/tests）+ tests/acceptance/*.py；aisep-mcp/tests 已由上一步跑，这里 --no-pytest 跳过
       - run: python tools/aisep.py test --no-pytest
-  # §5.9 合并时校验（切片 S6）。单独一个 job，先不列为必需检查（必需的仍只有 gate）。
+  # §5.9 合并时校验（切片 S6）。单独一个 job，与 gate、pytest 同为 main 的必需检查。
   # 口径：H = pull_request.head.sha（不用 GITHUB_SHA）；T = 刚 fetch 的远端主分支；M 在 T 上本地合并生成。
   mergecheck:
     if: github.event_name == 'pull_request'

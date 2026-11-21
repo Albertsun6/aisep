@@ -155,7 +155,7 @@
 
   - `aisep:activity`（可选，最多一个）→ 一条 `aisep:AgentActivity`（§6.7），表示这次批准针对的是哪次 AI 活动；必须是模型元素（IRI，带 `arch:inModel`），不能是空白节点。evidence 是 40 位 commit 时，必须等于该活动的 `aisep:headCommit`，否则 L1 报错。
   - 文件：每条批准记录单独一个文件 `models/<slug>/governance/<记录本地名>.ttl`（同次写入的 AI 活动在同一文件）；批准只新增文件，不改已有文件。早先写在 `governance.ttl` 里的记录与人员不搬迁，`governance.ttl` 仍放 `arch:Stakeholder` 等治理类元素。
-- **`arch:approvalState` 由构建推导**，只推导给可被批准的元素（与 `aisep:approves` 的允许集合一致，第四轮 R4-5、ADR-016）：带 `arch:inModel` 的 `arch:Element`，不含限定关系、`aisep:ApprovalRecord`、`aisep:AgentActivity`、`arch:Stakeholder`，这几类没有 approvalState。取值：取（按时区归一化，不带时区的按 UTC）最近一条**合法**批准记录的结论（不合法的记录不参与推导，构建时报 Warning）；没有记录则为 Proposed；元素本身被合并、替换（带 `dcterms:isReplacedBy`，且目标必须是某个模型里的元素，否则 L1 报错，也不触发）则为 Superseded。`aisep:Rejected`、`aisep:Superseded` 是 AISEP 补的取值，上游只有 Proposed/Approved。同一元素有两条时间相同（按时区归一化后）但结论不同的记录时，L1 报"批准有歧义"。手填 approvalState，包括通过子属性间接写入，都在 L1 报错。
+- **`arch:approvalState` 由构建推导**，只推导给可被批准的元素（元素部分与 `aisep:approves` 的允许集合一致；模型、ADR 只在有记录时有状态。第四轮 R4-5、ADR-016、ADR-017）：带 `arch:inModel` 的 `arch:Element`，不含限定关系、`aisep:ApprovalRecord`、`aisep:AgentActivity`、`arch:Stakeholder`，这几类没有 approvalState。取值：取（按时区归一化，不带时区的按 UTC）最近一条**合法**批准记录的结论（不合法的记录不参与推导，构建时报 Warning）；没有记录则为 Proposed；元素本身被合并、替换（带 `dcterms:isReplacedBy`，且目标必须是某个模型里的元素，否则 L1 报错，也不触发）则为 Superseded。`aisep:Rejected`、`aisep:Superseded` 是 AISEP 补的取值，上游只有 Proposed/Approved。同一元素有两条时间相同（按时区归一化后）但结论不同的记录时，L1 报"批准有歧义"。手填 approvalState，包括通过子属性间接写入，都在 L1 报错。
 - 工作台只展示批准记录、触发新增批准记录，不保存状态（ADR-009）。
 - 架构决策采用 vendored 的 `arch-decision`（ADR：Decision/Option/Force），用 `ad:relatedConcept` 连接元素。它的 shapes 读的是直连三元组，所以 L3 必须跑在构建后的图上（§10）。
 - 质量：`arch:hasQualityMeasure` + ISO 25010 个体；补 `aisep:value`、`aisep:unit`、`aisep:target`、`prov:generatedAtTime`。
@@ -165,7 +165,7 @@
 - `aisep:Implementation`（限定关系，CodeLocation → 设计元素），直连谓词 `aisep:implements`。
 - `aisep:Deployable` ⊑ `am4:Artifact`，带 `aisep:packageUrl`（purl）。Artifact → ApplicationComponent 的 Realization 可以直接画。
 - `aisep:AIAgent` ⊑ `arch:Element`、`prov:SoftwareAgent`（aisep-core 另声明 `prov:SoftwareAgent ⊑ prov:Agent`；不加载 PROV-O 本体）：执行任务的 AI 代理，按元素通则写名称和 `arch:inModel`。
-- `aisep:AgentActivity` ⊑ `arch:Element`、`prov:Activity`（ADR-013、ADR-014）：一次**已完成**的 AI 活动。只在任务过关口时由 `governance.record_approval` 写入，与批准记录在同一次提交里；进行中的状态不进模型仓库。一个（sessionRef, headCommit）只有一条，同一 head 过多个关口时复用；IRI 见 §3。字段：
+- `aisep:AgentActivity` ⊑ `arch:Element`、`prov:Activity`（ADR-013、ADR-014）：一次**已完成**的 AI 活动。只在任务过关口时由 `governance.record_approval` 写入，与批准记录在同一次提交里；进行中的状态不进模型仓库。一个（sessionRef, headCommit, branch）只有一条，同一 head 过多个关口时复用；IRI 见 §3。字段：
   - `skos:prefLabel` 恰好一个 `@zh`（缺省"AI 活动：{分支}"，建议写任务标题），`arch:inModel` 恰好一个；
   - `prov:wasAssociatedWith` → 执行的代理，恰好一个，必须是 `arch:Stakeholder` 或 `aisep:AIAgent` 的实例；
   - `prov:startedAtTime`、`prov:endedAtTime`，各恰好一个 xsd:dateTime，开始不晚于结束（按时区归一化，不带时区的按 UTC）；
@@ -405,10 +405,11 @@ C4、Backstage 接入、TOGAF 内容元模型、ArchiMate 派生规则引擎、�
 - "通用域风味"推导规则（§6.1）、DomainEvent 过去时 Warning（§6.4）、`rm` 级联删除（§8.2）没有原型化，留给 MCP Server 实现。
 - G7 的"元素间直连"白名单包含 BPMN 结构属性（flowElements、lanes 等）和 `arch:hasQualityMeasure`、`ddd:exposedAggregate`。这是为了让合法模型通过而做的判断，未经异构评审。
 - PROV-O 不整体加载；aisep-core 只声明 `aisep:AIAgent`，另在其对齐文件里加 `prov:SoftwareAgent ⊑ prov:Agent` 一条（ADR-010），其余 PROV-O 术语不可用，G7 白名单不变。
-- 历史批准的差异图和 gate 重跑依赖 headCommit 仍可达。模型仓库禁用 squash 合并和 rebase 合并，批准提交只经普通 merge 进受保护分支（ADR-014）；落实要同时做到：托管平台关闭 squash、rebase 两种 PR 合并方式，受保护分支禁止 force push、限制直接 push，PR 合并保留原提交（cherry-pick、rebase 都会生成新的 commit id）。这些是仓库托管平台的设置，元模型和 MCP 不检查；合并时校验已要求新记录的 evidence 是合并请求头的祖先（发布批准还须是目标分支头的祖先）。绕过它合入、或分支未合并就删除时，旧 commit 可能被 GC，历史批准无法重跑；管理员绕过分支保护、force push 后重开合并请求，同样可能让已合入记录的 evidence 不再可达。本仓库已于 2026-11-20 配置：只允许普通合并（关闭 squash、rebase），`main` 受保护（必需检查 `gate`、不要求分支最新、禁止 force push 与删除、管理员同样受约束）；未要求 PR 评审批准（个人仓库无第二人评审，人工批准靠 AGENTS.md「批准 #N」）。
-- 合并时校验（evidence 到分支头之间只有批准提交、已有记录不可改、已批准元素改动须重批、合并结果 gate 等）、批准专用合并请求的判定、发布标签检查由 CI 执行，须设为受保护分支的必需检查；元模型和 MCP 不检查 CI 是否配上。不开"要求分支最新"、不用合并队列（个人账号的 private 仓库用不了合并队列），目标分支前进后必需检查不会自动重跑，所以合并前由执行合并的人用同一检查对当前目标分支头重算；绕过它直接在网页上点合并时，合并结果 gate 可能只对旧主线有效，这是残余风险。重算与合并之间也没有原子绑定：平台合并只能锁合并请求头、锁不了目标分支头，重算通过后目标分支仍可能前进；由合并串行、合并前再比对目标分支头、合并后核验父提交并在不过时回滚来压缩，余下为残余风险。该检查脚本尚未实现。
+- 历史批准的差异图和 gate 重跑依赖 headCommit 仍可达。模型仓库禁用 squash 合并和 rebase 合并，批准提交只经普通 merge 进受保护分支（ADR-014）；落实要同时做到：托管平台关闭 squash、rebase 两种 PR 合并方式，受保护分支禁止 force push、限制直接 push，PR 合并保留原提交（cherry-pick、rebase 都会生成新的 commit id）。这些是仓库托管平台的设置，元模型和 MCP 不检查；合并时校验已要求新记录的 evidence 是合并请求头的祖先（发布批准还须是目标分支头的祖先）。绕过它合入、或分支未合并就删除时，旧 commit 可能被 GC，历史批准无法重跑；管理员绕过分支保护、force push 后重开合并请求，同样可能让已合入记录的 evidence 不再可达。本仓库已于 2026-11-20 配置：只允许普通合并（关闭 squash、rebase），`main` 受保护（必需检查 `gate`、`mergecheck`、`pytest`，不要求分支最新、禁止 force push 与删除、管理员同样受约束）；未要求平台上的 PR 评审批准（个人仓库没有第二人评审）。合并条件见 AGENTS.md「分支与合并」第 2 条：必需检查通过，且由没参与实现的 agent 独立评审通过。
+- 合并时校验（evidence 到分支头之间只有批准提交、已有记录不可改、已批准元素改动须重批、合并结果 gate 等）、批准专用合并请求的判定、发布标签检查由 CI 的 `mergecheck` 执行（脚本 `aisep/mergecheck.py`），本仓库已把它设为受保护分支的必需检查；元模型和 MCP 不检查 CI 是否配上。不开"要求分支最新"、不用合并队列（个人账号的 private 仓库用不了合并队列），目标分支前进后必需检查不会自动重跑，所以合并前由执行合并的人用同一检查对当前目标分支头重算；绕过它直接在网页上点合并时，合并结果 gate 可能只对旧主线有效，这是残余风险。重算与合并之间也没有原子绑定：平台合并只能锁合并请求头、锁不了目标分支头，重算通过后目标分支仍可能前进；由合并串行、合并前再比对目标分支头、合并后核验父提交并在不过时回滚来压缩，余下为残余风险。重算、复核、合并后核验三步已写进 AGENTS.md 的合并条款（ADR-017），但只靠执行合并的人照做，没有机制强制；第四轮负例（`test_merge_check_negatives.py`）不在 CI 里，涉及 mergecheck 的合并请求是否在本地跑过，同样只靠执行合并的人核对。
 - 普通合并请求不要求带批准记录，未经批准的模型改动可以进主分支（推导为 Proposed，ADR-016）。主线提交只能批准发布关口，所以主线上的 Proposed 元素要过其他关口，须从主分支拉分支、先有一个非批准提交（可以是空提交）再批；这是已拍板规则组合（ADR-015 U4①、ADR-016）的已知限制。
 - 元素级批准不覆盖以它为端点的限定关系：合并请求只改一条关系的端点（如换掉 target）时，被连接的已批准元素不须重批，合并后仍显示 Approved。要约束连接，须按模型批准（模型的比较范围含以成员为端点的关系）。这是有意的口径（第四轮 G4-4，用户拍板），否则每加一条代码追溯都会触发对设计元素的重批。
+- 视图从属不计入元素：`arch:inView` 三元组计入视图、不计入元素（与接口文档 §5.8 一致），所以合并请求只改已批准元素的 `arch:inView`（把它放进或移出某张视图）时，该元素不须重批。视图不可被批准（R4-5）：视图属于某个已批准模型时，模型的比较范围能看到这个改动；视图在其他模型里时，没有检查项能看到。这是有意的口径（第四轮复评 R3，Albert 2026-11-21 拍板，ADR-017）。
 - 进入受保护分支的批准记录 evidence 只能是 40 位 commit：`sha256:<64 位十六进制>` 形式 L1 合法，但合并时校验判断不了它与分支的祖先关系，一律拒绝；它只适用于不经合并进受保护分支的场合。
 - `release/*` 标签由托管平台的 tag ruleset 禁止删除与移动（本仓库 2026-11-20 已配置规则集 `release-tags-immutable`：规则 deletion、update、non_fast_forward，无绕过者，管理员同样受约束；探针实测创建可以、强推移动与删除均被 GH013 拒绝）。规则集被停用或修改时，标签可被移动、删除，发布标签检查又只在合并时看一次，此时为残余风险。
 - 发布批准的合并请求关闭未合并时，已推送的 `release/*` 标签不自动删除，由人清理；清理前它指向一个未合入主线的发布批准。因规则集禁止删除，清理须由仓库管理员临时停用规则集、删标签、再启用；规则集不设绕过者，是为了不让与人共用账号凭据的 AI 也能绕过。
