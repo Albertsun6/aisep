@@ -18,13 +18,20 @@ Default model files = models/**/*.ttl. Problem lines start with [Violation], [Wa
 
 Engines: pyoxigraph for everything (parse, store, SPARQL, L1/L2/L4, build, impact); pyshacl only for L3.
 """
-import glob, os, subprocess, sys, tempfile, time
-from xml.etree import ElementTree
+import os, sys
 
-import pyoxigraph as ox
-
+# sys.path: this file is named aisep, so its own directory must not be on the path, or `import aisep` finds it instead of
+# the aisep/ package. The repo root goes last, after the standard library and installed packages, so a file in the root
+# (say a fake pyshacl.py) cannot stand in for one of them; see tools/pyrun.py.
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)  # the aisep/ library package; this file has the same name, so the repo root must come first
+_unsafe = {os.path.realpath(p) for p in (ROOT, os.path.dirname(os.path.abspath(__file__)), os.getcwd())}
+sys.path[:] = [p for p in sys.path if os.path.realpath(p or ".") not in _unsafe] + [ROOT]
+
+import glob, subprocess, tempfile, time  # noqa: E402
+from xml.etree import ElementTree  # noqa: E402
+
+import pyoxigraph as ox  # noqa: E402
+
 from aisep.core import (AISEP, ARCH, Ctx, dependencies, discover, expand, impact, l3, l4, rel,  # noqa: E402
                         run_check, short, shown)
 from aisep import gitio  # noqa: E402

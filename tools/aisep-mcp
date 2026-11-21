@@ -6,4 +6,5 @@ TOP="$(git rev-parse --show-toplevel)" || exit 1
 PY="${AISEP_PY:-$MAIN/.venv/bin/python}"
 [ -x "$PY" ] || { echo "aisep-mcp: no interpreter at $PY — see AGENTS.md (uv venv ... .venv)" >&2; exit 1; }
 cd "$TOP" || exit 1
-exec "$PY" -m aisep.server --transport stdio --profile agent --allow-root "$MAIN" --repo "$TOP" "$@"
+# not `-m aisep.server`: -m would put the worktree root first on sys.path (tools/pyrun.py)
+exec "$PY" "$TOP/tools/pyrun.py" aisep.server --transport stdio --profile agent --allow-root "$MAIN" --repo "$TOP" "$@"
