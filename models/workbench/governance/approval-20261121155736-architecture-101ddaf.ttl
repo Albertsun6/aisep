@@ -1,0 +1,16 @@
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/workbench/> .
+
+:approval-20261121155736-architecture-101ddaf a aisep:ApprovalRecord ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "架构决策批准：读不到批准记录时退回确认框等 8 项"@zh ;
+    aisep:gate aisep:GateArchitecture ;
+    aisep:decision aisep:DecisionApproved ;
+    aisep:approvedBy <https://aisep.example/model/procurement/chiefArchitect> ;
+    aisep:approves <https://aisep.example/model/workbench/acCoverageUnknownConfirm> , <https://aisep.example/model/workbench/acNoRepeatSameSelection> , <https://aisep.example/model/workbench/acOtherGateOrRejectAllowed> , <https://aisep.example/model/workbench/gatePageCode> , <https://aisep.example/model/workbench/reqApprovalProgress> , <https://aisep.example/model/workbench/tcRepeatApprovalCoverageUnknown> , <https://aisep.example/model/workbench/tcRepeatApprovalOtherGateOrReject> , <https://aisep.example/model/workbench/tcRepeatApprovalSameSelection> ;
+    aisep:evidence "101ddaf9c0dedc25e6f29869199a92afaf1a243c" ;
+    prov:generatedAtTime "2026-11-21T15:57:36Z"^^xsd:dateTime .
