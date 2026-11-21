@@ -255,8 +255,9 @@ def _recover(rel):
 
 
 def _unstage_and_maybe_delete(w, rel, written_sha, staged=True):
-    """Step 8 rollback: "removed" (out of the index, file deleted), "kept" (out of the index, file changed by someone
-    else and kept), "stuck" (`git rm --cached` failed, e.g. index.lock held: the file stays staged and on disk) or
+    """Step 8 rollback: "removed" (out of the index, file deleted), "gone" (out of the index, someone else already
+    deleted the file), "kept" (out of the index, file changed by someone else and kept; written_sha None never
+    deletes), "stuck" (`git rm --cached` failed, e.g. index.lock held: the file stays staged and on disk) or
     "taken" (W's HEAD already tracks the file: another commit took it; index and file are left alone)."""
     if gitio.git(w, "cat-file", "-e", f"HEAD:{rel}")[0] == 0:
         return "taken"
@@ -264,7 +265,9 @@ def _unstage_and_maybe_delete(w, rel, written_sha, staged=True):
         rc, _, _ = gitio.git(w, "rm", "--cached", "-q", "-f", "--ignore-unmatch", "--", rel)  # -f: index only
         if rc != 0:
             return "stuck"
-    if _sha_file(w, rel) == written_sha:
+    if not os.path.lexists(os.path.join(w, rel)):
+        return "gone"
+    if written_sha is not None and _sha_file(w, rel) == written_sha:
         os.remove(os.path.join(w, rel))
         return "removed"
     return "kept"
@@ -473,6 +476,10 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
                 raise _taken(w, rel, f"{rel} 在提交前被改动")
             if undone == "stuck":
                 raise _stuck(rel, f"{rel} 在提交前被改动")
+            if undone == "gone":  # index and worktree are clean again: an unchanged retry writes the record anew
+                raise AisepError("CONFLICT", f"{rel} 在提交前被删除，已从 index 移除，未提交", retryable=True,
+                                 hint="确认没有别的进程在动 governance/ 后重新调用",
+                                 details={"reason": "file-deleted-before-commit"})
             raise _kept("CONFLICT", f"{rel} 在提交前被改动，已从 index 移除、保留文件", rel)
         msg = f"aisep: {gate} {decision} {rec_local}"
         cmd = ["git", "-C", w, "-c", "trailer.ifexists=add", "commit", "-q", "--only", "-m", msg,

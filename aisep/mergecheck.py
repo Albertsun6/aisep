@@ -161,7 +161,12 @@ def _commit_shape(repo, c):
     if len(trailers) != 1:
         return f"(a) 有 {len(trailers)} 个 AISEP-Evidence trailer，须恰好一个"
     prefix = f"models/{slug}/"
-    before, after = _side(repo, p, (prefix,)), _side(repo, c, (prefix,))
+    try:
+        before, after = _side(repo, p, (prefix,)), _side(repo, c, (prefix,))
+    except AisepError as e:  # an unreferenced, shared or cyclic blank node: the record file is not approval-shaped
+        if e.code != "DIFF_BNODE_UNSUPPORTED":
+            raise
+        return f"(c) {e.message}：新文件里不能有空白节点（第四轮 R4-8）"
     changed = [k for k in set(before.sig) | set(after.sig) if before.sig.get(k) != after.sig.get(k)]
     if any(k in before.sig for k in changed):
         return "(c) 源图差异里有修改或删除的主语"
@@ -181,6 +186,8 @@ def _commit_shape(repo, c):
         return "(c) 新文件解析失败"
     if any(isinstance(q.subject, ox.BlankNode) or isinstance(q.object, ox.BlankNode) for q in quads):
         return "(c) 新文件里有空白节点主语或宾语，主语只能是新记录及其活动（第四轮 R4-8）"
+    if any(isinstance(q.subject, ox.Triple) or isinstance(q.object, ox.Triple) for q in quads):
+        return "(c) 新文件里有 RDF 1.2 三元组项，批准记录只能是普通三元组（第四轮 R4-8）"
     file_subjects = {q.subject.value for q in quads if isinstance(q.subject, ox.NamedNode)}
     if file_subjects != {rec, *acts}:
         return f"(c) 新文件里的主语须只有新记录及其活动，实际：{sorted(file_subjects)}（第四轮 R4-8）"
@@ -529,10 +536,26 @@ def merge_check(repo, pr_head, target_ref, *, head_ref, now, remote="origin"):
         with _merged(r, t, h) as m, contextlib.ExitStack() as stack:
             if m is None:
                 return [_problem("merge-conflict", f"在 T={t[:7]} 上合并 {h[:7]} 冲突，请先解决冲突")]
-            a = _Analysis(r, h, t, m, now, stack)
+            try:
+                a = _Analysis(r, h, t, m, now, stack)
+            except AisepError as e:
+                if e.code != "DIFF_BNODE_UNSUPPORTED":
+                    raise
+                return _bnode_fallback(r, h, t, e)
             return (a.check1() + a.check3() + a.check4(head_ref) + a.check5() + a.check6() + a.check7()
                     + a.release_tags(remote))
     return _run(run)
+
+
+def _bnode_fallback(repo, h, t, e):
+    """A source graph with an unreferenced, shared or cyclic blank node cannot be diffed (DIFF_BNODE_UNSUPPORTED), so
+    no record can be read off it. Fail closed with a structured answer: the error itself, plus the criterion over
+    every commit in t..h that claims to be an approval commit (carries an AISEP-Evidence trailer)."""
+    out = [_problem("check-error", f"{e.code}：{e}")]
+    for c in _git(repo, "rev-list", "--reverse", h, f"^{t}").split():
+        if _git(repo, "log", "-1", "--format=%(trailers:key=AISEP-Evidence,valueonly)", c).strip():
+            out += _criterion(repo, [c])
+    return out
 
 
 def classify_pr(repo, pr_head, target_ref):
@@ -618,8 +641,11 @@ def main(argv=None):
         print(json.dumps({"problems": _git_problem(e)}, ensure_ascii=False, indent=2))
         return 1
     problems = merge_check(repo, a.pr_head, t, head_ref=a.head_ref, now=now, remote=a.remote)
-    print(json.dumps({"target": target, "T": t, "H": a.pr_head, "classification": None if problems and
-                      problems[0]["reason"] == "git-error" else classify_pr(repo, a.pr_head, t),
+    try:
+        cls = None if problems and problems[0]["reason"] == "git-error" else classify_pr(repo, a.pr_head, t)
+    except AisepError:  # e.g. DIFF_BNODE_UNSUPPORTED: already reported in problems (merge_check fails closed)
+        cls = None
+    print(json.dumps({"target": target, "T": t, "H": a.pr_head, "classification": cls,
                       "problems": problems}, ensure_ascii=False, indent=2))
     return 1 if problems else 0
 

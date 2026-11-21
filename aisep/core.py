@@ -95,7 +95,8 @@ def short(v):
     s = v if isinstance(v, str) else getattr(v, "value", str(v))
     if s.startswith(MODEL_BASE) and "/" in s[len(MODEL_BASE):]:
         slug, local = s[len(MODEL_BASE):].split("/", 1)
-        return f"{slug}:{local}"
+        if local:  # a model IRI itself (".../<slug>/") stays a full IRI, like a bare namespace below
+            return f"{slug}:{local}"
     for k, ns in NS.items():
         if s.startswith(ns) and len(s) > len(ns):
             return f"{k}:{s[len(ns):]}"
@@ -326,20 +327,32 @@ class Ctx:
             u = self.nearest(c.value, self.uf)
             if u:
                 out.append((s, ox.NamedNode(u), t, m.value if m else None))
-        in_model, blanks = {}, set()
+        in_model = {}
         for x, m in self.rows(f"""SELECT DISTINCT ?x ?m WHERE {{ GRAPH ?g {{ ?x arch:inModel ?m }} {self.src_graph_filter()} }}""", raw=True):
             if isinstance(x, ox.NamedNode):
                 in_model.setdefault(x.value, m.value)
-            elif x.value not in blanks:  # X1: a model member must be an IRI (spec §3); report, do not crash the build
-                blanks.add(x.value)
-                self.add("Violation", "build", f"blank node _:{x.value} carries arch:inModel {short(m)}: a model member "
-                         "must be an IRI (spec §3); it is left out of the build")
+        self.blank_members()
         for x, m in in_model.items():
             o = self.module_of(x)
             if o:
                 out.append((ox.NamedNode(x), ox.NamedNode(AISEP + "notation"), ox.NamedNode(o.iri), m))
         out += self.derive_approval_state(in_model)
         return out
+
+    def blank_members(self):
+        """X1: a model member must be an IRI (spec §3). A blank node with arch:inModel is reported (not a crash) by its
+        file and its own triples there, never by its blank node label (a fresh random id on every parse)."""
+        term = lambda t: "[]" if isinstance(t, ox.BlankNode) else short(t) if isinstance(t, ox.NamedNode) else str(t)
+        for f in sorted(self.src_quads, key=self.rel):
+            qs = self.src_quads[f]
+            seen = set()
+            for b in [q.subject for q in qs if q.predicate.value == ARCH + "inModel" and isinstance(q.subject, ox.BlankNode)]:
+                if b in seen:
+                    continue
+                seen.add(b)
+                desc = " ; ".join(sorted(f"{term(q.predicate)} {term(q.object)}" for q in qs if q.subject == b))
+                self.add("Violation", "build", f"{self.rel(f)}: blank node [ {desc} ] carries arch:inModel — a model "
+                         "member must be an IRI (spec §3); it is left out of the build", file=self.rel(f))
 
     def derive_approval_state(self, in_model):
         """spec §6.6 (D10, ADR-009): arch:approvalState is derived, never authored. Per element: the decision of the
