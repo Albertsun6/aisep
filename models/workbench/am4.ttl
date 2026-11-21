@@ -13,7 +13,7 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "工作台展示批准进度"@zh ;
     skos:altLabel "Show approval progress in the workbench"@en ;
-    skos:definition "工作台显示一次批准走到 待批准、已批准待推送、已推送待合并、已合入 的哪一步；进度一律从 Git 推导，不保存进行中状态（ADR-013）。同一分支上已被批准记录覆盖的选择（同一关口，勾选的元素都在该关口某条批准记录的批准范围里），关口页刷新或重进后不能再批一次；换关口、勾选新的元素或驳回仍可操作。"@zh ;
+    skos:definition "工作台显示一次批准走到 待批准、已批准待推送、已推送待合并、已合入 的哪一步；进度一律从 Git 推导，不保存进行中状态（ADR-013）。同一分支上，从有效内容提交到分支顶端之间（即批准之后没有内容改动）的全部 Approved 批准记录，按关口取已批元素的并集；当前选择的关口相同、勾选的元素是该关口并集的子集，就算已被覆盖，关口页刷新或重进后不能再批一次。换关口、勾选并集以外的元素、驳回，或批准后分支又有内容改动，仍可操作。"@zh ;
     aisep:priority aisep:Must .
 
 :gateApprovalFlow a am4:Process ;

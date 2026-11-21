@@ -156,17 +156,7 @@
     prov:generatedAtTime "2026-11-21T14:01:40Z"^^xsd:dateTime ;
     skos:note "ciJob=https://github.com/Albertsun6/aisep-workbench/actions/runs/44911752843/job/136868890031 ; commit=1e7767633c25e31d02c5182acd8b97460a63749c ; repo=https://github.com/Albertsun6/aisep-workbench" .
 
-:acNoRepeatSameSelection a aisep:AcceptanceCriterion ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "刷新或重进后不能重复批准已批准的同一选择"@zh ;
-    skos:altLabel "An already approved selection cannot be approved again after a reload"@en ;
-    aisep:gherkin "Given 分支上已有一条 Approved 批准记录，关口为 G、批准元素集合为 S（这条记录不一定在分支顶端：之后可能又批过别的关口）\nWhen 刷新或重进该分支的关口页，关口选 G，勾选的元素都在 S 里\nThen 批准按钮不可点，也不给「再写一条记录」的确认框，批准区说明本分支已经批准过这一选择" .
 
-:acOtherGateOrRejectAllowed a aisep:AcceptanceCriterion ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "换关口、勾选新元素或驳回仍可操作"@zh ;
-    skos:altLabel "Another gate, a new element or a rejection can still be recorded"@en ;
-    aisep:gherkin "Given 分支上已有一条 Approved 批准记录，关口为 G、批准元素集合为 S\nWhen 关口换成 G 以外的关口，或勾选了 S 以外的元素，或选择驳回\nThen 仍可操作：勾选「我确认要在这个分支上再写一条记录」后按钮可点" .
 
 :acCoverageUnknownConfirm a aisep:AcceptanceCriterion ;
     arch:inModel <https://aisep.example/model/workbench/> ;
@@ -178,19 +168,45 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "同一选择重复批准被禁用测试"@zh ;
     skos:altLabel "Same-selection repeat approval is blocked test"@en ;
-    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「repeat approval guard: same selection」下的测试，以及 frontend/src/renderer/aisep/data/approval-progress.test.ts 中 describe「approval coverage」下的测试：刷新后同关口同元素不可批；先批架构再批设计后重批架构不可批；覆盖范围取有效内容提交到分支顶端之间的全部 Approved 记录。"@zh .
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「repeat approval guard: same selection」下的测试，以及 frontend/src/renderer/aisep/data/approval-progress.test.ts 中 describe「approval coverage」下的测试：刷新后同关口同元素不可批；先批架构再批设计后重批架构不可批；覆盖范围取有效内容提交到分支顶端之间的全部 Approved 记录，按关口取已批元素的并集。"@zh .
 
 :tcRepeatApprovalOtherGateOrReject a aisep:TestCase ;
     arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "换关口与驳回仍可操作测试"@zh ;
-    skos:altLabel "Another gate or a rejection stays possible test"@en ;
-    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「repeat approval guard: other gate or reject」下的测试：换关口、勾选新元素、驳回经确认框后可点。"@zh .
+    skos:prefLabel "换关口、新元素、驳回与内容改动后仍可操作测试"@zh ;
+    skos:altLabel "Another gate, a new element, a rejection or new content stays possible test"@en ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「repeat approval guard: other gate or reject」下的测试：换关口、勾选新元素、驳回经确认框后可点；批准之后又有内容提交时可以再批。"@zh .
 
 :tcRepeatApprovalCoverageUnknown a aisep:TestCase ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "读不到批准记录时退回确认框测试"@zh ;
     skos:altLabel "Coverage unknown falls back to confirmation test"@en ;
     skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「repeat approval guard: coverage unknown」下的测试：读不到批准记录时批准与驳回经确认框后可点。"@zh .
+
+
+
+:rel-reqApprovalProgress-aggregates-acCoverageUnknownConfirm a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApprovalProgress ;
+    arch:target :acCoverageUnknownConfirm .
+
+
+
+:rel-tcRepeatApprovalCoverageUnknown-verifies-acCoverageUnknownConfirm a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcRepeatApprovalCoverageUnknown ;
+    arch:target :acCoverageUnknownConfirm .
+
+:acNoRepeatSameSelection a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "刷新或重进后不能重复批准已批准的同一选择"@zh ;
+    skos:altLabel "An already approved selection cannot be approved again after a reload"@en ;
+    aisep:gherkin "Given 分支上有 Approved 批准记录，且这些记录之后分支上没有内容改动（有效内容提交到分支顶端之间只有批准提交）；这段里关口为 G 的全部 Approved 记录已批元素的并集为 S（可以是多条记录，也不一定在分支顶端：之后可能又批过别的关口）\nWhen 刷新或重进该分支的关口页，关口选 G，勾选的元素都在 S 里\nThen 批准按钮不可点，也不给「再写一条记录」的确认框，批准区说明本分支已经批准过这一选择" .
+
+:acOtherGateOrRejectAllowed a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "换关口、勾选新元素、驳回或内容改动后仍可操作"@zh ;
+    skos:altLabel "Another gate, a new element, a rejection or new content can still be recorded"@en ;
+    aisep:gherkin "Given 分支上有 Approved 批准记录，关口为 G 的这些记录已批元素的并集为 S\nWhen 关口换成 G 以外的关口，或勾选了 S 以外的元素，或选择驳回，或这些批准之后分支上又有内容改动\nThen 批准或驳回按钮不因已有批准而停用；页面提示已有批准时，勾选「我确认要在这个分支上再写一条记录」后按钮可点" .
 
 :rel-reqApprovalProgress-aggregates-acNoRepeatSameSelection a am4:Aggregation ;
     arch:inModel <https://aisep.example/model/workbench/> ;
@@ -202,11 +218,6 @@
     arch:source :reqApprovalProgress ;
     arch:target :acOtherGateOrRejectAllowed .
 
-:rel-reqApprovalProgress-aggregates-acCoverageUnknownConfirm a am4:Aggregation ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :reqApprovalProgress ;
-    arch:target :acCoverageUnknownConfirm .
-
 :rel-tcRepeatApprovalSameSelection-verifies-acNoRepeatSameSelection a aisep:Verification ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :tcRepeatApprovalSameSelection ;
@@ -216,8 +227,3 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :tcRepeatApprovalOtherGateOrReject ;
     arch:target :acOtherGateOrRejectAllowed .
-
-:rel-tcRepeatApprovalCoverageUnknown-verifies-acCoverageUnknownConfirm a aisep:Verification ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :tcRepeatApprovalCoverageUnknown ;
-    arch:target :acCoverageUnknownConfirm .
