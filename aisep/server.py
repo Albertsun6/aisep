@@ -17,7 +17,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import MCPError
 from mcp_types.jsonrpc import INVALID_PARAMS
 
-from aisep import approval, diff, tools, write_tools
+from aisep import approval, branches, diff, tools, write_tools
 from aisep.errors import CODES, AisepError
 
 MAX_TEXT_LINES = 200
@@ -77,6 +77,8 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
                    obj({"head": {"oneOf": [S(), obj({"worktree": S()}, ["worktree"])]}, "base": S(), "mainRef": S(),
                         "detail": S(enum=["summary", "items", "triples"]), "model": MODEL, "repo": REPO}, ["head"]),
                    out("base", "head", "counts"), ANN_READ, {"agent", "workbench"}),
+    "model_branches": (branches.model_branches, "本地分支及其 Git 事实（远端头、是否未推送、是否已合入主分支、是否改了模型）；不 fetch",
+                       obj({"repo": REPO}), out("branches", "main"), ANN_READ, {"workbench"}),
     "model_add_element": (write_tools.model_add_element, "新增元素（写工作区，不提交；只拒绝新增违规）",
                           obj({"model": MODEL, "type": S(), "prefLabel": S(), "altLabel": S(), "slug": S(),
                                "definition": S(), "attributes": {"type": "array", "items": obj(
@@ -161,7 +163,9 @@ def summary_text(name, res):
                                     + ("，含未提交" if r["head"].get("dirty") else "")
                                     + ("，部分文件解析失败" if r.get("incomplete") else ""),
             "model_impact": lambda r: f"影响面 {len(r['items'])} 个元素" + ("（模型不合法）" if r.get("invalidModel") else ""),
-            "model_query": lambda r: f"查询结果：{r['kind']}"}.get(name)
+            "model_query": lambda r: f"查询结果：{r['kind']}",
+            "model_branches": lambda r: f"分支 {len(r['branches'])} 个，改了模型且未合入 "
+                                        f"{sum(b['hasModelChanges'] and not b['mergedIntoMain'] for b in r['branches'])} 个"}.get(name)
     if head is None:
         head = lambda r: f"{name} 完成" + (f"：{r['iri']}" if "iri" in r else "") + \
             ("（无变化）" if r.get("changed") is False else "")

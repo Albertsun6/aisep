@@ -102,7 +102,6 @@ def digest(*dirs):
 
 # ------------------------------------------------------------------ 注册与画像
 
-@L7
 def test_registered_read_only_in_workbench_profile():
     require_tool()
     ann = S.TOOLS[NAME][4]
@@ -114,7 +113,6 @@ def test_registered_read_only_in_workbench_profile():
 
 # ------------------------------------------------------------------ 各分支的 Git 事实
 
-@L7
 def test_pushed_unmerged_model_branch(topo):
     require_tool()
     b = branches(topo)["feat/model"]
@@ -124,7 +122,6 @@ def test_pushed_unmerged_model_branch(topo):
     assert b["mergedIntoMain"] is False and b["hasModelChanges"] is True
 
 
-@L7
 def test_unpushed_branch_without_model_changes(topo):
     require_tool()
     b = branches(topo)["feat/docs"]
@@ -133,7 +130,6 @@ def test_unpushed_branch_without_model_changes(topo):
     assert b["mergedIntoMain"] is False and b["hasModelChanges"] is False
 
 
-@L7
 def test_local_ahead_of_remote(topo):
     require_tool()
     b = branches(topo)["feat/ahead"]
@@ -141,7 +137,6 @@ def test_local_ahead_of_remote(topo):
     assert b["unpushed"] is True and b["mergedIntoMain"] is False and b["hasModelChanges"] is True
 
 
-@L7
 def test_merged_branch(topo):
     require_tool()
     b = branches(topo)["feat/merged"]
@@ -149,7 +144,6 @@ def test_merged_branch(topo):
     assert b["unpushed"] is False and b["mergedIntoMain"] is True
 
 
-@L7
 def test_merged_is_judged_against_origin_main_not_stale_local_main(topo):
     """与其他工具同一规则：主分支先取 origin/main。本地 main 落后时，已合入 origin/main 的分支仍算已合入。"""
     require_tool()
@@ -165,7 +159,6 @@ def test_merged_is_judged_against_origin_main_not_stale_local_main(topo):
 
 # ------------------------------------------------------------------ 只读
 
-@L7
 def test_read_only_and_no_fetch(topo):
     require_tool()
     before = digest(topo.root, topo.origin)
