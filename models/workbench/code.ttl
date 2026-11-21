@@ -27,3 +27,15 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :devLauncherCode ;
     arch:target :workbenchLauncherBC .
+
+:gatePageCode a aisep:CodeLocation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "关口页前端代码"@zh ;
+    skos:altLabel "Gate page UI code"@en ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    aisep:path "frontend/src/renderer/aisep/AisepGatePage.tsx" .
+
+:rel-gatePageCode-implements-workbenchGovernanceBC a aisep:Implementation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gatePageCode ;
+    arch:target :workbenchGovernanceBC .
