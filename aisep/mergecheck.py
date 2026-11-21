@@ -176,9 +176,12 @@ def _commit_shape(repo, c):
         return f"(a) AISEP-Evidence trailer {trailers[0]} 不等于新记录的 aisep:evidence"
     blob = gitio.commit_files(repo, c, (path,)).get(path)
     try:
-        file_subjects = {q.subject.value for q in ox.parse(blob, format=core.TTL) if isinstance(q.subject, ox.NamedNode)}
+        quads = list(ox.parse(blob, format=core.TTL))
     except (SyntaxError, TypeError):
         return "(c) 新文件解析失败"
+    if any(isinstance(q.subject, ox.BlankNode) or isinstance(q.object, ox.BlankNode) for q in quads):
+        return "(c) 新文件里有空白节点主语或宾语，主语只能是新记录及其活动（第四轮 R4-8）"
+    file_subjects = {q.subject.value for q in quads if isinstance(q.subject, ox.NamedNode)}
     if file_subjects != {rec, *acts}:
         return f"(c) 新文件里的主语须只有新记录及其活动，实际：{sorted(file_subjects)}（第四轮 R4-8）"
     if any(after.files.get(s) != {path} for s in file_subjects):
