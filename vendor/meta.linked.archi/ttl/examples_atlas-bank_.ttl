@@ -1,0 +1,428 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix togaf:   <https://meta.linked.archi/togaf/onto#> .
+@prefix togafvp: <https://meta.linked.archi/togaf/viewpoints#> .
+@prefix :        <https://meta.linked.archi/examples/atlas-bank/> .
+
+#################################################################
+# Model Declaration
+#################################################################
+
+:AtlasModel
+    a                          arch:Model ;
+    skos:prefLabel             "Atlas Global Bank — Enterprise Architecture Model"@en ;
+    dcterms:title              "Atlas Global Bank — Enterprise Architecture Model"@en ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/examples/atlas-bank/" ;
+    vann:preferredNamespacePrefix "atlasbank" ;
+    arch:modelConformsToMetamodel <https://meta.linked.archi/togaf/metamodel#TOGAF10> ;
+    dcterms:created            "2025-06-27"^^xsd:date ;
+    dcterms:creator            "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:description        "TOGAF 10 enterprise architecture model for Atlas Global Bank — a multinational financial services group executing a cloud-first digital transformation."@en ;
+.
+
+
+#################################################################
+# Motivation
+#################################################################
+
+:CloudFirstPrinciple
+    a              togaf:Principle ;
+    skos:prefLabel "Cloud-First Principle"@en ;
+    skos:definition "All new systems must be deployed on cloud infrastructure unless regulatory constraints prevent it."@en ;
+.
+
+:DataSovereigntyPrinciple
+    a              togaf:Principle ;
+    skos:prefLabel "Data Sovereignty Principle"@en ;
+    skos:definition "Customer data must reside within the jurisdiction of the customer's domicile."@en ;
+.
+
+:PSD2Compliance
+    a              togaf:Requirement ;
+    skos:prefLabel "PSD2 Open Banking Compliance"@en ;
+    skos:definition "All payment services must expose APIs compliant with PSD2 directive by Q4 2026."@en ;
+.
+
+:BaselIVCapital
+    a              togaf:Requirement ;
+    skos:prefLabel "Basel IV Capital Requirements"@en ;
+    skos:definition "Risk-weighted asset calculations must comply with Basel IV final framework."@en ;
+.
+
+:DigitalDisruption
+    a              togaf:Driver ;
+    skos:prefLabel "Digital Disruption from Neobanks"@en ;
+    skos:definition "Challenger banks capturing 15% of retail deposits in key markets."@en ;
+.
+
+:RegulatoryPressure
+    a              togaf:Driver ;
+    skos:prefLabel "Increasing Regulatory Pressure"@en ;
+    skos:definition "Growing compliance burden from PSD2, Basel IV, DORA, and national regulators."@en ;
+.
+
+:ReduceTimeToMarket
+    a              togaf:Goal ;
+    skos:prefLabel "Reduce Time-to-Market"@en ;
+    skos:definition "Reduce product launch cycle from 18 months to 3 months by 2027."@en ;
+.
+
+:ImproveCustomerExperience
+    a              togaf:Goal ;
+    skos:prefLabel "Improve Digital Customer Experience"@en ;
+    skos:definition "Achieve top-quartile NPS score across all digital channels by 2027."@en ;
+.
+
+:ReduceOperationalCost
+    a              togaf:Objective ;
+    skos:prefLabel "Reduce IT Operating Cost by 30%"@en ;
+    skos:definition "Achieve 30% reduction in IT run cost through cloud migration and decommissioning legacy by 2028."@en ;
+.
+
+
+#################################################################
+# Business Architecture
+#################################################################
+
+:RetailBanking
+    a              togaf:OrganizationUnit ;
+    skos:prefLabel "Retail Banking Division"@en ;
+    skos:definition "Division serving 12 million individual customers across 20 markets."@en ;
+.
+
+:CorporateBanking
+    a              togaf:OrganizationUnit ;
+    skos:prefLabel "Corporate Banking Division"@en ;
+    skos:definition "Division serving 50,000 corporate and institutional clients."@en ;
+.
+
+:WealthManagement
+    a              togaf:OrganizationUnit ;
+    skos:prefLabel "Wealth Management Division"@en ;
+    skos:definition "Division managing EUR 180 billion in assets for high-net-worth clients."@en ;
+.
+
+:PaymentProcessing
+    a              togaf:BusinessCapability ;
+    skos:prefLabel "Payment Processing"@en ;
+    skos:definition "The ability to execute, clear, and settle payment transactions across all channels and payment schemes."@en ;
+.
+
+:LendingCapability
+    a              togaf:BusinessCapability ;
+    skos:prefLabel "Lending"@en ;
+    skos:definition "The ability to originate, underwrite, disburse, and service loans across retail and corporate segments."@en ;
+.
+
+:RiskManagementCapability
+    a              togaf:BusinessCapability ;
+    skos:prefLabel "Risk Management"@en ;
+    skos:definition "The ability to identify, measure, monitor, and mitigate credit, market, and operational risks."@en ;
+.
+
+:CustomerOnboarding
+    a              togaf:BusinessCapability ;
+    skos:prefLabel "Customer Onboarding"@en ;
+    skos:definition "The ability to acquire new customers through KYC, identity verification, and account opening."@en ;
+.
+
+:LoanOrigination
+    a              togaf:Process ;
+    skos:prefLabel "Loan Origination Process"@en ;
+    skos:definition "End-to-end process from application through credit assessment, approval, to disbursement."@en ;
+.
+
+:PaymentExecution
+    a              togaf:Process ;
+    skos:prefLabel "Payment Execution Process"@en ;
+    skos:definition "Process of validating, routing, clearing, and settling payment instructions."@en ;
+.
+
+:AccountManagementService
+    a              togaf:BusinessService ;
+    skos:prefLabel "Account Management Service"@en ;
+    skos:definition "Service enabling customers to open, manage, and close accounts across all channels."@en ;
+.
+
+:PaymentService
+    a              togaf:BusinessService ;
+    skos:prefLabel "Payment Service"@en ;
+    skos:definition "Service enabling customers to initiate and receive payments domestically and internationally."@en ;
+.
+
+:CustomerData
+    a              togaf:BusinessInformation ;
+    skos:prefLabel "Customer Master Data"@en ;
+    skos:definition "Core customer identity, KYC, and relationship data across all products."@en ;
+.
+
+
+#################################################################
+# Data Architecture
+#################################################################
+
+:CustomerEntity
+    a              togaf:DataEntity ;
+    skos:prefLabel "Customer"@en ;
+    skos:definition "A person or organisation that holds or applies for banking products."@en ;
+.
+
+:AccountEntity
+    a              togaf:DataEntity ;
+    skos:prefLabel "Account"@en ;
+    skos:definition "A financial account holding a balance and recording transactions."@en ;
+.
+
+:TransactionEntity
+    a              togaf:DataEntity ;
+    skos:prefLabel "Transaction"@en ;
+    skos:definition "A financial operation that changes the balance of one or more accounts."@en ;
+.
+
+:LoanEntity
+    a              togaf:DataEntity ;
+    skos:prefLabel "Loan"@en ;
+    skos:definition "A credit facility with principal, interest rate, term, and repayment schedule."@en ;
+.
+
+
+#################################################################
+# Application Architecture
+#################################################################
+
+:CoreBankingLogical
+    a              togaf:LogicalApplicationComponent ;
+    skos:prefLabel "Core Banking System (Logical)"@en ;
+    skos:definition "Logical application managing accounts, transactions, and product lifecycle."@en ;
+.
+
+:CoreBankingPhysical
+    a              togaf:PhysicalApplicationComponent ;
+    skos:prefLabel "Temenos Transact"@en ;
+    skos:definition "Physical realisation of core banking on Temenos Transact platform deployed on AWS."@en ;
+.
+
+:PaymentHubLogical
+    a              togaf:LogicalApplicationComponent ;
+    skos:prefLabel "Payment Hub (Logical)"@en ;
+    skos:definition "Logical application orchestrating payment processing across all schemes and channels."@en ;
+.
+
+:PaymentHubPhysical
+    a              togaf:PhysicalApplicationComponent ;
+    skos:prefLabel "Finastra Payment Hub"@en ;
+    skos:definition "Physical realisation of payment processing on Finastra Global PAYplus."@en ;
+.
+
+:OpenBankingAPI
+    a              togaf:ApplicationService ;
+    skos:prefLabel "Open Banking API Gateway"@en ;
+    skos:definition "PSD2-compliant API gateway exposing account and payment services to third parties."@en ;
+.
+
+:MobileBankingApp
+    a              togaf:ApplicationService ;
+    skos:prefLabel "Mobile Banking Application"@en ;
+    skos:definition "Customer-facing mobile application for account management, payments, and lending."@en ;
+.
+
+:RiskEngine
+    a              togaf:ApplicationService ;
+    skos:prefLabel "Risk Calculation Engine"@en ;
+    skos:definition "Real-time risk scoring and capital calculation service for Basel IV compliance."@en ;
+.
+
+
+#################################################################
+# Technology Architecture
+#################################################################
+
+:AWSPlatform
+    a              togaf:PhysicalTechnologyComponent ;
+    skos:prefLabel "AWS EU (Frankfurt)"@en ;
+    skos:definition "Amazon Web Services EU-Central-1 region hosting Atlas production workloads."@en ;
+.
+
+:AWSIreland
+    a              togaf:PhysicalTechnologyComponent ;
+    skos:prefLabel "AWS EU (Ireland)"@en ;
+    skos:definition "Amazon Web Services EU-West-1 region for disaster recovery and Nordic data residency."@en ;
+.
+
+:ContainerOrchestration
+    a              togaf:TechnologyService ;
+    skos:prefLabel "Container Orchestration Service"@en ;
+    skos:definition "EKS-based Kubernetes orchestration for microservices deployment and scaling."@en ;
+.
+
+:ManagedDatabase
+    a              togaf:TechnologyService ;
+    skos:prefLabel "Managed Database Service"@en ;
+    skos:definition "Aurora PostgreSQL and DynamoDB managed database services."@en ;
+.
+
+:EventStreaming
+    a              togaf:TechnologyService ;
+    skos:prefLabel "Event Streaming Service"@en ;
+    skos:definition "Amazon MSK (Kafka) for real-time event processing across microservices."@en ;
+.
+
+
+#################################################################
+# Implementation & Migration
+#################################################################
+
+:CoreBankingMigration
+    a              togaf:WorkPackage ;
+    skos:prefLabel "Core Banking Migration Programme"@en ;
+    skos:definition "3-year programme to migrate from legacy mainframe to cloud-native core banking."@en ;
+.
+
+:OpenBankingProject
+    a              togaf:WorkPackage ;
+    skos:prefLabel "Open Banking Compliance Project"@en ;
+    skos:definition "Project delivering PSD2-compliant APIs and third-party provider onboarding."@en ;
+.
+
+:PaymentsValueStream
+    a              togaf:ValueStream ;
+    skos:prefLabel "Payments Value Stream"@en ;
+    skos:definition "End-to-end value delivery from payment initiation through clearing to settlement."@en ;
+.
+
+:LendingValueStream
+    a              togaf:ValueStream ;
+    skos:prefLabel "Lending Value Stream"@en ;
+    skos:definition "End-to-end value delivery from loan application through underwriting to servicing."@en ;
+.
+
+
+#################################################################
+# Relationships
+#################################################################
+
+## Motivation governs architecture
+:CloudFirstPrinciple togaf:governs :CoreBankingPhysical .
+:CloudFirstPrinciple togaf:governs :AWSPlatform .
+:DataSovereigntyPrinciple togaf:governs :AWSPlatform .
+:DataSovereigntyPrinciple togaf:governs :AWSIreland .
+:PSD2Compliance togaf:governs :OpenBankingAPI .
+:BaselIVCapital togaf:governs :RiskEngine .
+
+## Goals realized through work packages
+:ReduceTimeToMarket togaf:isRealizedThrough :CoreBankingMigration .
+:ImproveCustomerExperience togaf:isRealizedThrough :CoreBankingMigration .
+:ReduceOperationalCost togaf:isRealizedThrough :CoreBankingMigration .
+:PSD2Compliance togaf:isRealizedThrough :OpenBankingProject .
+
+## Drivers track goals
+:DigitalDisruption togaf:tracks :ReduceTimeToMarket .
+:DigitalDisruption togaf:tracks :ImproveCustomerExperience .
+:RegulatoryPressure togaf:tracks :PSD2Compliance .
+
+## Business architecture — containment
+:RetailBanking togaf:contains :PaymentProcessing .
+:RetailBanking togaf:contains :LendingCapability .
+:RetailBanking togaf:contains :CustomerOnboarding .
+:CorporateBanking togaf:contains :PaymentProcessing .
+:CorporateBanking togaf:contains :LendingCapability .
+:CorporateBanking togaf:contains :RiskManagementCapability .
+
+## Business architecture — supports
+:AccountManagementService togaf:supports :RetailBanking .
+:AccountManagementService togaf:supports :CorporateBanking .
+:PaymentService togaf:supports :PaymentProcessing .
+
+## Business architecture — decomposition
+:PaymentProcessing togaf:decomposesInto :DomesticPayments .
+:PaymentProcessing togaf:decomposesInto :CrossBorderPayments .
+:PaymentProcessing togaf:decomposesInto :CardPayments .
+
+:DomesticPayments
+    a              togaf:BusinessCapability ;
+    skos:prefLabel "Domestic Payments"@en ;
+    skos:definition "Processing of payments within a single jurisdiction via local clearing schemes."@en ;
+.
+
+:CrossBorderPayments
+    a              togaf:BusinessCapability ;
+    skos:prefLabel "Cross-Border Payments"@en ;
+    skos:definition "Processing of international payments via SWIFT, SEPA, and correspondent banking."@en ;
+.
+
+:CardPayments
+    a              togaf:BusinessCapability ;
+    skos:prefLabel "Card Payments"@en ;
+    skos:definition "Processing of debit and credit card transactions via card schemes."@en ;
+.
+
+## Process accesses data
+:LoanOrigination togaf:accesses :CustomerEntity .
+:LoanOrigination togaf:accesses :LoanEntity .
+:PaymentExecution togaf:accesses :AccountEntity .
+:PaymentExecution togaf:accesses :TransactionEntity .
+
+## Application realizes business
+:CoreBankingLogical togaf:supports :AccountManagementService .
+:CoreBankingLogical togaf:supports :LendingCapability .
+:PaymentHubLogical togaf:supports :PaymentProcessing .
+:OpenBankingAPI togaf:supports :AccountManagementService .
+:OpenBankingAPI togaf:supports :PaymentService .
+:MobileBankingApp togaf:supports :AccountManagementService .
+:RiskEngine togaf:supports :RiskManagementCapability .
+
+## Physical realizes logical
+:CoreBankingPhysical togaf:realizes :CoreBankingLogical .
+:PaymentHubPhysical togaf:realizes :PaymentHubLogical .
+
+## Technology supports application
+:ContainerOrchestration togaf:supports :CoreBankingPhysical .
+:ContainerOrchestration togaf:supports :PaymentHubPhysical .
+:ManagedDatabase togaf:supports :CoreBankingPhysical .
+:EventStreaming togaf:supports :PaymentHubPhysical .
+
+## Application communicates
+:OpenBankingAPI togaf:communicatesWith :CoreBankingPhysical .
+:MobileBankingApp togaf:communicatesWith :CoreBankingPhysical .
+:CoreBankingPhysical togaf:communicatesWith :PaymentHubPhysical .
+
+## Dependencies
+:CoreBankingPhysical togaf:dependsOn :ContainerOrchestration .
+:CoreBankingPhysical togaf:dependsOn :ManagedDatabase .
+:PaymentHubPhysical togaf:dependsOn :EventStreaming .
+:OpenBankingAPI togaf:dependsOn :CoreBankingPhysical .
+
+
+#################################################################
+# Views
+#################################################################
+
+:AtlasBusinessCapabilityView
+    a                            arch:View ;
+    skos:prefLabel               "Atlas Business Capability Map"@en ;
+    arch:viewConformsToViewpoint togafvp:BusinessServiceFunctionCatalog ;
+.
+
+:AtlasApplicationPortfolioView
+    a                            arch:View ;
+    skos:prefLabel               "Atlas Application Portfolio"@en ;
+    arch:viewConformsToViewpoint togafvp:ApplicationPortfolioCatalog ;
+.
+
+:AtlasMigrationRoadmapView
+    a                            arch:View ;
+    skos:prefLabel               "Atlas Migration Roadmap"@en ;
+    arch:viewConformsToViewpoint togafvp:ArchitectureRoadmap ;
+.
+
+:AtlasMotivationView
+    a                            arch:View ;
+    skos:prefLabel               "Atlas Motivation View"@en ;
+    arch:viewConformsToViewpoint togafvp:StakeholderMapMatrix ;
+.

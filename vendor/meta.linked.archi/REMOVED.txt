@@ -1,37 +1,12 @@
 Files removed from this directory after it was first committed.
 
 FETCHED_AT, fetch.log and urls.txt are kept unchanged as the record of the
-ttl/ fetch; SHA256SUMS lists only the ttl/ files still present.
+ttl/ fetch.
 
-2026-11-21  Removed 14 files that are not referenced by any AISEP module
-            manifest, code, model, test or doc, and in which no license
-            statement was found (checked for cc:license, dcterms:license,
-            schema:license, dc/dcterms rights, SPDX identifiers and
-            creativecommons.org license URLs). Decision: docs/decisions.md
-            ADR-018. Recorded here so the deletion is traceable:
-
-  llms.txt
-      Not part of the ttl/ fetch: it is not in urls.txt, fetch.log or the
-      original SHA256SUMS. It was committed with the directory in e7c4119
-      (the text of https://meta.linked.archi/llms.txt).
-  ttl/admit_onto.ttl            (fetched from https://meta.linked.archi/admit/onto)
-      NOTE: ttl/admit_metamodel.ttl (arch:modelConcepts, line 56) and
-      ttl/admit_tax.ttl still point to its namespace
-      https://meta.linked.archi/admit/onto# . Restore admit_onto.ttl
-      (re-fetch it) before using admit_metamodel.ttl or admit_tax.ttl.
-  ttl/examples_archimate3.2-questions_.ttl
-  ttl/examples_archimate4-questions_.ttl
-  ttl/examples_archimate4-viewpoint_.ttl
-  ttl/examples_atlas-bank_.ttl
-  ttl/examples_cloudplatform_model_.ttl
-  ttl/examples_diagram_.ttl
-  ttl/examples_labels_.ttl
-  ttl/examples_leanix-docs-example_.ttl
-  ttl/examples_meridian_.ttl
-  ttl/examples_nordfreight_.ttl
-  ttl/examples_payflow_.ttl
-  ttl/examples_uml_.ttl
-      (each fetched from the matching https://meta.linked.archi/examples/<name>/
-      URL in urls.txt)
-
-ttl/catalog.ttl was kept: it declares CC BY 4.0 with dcterms:license.
+2026-11-21  Removed llms.txt (decision: docs/decisions.md ADR-018).
+            It was not part of the ttl/ fetch: it is not in urls.txt,
+            fetch.log or SHA256SUMS. It was committed with this directory in
+            e7c4119 and held the text of https://meta.linked.archi/llms.txt.
+            It carries no license statement, has no entry in ttl/catalog.ttl,
+            and nothing in AISEP (module manifests, code, models, tests, docs)
+            references it.

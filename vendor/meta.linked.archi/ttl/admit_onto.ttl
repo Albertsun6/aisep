@@ -1,0 +1,197 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <http://schema.org/> .
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ad:      <https://meta.linked.archi/arch-decision#> .
+@prefix :        <https://meta.linked.archi/admit/onto#> .
+
+<https://meta.linked.archi/admit/onto#>
+    a                             owl:Ontology ;
+    owl:imports                   <https://meta.linked.archi/core#> ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/admit/onto#" ;
+    vann:preferredNamespacePrefix "admit" ;
+    dcterms:title                      "Linked.Archi ADMIT Design Forces Ontology"@en ;
+    dcterms:description                '''The ADMIT Design Forces Ontology contains the 20 ADMIT architecture design forces
+as OWL classes extending ad:Force.
+This is not an official IASA document.'''@en ;
+    dcterms:created               "2020-07-27"^^xsd:date ;
+    dcterms:issued                "2020-07-27"^^xsd:date ;
+    dcterms:modified              "2026-05-02"^^xsd:date ;
+    dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
+    bibo:status                   "draft" ;
+    owl:versionIRI                <https://meta.linked.archi/admit/onto/0.1.0#> ;
+    owl:versionInfo               "0.1.0"@en ;
+    prov:wasDerivedFrom           "ADMIT Framework (Prasad Rao, InfoQ 2014)" ;
+    rdfs:seeAlso                  <https://www.infoq.com/articles/admit-architecture-framework/> ;
+    schema:image                  <https://res.infoq.com/articles/admit-architecture-framework/en/resources/admit-figure2large.jpg> ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string .
+
+
+:BusinessForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Business Force"@en ;
+    skos:definition "A needs assessment from the business community should be considered first, in order to craft a successful solution. Business and IT will partner together to identify innovative solutions that satisfy requirements and adhere to IT strategy and standards. Architects transform ideas and concepts into systems and solutions; yielding the definition of business processes and services by applying their broad domain knowledge and business expertise."@en ;
+.
+
+
+:OperationForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Operation Force"@en ;
+    skos:definition "Non-functional requirements, such as system health monitoring, administration, service level agreements, and operational concerns usually comes from the business and IT operations. Despite not originating from direct client needs, meeting these requirements and pursuing operational excellence is a vital component of any architectural work."@en ;
+.
+
+
+:AestheticismForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Aestheticism Force"@en ;
+    skos:definition "Artistry and aestheticism should come into play because of human interaction with the systems we create. Architectural design delights people and raises their spirits. Seamless, effortless and attractive user interface will enhance customer experience and engagement. Helping business with right mix of technology, process, and pragmatism is a combination of both science and art. For that, left and right brains should be fused to think outside of box."@en ;
+.
+
+
+:FutureForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Future Force"@en ;
+    skos:definition "In addition to current requirements, architects have to consider the relevance of the solution for next five to ten years, so that a sound and solid architecture can be built to cater the expected growth pattern. Think ahead by introducing abstraction layers (boxes on flow chart or interfaces in code), but defer implementation until it is required."@en ;
+.
+
+
+:SimplicityForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Simplicity Force"@en ;
+    skos:definition "Simplicity not only improves the understandability of the system to its stakeholders, but also saves cost in the long run. However, sometimes complexity is unavoidable in the enterprise. Architects should be able to identify and manage the necessary complexity by abstraction or decomposition, and prevent the design entropy from taking hold. In the real world, complex systems evolve from simple working systems."@en ;
+.
+
+
+:ChangeForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Change Force"@en ;
+    skos:definition "In order to be competitive in the market place, we have to embrace and adopt changes quickly. For this reason, systems should be easily configurable using metadata and properties. Architecture will be better off if it is based on common foundation and building blocks to enable agility and flexibility."@en ;
+.
+
+
+:ProcessForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Process Force"@en ;
+    skos:definition "Outdated business processes and custom solutions should be reengineered to deliver both current and future requirements. Standardized and integrated business processes build core capabilities for execution and growth. Industry standard processes are appropriate for most functions, unless a clear competitive reason exists for a custom solution."@en ;
+.
+
+
+:IntegrationForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Integration Force"@en ;
+    skos:definition "Integration plays a major role in sharing data between applications as well as external business in the case of corporate acquisitions. To maintain flexibility and interoperability, integration should be loosely-coupled and standard-based. Common integration patterns and messaging protocols prevent the proliferation of redundant technologies and reduce maintenance costs."@en ;
+.
+
+
+:ImplementationPatternForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Implementation/Pattern Force"@en ;
+    skos:definition "Architects need to provide implementation details like object models (UML), data models (ERD), shared components, data-flow diagrams, dependency graphs, service APIs, communication protocols, messaging structure, etc. to the delivery team. These patterns, frameworks, and standards play an important role in architecture design. Patterns are proven solutions of a problem within a given context. Frameworks are the implementation kits for architecture and design patterns. Technology standards are used to improve interoperability of the system."@en ;
+.
+
+
+:EnterpriseForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Enterprise Force"@en ;
+    skos:definition "Having enterprise systems, shared IT infrastructure, and company-wide core data store provides global synergy, promotes efficiency of processes, and saves overhead costs, compared to building business silos for each business vertical. Focus should be on system reusability, core business processes and master data management."@en ;
+.
+
+
+:ConstraintEnvironmentForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:closeMatch ad:Constraint ;
+    skos:prefLabel  "Constraint/Environment Force"@en ;
+    skos:definition "In the organization, there may be some constraints that inevitably need to be addressed. These constraints can be related to personnel, technology, or time. We need to balance those constraints while designing the architecture. Architecture is also influenced by many environmental factors such as the organization's structure and culture, as well as individual employee's influence and corporate politics."@en ;
+.
+
+
+:FailureForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Failure Force"@en ;
+    skos:definition "Protecting systems from a single point of failure is achieved by considering fault-tolerance, redundancy, and data replication in the architecture. Over time all hardware and software systems fail. We need to plan for success scenarios, as well as failure scenarios in order to mitigate this risk."@en ;
+.
+
+
+:ChannelForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Channel Force"@en ;
+    skos:definition "Companies target different customer segments via multiple channels, such as mobile, web, social media, and on premises kiosks to provide unique and differentiating user experiences. Architects need to consider various tangible devices that are available to reach the consumer, and their related technologies at the client tier for mass adaption."@en ;
+.
+
+
+:ContentForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Content Force"@en ;
+    skos:definition "Content such as data and information is an enterprise asset that needs to be governed and delivered in an efficient way. Content sourcing, integration, and distribution are some of the important aspects of content strategy."@en ;
+.
+
+
+:PlatformForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Platform Force"@en ;
+    skos:definition "Platform covers the operating systems, virtual servers, middleware, database, and other technologies that deliver products. They play a major role in overall architecture in application and data space."@en ;
+.
+
+
+:InfrastructureForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Infrastructure Force"@en ;
+    skos:definition "To design a highly scalable and reliable infrastructure, architects consider server sizing and cluster environments to balance the workload for multiple servers and to protect the system from single point of failure. Infrastructure includes hardware stacks and the datacenter facility."@en ;
+.
+
+
+:NetworkForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Network Force"@en ;
+    skos:definition "To design a distributed system for a globalized environment, we have to consider next-generation networks including mobile and cloud and prepare deployment topologies with the proper network segmentation and firewall protected perimeter security."@en ;
+.
+
+
+:StorageForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Storage Force"@en ;
+    skos:definition "Protecting data's integrity is one of the most important elements in IT. These assets should be stored in a persistent storage medium such as NAS, SAN. Attention should be paid to define data replication strategy, backup and retention policy, restore and cleanup procedure."@en ;
+.
+
+
+:SecurityForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Security Force"@en ;
+    skos:definition "Companies formulate security policies to meet the legal and regulatory requirements of compliance, governance, and privacy in addition to protecting the organization and its brand from various risks. These policies are enforced as part of network security, application and data security, platform security, and physical security."@en ;
+.
+
+
+:CostForce
+    a               owl:Class ;
+    rdfs:subClassOf ad:Force ;
+    skos:prefLabel  "Cost Force"@en ;
+    skos:definition "Minimizing cost and maximizing quality is everybody's business in IT. Architects explore multiple of design options and their associated trade-offs in order to measure their cost and effectiveness before deciding the best possible solution of the business problem. Efficient technology is always good for company's bottom-line."@en ;
+.

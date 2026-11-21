@@ -1,0 +1,838 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix schema:  <http://schema.org/> .
+
+@prefix arch:    <https://meta.linked.archi/core#> .
+@prefix ap:      <https://meta.linked.archi/arch-processes#> .
+@prefix lmm:     <https://meta.linked.archi/leanix/onto#> .
+@prefix :        <https://meta.linked.archi/examples/leanix-docs-example/> .
+
+#################################################################
+# Model Declaration
+#################################################################
+
+:LeanIXDocsExampleModel
+    a                             arch:Model ;
+    skos:prefLabel                "SAP LeanIX Meta Model v4 — Documentation Example Landscape"@en ;
+    dcterms:title                 "SAP LeanIX Meta Model v4 — Documentation Example Landscape"@en ;
+    vann:preferredNamespaceUri    "https://meta.linked.archi/examples/leanix-docs-example/" ;
+    vann:preferredNamespacePrefix "lxdoc" ;
+    arch:modelConformsToMetamodel <https://meta.linked.archi/leanix/metamodel#LeanIXv4> ;
+    dcterms:created               "2026-08-16"^^xsd:date ;
+    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
+    dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
+    owl:versionInfo               "0.2.0"@en ;
+    dcterms:description           '''A small LeanIX workspace assembled from the examples SAP's own
+LeanIX documentation gives for each fact sheet type, wired together with a selection of Meta Model v4
+relationships and carrying the fact sheet attributes — status, completion, dated lifecycle phases,
+subscriptions and tags.
+
+Its purpose is to be validated, not admired: it is the data that exercises leanIX-shapes.ttl, which
+until now had nothing to fire on. It is deliberately small enough to read in one sitting.
+
+This is not an official SAP document, and SAP does not publish this landscape. What SAP publishes are
+the individual examples named below; assembling them into one connected workspace is this
+repository's doing.'''@en ;
+
+    ## ─── Sources ───────────────────────────────────────────────
+    ## Every element name, every tag and every enumerated value below comes from
+    ## one of these pages. Canonical URLs: the LeanIX documentation moved from
+    ## docs-eam.leanix.net to the SAP Help Portal, and these are the targets its
+    ## own 301s resolve to.
+    dcterms:source
+        <https://help.sap.com/docs/leanix/ea/meta-model>,
+        <https://help.sap.com/docs/leanix/ea/fact-sheets>,
+        <https://help.sap.com/docs/leanix/ea/lifecycle>,
+        <https://help.sap.com/docs/leanix/ea/fact-sheet-completeness>,
+        <https://help.sap.com/docs/leanix/ea/fact-sheet-subscription>,
+        <https://help.sap.com/docs/leanix/ea/managing-fact-sheet-subscriptions>,
+        <https://help.sap.com/docs/leanix/ea/subscription-roles>,
+        <https://help.sap.com/docs/leanix/ea/tags>,
+        <https://help.sap.com/docs/leanix/ea/it-components-hosting-modeling-v3>,
+        <https://help.sap.com/docs/leanix/ea/reference/graphql-advanced> ;
+    prov:wasDerivedFrom
+        <https://help.sap.com/docs/leanix/ea/meta-model>,
+        <https://help.sap.com/docs/leanix/ea/fact-sheets>,
+        <https://help.sap.com/docs/leanix/ea/lifecycle>,
+        <https://help.sap.com/docs/leanix/ea/fact-sheet-subscription>,
+        <https://help.sap.com/docs/leanix/ea/tags>,
+        <https://help.sap.com/docs/leanix/ea/it-components-hosting-modeling-v3>,
+        <https://help.sap.com/docs/leanix/ea/reference/graphql-advanced> ;
+
+    ## ─── What is sourced and what is illustrative ──────────────
+    skos:editorialNote
+        '''Read this before treating any value here as documented fact. Three tiers:
+
+**Sourced.** Fact sheet names are the examples SAP's documentation gives for each type, and each
+element below carries dcterms:source pointing at the page it came from — "SAP S/4HANA Finance" and
+"Salesforce Sales Cloud" for Application, "Customer Data Platform" for Platform, "Lead to Cash" for
+Value Stream, "PostgreSQL 15" and "Kubernetes cluster" for IT Component, and so on. The tag group
+"Application Hosting" with the values On-Prem, SaaS, PaaS and IaaS is the worked example on the IT
+component hosting page. The value sets — ACTIVE/ARCHIVED/BROKEN, RESPONSIBLE/ACCOUNTABLE/OBSERVER,
+and the five lifecycle phases plan/phaseIn/active/phaseOut/endOfLife — are fixed by the product and
+documented. The one lifecycle phase dated 2017-03-12 is verbatim from the GraphQL reference page's
+own response payload.
+
+**Illustrative.** The Accounting Shared Services team and Legacy Billing System names, completion
+ratios, fact sheet identifiers, subscriber email addresses and every
+date except the one named above. The documentation gives no example values for these, so they are
+invented, and any reader treating them as SAP's would be wrong. They are here because the shapes
+constrain their datatypes and cardinality, and a fixture that omits them tests nothing.
+
+**Ours.** Which element relates to which. SAP documents that an Application supports a Business
+Capability; it does not say that "Salesforce Sales Cloud" supports "Customer Management". Every edge
+below is a plausible reading of the documented relationship types over the documented names, chosen
+to exercise the common relationships. The companion conformance fixture covers every diagram pair.'''@en ;
+.
+
+
+#################################################################
+# Strategy & Transformation
+#
+# Objective and Initiative examples:
+#   https://help.sap.com/docs/leanix/ea/objective-modeling-guidelines
+#   https://help.sap.com/docs/leanix/ea/initiative-modeling-guidelines
+#################################################################
+
+:ReduceRunCost
+    a                   lmm:Objective ;
+    skos:prefLabel      "Reduce IT run cost by 20% by 2027"@en ;
+    skos:notation       "lxdoc-obj-1" ;
+    dcterms:type        "Objective" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/objective-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+    lmm:completion      0.75 ;
+.
+
+:ErpConsolidation
+    a                     lmm:Initiative ;
+    skos:prefLabel        "ERP Consolidation Program 2026–2028"@en ;
+    skos:notation         "lxdoc-ini-1" ;
+    dcterms:type          "Initiative" ;
+    dcterms:source        <https://help.sap.com/docs/leanix/ea/initiative-modeling-guidelines> ;
+    lmm:factSheetStatus   lmm:StatusActive ;
+    lmm:completion        0.6 ;
+    ap:atLifecycleStage   ap:PhaseIn ;
+    lmm:hasLifecyclePhase :ErpConsolidationPlanPhase, :ErpConsolidationPhaseInPhase ;
+.
+
+## The plan phase and its date are verbatim from the response payload on
+## https://help.sap.com/docs/leanix/ea/reference/graphql-advanced, which shows
+## lifecycle { asString phases { phase startDate } } returning
+## phase "plan", startDate "2017-03-12". The phase token resolves to ap:Plan
+## because ap:Plan carries a skos:closeMatch to the LeanIX lifecycle
+## documentation anchor of the same name.
+:ErpConsolidationPlanPhase
+    a                   lmm:LifecyclePhase ;
+    ap:atLifecycleStage ap:Plan ;
+    lmm:phaseStart      "2017-03-12"^^xsd:date ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/reference/graphql-advanced> ;
+.
+
+:ErpConsolidationPhaseInPhase
+    a                   lmm:LifecyclePhase ;
+    ap:atLifecycleStage ap:PhaseIn ;
+    lmm:phaseStart      "2026-01-01"^^xsd:date ;    ## illustrative
+.
+
+
+#################################################################
+# Business Architecture
+#
+#   https://help.sap.com/docs/leanix/ea/business-capability-modeling-guidelines
+#   https://help.sap.com/docs/leanix/ea/organization-modeling-guidelines
+#   https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines
+#################################################################
+
+:CustomerManagement
+    a                   lmm:BusinessCapability ;
+    skos:prefLabel      "Customer Management"@en ;
+    skos:notation       "lxdoc-bc-1" ;
+    dcterms:type        "BusinessCapability" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/business-capability-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+    lmm:completion      0.9 ;
+.
+
+:OrderProcessing
+    a                   lmm:BusinessCapability ;
+    skos:prefLabel      "Order Processing"@en ;
+    skos:notation       "lxdoc-bc-2" ;
+    dcterms:type        "BusinessCapability" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/business-capability-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+    lmm:completion      0.85 ;
+.
+
+:Finance
+    a                   lmm:Organization ;
+    skos:prefLabel      "Finance"@en ;
+    skos:notation       "lxdoc-org-1" ;
+    dcterms:type        "Organization" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/organization-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+:SalesEmea
+    a                   lmm:Organization ;
+    skos:prefLabel      "Sales EMEA"@en ;
+    skos:notation       "lxdoc-org-2" ;
+    dcterms:type        "Organization" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/organization-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+## Illustrative team inside Finance, demonstrating a same-type hierarchy.
+## The Team subtype is documented; this team name and its placement are local examples.
+:AccountingSharedServices
+    a                   lmm:Team ;
+    skos:prefLabel      "Accounting Shared Services"@en ;
+    skos:notation       "lxdoc-org-3" ;
+    dcterms:type        "Team" ;
+    skos:editorialNote  "Illustrative team name and placement; the Team subtype is documented by SAP."@en ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/organization-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+:LeadToCash
+    a                   lmm:ValueStream ;
+    skos:prefLabel      "Lead to Cash"@en ;
+    skos:notation       "lxdoc-vs-1" ;
+    dcterms:type        "ValueStream" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+:CreateCustomerInvoice
+    a                   lmm:Process ;
+    skos:prefLabel      "Create Customer Invoice"@en ;
+    skos:notation       "lxdoc-proc-1" ;
+    dcterms:type        "Process" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+:GoldCreditCard
+    a                   lmm:Product ;
+    skos:prefLabel      "Gold Credit Card"@en ;
+    skos:notation       "lxdoc-prod-1" ;
+    dcterms:type        "Product" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/business-context-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+
+#################################################################
+# Application & Data Architecture
+#
+#   https://help.sap.com/docs/leanix/ea/application-modeling-guidelines
+#   https://help.sap.com/docs/leanix/ea/interface-modeling-guidelines
+#   https://help.sap.com/docs/leanix/ea/data-object-modeling-guidelines
+#################################################################
+
+:S4HanaFinance
+    a                     lmm:Application ;
+    skos:prefLabel        "SAP S/4HANA Finance"@en ;
+    skos:altLabel         "S/4HANA Finance" ;
+    skos:notation         "lxdoc-app-1" ;
+    dcterms:type          "Application" ;
+    dcterms:source        <https://help.sap.com/docs/leanix/ea/application-modeling-guidelines> ;
+    dcterms:created       "2024-02-01T09:00:00Z"^^xsd:dateTime ;    ## illustrative
+    dcterms:modified      "2026-07-30T14:12:00Z"^^xsd:dateTime ;    ## illustrative
+    lmm:factSheetStatus   lmm:StatusActive ;
+    lmm:completion        0.82 ;                                    ## illustrative
+    ap:atLifecycleStage   ap:Active ;
+    lmm:hasLifecyclePhase :S4HanaActivePhase, :S4HanaPhaseOutPhase ;
+    lmm:hasSubscription   :S4HanaAccountable, :S4HanaResponsible ;
+    lmm:hasTag            :OnPremHostingTag ;
+.
+
+:S4HanaActivePhase
+    a                   lmm:LifecyclePhase ;
+    ap:atLifecycleStage ap:Active ;
+    lmm:phaseStart      "2024-04-01"^^xsd:date ;    ## illustrative
+.
+
+:S4HanaPhaseOutPhase
+    a                   lmm:LifecyclePhase ;
+    ap:atLifecycleStage ap:PhaseOut ;
+    lmm:phaseStart      "2028-01-01"^^xsd:date ;    ## illustrative — a planned phase
+.
+
+:SalesforceSalesCloud
+    a                     lmm:BusinessApplication ;
+    skos:prefLabel        "Salesforce Sales Cloud"@en ;
+    skos:notation         "lxdoc-app-2" ;
+    dcterms:type          "BusinessApplication" ;
+    dcterms:source        <https://help.sap.com/docs/leanix/ea/application-modeling-guidelines> ;
+    lmm:factSheetStatus   lmm:StatusActive ;
+    lmm:completion        0.68 ;                                    ## illustrative
+    ap:atLifecycleStage   ap:Active ;
+    lmm:hasSubscription   :SalesforceObserver ;
+    lmm:hasTag            :SaasHostingTag ;
+.
+
+## An archived fact sheet, to exercise the third status value. LeanIX keeps
+## archived fact sheets readable and refuses updates to them; nothing about
+## being archived says the software stopped running, which is why the lifecycle
+## stage here is independent of the status.
+:LegacyBillingSystem
+    a                   lmm:Application ;
+    skos:prefLabel      "Legacy Billing System"@en ;
+    skos:notation       "lxdoc-app-3" ;
+    dcterms:type        "Application" ;
+    lmm:factSheetStatus lmm:StatusArchived ;
+    ap:atLifecycleStage ap:Retired ;
+    skos:editorialNote  '''A fact sheet here with no dcterms:source, and deliberately so: the
+name is invented. The documentation names example applications but none that is archived, and the
+ARCHIVED status is worth demonstrating because it is the value most likely to be mishandled — an
+archived record is not a retired application.'''@en ;
+.
+
+:OrderExportApi
+    a                     lmm:Interface ;
+    skos:prefLabel        "Order export API"@en ;
+    skos:notation         "lxdoc-itf-1" ;
+    dcterms:type          "Interface" ;
+    dcterms:source        <https://help.sap.com/docs/leanix/ea/interface-modeling-guidelines> ;
+    lmm:factSheetStatus   lmm:StatusActive ;
+    ap:atLifecycleStage   ap:Active ;
+.
+
+:CustomerProfile
+    a                   lmm:DataObject ;
+    skos:prefLabel      "Customer Profile"@en ;
+    skos:notation       "lxdoc-do-1" ;
+    dcterms:type        "DataObject" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/data-object-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+:InvoiceData
+    a                   lmm:DataObject ;
+    skos:prefLabel      "Invoice Data"@en ;
+    skos:notation       "lxdoc-do-2" ;
+    dcterms:type        "DataObject" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/data-object-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+
+#################################################################
+# Technical Architecture
+#
+#   https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines
+#   https://help.sap.com/docs/leanix/ea/tech-category-modeling-guidelines
+#   https://help.sap.com/docs/leanix/ea/platform-modeling-guidelines
+#   https://help.sap.com/docs/leanix/ea/provider-modeling-guidelines
+#################################################################
+
+:Postgresql15
+    a                   lmm:ITComponent ;
+    skos:prefLabel      "PostgreSQL 15"@en ;
+    skos:notation       "lxdoc-itc-1" ;
+    dcterms:type        "ITComponent" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+    ap:atLifecycleStage ap:Active ;
+.
+
+:KubernetesCluster
+    a                   lmm:ITComponent ;
+    skos:prefLabel      "Kubernetes cluster"@en ;
+    skos:notation       "lxdoc-itc-2" ;
+    dcterms:type        "ITComponent" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/it-component-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+    ap:atLifecycleStage ap:Active ;
+.
+
+:DatabaseCategory
+    a                   lmm:TechCategory ;
+    skos:prefLabel      "Database"@en ;
+    skos:notation       "lxdoc-tc-1" ;
+    dcterms:type        "TechCategory" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/tech-category-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+:CloudPlatformCategory
+    a                   lmm:TechCategory ;
+    skos:prefLabel      "Cloud Platform"@en ;
+    skos:notation       "lxdoc-tc-2" ;
+    dcterms:type        "TechCategory" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/tech-category-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+:CustomerDataPlatform
+    a                   lmm:Platform ;
+    skos:prefLabel      "Customer Data Platform"@en ;
+    skos:notation       "lxdoc-plat-1" ;
+    dcterms:type        "Platform" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/platform-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+    lmm:completion      0.4 ;                                       ## illustrative
+.
+
+## System is the optional thirteenth fact sheet type. The name is the
+## documentation's own example of one.
+:EccProdSystem
+    a                   lmm:System ;
+    skos:prefLabel      "SAP ERP Central System (ECC PROD)"@en ;
+    skos:notation       "lxdoc-sys-1" ;
+    dcterms:type        "System" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/system-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+    ap:atLifecycleStage ap:PhaseOut ;
+.
+
+:SapProvider
+    a                   lmm:Provider ;
+    skos:prefLabel      "SAP"@en ;
+    skos:notation       "lxdoc-prov-1" ;
+    dcterms:type        "Provider" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/provider-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+:MicrosoftAzureProvider
+    a                   lmm:Provider ;
+    skos:prefLabel      "Microsoft Azure"@en ;
+    skos:notation       "lxdoc-prov-2" ;
+    dcterms:type        "Provider" ;
+    dcterms:source      <https://help.sap.com/docs/leanix/ea/provider-modeling-guidelines> ;
+    lmm:factSheetStatus lmm:StatusActive ;
+.
+
+
+#################################################################
+# Tags
+#
+# The tag group "Application Hosting" and its values On-Prem, SaaS, PaaS and
+# IaaS are the worked example on
+# https://help.sap.com/docs/leanix/ea/it-components-hosting-modeling-v3 —
+# which is also why the group matters: "SaaS" means something only relative to
+# it. Tag identifiers are illustrative.
+#################################################################
+
+:OnPremHostingTag
+    a              lmm:Tag ;
+    skos:notation  "lxdoc-tag-1" ;
+    lmm:tagName    "On-Prem" ;
+    lmm:tagGroup   "Application Hosting" ;
+    dcterms:source <https://help.sap.com/docs/leanix/ea/it-components-hosting-modeling-v3> ;
+.
+
+:SaasHostingTag
+    a              lmm:Tag ;
+    skos:notation  "lxdoc-tag-2" ;
+    lmm:tagName    "SaaS" ;
+    lmm:tagGroup   "Application Hosting" ;
+    dcterms:source <https://help.sap.com/docs/leanix/ea/it-components-hosting-modeling-v3> ;
+.
+
+
+#################################################################
+# Subscriptions
+#
+# The three subscription types are documented and fixed:
+#   https://help.sap.com/docs/leanix/ea/fact-sheet-subscription
+#   https://help.sap.com/docs/leanix/ea/managing-fact-sheet-subscriptions
+# Roles are configured per workspace and may be scoped to one type or to all,
+# which is why lmm:subscriptionRole is a plain string:
+#   https://help.sap.com/docs/leanix/ea/subscription-roles
+#
+# The people and their email addresses are invented. So is the pairing of a
+# person with a role.
+#################################################################
+
+:JaneDoe
+    a              arch:Stakeholder ;
+    skos:prefLabel "Jane Doe"@en ;
+.
+
+:MarcusReid
+    a              arch:Stakeholder ;
+    skos:prefLabel "Marcus Reid"@en ;
+.
+
+:S4HanaAccountable
+    a                    lmm:Subscription ;
+    lmm:subscriber       :JaneDoe ;
+    lmm:subscriberEmail  "jane.doe@example.org" ;
+    lmm:subscriptionType lmm:Accountable ;
+    lmm:subscriptionRole "Application Owner" ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/fact-sheet-subscription> ;
+.
+
+:S4HanaResponsible
+    a                    lmm:Subscription ;
+    lmm:subscriber       :MarcusReid ;
+    lmm:subscriberEmail  "marcus.reid@example.org" ;
+    lmm:subscriptionType lmm:Responsible ;
+    lmm:subscriptionRole "Technical Owner", "Data Steward" ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/fact-sheet-subscription> ;
+.
+
+## A subscription identified by address alone — the legitimate fallback where a
+## converter has no stable identity to mint a stakeholder from, and the case the
+## sh:or in LeanIXSubscriptionShape exists to permit.
+:SalesforceObserver
+    a                    lmm:Subscription ;
+    lmm:subscriberEmail  "sales-ops@example.org" ;
+    lmm:subscriptionType lmm:Observer ;
+    dcterms:source       <https://help.sap.com/docs/leanix/ea/fact-sheet-subscription> ;
+.
+
+## The accountable subscriber is the natural source for the core-level
+## governance owner, which makes "who owns this?" answerable without knowing
+## anything about LeanIX.
+:S4HanaFinance arch:conceptOwner :JaneDoe .
+
+
+#################################################################
+# Relationships
+#
+# Each relationship is written as its direct triple, its qualified predicate
+# and its resource (arch:source, arch:target, rdf:reifies). One of each type
+# has its resource in the next section, with what the export records about it.
+#
+# Relationship types are documented at
+# https://help.sap.com/docs/leanix/ea/meta-model. Which element relates to
+# which is this repository's reading, not SAP's.
+#################################################################
+
+## supports — Application → BusinessCapability
+:S4HanaFinance        lmm:supports :OrderProcessing .
+:SalesforceSalesCloud lmm:supports :CustomerManagement .
+:SalesforceSalesCloud lmm:qualifiedSupports :qr-SalesforceSalesCloud-supports-CustomerManagement .
+:qr-SalesforceSalesCloud-supports-CustomerManagement a lmm:Supports ;
+    arch:source :SalesforceSalesCloud ; arch:target :CustomerManagement ;
+    rdf:reifies <<( :SalesforceSalesCloud lmm:supports :CustomerManagement )>> .
+
+## uses — Application → ITComponent
+:S4HanaFinance        lmm:uses :Postgresql15 .
+:SalesforceSalesCloud lmm:uses :KubernetesCluster .
+:SalesforceSalesCloud lmm:qualifiedUses :qr-SalesforceSalesCloud-requires-KubernetesCluster .
+:qr-SalesforceSalesCloud-requires-KubernetesCluster a lmm:Uses ;
+    arch:source :SalesforceSalesCloud ; arch:target :KubernetesCluster ;
+    rdf:reifies <<( :SalesforceSalesCloud lmm:uses :KubernetesCluster )>> .
+
+## Interface provision and consumption — the asymmetry that makes the Interface
+## fact sheet worth having. The documentation describes the "Order export API"
+## as an interface between a front end and the ERP system.
+:S4HanaFinance        lmm:provides      :OrderExportApi .
+:SalesforceSalesCloud lmm:consumes :OrderExportApi .
+## Data — an Application's CRUD on a data object, and the data object an Interface
+## transfers
+:S4HanaFinance  lmm:crud :InvoiceData .
+:OrderExportApi lmm:transfers :CustomerProfile .
+## affects — Initiative → Application
+:ErpConsolidation lmm:affects :S4HanaFinance .
+:ErpConsolidation lmm:affects :LegacyBillingSystem .
+:ErpConsolidation lmm:qualifiedAffects :qr-ErpConsolidation-impacts-LegacyBillingSystem .
+:qr-ErpConsolidation-impacts-LegacyBillingSystem a lmm:Affects ;
+    arch:source :ErpConsolidation ; arch:target :LegacyBillingSystem ;
+    rdf:reifies <<( :ErpConsolidation lmm:affects :LegacyBillingSystem )>> .
+
+## supports — Initiative → Objective
+:ErpConsolidation lmm:supports :ReduceRunCost .
+## uses — Organization → Application
+:Finance   lmm:uses :S4HanaFinance .
+:SalesEmea lmm:uses :SalesforceSalesCloud .
+:SalesEmea lmm:qualifiedUses :qr-SalesEmea-usedByOrg-SalesforceSalesCloud .
+:qr-SalesEmea-usedByOrg-SalesforceSalesCloud a lmm:Uses ;
+    arch:source :SalesEmea ; arch:target :SalesforceSalesCloud ;
+    rdf:reifies <<( :SalesEmea lmm:uses :SalesforceSalesCloud )>> .
+
+## offers — Provider → ITComponent
+:SapProvider      lmm:offers :Postgresql15 .
+:MicrosoftAzureProvider lmm:offers :KubernetesCluster .
+:MicrosoftAzureProvider lmm:qualifiedOffers :qr-KubernetesCluster-providedBy-MicrosoftAzureProvider .
+:qr-KubernetesCluster-providedBy-MicrosoftAzureProvider a lmm:Offers ;
+    arch:source :MicrosoftAzureProvider ; arch:target :KubernetesCluster ;
+    rdf:reifies <<( :MicrosoftAzureProvider lmm:offers :KubernetesCluster )>> .
+
+## belongs to — ITComponent → TechCategory
+:Postgresql15      lmm:belongsTo :DatabaseCategory .
+:KubernetesCluster lmm:belongsTo :CloudPlatformCategory .
+:KubernetesCluster lmm:qualifiedBelongsTo :qr-KubernetesCluster-categorizedBy-CloudPlatformCategory .
+:qr-KubernetesCluster-categorizedBy-CloudPlatformCategory a lmm:BelongsTo ;
+    arch:source :KubernetesCluster ; arch:target :CloudPlatformCategory ;
+    rdf:reifies <<( :KubernetesCluster lmm:belongsTo :CloudPlatformCategory )>> .
+
+## Fact sheet hierarchy — parent → child, same fact sheet type. This is
+## relToParent/relToChild, the same-type hierarchy relation.
+## skos:broader is emitted alongside, so a consumer that understands SKOS gets
+## the tree without knowing anything about LeanIX.
+:Finance                  lmm:parentOf :AccountingSharedServices .
+:AccountingSharedServices skos:broader :Finance .
+
+## Platform — it runs an Application; a Business Capability supports it, an IT Component
+## implements it
+:CustomerDataPlatform lmm:runs :SalesforceSalesCloud .
+:CustomerManagement   lmm:supports :CustomerDataPlatform .
+:CustomerManagement lmm:qualifiedSupports :qr-CustomerManagement-partOfPlatform-CustomerDataPlatform .
+:qr-CustomerManagement-partOfPlatform-CustomerDataPlatform a lmm:Supports ;
+    arch:source :CustomerManagement ; arch:target :CustomerDataPlatform ;
+    rdf:reifies <<( :CustomerManagement lmm:supports :CustomerDataPlatform )>> .
+:KubernetesCluster    lmm:implements :CustomerDataPlatform .
+:KubernetesCluster lmm:qualifiedImplements :qr-KubernetesCluster-partOfPlatform-CustomerDataPlatform .
+:qr-KubernetesCluster-partOfPlatform-CustomerDataPlatform a lmm:Implements ;
+    arch:source :KubernetesCluster ; arch:target :CustomerDataPlatform ;
+    rdf:reifies <<( :KubernetesCluster lmm:implements :CustomerDataPlatform )>> .
+
+## Business context — supported by an application, associated with a capability
+:S4HanaFinance         lmm:supports :CreateCustomerInvoice .
+:SalesforceSalesCloud  lmm:supports :LeadToCash .
+:SalesforceSalesCloud lmm:qualifiedSupports :qr-SalesforceSalesCloud-supportsContext-LeadToCash .
+:qr-SalesforceSalesCloud-supportsContext-LeadToCash a lmm:Supports ;
+    arch:source :SalesforceSalesCloud ; arch:target :LeadToCash ;
+    rdf:reifies <<( :SalesforceSalesCloud lmm:supports :LeadToCash )>> .
+:LeadToCash            lmm:isAssociatedWith :CustomerManagement .
+:CreateCustomerInvoice lmm:isAssociatedWith :OrderProcessing .
+:CreateCustomerInvoice lmm:qualifiedIsAssociatedWith :qr-CreateCustomerInvoice-contextRealizes-OrderProcessing .
+:qr-CreateCustomerInvoice-contextRealizes-OrderProcessing a lmm:IsAssociatedWith ;
+    arch:source :CreateCustomerInvoice ; arch:target :OrderProcessing ;
+    rdf:reifies <<( :CreateCustomerInvoice lmm:isAssociatedWith :OrderProcessing )>> .
+
+## improves — Objective → BusinessCapability, which Objective's own definition mentions
+:ReduceRunCost lmm:improves :OrderProcessing .
+## System — an Application runs on it, and it uses an ITComponent
+:S4HanaFinance lmm:runsOn :EccProdSystem .
+:EccProdSystem lmm:uses :Postgresql15 .
+:S4HanaFinance lmm:qualifiedRunsOn :qr-EccProdSystem-composedOf-S4HanaFinance .
+:qr-EccProdSystem-composedOf-S4HanaFinance a lmm:RunsOn ;
+    arch:source :S4HanaFinance ; arch:target :EccProdSystem ;
+    rdf:reifies <<( :S4HanaFinance lmm:runsOn :EccProdSystem )>> .
+
+## affects — Initiative → Platform, the second pair lmm:affects admits here
+:ErpConsolidation lmm:affects :CustomerDataPlatform .
+#################################################################
+# Relationships — resources with what the export records
+#
+# One per relationship type. A converter reading a LeanIX export writes a
+# resource for every exported relation, as for every relationship: it is where
+# the workspace's own relation name and any relation attributes go.
+#
+# The direct triple above is written as well (P-7): a consumer doing SPARQL
+# traversal or reasoning depends on it, and the resource alone is not enough.
+#
+# Covering every relationship type the example uses is deliberate rather than
+# thorough for its own sake — leanIX-shapes.ttl carries one endpoint shape per
+# type, and a shape that no fixture reaches is a shape whose own class IRIs are
+# unchecked. Several pairs of one type (supports, uses, affects) are exercised
+# for the same reason.
+#################################################################
+
+:rel-S4HanaFinance-supports-OrderProcessing
+    a               lmm:Supports, arch:ModelConcept ;
+    skos:prefLabel  "SAP S/4HANA Finance supports Order Processing"@en ;
+    arch:source     :S4HanaFinance ;
+    arch:target     :OrderProcessing ;
+    rdf:reifies     <<( :S4HanaFinance lmm:supports :OrderProcessing )>> ;
+    dcterms:type    "relApplicationToBusinessCapability" ;
+.
+
+:S4HanaFinance lmm:qualifiedSupports :rel-S4HanaFinance-supports-OrderProcessing .
+
+:rel-S4HanaFinance-requires-Postgresql15
+    a               lmm:Uses, arch:ModelConcept ;
+    skos:prefLabel  "SAP S/4HANA Finance requires PostgreSQL 15"@en ;
+    arch:source     :S4HanaFinance ;
+    arch:target     :Postgresql15 ;
+    rdf:reifies     <<( :S4HanaFinance lmm:uses :Postgresql15 )>> ;
+    dcterms:type    "relApplicationToITComponent" ;
+.
+
+:S4HanaFinance lmm:qualifiedUses :rel-S4HanaFinance-requires-Postgresql15 .
+
+## Data usage from an Application …
+:rel-S4HanaFinance-uses-InvoiceData
+    a               lmm:Crud, arch:ModelConcept ;
+    skos:prefLabel  "SAP S/4HANA Finance uses Invoice Data"@en ;
+    arch:source     :S4HanaFinance ;
+    arch:target     :InvoiceData ;
+    rdf:reifies     <<( :S4HanaFinance lmm:crud :InvoiceData )>> ;
+    dcterms:type    "relApplicationToDataObject" ;
+.
+
+:S4HanaFinance lmm:qualifiedCrud :rel-S4HanaFinance-uses-InvoiceData .
+
+## … and from an Interface, which is the other branch of the same relation
+:rel-OrderExportApi-uses-CustomerProfile
+    a               lmm:Transfers, arch:ModelConcept ;
+    skos:prefLabel  "Order export API carries Customer Profile"@en ;
+    arch:source     :OrderExportApi ;
+    arch:target     :CustomerProfile ;
+    rdf:reifies     <<( :OrderExportApi lmm:transfers :CustomerProfile )>> ;
+    dcterms:type    "relInterfaceToDataObject" ;
+.
+
+:OrderExportApi lmm:qualifiedTransfers :rel-OrderExportApi-uses-CustomerProfile .
+
+:rel-ReduceRunCost-drives-ErpConsolidation
+    a               lmm:Supports, arch:ModelConcept ;
+    skos:prefLabel  "Reduce IT run cost drives the ERP Consolidation Program"@en ;
+    arch:source     :ErpConsolidation ;
+    arch:target     :ReduceRunCost ;
+    rdf:reifies     <<( :ErpConsolidation lmm:supports :ReduceRunCost )>> ;
+    dcterms:type    "relObjectiveToInitiative" ;
+.
+
+:ErpConsolidation lmm:qualifiedSupports :rel-ReduceRunCost-drives-ErpConsolidation .
+
+## Source is the Organization, not the Application — the direction the ontology
+## declares, which is the opposite of how the predicate name reads
+:rel-Finance-uses-S4HanaFinance
+    a               lmm:Uses, arch:ModelConcept ;
+    skos:prefLabel  "Finance uses SAP S/4HANA Finance"@en ;
+    arch:source     :Finance ;
+    arch:target     :S4HanaFinance ;
+    rdf:reifies     <<( :Finance lmm:uses :S4HanaFinance )>> ;
+    dcterms:type    "relOrganizationToApplication" ;
+.
+
+:Finance lmm:qualifiedUses :rel-Finance-uses-S4HanaFinance .
+
+:rel-Postgresql15-providedBy-Sap
+    a               lmm:Offers, arch:ModelConcept ;
+    skos:prefLabel  "PostgreSQL 15 is provided by SAP"@en ;
+    arch:source     :SapProvider ;
+    arch:target     :Postgresql15 ;
+    rdf:reifies     <<( :SapProvider lmm:offers :Postgresql15 )>> ;
+    dcterms:type    "relITComponentToProvider" ;
+.
+
+:SapProvider lmm:qualifiedOffers :rel-Postgresql15-providedBy-Sap .
+
+:rel-Postgresql15-categorizedBy-Database
+    a               lmm:BelongsTo, arch:ModelConcept ;
+    skos:prefLabel  "PostgreSQL 15 is categorized as Database"@en ;
+    arch:source     :Postgresql15 ;
+    arch:target     :DatabaseCategory ;
+    rdf:reifies     <<( :Postgresql15 lmm:belongsTo :DatabaseCategory )>> ;
+    dcterms:type    "relITComponentToTechCategory" ;
+.
+
+:Postgresql15 lmm:qualifiedBelongsTo :rel-Postgresql15-categorizedBy-Database .
+
+:rel-S4HanaFinance-provides-OrderExportApi
+    a               lmm:Provides, arch:ModelConcept ;
+    skos:prefLabel  "SAP S/4HANA Finance provides Order export API"@en ;
+    arch:source     :S4HanaFinance ;
+    arch:target     :OrderExportApi ;
+    rdf:reifies     <<( :S4HanaFinance lmm:provides :OrderExportApi )>> ;
+    dcterms:type    "relApplicationToInterfaceProvider" ;
+.
+
+:S4HanaFinance lmm:qualifiedProvides :rel-S4HanaFinance-provides-OrderExportApi .
+
+:rel-SalesforceSalesCloud-consumes-OrderExportApi
+    a               lmm:Consumes, arch:ModelConcept ;
+    skos:prefLabel  "Salesforce Sales Cloud consumes Order export API"@en ;
+    arch:source     :SalesforceSalesCloud ;
+    arch:target     :OrderExportApi ;
+    rdf:reifies     <<( :SalesforceSalesCloud lmm:consumes :OrderExportApi )>> ;
+    dcterms:type    "relInterfaceToConsumerApplication" ;
+.
+
+:SalesforceSalesCloud lmm:qualifiedConsumes :rel-SalesforceSalesCloud-consumes-OrderExportApi .
+
+:rel-Finance-parentOf-AccountingSharedServices
+    a               lmm:FactSheetHierarchy, arch:ModelConcept ;
+    skos:prefLabel  "Finance is the parent of Accounting Shared Services"@en ;
+    arch:source     :Finance ;
+    arch:target     :AccountingSharedServices ;
+    rdf:reifies     <<( :Finance lmm:parentOf :AccountingSharedServices )>> ;
+    dcterms:type    "relToChild", "relToParent" ;
+.
+
+:Finance lmm:qualifiedFactSheetHierarchy :rel-Finance-parentOf-AccountingSharedServices .
+
+:rel-ErpConsolidation-impacts-S4HanaFinance
+    a               lmm:Affects, arch:ModelConcept ;
+    skos:prefLabel  "ERP Consolidation Program impacts SAP S/4HANA Finance"@en ;
+    arch:source     :ErpConsolidation ;
+    arch:target     :S4HanaFinance ;
+    rdf:reifies     <<( :ErpConsolidation lmm:affects :S4HanaFinance )>> ;
+    dcterms:type    "relInitiativeToApplication" ;
+.
+
+:ErpConsolidation lmm:qualifiedAffects :rel-ErpConsolidation-impacts-S4HanaFinance .
+
+:rel-SalesforceSalesCloud-partOf-CustomerDataPlatform
+    a               lmm:Runs, arch:ModelConcept ;
+    skos:prefLabel  "Salesforce Sales Cloud is part of the Customer Data Platform"@en ;
+    arch:source     :CustomerDataPlatform ;
+    arch:target     :SalesforceSalesCloud ;
+    rdf:reifies     <<( :CustomerDataPlatform lmm:runs :SalesforceSalesCloud )>> ;
+    dcterms:type    "relApplicationToPlatform" ;
+.
+
+:CustomerDataPlatform lmm:qualifiedRuns :rel-SalesforceSalesCloud-partOf-CustomerDataPlatform .
+
+:rel-S4HanaFinance-supports-CreateCustomerInvoice
+    a               lmm:Supports, arch:ModelConcept ;
+    skos:prefLabel  "SAP S/4HANA Finance supports Create Customer Invoice"@en ;
+    arch:source     :S4HanaFinance ;
+    arch:target     :CreateCustomerInvoice ;
+    rdf:reifies     <<( :S4HanaFinance lmm:supports :CreateCustomerInvoice )>> ;
+    dcterms:type    "relApplicationToBusinessContext" ;
+.
+
+:S4HanaFinance lmm:qualifiedSupports :rel-S4HanaFinance-supports-CreateCustomerInvoice .
+
+:rel-LeadToCash-realizes-CustomerManagement
+    a               lmm:IsAssociatedWith, arch:ModelConcept ;
+    skos:prefLabel  "Lead to Cash realizes Customer Management"@en ;
+    arch:source     :LeadToCash ;
+    arch:target     :CustomerManagement ;
+    rdf:reifies     <<( :LeadToCash lmm:isAssociatedWith :CustomerManagement )>> ;
+    dcterms:type    "relBusinessContextToBusinessCapability" ;
+.
+
+:LeadToCash lmm:qualifiedIsAssociatedWith :rel-LeadToCash-realizes-CustomerManagement .
+
+:rel-ReduceRunCost-targets-OrderProcessing
+    a               lmm:Improves, arch:ModelConcept ;
+    skos:prefLabel  "Reduce IT run cost targets Order Processing"@en ;
+    arch:source     :ReduceRunCost ;
+    arch:target     :OrderProcessing ;
+    rdf:reifies     <<( :ReduceRunCost lmm:improves :OrderProcessing )>> ;
+    dcterms:type    "relObjectiveToBusinessCapability" ;
+.
+
+:ReduceRunCost lmm:qualifiedImproves :rel-ReduceRunCost-targets-OrderProcessing .
+
+:rel-EccProdSystem-composedOf-Postgresql15
+    a               lmm:Uses, arch:ModelConcept ;
+    skos:prefLabel  "SAP ERP Central System is composed of PostgreSQL 15"@en ;
+    arch:source     :EccProdSystem ;
+    arch:target     :Postgresql15 ;
+    rdf:reifies     <<( :EccProdSystem lmm:uses :Postgresql15 )>> ;
+    dcterms:type    "relSystemToITComponent" ;
+.
+
+:EccProdSystem lmm:qualifiedUses :rel-EccProdSystem-composedOf-Postgresql15 .
+
+## affects a Platform rather than an Application — a second pair of the same
+## relationship type, which its endpoint shape lists as a second target
+:rel-ErpConsolidation-impacts-CustomerDataPlatform
+    a               lmm:Affects, arch:ModelConcept ;
+    skos:prefLabel  "ERP Consolidation Program impacts the Customer Data Platform"@en ;
+    arch:source     :ErpConsolidation ;
+    arch:target     :CustomerDataPlatform ;
+    rdf:reifies     <<( :ErpConsolidation lmm:affects :CustomerDataPlatform )>> ;
+    dcterms:type    "relInitiativeToPlatform" ;
+.
+
+:ErpConsolidation lmm:qualifiedAffects :rel-ErpConsolidation-impacts-CustomerDataPlatform .
