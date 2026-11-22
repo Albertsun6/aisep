@@ -138,6 +138,39 @@ def _new(S_H, S_T, cls):
     return sorted(k for k in S_H.sig if k not in S_T.sig and _has_type(S_H, k, cls))
 
 
+# predicates whose rdfs:domain is aisep:ApprovalRecord or aisep:AgentActivity (aisep-core onto.ttl)
+GOV_PREDICATES = {AISEP + p for p in ("gate", "decision", "approvedBy", "approves", "evidence", "activity",
+                                       "sessionRef", "branch", "baseCommit", "headCommit")}
+
+
+def _governance_bnodes(repo, commit, classes):
+    """Blank nodes in the model sources of commit that are typed as an approval record / agent activity (classes: those
+    two and every subclass declared on the merge result, module or model file) or carry one of their predicates:
+    [(path, description)]. A record or activity must be an IRI model element (spec §6.6/§6.7); diff.Side folds a
+    referenced blank node into its referrer's signature, so the record checks below would never see it (2026-11-22
+    取证疑点一). This scan does not rely on the gate's L1 rule. A file that is not a regular file or does not parse is
+    left out (the gate on the same snapshot reports it)."""
+    parsed = {}
+    for path, data in gitio.commit_files(repo, commit, ("models/",)).items():
+        if isinstance(data, bytes):
+            try:
+                parsed[path] = diff._parse(data)
+            except SyntaxError:
+                pass
+    term = lambda t: "[]" if isinstance(t, ox.BlankNode) else core.short(t) if isinstance(t, ox.NamedNode) else repr(t.value)
+    out = []
+    for path in sorted(parsed):
+        props = {}
+        for q in parsed[path]:
+            if isinstance(q.subject, ox.BlankNode):
+                props.setdefault(q.subject, []).append((q.predicate, q.object))
+        for b, po in props.items():
+            if any((p.value == core.A and isinstance(o, ox.NamedNode) and o.value in classes) or p.value in GOV_PREDICATES
+                   for p, o in po):
+                out.append((path, "[ " + " ; ".join(sorted(f"{term(p)} {term(o)}" for p, o in po)) + " ]"))
+    return out
+
+
 # ---------------------------------------------------------------- the approval-commit criterion (§5.9 step 1)
 
 @functools.lru_cache(maxsize=4096)
@@ -321,6 +354,18 @@ class _Analysis:
         if c not in self._sides:
             self._sides[c] = _side(self.repo, c)
         return self._sides[c]
+
+    # blank-node records / activities (2026-11-22 取证疑点一): fail closed, independent of the gate
+    def check_bnodes(self, commits=None):
+        classes = {c for (c,) in self.ctx_M.rows("""SELECT DISTINCT ?c WHERE { ?c rdfs:subClassOf* ?k
+                   VALUES ?k { aisep:ApprovalRecord aisep:AgentActivity } FILTER(isIRI(?c)) }""")} | {RECORD, ACTIVITY}
+        found = {}
+        for name, c in commits or (("PR 头 H", self.H), ("合并结果 M", self.M)):
+            for path, desc in _governance_bnodes(self.repo, c, classes):
+                found.setdefault((path, desc), []).append(f"{name}（{c[:7]}）")
+        return [_problem("governance-blank-node", f"{'、'.join(where)} 的 {path} 里有空白节点形式的批准记录或活动 {desc}："
+                         "批准记录和活动必须是带 arch:inModel 的 IRI（规范 §6.6、§6.7），合并检查无法核对它，按失败处理")
+                for (path, desc), where in sorted(found.items())]
 
     # check 1 (第三轮 E)
     def check1(self):
@@ -542,8 +587,8 @@ def merge_check(repo, pr_head, target_ref, *, head_ref, now, remote="origin"):
                 if e.code != "DIFF_BNODE_UNSUPPORTED":
                     raise
                 return _bnode_fallback(r, h, t, e)
-            return (a.check1() + a.check3() + a.check4(head_ref) + a.check5() + a.check6() + a.check7()
-                    + a.release_tags(remote))
+            return (a.check_bnodes() + a.check1() + a.check3() + a.check4(head_ref) + a.check5() + a.check6()
+                    + a.check7() + a.release_tags(remote))
     return _run(run)
 
 
@@ -584,7 +629,7 @@ def post_merge_verify(repo, new_head, t_used, pr_head, *, head_ref, now):
         with contextlib.ExitStack() as stack:
             a = _Analysis(r, h, parents[0] if parents else m, m, now, stack)
             a.check3()  # covers must pass check 3; its own verdict was given before the merge
-            return a.check5() + a.check6() + a.check7()
+            return a.check_bnodes((("合并后的新头", m),)) + a.check5() + a.check6() + a.check7()
     return _run(run)
 
 

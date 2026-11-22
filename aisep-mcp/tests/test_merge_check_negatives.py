@@ -61,6 +61,8 @@ reason vocabulary (details.reason; the two marked * are the strings §5.9 step 1
     release-tag-missing             no compliantly named tag (release/{yyyymmdd}-{ev7} | release/v…) for an Approved GateRelease (tag check, K)
     release-tag-mismatch            such a tag exists but peels to another commit (tag check, K, L)
     git-error                       a git command failed / shallow clone (口径, G)
+    governance-blank-node           a blank node in the model sources of H or M is typed as, or carries a predicate of, an
+                                    ApprovalRecord / AgentActivity (2026-11-22 取证疑点一; independent of the L1 rule)
 
 Not covered here (other slices): record_approval's own errors (STALE_HEAD, INVALID_ARGUMENT …, slice S5), the workbench's
 tag/branch creation (client.ts, S8), the record_approval half of the stub-count test, and the GitHub server-side merge
@@ -1131,6 +1133,242 @@ def test_T38_R4_11_post_merge_verify(t, parents_match):
         assert_clean(p)
     else:
         assert_rejected(p, "merge-result-gate-failed")
+
+
+# ================================================================== 空白节点形式的批准记录与活动（2026-11-22 取证，疑点一）
+# A record written as a blank node referenced by a named subject (`<x> skos:note [ a aisep:ApprovalRecord ; … ]`) used
+# to pass gate and merge_check while the derivation honoured it: diff.Side folds a referenced blank node into its
+# referrer's signature, so no record IRI was "new" and check 3 never ran. Two independent guards now hold:
+#   layer 1 — aisep-core ApprovalRecordShape / AgentActivityShape: a record or activity must be an IRI with
+#             arch:inModel (L1 Violation → gate FAIL; Ctx.approval_problems → the derivation ignores the record);
+#   layer 2 — merge_check scans the model sources of H and M and reports every blank node typed as, or carrying a
+#             predicate of, a record or activity (reason governance-blank-node), whatever the gate says.
+
+BNODE = "governance-blank-node"
+SHA256 = "sha256:" + "ab" * 32
+ARCH_NS = "https://meta.linked.archi/core#"
+LAYER1_MARK = "must be a model element, an IRI with arch:inModel"
+
+
+def bnode_record(approves, decision="Approved", gate="GateArchitecture", at="2026-11-20T11:30:00Z", activity=None):
+    objs = ", ".join(a if a.startswith("<") else f":{a}" for a in approves)
+    act = f" ; aisep:activity {activity}" if activity else ""
+    return (f"[ a aisep:ApprovalRecord ; aisep:gate aisep:{gate} ; aisep:decision aisep:Decision{decision} ; "
+            f"aisep:approvedBy :chiefArchitect ; aisep:approves {objs} ; aisep:evidence \"{SHA256}\" ; "
+            f"prov:generatedAtTime \"{at}\"^^xsd:dateTime{act} ]")
+
+
+def bnode_activity(head, base, branch):
+    return (f"[ a aisep:AgentActivity ; prov:wasAssociatedWith :codingBot ; "
+            f"prov:startedAtTime \"2026-11-20T09:00:00Z\"^^xsd:dateTime ; prov:endedAtTime \"2026-11-20T10:00:00Z\"^^xsd:dateTime ; "
+            f"aisep:sessionRef \"s-bnode\" ; aisep:branch \"{branch}\" ; aisep:headCommit \"{head}\" ; aisep:baseCommit \"{base}\" ]")
+
+
+def hang(t, holder, blob, rel=AM4, msg="note"):
+    """Attach blob to a named subject with skos:note (the referenced-blank-node form) and commit."""
+    from fixtures.topology import PREFIXES
+    t.write(rel, "\n" + PREFIXES + f"\n{holder} skos:note {blob} .\n", "a")
+    return t.commit_all(msg)
+
+
+def state(t, commit, iri):
+    """The derived arch:approvalState values of iri on commit (in-process, the code under test)."""
+    from aisep import tools
+    with tools.loaded(tools.Config(), str(t.root), ref=commit) as (ctx, _):
+        return {o.value for s, p, o, _ in ctx.built if s.value == iri and p.value == ARCH_NS + "approvalState"}
+
+
+OTHER = "https://aisep.example/model/other/"
+
+
+def _bnode_case(t, case):
+    """Build one bypass attempt on a branch. Returns (H, head_ref, the IRI whose state the attempt targets or None)."""
+    if case == "new-element-approved":  # r1: a new element carries its own approval
+        feature(t)
+        return hang(t, ":newThing", bnode_record(["newThing"])), "feat/x", M + "newThing"
+    if case == "proposed-element-no-new-iri":  # r2: no new IRI; :submitQuotation is Proposed on main
+        t.checkout("main", new="feat/x")
+        return hang(t, f"<{M}>", bnode_record(["submitQuotation"])), "feat/x", M + "submitQuotation"
+    if case == "approved-element-rejected":  # r4 step 1: downgrade :auditTrail (Approved on main)
+        t.checkout("main", new="feat/x")
+        return hang(t, f"<{M}>", bnode_record(["auditTrail"], decision="Rejected")), "feat/x", M + "auditTrail"
+    if case == "activity-blank":  # a complete blank-node activity, referenced by the model resource
+        t.checkout("main", new="feat/x")
+        base = t.rev(MAIN)
+        return hang(t, f"<{M}>", bnode_activity(base, base, "feat/x")), "feat/x", None
+    if case == "record-in-other-model-file":  # unverified direction 1: the record lives in another model's file
+        t.checkout("main", new="feat/x")
+        from fixtures.topology import PREFIXES
+        t.write("models/other/other.ttl", PREFIXES + f"\n<{OTHER}> a arch:Model ;\n    skos:prefLabel \"其他\"@zh .\n")
+        t.commit_all("add model other")
+        return hang(t, f"<{OTHER}>", bnode_record(["submitQuotation"]), rel="models/other/other.ttl"), "feat/x", \
+            M + "submitQuotation"
+    if case == "approves-whole-model":  # unverified direction 2: the target is the arch:Model itself
+        t.checkout("main", new="feat/x")
+        return hang(t, f"<{M}>", bnode_record([f"<{M}>"])), "feat/x", M
+    if case == "record-with-activity":  # unverified direction 3: a blank-node record that names an (IRI) activity
+        h0 = feature(t)
+        from fixtures.topology import activity_ttl
+        a = act(t, h0, "feat/x")
+        t.write(f"{GOV}/{a['local']}.ttl", PREFIXES_() + activity_ttl(**a))
+        t.commit_all("add activity")
+        return hang(t, ":newThing", bnode_record(["newThing"], activity=f":{a['local']}")), "feat/x", M + "newThing"
+    if case == "record-with-blank-activity":  # an IRI record (approval-commit shape) whose activity is a blank node
+        h0 = feature(t)
+        from fixtures.topology import record_ttl
+        local = f"approval-20261120110000-architecture-{h0[:7]}"
+        body = record_ttl(local, "GateArchitecture", ["newThing"], h0)[:-3] + \
+            f" ;\n    aisep:activity {bnode_activity(h0, t.merge_base(h0, MAIN), 'feat/x')} .\n"
+        t.write(f"{GOV}/{local}.ttl", PREFIXES_() + body)
+        return t.commit_all(f"aisep: GateArchitecture Approved {local}", trailers=[f"AISEP-Evidence: {h0}"]), "feat/x", \
+            M + "newThing"
+    raise AssertionError(case)
+
+
+def PREFIXES_():
+    from fixtures.topology import PREFIXES
+    return PREFIXES
+
+
+BNODE_CASES = ["new-element-approved", "proposed-element-no-new-iri", "approved-element-rejected", "activity-blank",
+               "record-in-other-model-file", "approves-whole-model", "record-with-activity", "record-with-blank-activity"]
+
+
+@pytest.mark.parametrize("case", BNODE_CASES)
+def test_bnode_governance_rejected_by_gate_mergecheck_and_derivation(t, case):
+    """Both layers on: the branch head and the merge result fail the real gate, merge_check reports
+    governance-blank-node (and the failed merge-result gate), and the derived state of the target is the one on main."""
+    t_main = t.rev(MAIN)
+    h, ref, target = _bnode_case(t, case)
+    assert "[" in t.git("show", h, "--", AM4, "models/other/other.ttl", GOV)  # the fixture really writes a blank node
+    assert not cli_gate(t, h)
+    assert not cli_gate(t, t_main, merge=h)
+    p = check(t, h, ref)
+    assert_rejected(p, BNODE)
+    assert_rejected(p, "merge-result-gate-failed")
+    if target:  # h^ is the same branch without the blank node
+        assert state(t, h, target) == state(t, f"{h}^", target)
+
+
+def test_bnode_rejected_record_two_step_downgrade(t):
+    """r4: step 1 hangs a blank-node Rejected record on the Approved :auditTrail; step 2 (another PR) changes it.
+    Step 1 is refused; even if it had been merged (as before this fix), :auditTrail stays Approved on main, main fails
+    the gate, and step 2 is refused as an unapproved change to an Approved element."""
+    audit = M + "auditTrail"
+    assert state(t, t.rev(MAIN), audit) == {ARCH_NS + "Approved"}
+    t.checkout("main", new="feat/y")  # step 2 branches off main before step 1 lands: H itself has no blank node
+    h2 = t.relabel("auditTrail", "审计轨迹V2")
+    t.checkout("main", new="feat/r")
+    h1 = hang(t, f"<{M}>", bnode_record(["auditTrail"], decision="Rejected"), rel="models/procurement/notes.ttl")
+    assert_rejected(check(t, h1, "feat/r"), BNODE)
+    t.checkout("main"); t.git("merge", "-q", "--no-ff", "-m", "Merge feat/r (as if merged before the fix)", "feat/r")
+    t1 = t.rev()
+    assert state(t, t1, audit) == {ARCH_NS + "Approved"}
+    assert not cli_gate(t, t1)
+    assert "skos:note" not in t.git("show", f"{h2}:{AM4}") and "skos:note" in t.git("show", f"{t1}:models/procurement/notes.ttl")
+    p2 = check(t, h2, "feat/y")
+    assert_rejected(p2, "unapproved-change-to-approved", iri=audit)
+    assert_rejected(p2, BNODE)  # only M carries the blank node (from main)
+
+
+def _layer1_off(monkeypatch):
+    """Stub layer 1: drop the two aisep-core constraints that require a record / activity to be an IRI with
+    arch:inModel (everything else in the shapes stays)."""
+    from aisep import core, mergecheck
+    real = core.sparql_constraints
+    monkeypatch.setattr(core, "sparql_constraints", lambda path: [c for c in real(path) if LAYER1_MARK not in c[2]])
+    monkeypatch.setattr(mergecheck, "_GATES", {})
+
+
+def _layer2_off(monkeypatch):
+    from aisep import mergecheck
+    monkeypatch.setattr(mergecheck, "_governance_bnodes", lambda *a, **kw: [])
+    monkeypatch.setattr(mergecheck, "_GATES", {})
+
+
+INDEPENDENCE_CASES = ["new-element-approved", "proposed-element-no-new-iri", "approved-element-rejected", "activity-blank"]
+
+
+@pytest.mark.parametrize("case", INDEPENDENCE_CASES)
+def test_bnode_layer2_holds_without_layer1(t, case, monkeypatch):
+    """Layer 1 stubbed out: the derivation honours the blank-node record again (the stub is real), yet merge_check still
+    refuses with governance-blank-node."""
+    _layer1_off(monkeypatch)
+    h, ref, target = _bnode_case(t, case)
+    p = check(t, h, ref)
+    assert_rejected(p, BNODE)
+    if target:
+        assert state(t, h, target) != state(t, f"{h}^", target)  # proves the stub really removed layer 1
+
+
+@pytest.mark.parametrize("case", INDEPENDENCE_CASES)
+def test_bnode_layer1_holds_without_layer2(t, case, monkeypatch):
+    """Layer 2 stubbed out: merge_check no longer names the blank node, yet the merge-result gate fails (layer 1) and
+    the derivation ignores the record."""
+    _layer2_off(monkeypatch)
+    h, ref, target = _bnode_case(t, case)
+    p = check(t, h, ref)
+    if not isinstance(p, _Pending):
+        assert BNODE not in reasons(p), p  # proves the stub really removed layer 2
+    assert_rejected(p, "merge-result-gate-failed")
+    if target:
+        assert state(t, h, target) == state(t, f"{h}^", target)
+
+
+def test_bnode_post_merge_verify_scans_new_head(t):
+    """Main moved after the recompute and the platform merged anyway: post_merge_verify re-checks the new head and
+    names the blank-node record."""
+    t.checkout("main", new="feat/x")
+    h = hang(t, f"<{M}>", bnode_record(["submitQuotation"]))
+    t1 = t.rev(MAIN)
+    t.checkout("main"); t.add_element("later", "之后的提交", rel="models/procurement/later.ttl")
+    t.git("merge", "-q", "--no-ff", "-m", "Merge feat/x", h)
+    assert t.git("rev-parse", "HEAD^1") != t1  # main moved: post_merge_verify re-checks
+    p = call("post_merge_verify", str(t.root), t.rev(), t1, h, head_ref="feat/x", now=NOW)
+    assert_rejected(p, BNODE)
+
+
+def test_bnode_untyped_with_record_predicates_rejected_by_mergecheck(t):
+    """An untyped blank node with aisep:approves / aisep:decision cannot be read by the derivation (it needs the type),
+    but merge_check still refuses it (fail closed: a module-declared subclass would not be visible to diff.Side)."""
+    t.checkout("main", new="feat/x")
+    h = hang(t, f"<{M}>", "[ aisep:approves :submitQuotation ; aisep:decision aisep:DecisionApproved ]")
+    assert_rejected(check(t, h, "feat/x"), BNODE)
+
+
+@pytest.mark.parametrize("fixture", ["approval-record-blank-node", "approval-record-not-in-model"])
+def test_layer1_derivation_ignores_record_that_is_not_a_model_element(fixture):
+    """Layer 1 in core: the aisep-core invalid fixture's record is in Ctx.approval_problems, the derivation leaves the
+    approved element arch:Proposed, and L1 reports the record (the run_fixture check covers only the L1 message)."""
+    from aisep import core
+    ctx = core.Ctx(core.discover(), [os.path.join(core.ROOT, "modules/aisep-core/tests/invalid", fixture + ".ttl")])
+    assert any(LAYER1_MARK in m for ms in ctx.approval_problems().values() for m in ms)
+    states = {o.value for s, p, o, _ in ctx.built if s.value == "https://aisep.example/model/t/ac"
+              and p.value == ARCH_NS + "approvalState"}
+    assert states == {ARCH_NS + "Proposed"}
+    ctx.l1()
+    assert any(LAYER1_MARK in text for sev, layer, text in ctx.problems if sev == "Violation" and layer == "L1")
+
+
+@pytest.mark.parametrize("typed", ["aisep:AgentActivity", ":ProbeRecord"])
+def test_bnode_typed_without_record_predicates_rejected_by_mergecheck(t, typed):
+    """A blank node typed as a record / activity but with none of their predicates is reported too; a subclass declared
+    in a model file (itself an L1 violation, R1) is followed through the merge result's subclass closure."""
+    t.checkout("main", new="feat/x")
+    if typed == ":ProbeRecord":
+        t.write(AM4, "\n:ProbeRecord rdfs:subClassOf aisep:ApprovalRecord .\n", "a")
+        t.write(AM4, "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n" + t.read(AM4))
+    h = hang(t, f"<{M}>", f"[ a {typed} ; skos:prefLabel \"无谓词\"@zh ]")
+    assert_rejected(check(t, h, "feat/x"), BNODE)
+
+
+def test_bnode_plain_note_still_passes(t):
+    """Positive twin: a blank node with no governance type or predicate (a structured note) is not reported."""
+    t.checkout("main", new="feat/x")
+    h = hang(t, f"<{M}>", "[ skos:prefLabel \"备注\"@zh ]")
+    p = check(t, h, "feat/x")
+    if not isinstance(p, _Pending):
+        assert BNODE not in reasons(p), p
 
 
 # ------------------------------------------------------------------ every test: build all fixtures, then XFAIL if the
