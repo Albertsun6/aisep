@@ -377,7 +377,8 @@ class Ctx:
                     if isinstance(q.object, ox.BlankNode):
                         ref.setdefault(q.object.value, q.subject.value)
                 for b, po in own.items():
-                    self._bnode_info[b] = (f"{self.rel(f)}: blank node [ {' ; '.join(sorted(po))} ]", ref.get(b))
+                    self._bnode_info[b] = (f"{self.rel(f)}: blank node [ {' ; '.join(sorted(po))} ]", ref.get(b),
+                                           self.rel(f))
         return self._bnode_info
 
     def display(self, x):
@@ -386,13 +387,17 @@ class Ctx:
         return self._bnodes()[v][0] if v in self._bnodes() else short(x)
 
     def anchor(self, x):
-        """A stable finding focus: x itself, or for a blank node the nearest named subject referring to it (its own
-        label otherwise), so that the write tools' "new violation" comparison (§5.1 step 5) sees the same key."""
+        """Stable finding location as add() keywords: focus x itself, or for a blank node the nearest named subject
+        referring to it; an unreferenced blank node has none, so focus None and its file (§7.3: the file then joins the
+        instance key), never its label, so that the write tools' "new violation" comparison (§5.1 step 5) sees the
+        same key on every parse."""
         v, seen = (x if isinstance(x, str) else x.value), set()
-        while v in self._bnodes() and v not in seen and self._bnodes()[v][1] is not None:
+        while v in self._bnodes() and v not in seen:
             seen.add(v)
+            if self._bnodes()[v][1] is None:
+                return {"focus": None, "file": self._bnodes()[v][2]}
             v = self._bnodes()[v][1]
-        return v
+        return {"focus": v}
 
     def derive_approval_state(self, in_model):
         """spec §6.6 (D10, ADR-009): arch:approvalState is derived, never authored. Per element: the decision of the
@@ -587,15 +592,15 @@ class Ctx:
             if shape == APPROVAL_SHAPE or focus is None or focus.value not in in_src:
                 continue  # only model content, never ontology individuals; approval records: approval_problems()
             text = re.sub(r"\{[?$](\w+)\}", lambda mm: short(b[mm.group(1)]) if b.get(mm.group(1)) is not None else "?", msg)
-            self.add(sev, "L1", f"{self.display(focus)}: {text}", focus=self.anchor(focus))
+            self.add(sev, "L1", f"{self.display(focus)}: {text}", **self.anchor(focus))
         for rec, msgs in sorted(self.approval_problems().items()):  # R3a: the same check the derivation uses
             if rec in in_src:
                 for msg in sorted(set(msgs)):
-                    self.add("Violation", "L1", f"{self.display(rec)}: {msg}", focus=self.anchor(rec))
+                    self.add("Violation", "L1", f"{self.display(rec)}: {msg}", **self.anchor(rec))
         for act, msgs in sorted(self.activity_problems().items()):  # v0.4 §6.7
             if act in in_src:
                 for msg in sorted(set(msgs)):
-                    self.add("Violation", "L1", f"{self.display(act)}: {msg}", focus=self.anchor(act))
+                    self.add("Violation", "L1", f"{self.display(act)}: {msg}", **self.anchor(act))
         for x, t, rds in self.approval_ambiguous:  # R3c
             self.add("Violation", "L1", f"{short(x)}: ambiguous approval — valid approval records "
                      f"{', '.join(f'{short(r)} ({short(d)})' for r, d in rds)} approve it at the same instant "

@@ -1387,6 +1387,82 @@ def test_bnode_plain_note_still_passes(t):
         assert BNODE not in reasons(p), p
 
 
+# ------------------------------------------------------------------ #78 评审遗留（minor 1–3）
+
+_T_HEADER = """@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+:ac a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "组件"@zh .
+:boss a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "架构师"@zh .
+:bot a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "编码代理"@zh .
+"""
+_T_REC = ("a aisep:ApprovalRecord ; aisep:gate aisep:GateMerge ; aisep:decision aisep:DecisionApproved ; "
+          "aisep:approvedBy :boss ; aisep:approves :ac ; aisep:evidence \"" + SHA256 + "\" ; "
+          "prov:generatedAtTime \"2026-11-20T11:00:00+08:00\"^^xsd:dateTime")
+_T_ACT = ("a aisep:AgentActivity ; prov:wasAssociatedWith :bot ; prov:startedAtTime \"2026-11-20T01:00:00Z\"^^xsd:dateTime ; "
+          "prov:endedAtTime \"2026-11-20T02:00:00Z\"^^xsd:dateTime ; aisep:sessionRef \"s\" ; aisep:branch \"b\" ; "
+          "aisep:baseCommit \"0a1b2c3d4e5f60718293a4b5c6d7e8f901234567\" ; aisep:headCommit \"3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e\"")
+
+
+@pytest.mark.parametrize("body", [_T_REC, _T_ACT], ids=["record", "activity"])
+def test_layer1_unreferenced_blank_node_finding_is_stable(tmp_path, body):
+    """minor 1: an UNREFERENCED blank-node record / activity has no named subject to anchor on. Its L1 finding has
+    focus null and names the file (§7.3: focus null → file joins the instance key), so the write tools' "new violation"
+    comparison (§5.1 step 5) sees the same key on every parse instead of a fresh random blank node label."""
+    from aisep import core, writer
+    f = tmp_path / "loose.ttl"
+    f.write_text(_T_HEADER + f"[ {body} ] .\n", encoding="utf-8")
+    keys = []
+    for _ in range(2):
+        ctx = core.Ctx(core.discover(), [str(f)])
+        core.run_check(ctx)
+        fs = [f_ for _, f_ in writer._instances(ctx) if LAYER1_MARK in f_["message"] and f_["severity"] == "Violation"]
+        assert fs and all(x["focus"] is None and x["file"] for x in fs), fs
+        keys.append(sorted(k for k, f_ in writer._instances(ctx) if f_ in fs))
+    assert keys[0] == keys[1]
+
+
+@pytest.mark.parametrize("where", ["holder", "nested"])
+def test_bnode_class_of_governance_rejected_by_mergecheck(t, where):
+    """minor 2: a blank node used as a subclass of aisep:ApprovalRecord. holder: the blank class hangs on the model
+    resource; nested: a blank-node instance typed with a blank class (the only tree-shaped way to use one)."""
+    t.checkout("main", new="feat/x")
+    cls = "[ rdfs:subClassOf aisep:ApprovalRecord ]"
+    blob = cls if where == "holder" else f"[ a {cls} ; skos:prefLabel \"无谓词\"@zh ]"
+    from fixtures.topology import PREFIXES
+    t.write(AM4, "\n" + PREFIXES + "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n"
+            + f"\n<{M}> skos:note {blob} .\n", "a")
+    h = t.commit_all("note")
+    assert_rejected(check(t, h, "feat/x"), BNODE)
+
+
+def test_bnode_with_ontology_declared_governance_predicate_rejected_by_mergecheck(t):
+    """minor 2: the governance predicates are read from the merge result's rdfs:domain declarations (the built-in list
+    stays as a floor), so a predicate declared later with domain aisep:ApprovalRecord is covered without a code change.
+    Declared here in a model file (itself an R1 violation) to stand in for a module change."""
+    t.checkout("main", new="feat/x")
+    t.write(AM4, "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n" + t.read(AM4)
+            + "\n:probeP rdfs:domain aisep:ApprovalRecord .\n")
+    t.commit_all("declare a governance predicate")
+    h = hang(t, f"<{M}>", "[ :probeP \"x\" ]")
+    assert_rejected(check(t, h, "feat/x"), BNODE)
+
+
+@pytest.mark.parametrize("fixture,target", [("approval-record-in-model-not-a-model", "https://aisep.example/model/t/ac")])
+def test_layer1_derivation_ignores_record_whose_in_model_is_not_a_model(fixture, target):
+    """minor 3: arch:inModel must name an arch:Model, not just be present; such a record is ignored by the derivation."""
+    from aisep import core
+    ctx = core.Ctx(core.discover(), [os.path.join(core.ROOT, "modules/aisep-core/tests/invalid", fixture + ".ttl")])
+    assert any(LAYER1_MARK in m for ms in ctx.approval_problems().values() for m in ms)
+    states = {o.value for s, p, o, _ in ctx.built if s.value == target and p.value == ARCH_NS + "approvalState"}
+    assert states == {ARCH_NS + "Proposed"}
+
+
 # ------------------------------------------------------------------ every test: build all fixtures, then XFAIL if the
 # checker was missing for any call (see "checker access" above)
 

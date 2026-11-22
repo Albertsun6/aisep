@@ -142,7 +142,7 @@
 - 概念名用 `skos:exactMatch` 对到 OSLC QM/RM；不导入 OSLC。
 
 ### 6.6 治理与批准（Extension，ADR-009）
-- `aisep:ApprovalRecord` ⊑ `arch:Element`。这是作者写的唯一治理事实。记录本身必须是模型元素（IRI，带 `arch:inModel`），不能是空白节点，也不能是不属于任何模型的资源，否则 L1 报错，不参与推导；合并时另拒绝模型源文件里任何空白节点形式的批准记录或 AI 活动。字段：
+- `aisep:ApprovalRecord` ⊑ `arch:Element`。这是作者写的唯一治理事实。记录本身必须是模型元素（IRI，`arch:inModel` 指向一个 `arch:Model`），不能是空白节点，也不能是不属于任何模型的资源，否则 L1 报错，不参与推导；合并时另拒绝模型源文件里任何空白节点形式的批准记录或 AI 活动。字段：
   - `aisep:gate` ∈ {需求确认, 架构决策, 设计评审, 代码合并, 发布上线}，即架构原则五的五个关口（SKOS）；
   - `aisep:decision` ∈ {Approved, Rejected}；
   - `aisep:approvedBy` → 人（必须是 `arch:Stakeholder` 的实例，且不能是 `aisep:AIAgent`；AI 不能批准，原则五）；
@@ -167,7 +167,7 @@
 - `aisep:Deployable` ⊑ `am4:Artifact`，带 `aisep:packageUrl`（purl）。Artifact → ApplicationComponent 的 Realization 可以直接画。
 - `aisep:AIAgent` ⊑ `arch:Element`、`prov:SoftwareAgent`（aisep-core 另声明 `prov:SoftwareAgent ⊑ prov:Agent`；不加载 PROV-O 本体）：执行任务的 AI 代理，按元素通则写名称和 `arch:inModel`。
 - `aisep:AgentActivity` ⊑ `arch:Element`、`prov:Activity`（ADR-013、ADR-014）：一次**已完成**的 AI 活动。只在任务过关口时由 `governance.record_approval` 写入，与批准记录在同一次提交里；进行中的状态不进模型仓库。一个（sessionRef, headCommit, branch）只有一条，同一 head 过多个关口时复用；IRI 见 §3。字段：
-  - `skos:prefLabel` 恰好一个 `@zh`（缺省"AI 活动：{分支}"，建议写任务标题），`arch:inModel` 恰好一个；活动必须是 IRI，不能是空白节点（否则 L1 报错）；
+  - `skos:prefLabel` 恰好一个 `@zh`（缺省"AI 活动：{分支}"，建议写任务标题），`arch:inModel` 恰好一个；活动必须是 IRI、`arch:inModel` 指向一个 `arch:Model`，不能是空白节点（否则 L1 报错）；
   - `prov:wasAssociatedWith` → 执行的代理，恰好一个，必须是 `arch:Stakeholder` 或 `aisep:AIAgent` 的实例；
   - `prov:startedAtTime`、`prov:endedAtTime`，各恰好一个 xsd:dateTime，开始不晚于结束（按时区归一化，不带时区的按 UTC）；
   - `aisep:sessionRef`：外部编排器的会话标识，非空字符串，恰好一个；对元模型不透明，不绑定 AO；
