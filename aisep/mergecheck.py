@@ -138,14 +138,16 @@ def _new(S_H, S_T, cls):
     return sorted(k for k in S_H.sig if k not in S_T.sig and _has_type(S_H, k, cls))
 
 
-# predicates whose rdfs:domain is aisep:ApprovalRecord or aisep:AgentActivity (aisep-core onto.ttl)
+# predicates whose rdfs:domain is aisep:ApprovalRecord or aisep:AgentActivity (aisep-core onto.ttl): the floor;
+# check_bnodes adds every predicate the merge result declares with such a domain
 GOV_PREDICATES = {AISEP + p for p in ("gate", "decision", "approvedBy", "approves", "evidence", "activity",
                                        "sessionRef", "branch", "baseCommit", "headCommit")}
 
 
-def _governance_bnodes(repo, commit, classes):
+def _governance_bnodes(repo, commit, classes, predicates=GOV_PREDICATES):
     """Blank nodes in the model sources of commit that are typed as an approval record / agent activity (classes: those
-    two and every subclass declared on the merge result, module or model file) or carry one of their predicates:
+    two and every IRI subclass declared on the merge result, module or model file; a blank-node subclass in the same
+    file is followed too), are themselves such a blank-node subclass, or carry one of their predicates:
     [(path, description)]. A record or activity must be an IRI model element (spec §6.6/§6.7); diff.Side folds a
     referenced blank node into its referrer's signature, so the record checks below would never see it (2026-11-22
     取证疑点一). This scan does not rely on the gate's L1 rule. A file that is not a regular file or does not parse is
@@ -164,9 +166,17 @@ def _governance_bnodes(repo, commit, classes):
         for q in parsed[path]:
             if isinstance(q.subject, ox.BlankNode):
                 props.setdefault(q.subject, []).append((q.predicate, q.object))
+        gov = lambda o, bs: (isinstance(o, ox.NamedNode) and o.value in classes) or o in bs
+        blank_classes = set()  # blank labels are per parse, so the closure stays inside this file
+        while True:
+            more = {b for b, po in props.items() if b not in blank_classes and any(
+                p.value == core.NS["rdfs"] + "subClassOf" and gov(o, blank_classes) for p, o in po)}
+            if not more:
+                break
+            blank_classes |= more
         for b, po in props.items():
-            if any((p.value == core.A and isinstance(o, ox.NamedNode) and o.value in classes) or p.value in GOV_PREDICATES
-                   for p, o in po):
+            if b in blank_classes or any((p.value == core.A and gov(o, blank_classes)) or p.value in predicates
+                                         for p, o in po):
                 out.append((path, "[ " + " ; ".join(sorted(f"{term(p)} {term(o)}" for p, o in po)) + " ]"))
     return out
 
@@ -359,9 +369,12 @@ class _Analysis:
     def check_bnodes(self, commits=None):
         classes = {c for (c,) in self.ctx_M.rows("""SELECT DISTINCT ?c WHERE { ?c rdfs:subClassOf* ?k
                    VALUES ?k { aisep:ApprovalRecord aisep:AgentActivity } FILTER(isIRI(?c)) }""")} | {RECORD, ACTIVITY}
+        predicates = {p for (p,) in self.ctx_M.rows("""SELECT DISTINCT ?p WHERE { ?p rdfs:domain ?d .
+                      ?d rdfs:subClassOf* ?k VALUES ?k { aisep:ApprovalRecord aisep:AgentActivity } FILTER(isIRI(?p)) }""")
+                      } | GOV_PREDICATES
         found = {}
         for name, c in commits or (("PR 头 H", self.H), ("合并结果 M", self.M)):
-            for path, desc in _governance_bnodes(self.repo, c, classes):
+            for path, desc in _governance_bnodes(self.repo, c, classes, predicates):
                 found.setdefault((path, desc), []).append(f"{name}（{c[:7]}）")
         return [_problem("governance-blank-node", f"{'、'.join(where)} 的 {path} 里有空白节点形式的批准记录或活动 {desc}："
                          "批准记录和活动必须是带 arch:inModel 的 IRI（规范 §6.6、§6.7），合并检查无法核对它，按失败处理")

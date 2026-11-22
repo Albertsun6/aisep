@@ -1,0 +1,15 @@
+# expect: approval record must be a model element, an IRI with arch:inModel
+# #78 评审 minor 3 invalid: an IRI approval record whose arch:inModel names a resource that is not an arch:Model.
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+:ac a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "组件"@zh .
+:boss a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "架构师"@zh .
+:bot a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "编码代理"@zh .
+:nowhere skos:prefLabel "不是模型"@zh .
+:rec a aisep:ApprovalRecord ; aisep:gate aisep:GateMerge ; aisep:decision aisep:DecisionApproved ; aisep:approvedBy :boss ; aisep:approves :ac ; aisep:evidence "sha256:abababababababababababababababababababababababababababababababab" ; prov:generatedAtTime "2026-11-20T11:00:00+08:00"^^xsd:dateTime ; arch:inModel :nowhere ; skos:prefLabel "记录"@zh .
