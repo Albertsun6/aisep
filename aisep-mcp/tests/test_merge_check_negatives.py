@@ -1362,6 +1362,22 @@ def test_bnode_typed_without_record_predicates_rejected_by_mergecheck(t, typed):
     assert_rejected(check(t, h, "feat/x"), BNODE)
 
 
+@pytest.mark.parametrize("fixture", ["approval-record-blank-node", "activity-blank-node-standalone"])
+def test_layer1_blank_node_finding_is_stable_across_parses(fixture):
+    """The L1 finding of a blank-node record / activity names a stable focus (the named subject referring to it) and a
+    stable message, so the write tools' instance keys (§5.1 step 5) do not change between two parses of the same file."""
+    from aisep import core, writer
+    path = os.path.join(core.ROOT, "modules/aisep-core/tests/invalid", fixture + ".ttl")
+    keys = []
+    for _ in range(2):
+        ctx = core.Ctx(core.discover(), [path])
+        core.run_check(ctx)
+        ks = sorted(k for k, f in writer._instances(ctx) if LAYER1_MARK in f["message"] and f["severity"] == "Violation")
+        assert ks and all(k[3] and k[3].startswith("https://aisep.example/model/t/") for k in ks), ks
+        keys.append(ks)
+    assert keys[0] == keys[1]
+
+
 def test_bnode_plain_note_still_passes(t):
     """Positive twin: a blank node with no governance type or predicate (a structured note) is not reported."""
     t.checkout("main", new="feat/x")
