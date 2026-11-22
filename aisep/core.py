@@ -363,6 +363,37 @@ class Ctx:
                 self.add("Violation", "build", f"{self.rel(f)}: blank node [ {desc} ] carries arch:inModel — a model "
                          "member must be an IRI (spec §3); it is left out of the build", file=self.rel(f))
 
+    def _bnodes(self):
+        """blank node label -> (display text, referrer): text = its file and its own triples there, like X1
+        (blank_members); referrer = the subject of the triple that has it as object (None if unreferenced)."""
+        if getattr(self, "_bnode_info", None) is None:
+            term = lambda t: "[]" if isinstance(t, ox.BlankNode) else short(t) if isinstance(t, ox.NamedNode) else repr(t.value)
+            self._bnode_info = {}
+            for f in sorted(self.src_quads, key=self.rel):
+                own, ref = {}, {}
+                for q in self.src_quads[f]:
+                    if isinstance(q.subject, ox.BlankNode):
+                        own.setdefault(q.subject.value, []).append(f"{term(q.predicate)} {term(q.object)}")
+                    if isinstance(q.object, ox.BlankNode):
+                        ref.setdefault(q.object.value, q.subject.value)
+                for b, po in own.items():
+                    self._bnode_info[b] = (f"{self.rel(f)}: blank node [ {' ; '.join(sorted(po))} ]", ref.get(b))
+        return self._bnode_info
+
+    def display(self, x):
+        """short(x); a blank node (its label is a fresh random id on every parse) is shown by its file and triples."""
+        v = x if isinstance(x, str) else getattr(x, "value", str(x))
+        return self._bnodes()[v][0] if v in self._bnodes() else short(x)
+
+    def anchor(self, x):
+        """A stable finding focus: x itself, or for a blank node the nearest named subject referring to it (its own
+        label otherwise), so that the write tools' "new violation" comparison (§5.1 step 5) sees the same key."""
+        v, seen = (x if isinstance(x, str) else x.value), set()
+        while v in self._bnodes() and v not in seen and self._bnodes()[v][1] is not None:
+            seen.add(v)
+            v = self._bnodes()[v][1]
+        return v
+
     def derive_approval_state(self, in_model):
         """spec §6.6 (D10, ADR-009): arch:approvalState is derived, never authored. Per element: the decision of the
         latest aisep:ApprovalRecord (by prov:generatedAtTime) that aisep:approves it; none -> arch:Proposed;
@@ -384,7 +415,7 @@ class Ctx:
                 continue
             recs.setdefault(x, {}).setdefault(t, {})[rec] = dec
         for rec, msgs in sorted(invalid.items()):
-            self.add("Warning", "build", f"{short(rec)}: approval record ignored by the approval-state derivation — it "
+            self.add("Warning", "build", f"{self.display(rec)}: approval record ignored by the approval-state derivation — it "
                      f"fails the L1 ApprovalRecord checks: {' / '.join(sorted(set(msgs)))}")
         latest = {}  # target -> (record, state)
         for x, by_t in recs.items():
@@ -556,15 +587,15 @@ class Ctx:
             if shape == APPROVAL_SHAPE or focus is None or focus.value not in in_src:
                 continue  # only model content, never ontology individuals; approval records: approval_problems()
             text = re.sub(r"\{[?$](\w+)\}", lambda mm: short(b[mm.group(1)]) if b.get(mm.group(1)) is not None else "?", msg)
-            self.add(sev, "L1", f"{short(focus)}: {text}", focus=focus.value)
+            self.add(sev, "L1", f"{self.display(focus)}: {text}", focus=self.anchor(focus))
         for rec, msgs in sorted(self.approval_problems().items()):  # R3a: the same check the derivation uses
             if rec in in_src:
                 for msg in sorted(set(msgs)):
-                    self.add("Violation", "L1", f"{short(rec)}: {msg}")
+                    self.add("Violation", "L1", f"{self.display(rec)}: {msg}", focus=self.anchor(rec))
         for act, msgs in sorted(self.activity_problems().items()):  # v0.4 §6.7
             if act in in_src:
                 for msg in sorted(set(msgs)):
-                    self.add("Violation", "L1", f"{short(act)}: {msg}")
+                    self.add("Violation", "L1", f"{self.display(act)}: {msg}", focus=self.anchor(act))
         for x, t, rds in self.approval_ambiguous:  # R3c
             self.add("Violation", "L1", f"{short(x)}: ambiguous approval — valid approval records "
                      f"{', '.join(f'{short(r)} ({short(d)})' for r, d in rds)} approve it at the same instant "

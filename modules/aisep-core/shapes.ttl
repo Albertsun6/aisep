@@ -148,6 +148,14 @@ aisepsh:ViewShape a sh:NodeShape ;
 #      warns about) every record that fails one of them (v0.2.1, R3a).
 aisepsh:ApprovalRecordShape a sh:NodeShape ;
     sh:targetClass aisep:ApprovalRecord ;
+    # 2026-11-22 (取证疑点一): the merge-time check reads records by IRI (a blank node is folded into its referrer's
+    # signature, a model-less IRI is in no model), so such a record would steer the derivation unchecked
+    sh:sparql [
+        sh:message "AISEP: approval record must be a model element, an IRI with arch:inModel, not a blank node or a resource outside every model (spec §3/§6.6)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:ApprovalRecord .
+            FILTER(!isIRI($this) || NOT EXISTS { $this arch:inModel ?m }) }""" ] ;
     sh:sparql [
         sh:message "AISEP: approval record needs exactly one aisep:decision, aisep:DecisionApproved or aisep:DecisionRejected (spec §6.6)." ;
         sh:prefixes aisepsh:prefixes ;
@@ -235,6 +243,12 @@ aisepsh:ActivityLinkSubjectShape a sh:NodeShape ;
 
 aisepsh:AgentActivityShape a sh:NodeShape ;
     sh:targetClass aisep:AgentActivity ;
+    sh:sparql [
+        sh:message "AISEP: agent activity must be a model element, an IRI with arch:inModel, not a blank node or a resource outside every model (spec §3/§6.7)." ;
+        sh:prefixes aisepsh:prefixes ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            $this rdf:type ?t . ?t rdfs:subClassOf* aisep:AgentActivity .
+            FILTER(!isIRI($this) || NOT EXISTS { $this arch:inModel ?m }) }""" ] ;
     sh:sparql [
         sh:message "AISEP: agent activity needs exactly one prov:wasAssociatedWith, the agent that performed it (spec §6.7)." ;
         sh:prefixes aisepsh:prefixes ;
