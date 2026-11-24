@@ -129,3 +129,116 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :approverRole ;
     arch:target :gateApprovalFlow .
+
+:drvReleaseNeverExercised a am4:Driver ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布关口从没走过一次"@zh ;
+    skos:altLabel "The release gate has never been exercised"@en ;
+    skos:definition "发布关口的规则（短命批准分支、release 标签、批准专用 PR）已写进接口规范 §5.9 和合并校验，但仓库里没有一条发布批准记录，也没有一个 release 标签；工作台关口页也不提供发布关口。"@zh .
+
+:goalIdentifiableRelease a am4:Goal ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "能指认经过批准的发布版本"@zh ;
+    skos:altLabel "Approved releases are identifiable"@en .
+
+:outReleaseTagged a am4:Outcome ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "每个批准的发布都有批准记录和 release 标签"@zh ;
+    skos:altLabel "Every approved release has an approval record and a release tag"@en ;
+    skos:definition "批准的发布在主线上有一条发布关口批准记录，被发布的提交有一个指向它的 release 标签；驳回的发布只有记录，没有标签。"@zh .
+
+:reqApproveRelease a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "关口页能对发布批准分支批准发布"@zh ;
+    skos:altLabel "Gate page approves a release on a release approval branch"@en ;
+    skos:definition "会话从 main 最新提交拉出发布批准分支（approval/release-…）后，工作台首页关口区列出它，点进关口页只提供发布关口；批准对象是整个被批模型；批准人规则同其他关口；gate 不通过时只能驳回；分支所基于的提交已不是 main 最新提交时不能批准，提示重新准备。"@zh ;
+    aisep:priority aisep:Must .
+
+:reqTagOnlyApprovedRelease a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "只有批准的发布才打 release 标签"@zh ;
+    skos:altLabel "Only approved releases get a release tag"@en ;
+    skos:definition "发布批准记录的结论是批准、且 evidence 等于被发布的提交时，才给该提交打 release/{yyyymmdd}-{前 7 位} 标签（UTC 日期），再推送分支与标签、开批准专用 PR；结论是驳回时不打标签；同名标签已存在且指向同一提交则复用，指向别的提交则停下由人处理。"@zh ;
+    aisep:priority aisep:Must .
+
+:reqRejectRelease a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "关口页能驳回发布"@zh ;
+    skos:altLabel "Gate page rejects a release"@en ;
+    skos:definition "在发布关口可以驳回：记一条结论为驳回的发布关口记录，不打标签，记录照样经批准专用 PR 合入。"@zh ;
+    aisep:priority aisep:Should .
+
+:reqReleaseVersionTag a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "用版本号命名 release 标签"@zh ;
+    skos:altLabel "Name release tags by version number"@en ;
+    skos:definition "本次不做：只用 release/{yyyymmdd}-{前 7 位}，不做 release/v…。"@zh ;
+    aisep:priority aisep:Wont .
+
+:reqAutoDeleteReleaseTag a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准 PR 关闭未合并时自动删 release 标签"@zh ;
+    skos:altLabel "Delete the release tag when the approval PR is closed unmerged"@en ;
+    skos:definition "本次不做：规则集禁止删除 release 标签，遗留标签由人清理（规范 §5.9 第 3 步、附录 C）。"@zh ;
+    aisep:priority aisep:Wont .
+
+:reqDeployOnRelease a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布后自动部署"@zh ;
+    skos:altLabel "Deploy automatically on release"@en ;
+    skos:definition "本次不做：release 标签只是发布指针，不触发任何部署。"@zh ;
+    aisep:priority aisep:Wont .
+
+:reqTagWorkbenchRepo a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "给 workbench 仓库也打 release 标签"@zh ;
+    skos:altLabel "Tag the workbench repository on release"@en ;
+    skos:definition "本次不做：只给 aisep 主线提交打 release 标签。"@zh ;
+    aisep:priority aisep:Wont .
+
+:reqReleaseChangeSummary a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布关口页显示自上次发布以来的改动"@zh ;
+    skos:altLabel "Show changes since the last release on the release gate page"@en ;
+    skos:definition "本次不做：第一次发布没有上一版可比，等有了第二版再做。"@zh ;
+    aisep:priority aisep:Wont .
+
+:rel-drvReleaseNeverExercised-influences-goalIdentifiableRelease a am4:Influence ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :drvReleaseNeverExercised ;
+    arch:target :goalIdentifiableRelease .
+
+:rel-outReleaseTagged-realizes-goalIdentifiableRelease a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :outReleaseTagged ;
+    arch:target :goalIdentifiableRelease .
+
+:rel-reqApproveRelease-realizes-outReleaseTagged a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproveRelease ;
+    arch:target :outReleaseTagged .
+
+:rel-reqTagOnlyApprovedRelease-realizes-outReleaseTagged a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqTagOnlyApprovedRelease ;
+    arch:target :outReleaseTagged .
+
+:rel-reqRejectRelease-realizes-outReleaseTagged a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqRejectRelease ;
+    arch:target :outReleaseTagged .
+
+:rel-gateApprovalFlow-realizes-reqApproveRelease a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gateApprovalFlow ;
+    arch:target :reqApproveRelease .
+
+:rel-gateApprovalFlow-realizes-reqTagOnlyApprovedRelease a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gateApprovalFlow ;
+    arch:target :reqTagOnlyApprovedRelease .
+
+:rel-gateApprovalFlow-realizes-reqRejectRelease a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gateApprovalFlow ;
+    arch:target :reqRejectRelease .
