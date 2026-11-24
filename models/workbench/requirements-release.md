@@ -8,7 +8,7 @@
 - 模型：`https://aisep.example/model/workbench/`
 - 需求范围：对 aisep main 最新提交做发布批准或驳回，以及批准后打 release 标签
 - 业务负责人：`:projectLead`（项目负责人，Albert）。它是 `arch:Stakeholder`，连不到驱动因素，原因同 `requirements-approver-scope.md` 第 8 节（aisep #83）。
-- 关联阶段：需求管理；业务架构（流程细化在后续设计 PR）
+- 关联阶段：需求管理；业务架构（流程细化 `:bpmnReleaseApproval`，aisep #88）；实现（aisep #89 会话脚本 `aisep/release.py`，aisep-workbench #27 关口页）
 
 ## 1. 访谈记录（2026-11-25）
 
@@ -64,7 +64,13 @@
 - 遗留 Warning 共 13 条：
   - 12 条是 Must 追溯缺口：两条 Must 需求和它们的 10 条验收标准还没有测试用例。按承载者分两类，代码合并关口前都要清零：
     - 关口页的 5 条（`:acReleaseBranchListed`、`:acReleaseOnlyReleaseGate`、`:acReleaseStaleBlocks`、`:acReleaseGateFailBlocksApprove`、`:acReleaseApproveRecorded`）由工作台代码承载，工作台单元测试验证。
-    - 打标签、推送、开 PR 的 5 条（`:acTagOnApprovedRelease`、`:acNoTagOnRejectedRelease`、`:acReleaseTagReused`、`:acReleaseTagConflictStops`、`:acApprovedReleasePushed`）是会话执行的步骤，工作台代码里没有可测对象。设计阶段把这几步做成会话调用的脚本，由脚本的测试在 CI 里验证；脚本放在哪个仓库由设计 PR 的 ADR 决定。
+    - 打标签、推送、开 PR 的 5 条（`:acTagOnApprovedRelease`、`:acNoTagOnRejectedRelease`、`:acReleaseTagReused`、`:acReleaseTagConflictStops`、`:acApprovedReleasePushed`）是会话执行的步骤，工作台代码里没有可测对象。设计阶段把这几步做成会话调用的脚本，由脚本的测试在 CI 里验证；ADR `:adrReleaseStepsBySessionScript` 定为 aisep 仓库的 `aisep/release.py`。
+  - 2026-11-25 更新（追溯 PR）：15 个测试用例与 CI 测试结果已补——脚本 8 个（aisep main 1b84c74，运行 45471079546），关口页与首页 7 个（aisep-workbench aisep-main 9494224，运行 45472332687）；`:releaseScriptCode` 与 `:gatePageCode` 经 `aisep:Implementation` 实现 `:bpmnReleaseApproval`。12 条 Must 追溯缺口全部清零，全仓库 gate 只剩采购模型原有的 1 条 Warning。
   - 1 条是采购模型原有的 Warning，与本需求无关。
 - Info：5 条新的 Won't 需求是孤立元素，按设计不连（另 3 条是前段链路的 Won't）。
+
+## 8. 残余风险（aisep #89 评审）
+
+- 远端规则集 `release-tags-immutable` 只禁删除和移动 `release/*` 标签、不禁创建；会话脚本不是防恶意会话的安全边界，有推送权限的会话可以绕过脚本直接打标签。
+- 形状与内容都合法、但不是 Albert 本人做出的伪造发布批准记录，任何机械核对（脚本的 `merge_check`、CI）都分不出；据此打出的标签删不掉，而批准专用 PR 尚可 revert。挡住它的仍是「AI 不得新增批准记录」的硬规则（AGENTS.md）。两条都已写进 ADR `:adrReleaseStepsBySessionScript` 的代价。
 - 批准范围（若过需求确认关口）：第 3 节的全部元素。限定关系不能被批准（规范 §6.6）。

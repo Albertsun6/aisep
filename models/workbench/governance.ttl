@@ -65,32 +65,15 @@
 
 :optReleaseStepsBySessionScript a ad:Option ;
     arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "会话用 aisep 仓库 tools/ 下的脚本拉分支、打标签、推送、开 PR"@zh .
+    skos:prefLabel "会话经 tools/pyrun.py 调用 aisep.release 拉分支、打标签、推送、开 PR"@zh .
 
 :optReleaseStepsByWorkbenchBackend a ad:Option ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "工作台加本地后端，照接口规范 §5.9 原文自己完成这些步骤"@zh .
 
-:adrReleaseStepsBySessionScript a ad:Decision ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "发布的 git 步骤由会话调用 aisep 脚本完成，工作台只认出发布批准分支并提供发布关口"@zh ;
-    ad:decisionState ad:Accepted ;
-    ad:justification "工作台前端只调 MCP，不做 git 写操作，也不持推送凭据；前几条链路的推送、开 PR、合并一直由会话按 AGENTS.md 做。Albert 2026-11-25 定：拉发布批准分支、核对记录后打标签、推送、开批准专用 PR 由会话做，并做成 aisep tools/ 下的脚本，复用 mergecheck 的标签命名与批准提交判据，由脚本测试在 CI 里验证。批准记录仍只由 Albert 在关口页做出，脚本只在记录结论为批准且 evidence 等于被发布提交时打标签。代价：Albert 不能在工作台一处完成全部发布步骤；接口规范 §5.9 第 1、3、5 步改为「工作台或会话脚本」。"@zh .
 
-:rel-adrReleaseStepsBySessionScript-relatedConcept-bpmnRelTag a ad:RelatedConcept ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :adrReleaseStepsBySessionScript ;
-    arch:target :bpmnRelTag .
 
-:rel-adrReleaseStepsBySessionScript-hasSelectedOption-optReleaseStepsBySessionScript a ad:HasSelectedOption ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :adrReleaseStepsBySessionScript ;
-    arch:target :optReleaseStepsBySessionScript .
 
-:rel-adrReleaseStepsBySessionScript-hasAlternative-optReleaseStepsByWorkbenchBackend a ad:HasAlternative ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :adrReleaseStepsBySessionScript ;
-    arch:target :optReleaseStepsByWorkbenchBackend .
 
 :forceWorkbenchNoGitWrites a ad:Force ;
     arch:inModel <https://aisep.example/model/workbench/> ;
@@ -109,3 +92,34 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :optReleaseStepsByWorkbenchBackend ;
     arch:target :forceReleaseInOnePlace .
+
+:adrReleaseStepsBySessionScript a ad:Decision ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布的 git 步骤由会话调用 aisep 脚本完成，工作台只认出发布批准分支并提供发布关口"@zh ;
+    ad:decisionState ad:Accepted ;
+    ad:justification "工作台前端只调 MCP，不做 git 写操作，也不持推送凭据；前几条链路的推送、开 PR、合并一直由会话按 AGENTS.md 做。Albert 2026-11-25 定：拉发布批准分支、核对记录后打标签、推送、开批准专用 PR 由会话做，实现为 aisep 仓库的 aisep/release.py，经 `$PY -P tools/pyrun.py aisep.release prepare|publish` 调用（aisep #89）。publish 打标签前对分支头跑与合并时相同的 mergecheck.merge_check，只在唯一一条发布记录结论为批准、evidence 等于被发布提交 R 且没有其他问题时打标签；批准记录仍只由 Albert 在关口页做出。R 取 prepare 时 origin/main 的最新提交，分支在进入关口页前拉好；关口页比对钉住的头与 origin/main 最新提交，不一致就不能批准或驳回。代价：Albert 不能在工作台一处完成全部发布步骤；批准记录写进分支后要有会话运行 publish 才会打标签、推送，否则进度停在「已批准待推送」；接口规范 §5.9 第 1、3、5 步改为「工作台或会话脚本」。残余风险：远端规则集只禁删除和移动 release/* 标签、不禁创建，脚本不是防恶意会话的安全边界；形状与内容都合法、但不是 Albert 本人做出的伪造记录，任何机械核对都分不出，而据此打出的标签删不掉（批准专用 PR 尚可 revert）。挡住它的仍是「AI 不得新增批准记录」的硬规则。"@zh .
+
+:rel-adrReleaseStepsBySessionScript-relatedConcept-bpmnRelTag a ad:RelatedConcept ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :adrReleaseStepsBySessionScript ;
+    arch:target :bpmnRelTag .
+
+:rel-adrReleaseStepsBySessionScript-relatedConcept-bpmnRelPrepare a ad:RelatedConcept ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :adrReleaseStepsBySessionScript ;
+    arch:target :bpmnRelPrepare .
+
+:rel-adrReleaseStepsBySessionScript-relatedConcept-bpmnRelPublish a ad:RelatedConcept ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :adrReleaseStepsBySessionScript ;
+    arch:target :bpmnRelPublish .
+
+:rel-adrReleaseStepsBySessionScript-hasSelectedOption-optReleaseStepsBySessionScript a ad:HasSelectedOption ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :adrReleaseStepsBySessionScript ;
+    arch:target :optReleaseStepsBySessionScript .
+
+:rel-adrReleaseStepsBySessionScript-hasAlternative-optReleaseStepsByWorkbenchBackend a ad:HasAlternative ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :adrReleaseStepsBySessionScript ;
+    arch:target :optReleaseStepsByWorkbenchBackend .

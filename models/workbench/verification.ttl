@@ -686,3 +686,348 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :reqApproveRelease ;
     arch:target :acReleaseOnlyReleaseGate .
+
+:tcReleaseEndToEnd a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布端到端：真实批准记录后打标签、推送、开 PR 测试"@zh ;
+    skos:definition "aisep 仓库 aisep-mcp/tests/test_release.py 里的测试「test_acTagOnApprovedRelease_and_acApprovedReleasePushed_with_record_approval」（pytest）。"@zh .
+
+:rel-tcReleaseEndToEnd-verifies-acTagOnApprovedRelease a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseEndToEnd ;
+    arch:target :acTagOnApprovedRelease .
+
+:rel-tcReleaseEndToEnd-verifies-acApprovedReleasePushed a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseEndToEnd ;
+    arch:target :acApprovedReleasePushed .
+
+:tcReleaseDateUtc a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "release 标签取 UTC 批准日期测试"@zh ;
+    skos:definition "aisep 仓库 aisep-mcp/tests/test_release.py 里的测试「test_acTagOnApprovedRelease_date_is_utc」（pytest）。"@zh .
+
+:rel-tcReleaseDateUtc-verifies-acTagOnApprovedRelease a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseDateUtc ;
+    arch:target :acTagOnApprovedRelease .
+
+:tcReleaseRejectedNoTag a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "驳回的发布不打标签、只推分支开 PR 测试"@zh ;
+    skos:definition "aisep 仓库 aisep-mcp/tests/test_release.py 里的测试「test_acNoTagOnRejectedRelease_and_acRejectedReleasePushed」（pytest）。"@zh .
+
+:rel-tcReleaseRejectedNoTag-verifies-acNoTagOnRejectedRelease a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseRejectedNoTag ;
+    arch:target :acNoTagOnRejectedRelease .
+
+:rel-tcReleaseRejectedNoTag-verifies-acRejectedReleasePushed a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseRejectedNoTag ;
+    arch:target :acRejectedReleasePushed .
+
+:tcReleaseTagReused a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "同名标签已指向 R 时复用测试"@zh ;
+    skos:definition "aisep 仓库 aisep-mcp/tests/test_release.py 里的测试「test_acReleaseTagReused」（pytest）。"@zh .
+
+:rel-tcReleaseTagReused-verifies-acReleaseTagReused a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseTagReused ;
+    arch:target :acReleaseTagReused .
+
+:tcReleaseTagReusedRemoteOnly a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "只有远端有同名标签时原样复用测试"@zh ;
+    skos:definition "aisep 仓库 aisep-mcp/tests/test_release.py 里的测试「test_acReleaseTagReused_remote_only」（pytest）。"@zh .
+
+:rel-tcReleaseTagReusedRemoteOnly-verifies-acReleaseTagReused a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseTagReusedRemoteOnly ;
+    arch:target :acReleaseTagReused .
+
+:tcReleaseTagConflict a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "同名标签指向别处时停下测试"@zh ;
+    skos:definition "aisep 仓库 aisep-mcp/tests/test_release.py 里的测试「test_acReleaseTagConflictStops」（pytest）。"@zh .
+
+:rel-tcReleaseTagConflict-verifies-acReleaseTagConflictStops a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseTagConflict ;
+    arch:target :acReleaseTagConflictStops .
+
+:tcReleaseTagConflictRemoteOnly a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "只有远端有冲突标签时停下测试"@zh ;
+    skos:definition "aisep 仓库 aisep-mcp/tests/test_release.py 里的测试「test_acReleaseTagConflictStops_remote_only」（pytest）。"@zh .
+
+:rel-tcReleaseTagConflictRemoteOnly-verifies-acReleaseTagConflictStops a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseTagConflictRemoteOnly ;
+    arch:target :acReleaseTagConflictStops .
+
+:tcReleaseMergeCheckFirst a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "打标签前先跑合并时校验测试"@zh ;
+    skos:definition "aisep 仓库 aisep-mcp/tests/test_release.py 里的测试「test_publish_runs_the_merge_time_checks_before_tagging」（pytest）。"@zh .
+
+:rel-tcReleaseMergeCheckFirst-verifies-reqTagOnlyApprovedRelease a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseMergeCheckFirst ;
+    arch:target :reqTagOnlyApprovedRelease .
+
+:tcReleaseGateOnlyRelease a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布批准分支只提供发布关口并批准整个模型测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「AisepGatePage on a release approval branch」 里的测试「offers the release gate only and approves the whole model on R (acReleaseOnlyReleaseGate, acReleaseApproveRecorded)」（vitest）。"@zh .
+
+:rel-tcReleaseGateOnlyRelease-verifies-acReleaseOnlyReleaseGate a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseGateOnlyRelease ;
+    arch:target :acReleaseOnlyReleaseGate .
+
+:rel-tcReleaseGateOnlyRelease-verifies-acReleaseApproveRecorded a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseGateOnlyRelease ;
+    arch:target :acReleaseApproveRecorded .
+
+:tcReleaseGateStale a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "origin/main 前进后不能批准也不能驳回测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「AisepGatePage on a release approval branch」 里的测试「can neither approve nor reject once origin/main moved past R (acReleaseStaleBlocks)」（vitest）。"@zh .
+
+:rel-tcReleaseGateStale-verifies-acReleaseStaleBlocks a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseGateStale ;
+    arch:target :acReleaseStaleBlocks .
+
+:tcReleaseGateHeadNotR a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "头不是 origin/main 最新提交时不能批准也不能驳回测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「AisepGatePage on a release approval branch」 里的测试「can neither approve nor reject when the pinned head is not origin/main's tip, whatever the branch name says」（vitest）。"@zh .
+
+:rel-tcReleaseGateHeadNotR-verifies-acReleaseStaleBlocks a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseGateHeadNotR ;
+    arch:target :acReleaseStaleBlocks .
+
+:tcReleaseGateMainMovedBeforeWrite a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "写入前 main 已前进则不写测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「AisepGatePage on a release approval branch」 里的测试「reads origin/main again right before writing and writes nothing if it moved meanwhile」（vitest）。"@zh .
+
+:rel-tcReleaseGateMainMovedBeforeWrite-verifies-acReleaseStaleBlocks a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseGateMainMovedBeforeWrite ;
+    arch:target :acReleaseStaleBlocks .
+
+:tcReleaseGateMainUnknown a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "读不到 origin/main 时不能批准也不能驳回测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「AisepGatePage on a release approval branch」 里的测试「can neither approve nor reject while origin/main's tip cannot be read」（vitest）。"@zh .
+
+:rel-tcReleaseGateMainUnknown-verifies-reqApproveRelease a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseGateMainUnknown ;
+    arch:target :reqApproveRelease .
+
+:tcReleaseGateFail a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "gate 不通过时不能批准发布测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「AisepGatePage on a release approval branch」 里的测试「cannot approve a release whose gate fails (acReleaseGateFailBlocksApprove)」（vitest）。"@zh .
+
+:rel-tcReleaseGateFail-verifies-acReleaseGateFailBlocksApprove a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseGateFail ;
+    arch:target :acReleaseGateFailBlocksApprove .
+
+:tcReleaseBranchListed a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "首页列出发布批准分支测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepWorkbenchPage.test.tsx 中 describe「AisepWorkbenchPage gate entries (model_branches, §5.11)」 里的测试「lists a release approval branch while it waits for a decision or for its merge (acReleaseBranchListed)」（vitest）。"@zh .
+
+:rel-tcReleaseBranchListed-verifies-acReleaseBranchListed a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseBranchListed ;
+    arch:target :acReleaseBranchListed .
+
+:trReleaseEndToEnd1b84c74 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布端到端测试：通过（main 1b84c74）"@zh ;
+    skos:altLabel "Release end to end test: passed (main 1b84c74)"@en ;
+    aisep:resultOf :tcReleaseEndToEnd ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:36:11Z"^^xsd:dateTime ;
+    aisep:testedCommit "1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep/actions/runs/45471079546> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep> ;
+    skos:definition "aisep 仓库 main 提交 1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f（合并 PR #89）上，GitHub Actions 运行 45471079546（gate 工作流，push 触发）：pytest-shard (0/3)、(1/3)、(2/3) 三个任务（138718875690、138718875507、138718875409）分别 194、174、209 passed、无失败，汇总任务 pytest（138721960916）成功；最后一个分片日志时间 2026-11-24T19:36:11Z。分片日志只打印通过总数和耗时清单（耗时清单里可见 test_release.py 的端到端与 remote_only 等用例），所以这里按三个分片全部通过推出 aisep-mcp/tests/test_release.py 里的「test_acTagOnApprovedRelease_and_acApprovedReleasePushed_with_record_approval」通过。"@zh .
+
+:trReleaseDateUtc1b84c74 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "release 标签取 UTC 批准日期测试：通过（main 1b84c74）"@zh ;
+    skos:altLabel "Release tag takes the UTC approval date test: passed (main 1b84c74)"@en ;
+    aisep:resultOf :tcReleaseDateUtc ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:36:11Z"^^xsd:dateTime ;
+    aisep:testedCommit "1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep/actions/runs/45471079546> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep> ;
+    skos:definition "aisep 仓库 main 提交 1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f（合并 PR #89）上，GitHub Actions 运行 45471079546（gate 工作流，push 触发）：pytest-shard (0/3)、(1/3)、(2/3) 三个任务（138718875690、138718875507、138718875409）分别 194、174、209 passed、无失败，汇总任务 pytest（138721960916）成功；最后一个分片日志时间 2026-11-24T19:36:11Z。分片日志只打印通过总数和耗时清单（耗时清单里可见 test_release.py 的端到端与 remote_only 等用例），所以这里按三个分片全部通过推出 aisep-mcp/tests/test_release.py 里的「test_acTagOnApprovedRelease_date_is_utc」通过。"@zh .
+
+:trReleaseRejectedNoTag1b84c74 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "驳回的发布不打标签测试：通过（main 1b84c74）"@zh ;
+    skos:altLabel "A rejected release gets no tag test: passed (main 1b84c74)"@en ;
+    aisep:resultOf :tcReleaseRejectedNoTag ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:36:11Z"^^xsd:dateTime ;
+    aisep:testedCommit "1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep/actions/runs/45471079546> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep> ;
+    skos:definition "aisep 仓库 main 提交 1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f（合并 PR #89）上，GitHub Actions 运行 45471079546（gate 工作流，push 触发）：pytest-shard (0/3)、(1/3)、(2/3) 三个任务（138718875690、138718875507、138718875409）分别 194、174、209 passed、无失败，汇总任务 pytest（138721960916）成功；最后一个分片日志时间 2026-11-24T19:36:11Z。分片日志只打印通过总数和耗时清单（耗时清单里可见 test_release.py 的端到端与 remote_only 等用例），所以这里按三个分片全部通过推出 aisep-mcp/tests/test_release.py 里的「test_acNoTagOnRejectedRelease_and_acRejectedReleasePushed」通过。"@zh .
+
+:trReleaseTagReused1b84c74 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "同名标签已指向 R 时复用测试：通过（main 1b84c74）"@zh ;
+    skos:altLabel "A tag already on R is reused test: passed (main 1b84c74)"@en ;
+    aisep:resultOf :tcReleaseTagReused ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:36:11Z"^^xsd:dateTime ;
+    aisep:testedCommit "1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep/actions/runs/45471079546> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep> ;
+    skos:definition "aisep 仓库 main 提交 1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f（合并 PR #89）上，GitHub Actions 运行 45471079546（gate 工作流，push 触发）：pytest-shard (0/3)、(1/3)、(2/3) 三个任务（138718875690、138718875507、138718875409）分别 194、174、209 passed、无失败，汇总任务 pytest（138721960916）成功；最后一个分片日志时间 2026-11-24T19:36:11Z。分片日志只打印通过总数和耗时清单（耗时清单里可见 test_release.py 的端到端与 remote_only 等用例），所以这里按三个分片全部通过推出 aisep-mcp/tests/test_release.py 里的「test_acReleaseTagReused」通过。"@zh .
+
+:trReleaseTagReusedRemoteOnly1b84c74 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "只有远端有同名标签时复用测试：通过（main 1b84c74）"@zh ;
+    skos:altLabel "A remote-only tag on R is reused test: passed (main 1b84c74)"@en ;
+    aisep:resultOf :tcReleaseTagReusedRemoteOnly ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:36:11Z"^^xsd:dateTime ;
+    aisep:testedCommit "1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep/actions/runs/45471079546> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep> ;
+    skos:definition "aisep 仓库 main 提交 1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f（合并 PR #89）上，GitHub Actions 运行 45471079546（gate 工作流，push 触发）：pytest-shard (0/3)、(1/3)、(2/3) 三个任务（138718875690、138718875507、138718875409）分别 194、174、209 passed、无失败，汇总任务 pytest（138721960916）成功；最后一个分片日志时间 2026-11-24T19:36:11Z。分片日志只打印通过总数和耗时清单（耗时清单里可见 test_release.py 的端到端与 remote_only 等用例），所以这里按三个分片全部通过推出 aisep-mcp/tests/test_release.py 里的「test_acReleaseTagReused_remote_only」通过。"@zh .
+
+:trReleaseTagConflict1b84c74 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "同名标签指向别处时停下测试：通过（main 1b84c74）"@zh ;
+    skos:altLabel "A conflicting tag stops the release test: passed (main 1b84c74)"@en ;
+    aisep:resultOf :tcReleaseTagConflict ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:36:11Z"^^xsd:dateTime ;
+    aisep:testedCommit "1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep/actions/runs/45471079546> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep> ;
+    skos:definition "aisep 仓库 main 提交 1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f（合并 PR #89）上，GitHub Actions 运行 45471079546（gate 工作流，push 触发）：pytest-shard (0/3)、(1/3)、(2/3) 三个任务（138718875690、138718875507、138718875409）分别 194、174、209 passed、无失败，汇总任务 pytest（138721960916）成功；最后一个分片日志时间 2026-11-24T19:36:11Z。分片日志只打印通过总数和耗时清单（耗时清单里可见 test_release.py 的端到端与 remote_only 等用例），所以这里按三个分片全部通过推出 aisep-mcp/tests/test_release.py 里的「test_acReleaseTagConflictStops」通过。"@zh .
+
+:trReleaseTagConflictRemoteOnly1b84c74 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "只有远端有冲突标签时停下测试：通过（main 1b84c74）"@zh ;
+    skos:altLabel "A remote-only conflicting tag stops the release test: passed (main 1b84c74)"@en ;
+    aisep:resultOf :tcReleaseTagConflictRemoteOnly ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:36:11Z"^^xsd:dateTime ;
+    aisep:testedCommit "1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep/actions/runs/45471079546> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep> ;
+    skos:definition "aisep 仓库 main 提交 1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f（合并 PR #89）上，GitHub Actions 运行 45471079546（gate 工作流，push 触发）：pytest-shard (0/3)、(1/3)、(2/3) 三个任务（138718875690、138718875507、138718875409）分别 194、174、209 passed、无失败，汇总任务 pytest（138721960916）成功；最后一个分片日志时间 2026-11-24T19:36:11Z。分片日志只打印通过总数和耗时清单（耗时清单里可见 test_release.py 的端到端与 remote_only 等用例），所以这里按三个分片全部通过推出 aisep-mcp/tests/test_release.py 里的「test_acReleaseTagConflictStops_remote_only」通过。"@zh .
+
+:trReleaseMergeCheckFirst1b84c74 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "打标签前先跑合并时校验测试：通过（main 1b84c74）"@zh ;
+    skos:altLabel "Merge-time checks run before tagging test: passed (main 1b84c74)"@en ;
+    aisep:resultOf :tcReleaseMergeCheckFirst ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:36:11Z"^^xsd:dateTime ;
+    aisep:testedCommit "1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep/actions/runs/45471079546> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep> ;
+    skos:definition "aisep 仓库 main 提交 1b84c74d6d683ec6bcca4eb247c1f8e9ecfda32f（合并 PR #89）上，GitHub Actions 运行 45471079546（gate 工作流，push 触发）：pytest-shard (0/3)、(1/3)、(2/3) 三个任务（138718875690、138718875507、138718875409）分别 194、174、209 passed、无失败，汇总任务 pytest（138721960916）成功；最后一个分片日志时间 2026-11-24T19:36:11Z。分片日志只打印通过总数和耗时清单（耗时清单里可见 test_release.py 的端到端与 remote_only 等用例），所以这里按三个分片全部通过推出 aisep-mcp/tests/test_release.py 里的「test_publish_runs_the_merge_time_checks_before_tagging」通过。"@zh .
+
+:trReleaseGateOnlyRelease9494224 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布批准分支只提供发布关口测试：通过（aisep-main 9494224）"@zh ;
+    skos:altLabel "Release branch offers the release gate only test: passed (aisep-main 9494224)"@en ;
+    aisep:resultOf :tcReleaseGateOnlyRelease ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:39:44Z"^^xsd:dateTime ;
+    aisep:testedCommit "949422452438027ecdd4569ca39af53d48810f88" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45472332687> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 949422452438027ecdd4569ca39af53d48810f88（合并 PR #27）上，GitHub Actions CI 运行 45472332687（push 触发）：「frontend / vitest (2)」任务（138723424694）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（43 tests），日志时间 2026-11-24T19:39:44Z，其中包括「offers the release gate only and approves the whole model on R (acReleaseOnlyReleaseGate, acReleaseApproveRecorded)」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
+
+:trReleaseGateStale9494224 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "origin/main 前进后不能批准也不能驳回测试：通过（aisep-main 9494224）"@zh ;
+    skos:altLabel "No decision once origin/main moved test: passed (aisep-main 9494224)"@en ;
+    aisep:resultOf :tcReleaseGateStale ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:39:44Z"^^xsd:dateTime ;
+    aisep:testedCommit "949422452438027ecdd4569ca39af53d48810f88" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45472332687> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 949422452438027ecdd4569ca39af53d48810f88（合并 PR #27）上，GitHub Actions CI 运行 45472332687（push 触发）：「frontend / vitest (2)」任务（138723424694）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（43 tests），日志时间 2026-11-24T19:39:44Z，其中包括「can neither approve nor reject once origin/main moved past R (acReleaseStaleBlocks)」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
+
+:trReleaseGateHeadNotR9494224 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "头不是 origin/main 最新提交时不能决定测试：通过（aisep-main 9494224）"@zh ;
+    skos:altLabel "No decision when the head is not origin/main's tip test: passed (aisep-main 9494224)"@en ;
+    aisep:resultOf :tcReleaseGateHeadNotR ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:39:44Z"^^xsd:dateTime ;
+    aisep:testedCommit "949422452438027ecdd4569ca39af53d48810f88" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45472332687> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 949422452438027ecdd4569ca39af53d48810f88（合并 PR #27）上，GitHub Actions CI 运行 45472332687（push 触发）：「frontend / vitest (2)」任务（138723424694）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（43 tests），日志时间 2026-11-24T19:39:44Z，其中包括「can neither approve nor reject when the pinned head is not origin/main's tip, whatever the branch name says」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
+
+:trReleaseGateMainMovedBeforeWrite9494224 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "写入前 main 已前进则不写测试：通过（aisep-main 9494224）"@zh ;
+    skos:altLabel "Nothing written if main moved before writing test: passed (aisep-main 9494224)"@en ;
+    aisep:resultOf :tcReleaseGateMainMovedBeforeWrite ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:39:44Z"^^xsd:dateTime ;
+    aisep:testedCommit "949422452438027ecdd4569ca39af53d48810f88" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45472332687> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 949422452438027ecdd4569ca39af53d48810f88（合并 PR #27）上，GitHub Actions CI 运行 45472332687（push 触发）：「frontend / vitest (2)」任务（138723424694）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（43 tests），日志时间 2026-11-24T19:39:44Z，其中包括「reads origin/main again right before writing and writes nothing if it moved meanwhile」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
+
+:trReleaseGateMainUnknown9494224 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "读不到 origin/main 时不能决定测试：通过（aisep-main 9494224）"@zh ;
+    skos:altLabel "No decision while origin/main is unknown test: passed (aisep-main 9494224)"@en ;
+    aisep:resultOf :tcReleaseGateMainUnknown ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:39:44Z"^^xsd:dateTime ;
+    aisep:testedCommit "949422452438027ecdd4569ca39af53d48810f88" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45472332687> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 949422452438027ecdd4569ca39af53d48810f88（合并 PR #27）上，GitHub Actions CI 运行 45472332687（push 触发）：「frontend / vitest (2)」任务（138723424694）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（43 tests），日志时间 2026-11-24T19:39:44Z，其中包括「can neither approve nor reject while origin/main's tip cannot be read」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
+
+:trReleaseGateFail9494224 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "gate 不通过时不能批准发布测试：通过（aisep-main 9494224）"@zh ;
+    skos:altLabel "No release approval when the gate fails test: passed (aisep-main 9494224)"@en ;
+    aisep:resultOf :tcReleaseGateFail ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:39:44Z"^^xsd:dateTime ;
+    aisep:testedCommit "949422452438027ecdd4569ca39af53d48810f88" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45472332687> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 949422452438027ecdd4569ca39af53d48810f88（合并 PR #27）上，GitHub Actions CI 运行 45472332687（push 触发）：「frontend / vitest (2)」任务（138723424694）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（43 tests），日志时间 2026-11-24T19:39:44Z，其中包括「cannot approve a release whose gate fails (acReleaseGateFailBlocksApprove)」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
+
+:trReleaseBranchListed9494224 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "首页列出发布批准分支测试：通过（aisep-main 9494224）"@zh ;
+    skos:altLabel "Home lists release approval branches test: passed (aisep-main 9494224)"@en ;
+    aisep:resultOf :tcReleaseBranchListed ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T19:39:50Z"^^xsd:dateTime ;
+    aisep:testedCommit "949422452438027ecdd4569ca39af53d48810f88" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45472332687> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 949422452438027ecdd4569ca39af53d48810f88（合并 PR #27）上，GitHub Actions CI 运行 45472332687（push 触发）：「frontend / vitest (2)」任务（138723424694）里 frontend/src/renderer/aisep/AisepWorkbenchPage.test.tsx 整个文件通过（38 tests），日志时间 2026-11-24T19:39:50Z，其中包括「lists a release approval branch while it waits for a decision or for its merge (acReleaseBranchListed)」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
