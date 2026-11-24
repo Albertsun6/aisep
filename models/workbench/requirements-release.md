@@ -14,11 +14,11 @@
 
 - 使用者：在工作台关口页做批准的人，目前只有项目负责人；批准人规则同其他关口（只列被批模型的人类干系人）。→ `:approverRole`（复用）
 - 目的：发布关口的规则已写进接口规范 §5.9 和合并校验，但从没走过一次：仓库里没有发布批准记录，也没有 release 标签；工作台关口页不提供发布关口。→ `:drvReleaseNeverExercised`、`:goalIdentifiableRelease`、`:outReleaseTagged`
-- 主流程：会话从 main 最新提交 R 拉出发布批准分支 → 首页关口区列出它 → 关口页只提供发布关口，批准对象是整个被批模型 → Albert 批准或驳回 → 结论是批准时，会话打 `release/{yyyymmdd}-{R 前 7 位}` 标签 → 会话推送分支与标签、开批准专用 PR，按 AGENTS.md 三步合并。→ `:gateApprovalFlow`（复用已有流程）
+- 主流程：会话从 origin/main（模型服务所读仓库最近一次 fetch 时）的最新提交 R 拉出发布批准分支 → 首页关口区列出它 → 关口页只提供发布关口，批准对象是整个被批模型 → Albert 批准或驳回 → 结论是批准时，会话打 `release/{yyyymmdd}-{R 前 7 位}` 标签 → 会话推送分支与标签、开批准专用 PR，按 AGENTS.md 三步合并；结论是驳回时不打标签，只推送分支、开 PR。→ `:gateApprovalFlow`（复用已有流程）
 - 分工：工作台前端只调 MCP，不做 git 写操作。拉分支、打标签、推送、开 PR 由会话做；这一点和规范 §5.9 第 5 步「由工作台做」不同，在设计 PR 的 ADR 里记录。
-- 边界条件：只能发布 main 最新提交；标签只用日期加短提交号；同名标签已指向 R 时复用。
-- 异常情况：分支准备好后 main 又前进了 → 不能批，提示重新准备分支；gate 不通过 → 只能驳回；同名标签指向别的提交 → 停下由人处理，不移动标签。
-- 发布前提：元素是「待批准」（Proposed）也允许发布，照现行规则，服务端不要求先过前面的关口。
+- 边界条件：只能发布 origin/main 最新提交；标签只用日期加短提交号；同名标签已指向 R 时复用。
+- 异常情况：分支准备好后 origin/main 又前进了 → 既不能批准也不能驳回，提示重新准备分支；gate 不通过 → 不能批准（驳回属于 Should 的 `:reqRejectRelease`）；同名标签指向别的提交 → 停下由人处理，不移动标签。
+- 发布前提：元素是「待批准」（Proposed）也允许发布，照现行规则，服务端不要求先过前面的关口。照现状，不新增需求，只在 `:reqApproveRelease` 正文里写明。
 - 不做什么：版本号标签；批准 PR 关闭未合并时自动删标签；发布后自动部署；给 workbench 仓库打标签；发布关口页显示自上次发布以来的改动。五条都写成 Won't 需求。
 - 尚未回答的问题：无。
 
@@ -38,10 +38,10 @@
 | 需求 | `:reqApproveRelease`、`:reqTagOnlyApprovedRelease` | Must |
 | 需求 | `:reqRejectRelease` | Should |
 | 需求（不做） | `:reqReleaseVersionTag`、`:reqAutoDeleteReleaseTag`、`:reqDeployOnRelease`、`:reqTagWorkbenchRepo`、`:reqReleaseChangeSummary` | Won't |
-| 验收标准 | `:acReleaseBranchListed`、`:acReleaseOnlyReleaseGate`、`:acReleaseStaleBlocks`、`:acReleaseGateFailRejectOnly`、`:acReleaseApproveRecorded`、`:acTagOnApprovedRelease`、`:acNoTagOnRejectedRelease`、`:acReleaseTagReused`、`:acReleaseTagConflictStops` | Must |
-| 验收标准 | `:acRejectReleaseRecorded` | Should |
+| 验收标准 | `:acReleaseBranchListed`、`:acReleaseOnlyReleaseGate`、`:acReleaseStaleBlocks`、`:acReleaseGateFailBlocksApprove`、`:acReleaseApproveRecorded`、`:acTagOnApprovedRelease`、`:acNoTagOnRejectedRelease`、`:acReleaseTagReused`、`:acReleaseTagConflictStops`、`:acApprovedReleasePushed` | Must |
+| 验收标准 | `:acRejectReleaseRecorded`、`:acRejectedReleasePushed` | Should |
 
-全部经 aisep 写工具（`model_add_element`、`model_add_relationship`）写入。
+全部经 aisep 写工具（`model_add_element`、`model_add_relationship`、`model_set_labels`、`model_remove`）写入。
 
 ## 4. 必需的追溯
 
@@ -59,9 +59,11 @@
 
 ## 7. 关口评审输入
 
-- gate 摘要行（全仓库）：`SUMMARY gate files=17 violations=0 warnings=12 infos=8 ... result=PASS`。
-- 遗留 Warning 共 12 条：
-  - 11 条是 Must 追溯缺口：两条 Must 需求和它们的 9 条验收标准还没有测试用例。工作台代码合入后补成 `aisep:TestCase` 并连 `aisep:Verification`，代码合并关口前清零。
+- gate 摘要行（全仓库）：`SUMMARY gate files=17 violations=0 warnings=13 infos=8 ... result=PASS`。
+- 遗留 Warning 共 13 条：
+  - 12 条是 Must 追溯缺口：两条 Must 需求和它们的 10 条验收标准还没有测试用例。按承载者分两类，代码合并关口前都要清零：
+    - 关口页的 5 条（`:acReleaseBranchListed`、`:acReleaseOnlyReleaseGate`、`:acReleaseStaleBlocks`、`:acReleaseGateFailBlocksApprove`、`:acReleaseApproveRecorded`）由工作台代码承载，工作台单元测试验证。
+    - 打标签、推送、开 PR 的 5 条（`:acTagOnApprovedRelease`、`:acNoTagOnRejectedRelease`、`:acReleaseTagReused`、`:acReleaseTagConflictStops`、`:acApprovedReleasePushed`）是会话执行的步骤，工作台代码里没有可测对象。设计阶段把这几步做成会话调用的脚本，由脚本的测试在 CI 里验证；脚本放在哪个仓库由设计 PR 的 ADR 决定。
   - 1 条是采购模型原有的 Warning，与本需求无关。
 - Info：5 条新的 Won't 需求是孤立元素，按设计不连（另 3 条是前段链路的 Won't）。
 - 批准范围（若过需求确认关口）：第 3 节的全部元素。限定关系不能被批准（规范 §6.6）。

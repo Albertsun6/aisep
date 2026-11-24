@@ -151,14 +151,14 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "关口页能对发布批准分支批准发布"@zh ;
     skos:altLabel "Gate page approves a release on a release approval branch"@en ;
-    skos:definition "会话从 main 最新提交拉出发布批准分支（approval/release-…）后，工作台首页关口区列出它，点进关口页只提供发布关口；批准对象是整个被批模型；批准人规则同其他关口；gate 不通过时只能驳回；分支所基于的提交已不是 main 最新提交时不能批准，提示重新准备。"@zh ;
+    skos:definition "会话从 origin/main（模型服务所读仓库最近一次 fetch 时） 的最新提交拉出发布批准分支（approval/release-…）后，工作台首页关口区列出它，点进关口页只提供发布关口；批准对象是整个被批模型；批准人规则同其他关口；gate 不通过时不能批准；分支所基于的提交已不是 origin/main 最新提交时既不能批准也不能驳回，提示重新准备。被批元素是「待批准」也允许发布（照现行规则）。"@zh ;
     aisep:priority aisep:Must .
 
 :reqTagOnlyApprovedRelease a am4:Requirement ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "只有批准的发布才打 release 标签"@zh ;
     skos:altLabel "Only approved releases get a release tag"@en ;
-    skos:definition "发布批准记录的结论是批准、且 evidence 等于被发布的提交时，才给该提交打 release/{yyyymmdd}-{前 7 位} 标签（UTC 日期），再推送分支与标签、开批准专用 PR；结论是驳回时不打标签；同名标签已存在且指向同一提交则复用，指向别的提交则停下由人处理。"@zh ;
+    skos:definition "发布批准记录的结论是批准、且 evidence 等于被发布的提交时，才给该提交打 release/{yyyymmdd}-{前 7 位} 标签（批准日期，UTC），再推送分支与标签、开批准专用 PR；结论是驳回时不打标签，只推送分支、开批准专用 PR；同名标签已存在且指向同一提交则复用，指向别的提交则停下由人处理。"@zh ;
     aisep:priority aisep:Must .
 
 :reqRejectRelease a am4:Requirement ;
