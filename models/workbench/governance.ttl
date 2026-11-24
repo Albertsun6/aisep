@@ -4,7 +4,65 @@
 @prefix arch:  <https://meta.linked.archi/core#> .
 @prefix aisep: <https://aisep.example/ont/aisep#> .
 @prefix :      <https://aisep.example/model/workbench/> .
+@prefix ad: <https://meta.linked.archi/arch-decision#> .
 
 :projectLead a arch:Stakeholder ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "项目负责人"@zh ; skos:altLabel "Project Lead"@en .
+
+:optApproverFilterInWorkbench a ad:Option ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "工作台关口页按被批模型过滤批准人"@zh .
+
+:optApproverEnforcedByServer a ad:Option ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准工具与形状规则强制批准人属于被批模型"@zh .
+
+:adrApproverScopeInWorkbench a ad:Decision ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准人范围先在工作台关口页收窄，服务端暂不强制"@zh ;
+    ad:decisionState ad:Accepted ;
+    ad:justification "误选只发生在工作台关口页这一个入口（aisep #68），在页面上只列被批模型的人类干系人就能堵住，只改工作台前端，不动 aisep 的批准与合并判据。服务端强制属于批准判据的改动，要先排查哪些入口用单模型视图推导批准状态，还要处理已合入的跨模型记录，留给 aisep #73。代价：经 MCP 直接调用批准工具时仍可能写进别的模型的干系人。"@zh .
+
+:rel-adrApproverScopeInWorkbench-relatedConcept-bpmnApvApproverGateway a ad:RelatedConcept ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :adrApproverScopeInWorkbench ;
+    arch:target :bpmnApvApproverGateway .
+
+:rel-adrApproverScopeInWorkbench-hasSelectedOption-optApproverFilterInWorkbench a ad:HasSelectedOption ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :adrApproverScopeInWorkbench ;
+    arch:target :optApproverFilterInWorkbench .
+
+:rel-adrApproverScopeInWorkbench-hasAlternative-optApproverEnforcedByServer a ad:HasAlternative ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :adrApproverScopeInWorkbench ;
+    arch:target :optApproverEnforcedByServer .
+
+:forceKeepApprovalCriteriaFrozen a ad:Force ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "不动批准与合并判据"@zh .
+
+:forceBlockAllEntryPoints a ad:Force ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "所有批准入口都挡住误选"@zh .
+
+:rel-optApproverFilterInWorkbench-addressesForce-forceKeepApprovalCriteriaFrozen a ad:AddressesForce ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :optApproverFilterInWorkbench ;
+    arch:target :forceKeepApprovalCriteriaFrozen .
+
+:rel-optApproverFilterInWorkbench-addressesForce-forceBlockAllEntryPoints a ad:AddressesForce ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :optApproverFilterInWorkbench ;
+    arch:target :forceBlockAllEntryPoints .
+
+:rel-optApproverEnforcedByServer-addressesForce-forceKeepApprovalCriteriaFrozen a ad:AddressesForce ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :optApproverEnforcedByServer ;
+    arch:target :forceKeepApprovalCriteriaFrozen .
+
+:rel-optApproverEnforcedByServer-addressesForce-forceBlockAllEntryPoints a ad:AddressesForce ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :optApproverEnforcedByServer ;
+    arch:target :forceBlockAllEntryPoints .
