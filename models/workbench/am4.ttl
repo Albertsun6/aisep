@@ -64,7 +64,7 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "关口页的批准人只能选被批模型的人类干系人"@zh ;
     skos:altLabel "Gate page offers only the approved model's human stakeholders as approvers"@en ;
-    skos:definition "关口页批准人下拉只列被批模型自己的人类干系人（不是 aisep:AIAgent）；别的模型的干系人不出现。被批模型没有人类干系人时提示没有可选批准人，不能批准；干系人列表读不到时不显示下拉，不能批准；切换被批模型后清空已选批准人。"@zh ;
+    skos:definition "关口页批准人下拉只列被批模型自己的人类干系人（不是 aisep:AIAgent）；别的模型的干系人不出现。被批模型没有人类干系人时提示没有可选批准人，不能批准；干系人列表读不到时不显示下拉，不能批准；切换被批模型后，之前为别的模型选的批准人不再生效。"@zh ;
     aisep:priority aisep:Must .
 
 :reqSingleApproverPreselect a am4:Requirement ;

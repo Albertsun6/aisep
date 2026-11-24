@@ -267,11 +267,6 @@
     aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/44924597097> ;
     schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
 
-:acOnlyModelStakeholders a aisep:AcceptanceCriterion ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "批准人下拉只列被批模型的人类干系人"@zh ;
-    aisep:priority aisep:Must ;
-    aisep:gherkin "Given 模型 workbench 有人类干系人「项目负责人」，模型 procurement 有人类干系人「首席架构师」，另有一个 AI 代理干系人\nWhen 在关口页选择被批模型 workbench\nThen 批准人下拉只有「项目负责人」" .
 
 :acNoApproversBlocks a aisep:AcceptanceCriterion ;
     arch:inModel <https://aisep.example/model/workbench/> ;
@@ -287,15 +282,10 @@
 
 :acSwitchModelClears a aisep:AcceptanceCriterion ;
     arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "切换被批模型后清空已选批准人"@zh ;
+    skos:prefLabel "切换被批模型后不沿用之前选的批准人"@zh ;
     aisep:priority aisep:Must ;
     aisep:gherkin "Given 已为模型 A 选了批准人，模型 B 有两个人类干系人\nWhen 把被批模型切换为 B\nThen 批准人为空并显示占位文案" .
 
-:acSingleApproverPreselected a aisep:AcceptanceCriterion ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "只有一个人类干系人时自动选上"@zh ;
-    aisep:priority aisep:Should ;
-    aisep:gherkin "Given 模型 B 恰好有一个人类干系人「项目负责人」\nWhen 在关口页选择被批模型 B（含从模型 A 切换过来）\nThen 批准人已选为「项目负责人」" .
 
 :acMultipleNotPreselected a aisep:AcceptanceCriterion ;
     arch:inModel <https://aisep.example/model/workbench/> ;
@@ -303,10 +293,6 @@
     aisep:priority aisep:Should ;
     aisep:gherkin "Given 被批模型有两个人类干系人\nWhen 在关口页选择这个模型\nThen 批准人为空并显示占位文案" .
 
-:rel-reqApproverFromModel-aggregates-acOnlyModelStakeholders a am4:Aggregation ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :reqApproverFromModel ;
-    arch:target :acOnlyModelStakeholders .
 
 :rel-reqApproverFromModel-aggregates-acNoApproversBlocks a am4:Aggregation ;
     arch:inModel <https://aisep.example/model/workbench/> ;
@@ -323,12 +309,41 @@
     arch:source :reqApproverFromModel ;
     arch:target :acSwitchModelClears .
 
-:rel-reqSingleApproverPreselect-aggregates-acSingleApproverPreselected a am4:Aggregation ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :reqSingleApproverPreselect ;
-    arch:target :acSingleApproverPreselected .
 
 :rel-reqSingleApproverPreselect-aggregates-acMultipleNotPreselected a am4:Aggregation ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :reqSingleApproverPreselect ;
     arch:target :acMultipleNotPreselected .
+
+:acOnlyModelStakeholders a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准人下拉只列被批模型的人类干系人"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 模型 workbench 有人类干系人「项目负责人」，模型 procurement 有人类干系人「首席架构师」，另有一个 AI 代理（aisep:AIAgent）\nWhen 在关口页选择被批模型 workbench\nThen 批准人下拉只有「项目负责人」" .
+
+:rel-reqApproverFromModel-aggregates-acOnlyModelStakeholders a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproverFromModel ;
+    arch:target :acOnlyModelStakeholders .
+
+:acSingleApproverPreselected a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "只有一个人类干系人时自动选上"@zh ;
+    aisep:priority aisep:Should ;
+    aisep:gherkin "Given 模型 B 恰好有一个人类干系人「项目负责人」\nWhen 在关口页选择被批模型 B\nThen 批准人已选为「项目负责人」" .
+
+:rel-reqSingleApproverPreselect-aggregates-acSingleApproverPreselected a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqSingleApproverPreselect ;
+    arch:target :acSingleApproverPreselected .
+
+:acSingleApproverAfterSwitch a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "切换到只有一个人类干系人的模型后自动选上"@zh ;
+    aisep:priority aisep:Should ;
+    aisep:gherkin "Given 已为模型 A 选了批准人「首席架构师」，模型 B 恰好有一个人类干系人「项目负责人」\nWhen 把被批模型切换为 B\nThen 批准人已选为「项目负责人」" .
+
+:rel-reqSingleApproverPreselect-aggregates-acSingleApproverAfterSwitch a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqSingleApproverPreselect ;
+    arch:target :acSingleApproverAfterSwitch .
