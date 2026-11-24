@@ -63,6 +63,7 @@
 - 遗留 Warning 共 6 条：
   - 5 条是 Must 追溯缺口：`:reqApproverFromModel` 与它的 4 条验收标准还没有测试用例。工作台代码合入后补成 `aisep:TestCase` 并连 `aisep:Verification`，代码合并关口前清零。
   - 2026-11-24 更新（aisep #85）：7 个测试用例与 CI 测试结果已补，上面 5 条已清零。`:acOnlyModelStakeholders` 拆出 `:acNoAIAgentApprover`（AI 代理不出现），CI 里没有测试执行批准人查询，按 Albert 决定先留追溯缺口，跟踪在 aisep #84。
+  - 2026-11-25 更新：workbench #26 用 oxigraph 在单元测试里执行真实的批准人查询，补上 `:acNoAIAgentApprover` 的测试用例 `:tcApproverNoAIAgent` 与 CI 测试结果（aisep-main fd90200），Must 追溯缺口全部清零，aisep #84 关闭。
   - 1 条是采购模型原有的 Warning，与本需求无关。
 - Info：3 条 Won't 需求是孤立元素，按设计不连。
 - 批准范围（若以后过需求确认关口）：第 3 节的全部元素。限定关系不能被批准（规范 §6.6）。

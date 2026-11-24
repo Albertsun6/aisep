@@ -521,3 +521,26 @@
     aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45428871261> ;
     schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
     skos:altLabel "The only stakeholder of the model switched to is preselected test: passed (aisep-main 1cea8b9)"@en .
+
+:tcApproverNoAIAgent a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "AI 代理不出现在批准人下拉里测试"@zh ;
+    skos:altLabel "An AI agent is never offered as approver test"@en ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「approver choices」里的测试「never offers an AI agent as approver: the approvers query itself leaves it out」（vitest）：用 oxigraph 0.5.13（与 aisep 服务端 pyoxigraph 同引擎同版本）把关口页真实的 APPROVERS_QUERY 跑在含 AI 代理（直接类型与子类型各一）的数据上，再把结果喂给关口页，断言下拉里只有人类干系人。"@zh .
+
+:rel-tcApproverNoAIAgent-verifies-acNoAIAgentApprover a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcApproverNoAIAgent ;
+    arch:target :acNoAIAgentApprover .
+
+:trApproverNoAIAgentfd90200 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "AI 代理不出现在批准人下拉里测试：通过（aisep-main fd90200）"@zh ;
+    skos:altLabel "An AI agent is never offered as approver test: passed (aisep-main fd90200)"@en ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 fd90200cf878de6e6c0fbe74a6a0c25b5c60fcd0（合并 PR #26）上，GitHub Actions CI 运行 45436003675（push 触发）：「frontend / vitest (2)」任务（138594006190）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（35 tests），日志时间 2026-11-24T16:22:39Z，其中包括 describe「approver choices」里的「never offers an AI agent as approver: the approvers query itself leaves it out」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh ;
+    aisep:resultOf :tcApproverNoAIAgent ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T16:22:39Z"^^xsd:dateTime ;
+    aisep:testedCommit "fd90200cf878de6e6c0fbe74a6a0c25b5c60fcd0" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45436003675> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
