@@ -710,11 +710,11 @@ CI 设为受保护分支的必需检查，PR 每次更新都跑；合并前由�
 
 **发布关口**（R2-15 已拍板：短命批准分支 + PR，受保护分支不开例外；第三轮 J、K、L、N 修订）
 
-1. 人在关口页选定**被发布的那个主线提交** R（mainRef 上的某个提交，不一定是最新）。工作台从 R 拉分支并检出：`git worktree add -b approval/release-{R 前 7 位}-{yyyymmddHHMMSS} <目录> R`（时间取 UTC，第三轮 L），目录在 `--allow-root` 之下；同名分支已存在 → `worktree add` 失败，报错由人处理。**必须从 R 拉**：从主线最新提交拉时，R 之后的主线提交落在 R..分支头之间，第 1 步报 `STALE_HEAD`；绕过 MCP 造出来的分支也会被合并时校验拒绝。
+1. 人在关口页选定**被发布的那个主线提交** R（mainRef 上的某个提交，不一定是最新）。工作台（或会话脚本，见第 5 步）从 R 拉分支并检出：`git worktree add -b approval/release-{R 前 7 位}-{yyyymmddHHMMSS} <目录> R`（时间取 UTC，第三轮 L），目录在 `--allow-root` 之下；同名分支已存在 → `worktree add` 失败，报错由人处理。**必须从 R 拉**：从主线最新提交拉时，R 之后的主线提交落在 R..分支头之间，第 1 步报 `STALE_HEAD`；绕过 MCP 造出来的分支也会被合并时校验拒绝。
 2. 调 `record_approval`：`gate: GateRelease`，`branch` = 该批准分支，`headCommit` = R，不带 `activity`。分支上只有这一个批准提交，evidence = R。合并时校验对它同样适用：R..分支头只有这一个批准提交。
-3. **只有 `decision = Approved` 才打标签**（第三轮 J）：工作台给 R 打 `release/{yyyymmdd}-{R 前 7 位}`（批准日期，UTC；也可另用版本号 `release/v…`）。同名标签已存在：剥离到 commit 后指向 R → 幂等复用，不重建；指向别的提交 → 报错由人处理（第三轮 L）。`Rejected` 不得创建 release 标签。推送分支（和新建的标签），开 PR。PR 按批准专用 PR 处理（ADR-021 第 1 款：机械核对通过后合并，不需要独立评审），合并后删分支。PR 关闭未合并时不自动删标签：遗留的 release 标签由人清理，登记为残余风险（§9 附录 C；核对轮 7 取消第三轮 K 的"自动删除"）。标签是对外的发布指针；R 的可达性由主线保证（R 是主线提交），不靠标签防 GC（第三轮 N）。
+3. **只有 `decision = Approved` 才打标签**（第三轮 J）：工作台（或会话脚本）给 R 打 `release/{yyyymmdd}-{R 前 7 位}`（批准日期，UTC；也可另用版本号 `release/v…`）。同名标签已存在：剥离到 commit 后指向 R → 幂等复用，不重建；指向别的提交 → 报错由人处理（第三轮 L）。`Rejected` 不得创建 release 标签。推送分支（和新建的标签），开 PR。PR 按批准专用 PR 处理（ADR-021 第 1 款：机械核对通过后合并，不需要独立评审），合并后删分支。PR 关闭未合并时不自动删标签：遗留的 release 标签由人清理，登记为残余风险（§9 附录 C；核对轮 7 取消第三轮 K 的"自动删除"）。标签是对外的发布指针；R 的可达性由主线保证（R 是主线提交），不靠标签防 GC（第三轮 N）。
 4. **发布标签检查**（CI，合并前重算同跑）：PR 新增的每条 `decision = Approved` 的 `GateRelease` 记录，远端都要有一个名字合规（`release/{yyyymmdd}-{evidence 前 7 位}` 或 `release/v…`）、**剥离到 commit 后**等于其 evidence 的标签（取 `git ls-remote` 的 `^{}` 行，或 `git rev-parse <tag>^{commit}`；附注标签直接比较标签对象 sha 会误判），否则失败。`Rejected` 记录不要求标签。标签可被移动、删除：`release/*` 应以 tag ruleset 禁止删除与移动（private 仓库需 GitHub Pro 及以上），未配置时为残余风险（§9 附录 C）。不采纳"合并后由可信流程原子创建标签"：要新增一套机制（第三轮 K 部分接受）。
-5. MCP 只做第 2 步的一次提交；拉分支、打标签、推送、开 PR 由工作台做，MCP 不推送、不打标签、不开 PR。
+5. MCP 只做第 2 步的一次提交；拉分支、打标签、推送、开 PR 由工作台或会话脚本做，MCP 不推送、不打标签、不开 PR。工作台模型现行做法（ADR `workbench:adrReleaseStepsBySessionScript`，2026-11-25）：工作台前端不做 git 写操作，这几步由会话调用 aisep `tools/` 下的脚本完成；脚本只在记录 `decision = Approved` 且 evidence 等于 R 时打标签，批准记录仍只由人在关口页做出。
 
 **输出**
 
