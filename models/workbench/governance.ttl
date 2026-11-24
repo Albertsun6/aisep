@@ -62,3 +62,50 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :adrApproverScopeInWorkbench ;
     arch:target :bpmnApvApproverGateway .
+
+:optReleaseStepsBySessionScript a ad:Option ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "会话用 aisep 仓库 tools/ 下的脚本拉分支、打标签、推送、开 PR"@zh .
+
+:optReleaseStepsByWorkbenchBackend a ad:Option ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "工作台加本地后端，照接口规范 §5.9 原文自己完成这些步骤"@zh .
+
+:adrReleaseStepsBySessionScript a ad:Decision ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布的 git 步骤由会话调用 aisep 脚本完成，工作台只认出发布批准分支并提供发布关口"@zh ;
+    ad:decisionState ad:Accepted ;
+    ad:justification "工作台前端只调 MCP，不做 git 写操作，也不持推送凭据；前几条链路的推送、开 PR、合并一直由会话按 AGENTS.md 做。Albert 2026-11-25 定：拉发布批准分支、核对记录后打标签、推送、开批准专用 PR 由会话做，并做成 aisep tools/ 下的脚本，复用 mergecheck 的标签命名与批准提交判据，由脚本测试在 CI 里验证。批准记录仍只由 Albert 在关口页做出，脚本只在记录结论为批准且 evidence 等于被发布提交时打标签。代价：Albert 不能在工作台一处完成全部发布步骤；接口规范 §5.9 第 1、3、5 步改为「工作台或会话脚本」。"@zh .
+
+:rel-adrReleaseStepsBySessionScript-relatedConcept-bpmnRelTag a ad:RelatedConcept ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :adrReleaseStepsBySessionScript ;
+    arch:target :bpmnRelTag .
+
+:rel-adrReleaseStepsBySessionScript-hasSelectedOption-optReleaseStepsBySessionScript a ad:HasSelectedOption ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :adrReleaseStepsBySessionScript ;
+    arch:target :optReleaseStepsBySessionScript .
+
+:rel-adrReleaseStepsBySessionScript-hasAlternative-optReleaseStepsByWorkbenchBackend a ad:HasAlternative ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :adrReleaseStepsBySessionScript ;
+    arch:target :optReleaseStepsByWorkbenchBackend .
+
+:forceWorkbenchNoGitWrites a ad:Force ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "工作台前端不做 git 写操作、不持推送凭据"@zh .
+
+:forceReleaseInOnePlace a ad:Force ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准人在一处完成全部发布步骤"@zh .
+
+:rel-optReleaseStepsBySessionScript-addressesForce-forceWorkbenchNoGitWrites a ad:AddressesForce ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :optReleaseStepsBySessionScript ;
+    arch:target :forceWorkbenchNoGitWrites .
+
+:rel-optReleaseStepsByWorkbenchBackend-addressesForce-forceReleaseInOnePlace a ad:AddressesForce ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :optReleaseStepsByWorkbenchBackend ;
+    arch:target :forceReleaseInOnePlace .
