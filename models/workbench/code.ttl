@@ -45,3 +45,20 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :gatePageCode ;
     arch:target :bpmnApproverSelection .
+
+:releaseScriptCode a aisep:CodeLocation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布关口会话脚本"@zh ;
+    skos:altLabel "Release gate session script"@en ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep> ;
+    aisep:path "aisep/release.py" .
+
+:rel-releaseScriptCode-implements-bpmnReleaseApproval a aisep:Implementation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :releaseScriptCode ;
+    arch:target :bpmnReleaseApproval .
+
+:rel-gatePageCode-implements-bpmnReleaseApproval a aisep:Implementation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gatePageCode ;
+    arch:target :bpmnReleaseApproval .
