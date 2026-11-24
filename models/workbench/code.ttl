@@ -39,3 +39,8 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :gatePageCode ;
     arch:target :workbenchGovernanceBC .
+
+:rel-gatePageCode-implements-bpmnApvPreselect a aisep:Implementation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gatePageCode ;
+    arch:target :bpmnApvPreselect .
