@@ -106,3 +106,4 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :bpmnApproverSelection ;
     arch:target :gateApprovalFlow .
+

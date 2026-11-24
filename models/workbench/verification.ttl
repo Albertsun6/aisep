@@ -315,16 +315,7 @@
     arch:source :reqSingleApproverPreselect ;
     arch:target :acMultipleNotPreselected .
 
-:acOnlyModelStakeholders a aisep:AcceptanceCriterion ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "批准人下拉只列被批模型的人类干系人"@zh ;
-    aisep:priority aisep:Must ;
-    aisep:gherkin "Given 模型 workbench 有人类干系人「项目负责人」，模型 procurement 有人类干系人「首席架构师」，另有一个 AI 代理（aisep:AIAgent）\nWhen 在关口页选择被批模型 workbench\nThen 批准人下拉只有「项目负责人」" .
 
-:rel-reqApproverFromModel-aggregates-acOnlyModelStakeholders a am4:Aggregation ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :reqApproverFromModel ;
-    arch:target :acOnlyModelStakeholders .
 
 :acSingleApproverPreselected a aisep:AcceptanceCriterion ;
     arch:inModel <https://aisep.example/model/workbench/> ;
@@ -347,3 +338,186 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :reqSingleApproverPreselect ;
     arch:target :acSingleApproverAfterSwitch .
+
+:acOnlyModelStakeholders a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准人下拉只列被批模型的人类干系人"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 模型 workbench 有人类干系人「项目负责人」，模型 procurement 有人类干系人「评审人」「首席架构师」\nWhen 在关口页选择被批模型 procurement\nThen 批准人下拉只有「评审人」「首席架构师」" .
+
+:rel-reqApproverFromModel-aggregates-acOnlyModelStakeholders a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproverFromModel ;
+    arch:target :acOnlyModelStakeholders .
+
+:acNoAIAgentApprover a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "AI 代理不出现在批准人下拉里"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 被批模型里有一个同时是 aisep:AIAgent 的干系人\nWhen 在关口页选择这个模型\nThen 批准人下拉里没有它" .
+
+:rel-reqApproverFromModel-aggregates-acNoAIAgentApprover a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproverFromModel ;
+    arch:target :acNoAIAgentApprover .
+
+:tcApproverOnlyModelStakeholders a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准人只列被批模型干系人测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「approver choices」里的测试「offers only the Stakeholders of the model being approved」（vitest）。"@zh ;
+    skos:altLabel "Approver list holds only the approved model's stakeholders test"@en .
+
+:rel-tcApproverOnlyModelStakeholders-verifies-acOnlyModelStakeholders a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcApproverOnlyModelStakeholders ;
+    arch:target :acOnlyModelStakeholders .
+
+:tcApproverNoneBlocks a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "没有干系人时提示且不能批准测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「approver choices」里的测试「says so instead of showing an empty list when the model has no Stakeholder」（vitest）。"@zh ;
+    skos:altLabel "No stakeholder means a notice and no approval test"@en .
+
+:rel-tcApproverNoneBlocks-verifies-acNoApproversBlocks a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcApproverNoneBlocks ;
+    arch:target :acNoApproversBlocks .
+
+:tcApproverUnreadable a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "干系人读不到时不能批准测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「approver choices」里的测试「offers no approver and no decision when the Stakeholders cannot be read」（vitest）。"@zh ;
+    skos:altLabel "Unreadable stakeholders mean no approval test"@en .
+
+:rel-tcApproverUnreadable-verifies-acApproversUnreadable a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcApproverUnreadable ;
+    arch:target :acApproversUnreadable .
+
+:tcApproverSwitchNotKept a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "切换模型后不沿用之前的批准人测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「approver choices」里的测试「shows the placeholder again, not a blank picker, after switching to a model with two Stakeholders」（vitest）。"@zh ;
+    skos:altLabel "Switching models does not keep the earlier approver test"@en .
+
+:rel-tcApproverSwitchNotKept-verifies-acSwitchModelClears a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcApproverSwitchNotKept ;
+    arch:target :acSwitchModelClears .
+
+:tcApproverMultipleNotPreselected a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "多个干系人时不预选测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「approver choices」里的测试「chooses no approver for the user: nothing can be sent until one is picked」（vitest）。"@zh ;
+    skos:altLabel "Several stakeholders means no preselection test"@en .
+
+:rel-tcApproverMultipleNotPreselected-verifies-acMultipleNotPreselected a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcApproverMultipleNotPreselected ;
+    arch:target :acMultipleNotPreselected .
+
+:tcApproverSinglePreselected a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "只有一个干系人时自动选上测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「approver choices」里的测试「chooses the only Stakeholder of the model being approved for the user」（vitest）。"@zh ;
+    skos:altLabel "The only stakeholder is preselected test"@en .
+
+:rel-tcApproverSinglePreselected-verifies-acSingleApproverPreselected a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcApproverSinglePreselected ;
+    arch:target :acSingleApproverPreselected .
+
+:tcApproverSingleAfterSwitch a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "切换到只有一个干系人的模型后自动选上测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「approver choices」里的测试「chooses the only Stakeholder of the model switched to, not the one chosen before」（vitest）。"@zh ;
+    skos:altLabel "The only stakeholder of the model switched to is preselected test"@en .
+
+:rel-tcApproverSingleAfterSwitch-verifies-acSingleApproverAfterSwitch a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcApproverSingleAfterSwitch ;
+    arch:target :acSingleApproverAfterSwitch .
+
+:trApproverOnlyModelStakeholders1cea8b9 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准人只列被批模型干系人测试：通过（aisep-main 1cea8b9）"@zh ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 1cea8b987f7e9413e95d9f80a61ff25af75d6b09（合并 PR #25）上，GitHub Actions CI 运行 45428871261（push 触发）：「frontend / vitest (2)」任务（138568409333）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（34 tests，无跳过、无失败），日志时间 2026-11-24T15:45:32Z，其中包括 describe「approver choices」里的「offers only the Stakeholders of the model being approved」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh ;
+    aisep:resultOf :tcApproverOnlyModelStakeholders ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T15:45:32Z"^^xsd:dateTime ;
+    aisep:testedCommit "1cea8b987f7e9413e95d9f80a61ff25af75d6b09" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45428871261> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:altLabel "Approver list holds only the approved model's stakeholders test: passed (aisep-main 1cea8b9)"@en .
+
+:trApproverNoneBlocks1cea8b9 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "没有干系人时提示且不能批准测试：通过（aisep-main 1cea8b9）"@zh ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 1cea8b987f7e9413e95d9f80a61ff25af75d6b09（合并 PR #25）上，GitHub Actions CI 运行 45428871261（push 触发）：「frontend / vitest (2)」任务（138568409333）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（34 tests，无跳过、无失败），日志时间 2026-11-24T15:45:32Z，其中包括 describe「approver choices」里的「says so instead of showing an empty list when the model has no Stakeholder」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh ;
+    aisep:resultOf :tcApproverNoneBlocks ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T15:45:32Z"^^xsd:dateTime ;
+    aisep:testedCommit "1cea8b987f7e9413e95d9f80a61ff25af75d6b09" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45428871261> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:altLabel "No stakeholder means a notice and no approval test: passed (aisep-main 1cea8b9)"@en .
+
+:trApproverUnreadable1cea8b9 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "干系人读不到时不能批准测试：通过（aisep-main 1cea8b9）"@zh ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 1cea8b987f7e9413e95d9f80a61ff25af75d6b09（合并 PR #25）上，GitHub Actions CI 运行 45428871261（push 触发）：「frontend / vitest (2)」任务（138568409333）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（34 tests，无跳过、无失败），日志时间 2026-11-24T15:45:32Z，其中包括 describe「approver choices」里的「offers no approver and no decision when the Stakeholders cannot be read」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh ;
+    aisep:resultOf :tcApproverUnreadable ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T15:45:32Z"^^xsd:dateTime ;
+    aisep:testedCommit "1cea8b987f7e9413e95d9f80a61ff25af75d6b09" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45428871261> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:altLabel "Unreadable stakeholders mean no approval test: passed (aisep-main 1cea8b9)"@en .
+
+:trApproverSwitchNotKept1cea8b9 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "切换模型后不沿用之前的批准人测试：通过（aisep-main 1cea8b9）"@zh ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 1cea8b987f7e9413e95d9f80a61ff25af75d6b09（合并 PR #25）上，GitHub Actions CI 运行 45428871261（push 触发）：「frontend / vitest (2)」任务（138568409333）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（34 tests，无跳过、无失败），日志时间 2026-11-24T15:45:32Z，其中包括 describe「approver choices」里的「shows the placeholder again, not a blank picker, after switching to a model with two Stakeholders」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh ;
+    aisep:resultOf :tcApproverSwitchNotKept ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T15:45:32Z"^^xsd:dateTime ;
+    aisep:testedCommit "1cea8b987f7e9413e95d9f80a61ff25af75d6b09" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45428871261> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:altLabel "Switching models does not keep the earlier approver test: passed (aisep-main 1cea8b9)"@en .
+
+:trApproverMultipleNotPreselected1cea8b9 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "多个干系人时不预选测试：通过（aisep-main 1cea8b9）"@zh ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 1cea8b987f7e9413e95d9f80a61ff25af75d6b09（合并 PR #25）上，GitHub Actions CI 运行 45428871261（push 触发）：「frontend / vitest (2)」任务（138568409333）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（34 tests，无跳过、无失败），日志时间 2026-11-24T15:45:32Z，其中包括 describe「approver choices」里的「chooses no approver for the user: nothing can be sent until one is picked」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh ;
+    aisep:resultOf :tcApproverMultipleNotPreselected ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T15:45:32Z"^^xsd:dateTime ;
+    aisep:testedCommit "1cea8b987f7e9413e95d9f80a61ff25af75d6b09" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45428871261> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:altLabel "Several stakeholders means no preselection test: passed (aisep-main 1cea8b9)"@en .
+
+:trApproverSinglePreselected1cea8b9 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "只有一个干系人时自动选上测试：通过（aisep-main 1cea8b9）"@zh ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 1cea8b987f7e9413e95d9f80a61ff25af75d6b09（合并 PR #25）上，GitHub Actions CI 运行 45428871261（push 触发）：「frontend / vitest (2)」任务（138568409333）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（34 tests，无跳过、无失败），日志时间 2026-11-24T15:45:32Z，其中包括 describe「approver choices」里的「chooses the only Stakeholder of the model being approved for the user」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh ;
+    aisep:resultOf :tcApproverSinglePreselected ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T15:45:32Z"^^xsd:dateTime ;
+    aisep:testedCommit "1cea8b987f7e9413e95d9f80a61ff25af75d6b09" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45428871261> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:altLabel "The only stakeholder is preselected test: passed (aisep-main 1cea8b9)"@en .
+
+:trApproverSingleAfterSwitch1cea8b9 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "切换到只有一个干系人的模型后自动选上测试：通过（aisep-main 1cea8b9）"@zh ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 1cea8b987f7e9413e95d9f80a61ff25af75d6b09（合并 PR #25）上，GitHub Actions CI 运行 45428871261（push 触发）：「frontend / vitest (2)」任务（138568409333）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（34 tests，无跳过、无失败），日志时间 2026-11-24T15:45:32Z，其中包括 describe「approver choices」里的「chooses the only Stakeholder of the model switched to, not the one chosen before」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh ;
+    aisep:resultOf :tcApproverSingleAfterSwitch ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-24T15:45:32Z"^^xsd:dateTime ;
+    aisep:testedCommit "1cea8b987f7e9413e95d9f80a61ff25af75d6b09" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45428871261> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:altLabel "The only stakeholder of the model switched to is preselected test: passed (aisep-main 1cea8b9)"@en .

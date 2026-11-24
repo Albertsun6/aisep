@@ -37,7 +37,7 @@
 | 需求 | `:reqApproverFromModel` | Must |
 | 需求 | `:reqSingleApproverPreselect` | Should |
 | 需求（不做） | `:reqServerEnforcesApproverModel`、`:reqBackfillCrossModelApproval`、`:reqApproverPerGate` | Won't |
-| 验收标准 | `:acOnlyModelStakeholders`、`:acNoApproversBlocks`、`:acApproversUnreadable`、`:acSwitchModelClears` | Must |
+| 验收标准 | `:acOnlyModelStakeholders`、`:acNoAIAgentApprover`、`:acNoApproversBlocks`、`:acApproversUnreadable`、`:acSwitchModelClears` | Must |
 | 验收标准 | `:acSingleApproverPreselected`、`:acSingleApproverAfterSwitch`、`:acMultipleNotPreselected` | Should |
 
 全部经 aisep 写工具（`model_add_element`、`model_add_relationship`、`model_set_labels`、`model_remove`）写入。
@@ -62,6 +62,7 @@
 - gate 摘要行（全仓库）：`SUMMARY gate files=16 violations=0 warnings=6 infos=3 ... result=PASS`。
 - 遗留 Warning 共 6 条：
   - 5 条是 Must 追溯缺口：`:reqApproverFromModel` 与它的 4 条验收标准还没有测试用例。工作台代码合入后补成 `aisep:TestCase` 并连 `aisep:Verification`，代码合并关口前清零。
+  - 2026-11-24 更新（aisep #85）：7 个测试用例与 CI 测试结果已补，上面 5 条已清零。`:acOnlyModelStakeholders` 拆出 `:acNoAIAgentApprover`（AI 代理不出现），CI 里没有测试执行批准人查询，按 Albert 决定先留追溯缺口，跟踪在 aisep #84。
   - 1 条是采购模型原有的 Warning，与本需求无关。
 - Info：3 条 Won't 需求是孤立元素，按设计不连。
 - 批准范围（若以后过需求确认关口）：第 3 节的全部元素。限定关系不能被批准（规范 §6.6）。
