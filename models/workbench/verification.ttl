@@ -545,17 +545,7 @@
     aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45436003675> ;
     schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
 
-:acReleaseBranchListed a aisep:AcceptanceCriterion ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "首页关口区列出发布批准分支"@zh ;
-    aisep:priority aisep:Must ;
-    aisep:gherkin "Given 本地有从 main 最新提交 R 拉出的分支 approval/release-{R 前 7 位}-{时间}\nWhen 打开工作台首页关口区\nThen 列出这条分支并标为发布\nAnd 点它进入它的关口页" .
 
-:acReleaseOnlyReleaseGate a aisep:AcceptanceCriterion ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "发布批准分支的关口页只提供发布关口"@zh ;
-    aisep:priority aisep:Must ;
-    aisep:gherkin "Given 发布批准分支的头是 main 最新提交 R\nWhen 打开它的关口页\nThen 关口只有「发布」\nAnd 批准对象是整个被批模型" .
 
 
 
@@ -590,15 +580,7 @@
     aisep:priority aisep:Should ;
     aisep:gherkin "Given 发布批准分支的关口页，已选批准人\nWhen 驳回发布\nThen 分支上新增一个批准提交，记录关口为发布、结论为驳回、evidence 为 R" .
 
-:rel-reqApproveRelease-aggregates-acReleaseBranchListed a am4:Aggregation ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :reqApproveRelease ;
-    arch:target :acReleaseBranchListed .
 
-:rel-reqApproveRelease-aggregates-acReleaseOnlyReleaseGate a am4:Aggregation ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :reqApproveRelease ;
-    arch:target :acReleaseOnlyReleaseGate .
 
 
 
@@ -682,3 +664,25 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :reqRejectRelease ;
     arch:target :acRejectedReleasePushed .
+
+:acReleaseBranchListed a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "首页关口区列出发布批准分支"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 本地有从 origin/main 最新提交 R 拉出的分支 approval/release-{R 前 7 位}-{时间}\nWhen 打开工作台首页关口区\nThen 列出这条分支并标为发布\nAnd 点它进入它的关口页" .
+
+:rel-reqApproveRelease-aggregates-acReleaseBranchListed a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproveRelease ;
+    arch:target :acReleaseBranchListed .
+
+:acReleaseOnlyReleaseGate a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布批准分支的关口页只提供发布关口"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 发布批准分支的头是 origin/main 最新提交 R\nWhen 打开它的关口页\nThen 关口只有「发布」\nAnd 批准对象是整个被批模型" .
+
+:rel-reqApproveRelease-aggregates-acReleaseOnlyReleaseGate a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproveRelease ;
+    arch:target :acReleaseOnlyReleaseGate .

@@ -20,12 +20,13 @@
 - 异常情况：分支准备好后 origin/main 又前进了 → 既不能批准也不能驳回，提示重新准备分支；gate 不通过 → 不能批准（驳回属于 Should 的 `:reqRejectRelease`）；同名标签指向别的提交 → 停下由人处理，不移动标签。
 - 发布前提：元素是「待批准」（Proposed）也允许发布，照现行规则，服务端不要求先过前面的关口。照现状，不新增需求，只在 `:reqApproveRelease` 正文里写明。
 - 不做什么：版本号标签；批准 PR 关闭未合并时自动删标签；发布后自动部署；给 workbench 仓库打标签；发布关口页显示自上次发布以来的改动。五条都写成 Won't 需求。
+- 评审后补充（aisep #87 复评 n2，Albert 2026-11-25 确认）：origin/main 前进后关口页既不能批准也不能驳回；驳回时不打标签，但仍推送分支、开批准专用 PR，把驳回记录合入 main。
 - 尚未回答的问题：无。
 
 ## 2. 业务语言复述 + 业务流程
 
 - 复述：Albert 在工作台关口页，对 aisep main 的最新提交做「发布」批准或驳回。会话先从该提交拉好发布批准分支 `approval/release-{短号}-{时间}`；关口页认出这类分支后只提供「发布」关口，批准人仍只列被批模型的人类干系人，gate 不通过只能驳回。只有记录是「批准」时，会话才打 `release/{日期}-{短号}` 标签，再推送、开批准专用 PR，三步合并；驳回只合记录，不打标签。
-- 流程：BPMN 细化在后续设计 PR。
+- 流程：BPMN 细化见设计 PR（`:bpmnReleaseApproval`，经 `arch:Refines` 指向 `:gateApprovalFlow`）；分工见 ADR `:adrReleaseStepsBySessionScript`。
 - 用户确认：2026-11-25，Albert。
 
 ## 3. 本阶段产出的模型元素
