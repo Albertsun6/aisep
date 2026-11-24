@@ -37,3 +37,95 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :gateApprovalFlow ;
     arch:target :reqNestedCheckoutScan .
+
+:drvCrossModelApprover a am4:Driver ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准人可能误选别的模型的干系人"@zh ;
+    skos:altLabel "Approver may be a stakeholder of another model"@en ;
+    skos:definition "工作台关口页曾列出所有模型的干系人并默认选中第一个，aisep #68 的批准因此签成了采购模型的首席架构师；只看工作台模型时这条批准不算数（aisep #73）。"@zh .
+
+:goalApproverInModel a am4:Goal ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准人属于被批模型"@zh ;
+    skos:altLabel "Approver belongs to the approved model"@en .
+
+:outApproverInModel a am4:Outcome ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "工作台做出的批准在被批模型内自洽"@zh ;
+    skos:altLabel "Workbench approvals are consistent within the approved model"@en ;
+    skos:definition "之后在工作台关口页做出的批准记录，批准人都属于被批模型；只对被批模型跑 gate，不因批准人报错。"@zh .
+
+:approverRole a am4:Role ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准人"@zh ;
+    skos:altLabel "Approver"@en .
+
+:reqApproverFromModel a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "关口页的批准人只能选被批模型的人类干系人"@zh ;
+    skos:altLabel "Gate page offers only the approved model's human stakeholders as approvers"@en ;
+    skos:definition "关口页批准人下拉只列被批模型自己的人类干系人（不是 aisep:AIAgent）；别的模型的干系人不出现。被批模型没有人类干系人时提示没有可选批准人，不能批准；干系人列表读不到时不显示下拉，不能批准；切换被批模型后，之前为别的模型选的批准人不再生效。"@zh ;
+    aisep:priority aisep:Must .
+
+:reqSingleApproverPreselect a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "被批模型只有一个人类干系人时自动选上"@zh ;
+    skos:altLabel "Preselect the approver when the model has exactly one human stakeholder"@en ;
+    skos:definition "被批模型恰好有一个人类干系人时，批准人自动选上他（含从别的模型切换过来）；有两个及以上时不预选，由人自己选。"@zh ;
+    aisep:priority aisep:Should .
+
+:reqServerEnforcesApproverModel a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "服务端强制批准人属于被批模型"@zh ;
+    skos:altLabel "Server enforces that the approver belongs to the approved model"@en ;
+    skos:definition "本次不做：批准工具与形状规则暂不要求批准人属于被批模型，留给 aisep #73。"@zh ;
+    aisep:priority aisep:Wont .
+
+:reqBackfillCrossModelApproval a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "补批已合入的跨模型批准记录"@zh ;
+    skos:altLabel "Re-approve the merged cross-model approval record"@en ;
+    skos:definition "本次不做：aisep #68 那条批准人为采购模型首席架构师的记录保留原样，不补批。"@zh ;
+    aisep:priority aisep:Wont .
+
+:reqApproverPerGate a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "按关口分配批准人"@zh ;
+    skos:altLabel "Assign approvers per gate"@en ;
+    skos:definition "本次不做：不限定某个关口只能由某个角色批准。"@zh ;
+    aisep:priority aisep:Wont .
+
+:rel-drvCrossModelApprover-influences-goalApproverInModel a am4:Influence ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :drvCrossModelApprover ;
+    arch:target :goalApproverInModel .
+
+:rel-outApproverInModel-realizes-goalApproverInModel a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :outApproverInModel ;
+    arch:target :goalApproverInModel .
+
+:rel-reqApproverFromModel-realizes-outApproverInModel a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproverFromModel ;
+    arch:target :outApproverInModel .
+
+:rel-reqSingleApproverPreselect-realizes-outApproverInModel a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqSingleApproverPreselect ;
+    arch:target :outApproverInModel .
+
+:rel-gateApprovalFlow-realizes-reqApproverFromModel a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gateApprovalFlow ;
+    arch:target :reqApproverFromModel .
+
+:rel-gateApprovalFlow-realizes-reqSingleApproverPreselect a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gateApprovalFlow ;
+    arch:target :reqSingleApproverPreselect .
+
+:rel-approverRole-assignedTo-gateApprovalFlow a am4:Assignment ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :approverRole ;
+    arch:target :gateApprovalFlow .
