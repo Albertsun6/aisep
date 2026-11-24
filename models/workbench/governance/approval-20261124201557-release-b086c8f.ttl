@@ -1,0 +1,16 @@
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/workbench/> .
+
+:approval-20261124201557-release-b086c8f a aisep:ApprovalRecord ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布上线批准：AISEP 工作台"@zh ;
+    aisep:gate aisep:GateRelease ;
+    aisep:decision aisep:DecisionApproved ;
+    aisep:approvedBy <https://aisep.example/model/workbench/projectLead> ;
+    aisep:approves <https://aisep.example/model/workbench/> ;
+    aisep:evidence "b086c8f8df53b3bb2e6108bdfa651ef897458063" ;
+    prov:generatedAtTime "2026-11-24T20:15:57Z"^^xsd:dateTime .
