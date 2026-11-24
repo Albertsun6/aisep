@@ -122,7 +122,7 @@ def publish(repo, branch, *, now, remote="origin", main="main", gh="gh"):
         raise ReleaseError("merge-check-failed", "合并时校验不通过，不打标签、不推送：" +
                            "；".join(f"{p['reason']}：{p['message']}" for p in problems))
     created = False
-    if tag and local is None:
+    if tag and local is None and far is None:  # a remote tag already on R is reused as it is, not copied locally
         _git(repo, "tag", tag, r)
         created = True
     refspecs = [f"{tip}:refs/heads/{branch}"] + ([f"refs/tags/{tag}:refs/tags/{tag}"] if tag and far is None else [])

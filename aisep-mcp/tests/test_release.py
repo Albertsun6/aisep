@@ -108,6 +108,19 @@ def test_acReleaseTagReused(t, gh):
     assert out["tag"] == tag and out["tagCreated"] is False and remote_tag(t, tag) == r
 
 
+def test_acReleaseTagReused_remote_only(t, gh):
+    """Only the remote has the annotated tag on R: nothing new is tagged, and the tag is not pushed again."""
+    name, r = release_branch(t)
+    tag = f"release/20261120-{r[:7]}"
+    t.tag(tag, r, annotated=True)
+    remote_obj = t.git("ls-remote", "--tags", "origin", f"refs/tags/{tag}").split("\t")[0]
+    t.git("tag", "-d", tag)
+    out = publish(t, name, gh)
+    assert out["tag"] == tag and out["tagCreated"] is False and t.git("tag", "-l", tag) == ""
+    assert t.git("ls-remote", "--tags", "origin", f"refs/tags/{tag}").split("\t")[0] == remote_obj
+    assert remote_tag(t, tag) == r and remote_branch(t, name) == t.rev(f"refs/heads/{name}")
+
+
 def test_acReleaseTagConflictStops(t, gh):
     name, r = release_branch(t)
     tag = f"release/20261120-{r[:7]}"
