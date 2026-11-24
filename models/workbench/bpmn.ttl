@@ -1,0 +1,108 @@
+@prefix : <https://aisep.example/model/workbench/> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+:bpmnApvStart a bpmn:StartEvent ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "打开关口页"@zh .
+
+:bpmnApvChooseModel a bpmn:UserTask ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "选择被批模型"@zh .
+
+:bpmnApvApproverGateway a bpmn:ExclusiveGateway ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "被批模型有几个人类干系人？"@zh ;
+    bpmn:gatewayDirection "Diverging" .
+
+:bpmnApvBlocked a bpmn:EndEvent ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "不能批准"@zh .
+
+:bpmnApvPreselect a bpmn:ServiceTask ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "自动选上唯一的批准人"@zh .
+
+:bpmnApvPickApprover a bpmn:UserTask ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "自己选批准人"@zh .
+
+:bpmnApvDecide a bpmn:UserTask ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "选关口、勾元素并批准或驳回"@zh .
+
+:bpmnApvRecorded a bpmn:EndEvent ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准记录写入分支"@zh .
+
+:rel-bpmnApvStart-sequenceFlow-bpmnApvChooseModel a bpmn:SequenceFlow ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnApvStart ;
+    arch:target :bpmnApvChooseModel .
+
+:rel-bpmnApvChooseModel-sequenceFlow-bpmnApvApproverGateway a bpmn:SequenceFlow ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnApvChooseModel ;
+    arch:target :bpmnApvApproverGateway .
+
+:rel-bpmnApvApproverGateway-sequenceFlow-bpmnApvPickApprover a bpmn:SequenceFlow ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnApvApproverGateway ;
+    arch:target :bpmnApvPickApprover ;
+    skos:prefLabel "两个及以上"@zh .
+
+:rel-bpmnApvApproverGateway-sequenceFlow-bpmnApvPreselect a bpmn:SequenceFlow ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnApvApproverGateway ;
+    arch:target :bpmnApvPreselect ;
+    skos:prefLabel "恰好一个"@zh .
+
+:rel-bpmnApvApproverGateway-sequenceFlow-bpmnApvBlocked a bpmn:SequenceFlow ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnApvApproverGateway ;
+    arch:target :bpmnApvBlocked ;
+    skos:prefLabel "没有或读不到"@zh .
+
+:rel-bpmnApvPreselect-sequenceFlow-bpmnApvDecide a bpmn:SequenceFlow ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnApvPreselect ;
+    arch:target :bpmnApvDecide .
+
+:rel-bpmnApvPickApprover-sequenceFlow-bpmnApvDecide a bpmn:SequenceFlow ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnApvPickApprover ;
+    arch:target :bpmnApvDecide .
+
+:rel-bpmnApvDecide-sequenceFlow-bpmnApvRecorded a bpmn:SequenceFlow ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnApvDecide ;
+    arch:target :bpmnApvRecorded .
+
+:bpmnApproverSelection a bpmn:Process ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "关口页选批准人并批准"@zh ;
+    bpmn:processType "Private" ;
+    bpmn:isExecutable "false"^^xsd:boolean ;
+    bpmn:flowElements :bpmnApvStart ;
+    bpmn:flowElements :bpmnApvChooseModel ;
+    bpmn:flowElements :bpmnApvApproverGateway ;
+    bpmn:flowElements :bpmnApvBlocked ;
+    bpmn:flowElements :bpmnApvPreselect ;
+    bpmn:flowElements :bpmnApvPickApprover ;
+    bpmn:flowElements :bpmnApvDecide ;
+    bpmn:flowElements :bpmnApvRecorded ;
+    bpmn:flowElements :rel-bpmnApvStart-sequenceFlow-bpmnApvChooseModel ;
+    bpmn:flowElements :rel-bpmnApvChooseModel-sequenceFlow-bpmnApvApproverGateway ;
+    bpmn:flowElements :rel-bpmnApvApproverGateway-sequenceFlow-bpmnApvPickApprover ;
+    bpmn:flowElements :rel-bpmnApvApproverGateway-sequenceFlow-bpmnApvPreselect ;
+    bpmn:flowElements :rel-bpmnApvApproverGateway-sequenceFlow-bpmnApvBlocked ;
+    bpmn:flowElements :rel-bpmnApvPreselect-sequenceFlow-bpmnApvDecide ;
+    bpmn:flowElements :rel-bpmnApvPickApprover-sequenceFlow-bpmnApvDecide ;
+    bpmn:flowElements :rel-bpmnApvDecide-sequenceFlow-bpmnApvRecorded .
+
+:rel-bpmnApproverSelection-refines-gateApprovalFlow a arch:Refines ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnApproverSelection ;
+    arch:target :gateApprovalFlow .
