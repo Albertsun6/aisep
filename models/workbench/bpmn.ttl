@@ -107,7 +107,3 @@
     arch:source :bpmnApproverSelection ;
     arch:target :gateApprovalFlow .
 
-:rel-bpmnApvPreselect-refines-gateApprovalFlow a arch:Refines ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :bpmnApvPreselect ;
-    arch:target :gateApprovalFlow .
