@@ -544,3 +544,141 @@
     aisep:testedCommit "fd90200cf878de6e6c0fbe74a6a0c25b5c60fcd0" ;
     aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45436003675> ;
     schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> .
+
+:acReleaseBranchListed a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "首页关口区列出发布批准分支"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 本地有从 main 最新提交 R 拉出的分支 approval/release-{R 前 7 位}-{时间}\nWhen 打开工作台首页关口区\nThen 列出这条分支并标为发布\nAnd 点它进入它的关口页" .
+
+:acReleaseOnlyReleaseGate a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "发布批准分支的关口页只提供发布关口"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 发布批准分支的头是 main 最新提交 R\nWhen 打开它的关口页\nThen 关口只有「发布」\nAnd 批准对象是整个被批模型" .
+
+
+
+
+:acTagOnApprovedRelease a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准的发布打上 release 标签"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 发布批准分支上的记录结论为批准、evidence 为 R\nWhen 打发布标签\nThen 创建 release/{UTC 批准日期}-{R 前 7 位}，剥离后指向 R" .
+
+:acNoTagOnRejectedRelease a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "驳回的发布不打标签"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 发布批准分支上的记录结论为驳回\nWhen 打发布标签\nThen 不创建 release 标签" .
+
+:acReleaseTagReused a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "同名标签已指向同一提交时复用"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 同名 release 标签已存在且剥离后指向 R\nWhen 打发布标签\nThen 不新建标签，也不报错" .
+
+:acReleaseTagConflictStops a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "同名标签指向别的提交时停下"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 同名 release 标签已存在且剥离后指向别的提交\nWhen 打发布标签\nThen 报错停下\nAnd 不移动已有标签" .
+
+:acRejectReleaseRecorded a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "驳回发布记一条发布关口驳回记录"@zh ;
+    aisep:priority aisep:Should ;
+    aisep:gherkin "Given 发布批准分支的关口页，已选批准人\nWhen 驳回发布\nThen 分支上新增一个批准提交，记录关口为发布、结论为驳回、evidence 为 R" .
+
+:rel-reqApproveRelease-aggregates-acReleaseBranchListed a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproveRelease ;
+    arch:target :acReleaseBranchListed .
+
+:rel-reqApproveRelease-aggregates-acReleaseOnlyReleaseGate a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproveRelease ;
+    arch:target :acReleaseOnlyReleaseGate .
+
+
+
+
+:rel-reqTagOnlyApprovedRelease-aggregates-acTagOnApprovedRelease a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqTagOnlyApprovedRelease ;
+    arch:target :acTagOnApprovedRelease .
+
+:rel-reqTagOnlyApprovedRelease-aggregates-acNoTagOnRejectedRelease a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqTagOnlyApprovedRelease ;
+    arch:target :acNoTagOnRejectedRelease .
+
+:rel-reqTagOnlyApprovedRelease-aggregates-acReleaseTagReused a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqTagOnlyApprovedRelease ;
+    arch:target :acReleaseTagReused .
+
+:rel-reqTagOnlyApprovedRelease-aggregates-acReleaseTagConflictStops a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqTagOnlyApprovedRelease ;
+    arch:target :acReleaseTagConflictStops .
+
+:rel-reqRejectRelease-aggregates-acRejectReleaseRecorded a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqRejectRelease ;
+    arch:target :acRejectReleaseRecorded .
+
+:acReleaseStaleBlocks a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "origin/main 已前进时不能批准也不能驳回发布"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 发布批准分支基于 R，origin/main 已前进到 R 之后的提交\nWhen 打开它的关口页\nThen 提示 R 已不是 origin/main 最新提交，需要重新准备分支\nAnd 不能批准也不能驳回" .
+
+:rel-reqApproveRelease-aggregates-acReleaseStaleBlocks a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproveRelease ;
+    arch:target :acReleaseStaleBlocks .
+
+:acReleaseGateFailBlocksApprove a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "gate 不通过时不能批准发布"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 发布批准分支的头 R 上 gate 不通过\nWhen 打开它的关口页\nThen 不能批准" .
+
+:rel-reqApproveRelease-aggregates-acReleaseGateFailBlocksApprove a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproveRelease ;
+    arch:target :acReleaseGateFailBlocksApprove .
+
+:acReleaseApproveRecorded a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准发布记一条发布关口批准记录"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 发布批准分支的关口页，gate 通过，已选批准人\nWhen 批准发布\nThen 分支上新增一个批准提交，记录关口为发布、结论为批准、evidence 为 R、批准对象为被批模型\nAnd 记录不带 AI 活动" .
+
+:rel-reqApproveRelease-aggregates-acReleaseApproveRecorded a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqApproveRelease ;
+    arch:target :acReleaseApproveRecorded .
+
+:acApprovedReleasePushed a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "批准的发布推送标签并开出批准专用 PR"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 发布批准分支上的记录结论为批准，release 标签已创建\nWhen 推送并开 PR\nThen 远端有该标签且剥离后指向 R\nAnd 开出一个以发布批准分支为源、main 为目标的 PR" .
+
+:rel-reqTagOnlyApprovedRelease-aggregates-acApprovedReleasePushed a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqTagOnlyApprovedRelease ;
+    arch:target :acApprovedReleasePushed .
+
+:acRejectedReleasePushed a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "驳回的发布只推送分支并开出批准专用 PR"@zh ;
+    aisep:priority aisep:Should ;
+    aisep:gherkin "Given 发布批准分支上的记录结论为驳回\nWhen 推送并开 PR\nThen 远端没有新的 release 标签\nAnd 开出一个以发布批准分支为源、main 为目标的 PR" .
+
+:rel-reqRejectRelease-aggregates-acRejectedReleasePushed a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqRejectRelease ;
+    arch:target :acRejectedReleasePushed .
