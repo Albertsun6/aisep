@@ -42,6 +42,7 @@
 
 按 `template.md` 第 3、4 节写元素和关系：
 
+- 业务干系人写成 `am4:Stakeholder`（表示关注点，用 `am4:Association` 连驱动因素）；关口批准人是 `governance.ttl` 里另外的 `arch:Stakeholder`，不拿来连线（aisep #83）。
 - `am4:Stakeholder`、`am4:Driver`、`am4:Goal`、`am4:Outcome`、`am4:Requirement`、`am4:BusinessActor`、`am4:Role`、`am4:Process` 写进 `models/<slug>/am4.ttl`。
 - `aisep:AcceptanceCriterion`（带 `aisep:priority`，尽量带 `aisep:gherkin`）写进 `models/<slug>/verification.ttl`，用 `am4:Aggregation` 挂到父需求下。
 - `bpmn:Process` 及其节点写进 `models/<slug>/bpmn.ttl`，用 `arch:Refines` 指向对应的 `am4:Process`。
