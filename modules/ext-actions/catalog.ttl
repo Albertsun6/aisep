@@ -5,7 +5,7 @@
 @prefix sh:      <http://www.w3.org/ns/shacl#> .
 @prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
 @prefix aisep:   <https://aisep.example/ont/aisep#> .
-@prefix ap:      <https://aisep.example/ont/action-param#> .
+@prefix ap:      <https://aisep.example/ont/ext-actions#> .
 
 # The action catalogue read by aisep/actions.py (model_list_actions / model_apply_action, docs/mcp-interface.md
 # §5.13, §5.14). Checked by shapes.ttl at L3 (EA1-EA10) and, on every call, by the executor (X1-X10).

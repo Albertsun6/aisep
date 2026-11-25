@@ -852,7 +852,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 目录每次调用都从磁盘重读，不缓存。`catalog.ttl` 不是合法 Turtle → `PARSE_FAILED`（`details.file` 点名文件；这时 `gate`、pre-commit 同样失败）。`modules/ext-actions/` 不存在（很老的检出）→ `actions: []`，不报错。
 
-**定义的写法**（`catalog.ttl`，前缀 `ap:` = `https://aisep.example/ont/action-param#`，参数键在这里，不声明为属性）：
+**定义的写法**（`catalog.ttl`，前缀 `ap:` = `https://aisep.example/ont/ext-actions#`，参数键在这里，不声明为属性）：
 
 | 部分 | 写法 | 规则 |
 |---|---|---|
