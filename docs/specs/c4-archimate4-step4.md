@@ -61,7 +61,7 @@
 4. **R7 只实现“可追溯”这一半**：服务本身，或实现它的某个行为，realizes 了一个 Capability 或 Requirement。另一半“至少被一个行为实现”没有实现：没有行为实现的服务，找不到通向 C4 元素的路径，因此无法按偏离 3 的范围选中。
 5. **与 AISEP 现行规范文字的出入（已全部修订）**：
    - `docs/metamodel-spec.md` 的 §13、§7.2、§7.3 G5 已由 PR #111 修订（加入 §6.8，C4 列为 design 层，G5 写进 `arch:DependsOn`）；
-   - 基线版本、§0 中 C4 是例外，以及 `docs/decisions.md` 的 G5 与 ADR-025（C4 双模型），由后续的规范修订 PR 补上。
+   - 基线版本、§0 中 C4 是例外，以及 `docs/decisions.md` 的 G5 与 ADR-025（C4 双模型），由 PR #114 补上。
 
 6. **规范 §5 与上游冲突，以上游为准**：
    - 规范 §5 写的是 `am4:ApplicationComponent am4:assignedTo am4:Function / am4:Process`。
