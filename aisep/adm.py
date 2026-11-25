@@ -68,8 +68,8 @@ def _provenance(root):
     rc, head, _ = gitio.git(root, "rev-parse", "--short=12", "HEAD")
     if rc != 0:
         return "不在 Git 检出中"
-    _, dirty, _ = gitio.git(root, "status", "--porcelain", "--", "models")
-    return f"提交 {head.strip()}" + ("（models/ 有未提交改动）" if dirty.strip() else "")
+    _, dirty, _ = gitio.git(root, "--no-optional-locks", "status", "--porcelain", "--", "models", QUERY_DIR)
+    return f"提交 {head.strip()}" + ("（models/ 或检查项有未提交改动）" if dirty.strip() else "")
 
 
 def run(phase, slug, files, read=None, root=ROOT):

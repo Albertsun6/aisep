@@ -147,3 +147,6 @@ $PY tools/aisep.py adm 02-business --model workbench --deliverable   # 生成交
 - 报告末尾只附本模型的 L4 发现项，不附 gate 摘要行：gate 要跑 L3（SHACL），慢且结论应以 `gate` 命令本身为准。
 - 类型判断：`ddd:BoundedContext` ⊑ `am4:ApplicationComponent`、`bpmn:Process` ⊑ `am4:Process`、`aisep:AcceptanceCriterion` ⊑ `am4:Requirement`。清单里需要「只算 am4 记法」的地方（am4 流程、应用组件、需求）按断言类型的命名空间过滤；能力不过滤，`ddd:Subdomain` 算能力。
 - 交付物中人写的叙述节（背景、待决问题、差距分析等）名单放在 `aisep/adm.py` 的 `MANUAL`，节名取自各阶段 `template.md`。
+- 评审（PR #108）后补充：凡是元素类会被其他记法的子类对齐「收进来」的地方，一律按断言类型的命名空间只算 am4 记法，包括业务对象（`bpmn:DataObject` ⊑ `am4:BusinessObject`）、参与者（`ddd:Team` ⊑ `am4:BusinessActor`）、应用接口与功能。
+- 05 路线图的「组件或节点没被交付物实现、不属于平台期」只查 am4 的应用组件和节点，不查限界上下文：模板第 8 节说限界上下文「可以」被平台期聚合、被交付物实现，是允许而不是要求；出口条件第 1 条只要求应用组件和节点。
+- 治理阶段的「Must 验收标准没有 Passed 结果」只看已有测试用例的验收标准；完全没有测试用例的由 L4 追溯缺口报。

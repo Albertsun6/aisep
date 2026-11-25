@@ -1,7 +1,7 @@
 # adm-phase: 02-business
 # section: 3. 组织：参与者与角色
 # kind: inventory
-# title: 参与者与角色
+# title: 参与者与角色（只算 am4 记法）
 # 用法：经 tools/aisep.py adm 运行；直接交给 model_query 时只改 VALUES ?model 一行。
 PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
@@ -18,5 +18,6 @@ SELECT DISTINCT ?element ?label ?type WHERE {
   VALUES ?cls { am4:BusinessActor am4:Role }
   ?element arch:inModel ?model ; a ?type .
   ?type rdfs:subClassOf* ?cls .
+  FILTER(STRSTARTS(STR(?type), STR(am4:)))
   OPTIONAL { ?element skos:prefLabel ?label FILTER(lang(?label) = "zh") }
 } ORDER BY ?type ?element

@@ -1,7 +1,7 @@
 # adm-phase: governance
 # section: 测试结果
 # kind: gap
-# title: Must 验收标准的测试用例没有结果，或最近一条结果不是 Passed
+# title: Must 验收标准的测试用例没有结果，或最近一条结果不是 Passed（完全没有测试用例的由 L4 追溯缺口报）
 # source: governance/template.md 第 3 节 发布上线专项
 # 用法：经 tools/aisep.py adm 运行；直接交给 model_query 时只改 VALUES ?model 一行。
 PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>

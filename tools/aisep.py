@@ -312,8 +312,14 @@ def cmd_adm(args):
         report_rows(result["problems"]); return 1
     text = adm.render(phase, opts["--model"], result, deliverable=opts.get("--deliverable", False))
     if "--out" in opts:
-        with open(opts["--out"], "w", encoding="utf-8") as f:
-            f.write(text)
+        out = os.path.abspath(opts["--out"])
+        if out.startswith(os.path.join(ROOT, "models") + os.sep):
+            print("--out 不能写到 models/ 下：生成的交付物不提交（docs/specs/adm-wizard.md 3.3）", file=sys.stderr); return 2
+        try:
+            with open(out, "w", encoding="utf-8") as f:
+                f.write(text)
+        except OSError as e:
+            print(f"写不了 {opts['--out']}：{e}", file=sys.stderr); return 2
         print(f"已写 {opts['--out']}")
     else:
         print(text, end="")

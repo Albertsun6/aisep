@@ -117,6 +117,26 @@ def test_failed_latest_result_shows_as_governance_gap(tmp_path):
     assert key in gap_rows(adm.run("governance", "workbench", files(m)))
 
 
+def test_aligned_subclasses_of_other_notations_are_not_gaps(tmp_path):
+    """评审发现：bpmn:DataObject ⊑ am4:BusinessObject、ddd:Team ⊑ am4:BusinessActor，不能被当成 am4 元素报缺口。"""
+    m = copy_models(tmp_path)
+    append(m / "workbench" / "bpmn.ttl", f"""
+<{WB}doProbe> a <https://meta.linked.archi/bpmn/onto#DataObject> ;
+    <https://meta.linked.archi/core#inModel> <{WB}> ;
+    <http://www.w3.org/2004/02/skos/core#prefLabel> "探针数据对象"@zh .
+""")
+    append(m / "workbench" / "ddd.ttl", f"""
+<{WB}teamProbe> a <https://aisep.example/ont/ddd#Team> ;
+    <https://meta.linked.archi/core#inModel> <{WB}> ;
+    <http://www.w3.org/2004/02/skos/core#prefLabel> "探针团队"@zh .
+""")
+    fs = files(m)
+    got = gap_rows(adm.run("03-data", "workbench", fs)) | gap_rows(adm.run("02-business", "workbench", fs))
+    assert not {e for _, e in got} & {"workbench:doProbe", "workbench:teamProbe"}
+    s = sections(adm.run("02-business", "workbench", fs))
+    assert "workbench:teamProbe" not in elements(s["3."][0]) and "workbench:doProbe" not in elements(s["5."][0])
+
+
 def test_unknown_model_and_malformed_check_are_errors(tmp_path):
     with pytest.raises(AisepError):
         adm.run("02-business", "no-such-model", files(copy_models(tmp_path)))

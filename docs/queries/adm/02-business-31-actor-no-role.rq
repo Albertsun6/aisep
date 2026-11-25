@@ -15,7 +15,9 @@ PREFIX ddd:   <https://aisep.example/ont/ddd#>
 PREFIX aisep: <https://aisep.example/ont/aisep#>
 SELECT ?element ?label WHERE {
   VALUES ?model { <https://aisep.example/model/workbench/> }
-  ?element arch:inModel ?model ; a/rdfs:subClassOf* am4:BusinessActor .
+  ?element arch:inModel ?model ; a ?t .
+  ?t rdfs:subClassOf* am4:BusinessActor .
+  FILTER(STRSTARTS(STR(?t), STR(am4:)))
   FILTER NOT EXISTS {
     ?r a/rdfs:subClassOf* am4:Assignment ; arch:source ?element ; arch:target ?role .
     ?role a/rdfs:subClassOf* am4:Role }

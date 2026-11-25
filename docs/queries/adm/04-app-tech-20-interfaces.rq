@@ -1,7 +1,7 @@
 # adm-phase: 04-app-tech
 # section: 3. 应用服务与接口
 # kind: inventory
-# title: 应用接口与功能
+# title: 应用接口与功能（只算 am4 记法）
 # 用法：经 tools/aisep.py adm 运行；直接交给 model_query 时只改 VALUES ?model 一行。
 PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
@@ -18,5 +18,6 @@ SELECT DISTINCT ?element ?label ?type WHERE {
   VALUES ?cls { am4:ApplicationInterface am4:Function }
   ?element arch:inModel ?model ; a ?type .
   ?type rdfs:subClassOf* ?cls .
+  FILTER(STRSTARTS(STR(?type), STR(am4:)))
   OPTIONAL { ?element skos:prefLabel ?label FILTER(lang(?label) = "zh") }
 } ORDER BY ?type ?element
