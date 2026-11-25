@@ -1,0 +1,140 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix aisep:   <https://aisep.example/ont/aisep#> .
+@prefix :        <https://aisep.example/shapes/ext-actions#> .
+
+# L3 shapes for the actions extension. SHACL Core only. Each message starts with a rule id (EA1..EA10); every rule
+# has an invalid fixture in tests/, and tests/valid/catalog-loads.ttl passes only when the shipped catalog.ttl
+# (loaded by the manifest, so part of the L3 data graph) satisfies all of them.
+# The executor (aisep/actions.py) re-checks the same structure on every call (X1) and adds what SHACL Core cannot
+# say: list well-formedness, argument names per basic action, references between steps and parameters, guards
+# that must run, two steps on one target (X2-X10). `pattern` uses Python re, where $ also matches before a final
+# newline: identifiers additionally carry sh:not [ sh:pattern "\\n" ] (as EG16).
+# Nested nodes (steps, bindings, parameters, guards, the list) must be blank nodes: definitionDigest follows blank
+# nodes only, so an IRI there would let a change escape the digest.
+
+:ActionTypeShape a sh:NodeShape ;
+    sh:targetClass aisep:ActionType ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^https://aisep\\.example/ont/aisep#Action[A-Z][A-Za-z0-9]*$" ;
+    sh:message "EA1: an aisep:ActionType must be an IRI aisep:Action<Name> declared in modules/ext-actions/catalog.ttl." ;
+    sh:property [
+        sh:path dcterms:identifier ;
+        sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;
+        sh:pattern "^[a-z][a-z0-9-]{0,63}$" ; sh:not [ sh:pattern "\\n" ] ;
+        sh:message "EA2: an action type needs exactly one dcterms:identifier matching ^[a-z][a-z0-9-]{0,63}$ (no newline)." ;
+    ] ;
+    sh:property [
+        sh:path skos:prefLabel ;
+        sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "zh" ) ;
+        sh:message "EA3: an action type needs exactly one skos:prefLabel, tagged @zh." ;
+    ] ;
+    sh:property [
+        sh:path skos:definition ;
+        sh:maxCount 1 ; sh:languageIn ( "zh" ) ;
+        sh:message "EA3: an action type has at most one skos:definition, tagged @zh." ;
+    ] ;
+    sh:property [
+        sh:path owl:versionInfo ;
+        sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;
+        sh:pattern "^[0-9]+\\.[0-9]+\\.[0-9]+$" ; sh:not [ sh:pattern "\\n" ] ;
+        sh:message "EA4: an action type needs exactly one owl:versionInfo of the form <major>.<minor>.<patch>." ;
+    ] ;
+    sh:property [
+        sh:path aisep:steps ;
+        sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:BlankNode ;
+        sh:message "EA5: an action type needs exactly one non-empty aisep:steps list (written with ( ... ))." ;
+    ] ;
+    sh:property [
+        sh:path ( aisep:steps [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+        sh:class aisep:ActionStep ; sh:nodeKind sh:BlankNode ;
+        sh:message "EA5: every member of aisep:steps must be a blank node typed aisep:ActionStep." ;
+    ] ;
+    sh:property [
+        sh:path sh:parameter ;
+        sh:nodeKind sh:BlankNode ; sh:node :ParameterShape ;
+        sh:message "EA8: a parameter is a blank node with one IRI sh:path, either sh:datatype xsd:string or sh:nodeKind sh:IRI, at most one boolean sh:optional and one @zh sh:description, nothing else." ;
+    ] ;
+    sh:property [
+        sh:path aisep:guard ;
+        sh:nodeKind sh:BlankNode ; sh:class sh:SPARQLAskValidator ; sh:node :GuardShape ;
+        sh:message "EA9: a guard is a blank sh:SPARQLAskValidator with one string sh:ask, one @zh sh:message and one dcterms:identifier, nothing else." ;
+    ] .
+
+:ActionStepShape a sh:NodeShape ;
+    sh:targetClass aisep:ActionStep ;
+    sh:property [
+        sh:path aisep:invokes ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( aisep:BasicAddElement aisep:BasicAddRelationship aisep:BasicSetLabels aisep:BasicSetAttributes aisep:BasicRemove ) ;
+        sh:message "EA6: a step invokes exactly one of the five basic actions (aisep:BasicAddElement, aisep:BasicAddRelationship, aisep:BasicSetLabels, aisep:BasicSetAttributes, aisep:BasicRemove)." ;
+    ] ;
+    sh:property [
+        sh:path dcterms:identifier ;
+        sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;
+        sh:pattern "^[a-z][a-z0-9-]{0,63}$" ; sh:not [ sh:pattern "\\n" ] ;
+        sh:message "EA6: a step needs exactly one dcterms:identifier matching ^[a-z][a-z0-9-]{0,63}$ (no newline)." ;
+    ] ;
+    sh:property [
+        sh:path aisep:binding ;
+        sh:nodeKind sh:BlankNode ; sh:node :BindingShape ;
+        sh:message "EA7: a binding is a blank node with one string aisep:argument, exactly one of aisep:constant / aisep:fromParameter / aisep:fromStep / aisep:modelOf, at most one aisep:attributePredicate, nothing else." ;
+    ] .
+
+:BindingShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:path aisep:argument ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path aisep:constant ; sh:maxCount 1 ] ;
+    sh:property [ sh:path aisep:fromParameter ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path aisep:modelOf ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path aisep:fromStep ; sh:maxCount 1 ; sh:class aisep:ActionStep ] ;
+    sh:property [ sh:path aisep:attributePredicate ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
+    sh:xone ( [ sh:path aisep:constant ; sh:minCount 1 ]
+              [ sh:path aisep:fromParameter ; sh:minCount 1 ]
+              [ sh:path aisep:fromStep ; sh:minCount 1 ]
+              [ sh:path aisep:modelOf ; sh:minCount 1 ] ) .
+
+:ParameterShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:path sh:path ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path sh:datatype ; sh:maxCount 1 ; sh:in ( xsd:string ) ] ;
+    sh:property [ sh:path sh:nodeKind ; sh:maxCount 1 ; sh:in ( sh:IRI ) ] ;
+    sh:property [ sh:path sh:optional ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;
+    sh:property [ sh:path sh:description ; sh:maxCount 1 ; sh:languageIn ( "zh" ) ] ;
+    sh:xone ( [ sh:path sh:datatype ; sh:minCount 1 ]
+              [ sh:path sh:nodeKind ; sh:minCount 1 ] ) .
+
+:GuardShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:path sh:ask ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path sh:message ; sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "zh" ) ] ;
+    sh:property [ sh:path dcterms:identifier ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;
+                  sh:pattern "^[a-z][a-z0-9-]{0,63}$" ; sh:not [ sh:pattern "\\n" ] ] .
+
+# EA10: once declared in onto.ttl these properties pass the closed world (G7) in model files; these shapes keep
+# them where they belong (as EV14 does for the verification extension).
+:ActionTypePropertySubjectShape a sh:NodeShape ;
+    sh:targetSubjectsOf aisep:steps , aisep:guard ;
+    sh:class aisep:ActionType ;
+    sh:message "EA10: aisep:steps / aisep:guard may only be stated on an aisep:ActionType." .
+
+:ActionStepPropertySubjectShape a sh:NodeShape ;
+    sh:targetSubjectsOf aisep:invokes , aisep:binding ;
+    sh:class aisep:ActionStep ;
+    sh:message "EA10: aisep:invokes / aisep:binding may only be stated on an aisep:ActionStep." .
+
+:BindingPropertySubjectShape a sh:NodeShape ;
+    sh:targetSubjectsOf aisep:argument , aisep:constant , aisep:fromParameter , aisep:fromStep , aisep:modelOf ,
+                        aisep:attributePredicate ;
+    sh:property [
+        sh:path [ sh:inversePath aisep:binding ] ;
+        sh:minCount 1 ;
+        sh:message "EA10: aisep:argument / constant / fromParameter / fromStep / modelOf / attributePredicate may only be stated on a node that is the object of aisep:binding." ;
+    ] .

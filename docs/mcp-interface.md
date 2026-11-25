@@ -837,42 +837,45 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 ### 5.13 `model_list_actions`（动作目录，规范外）
 
-出处：Albert 2026-11-25 确认动作机制走「薄封装」方向，并于 2026-11-26 放行阶段 C，本节与 §5.14 随之加入。字段名、错误码名、目录格式等细节是实现时的取舍，Albert 没有逐条定过。用法见 `docs/actions.md`「动作目录」一节。
+出处：Albert 2026-11-25 确认动作机制走「薄封装」方向，2026-11-26 放行阶段 C 时改选：动作定义建进元模型（新模块 `modules/ext-actions/`，参照 Palantir Foundry 的 Action type，只建定义、不建执行记录），目录从 RDF 读。本节与 §5.14 随之加入。字段名、错误码名、词汇细节是实现时的取舍，Albert 没有逐条定过。用法见 `docs/actions.md`「动作目录」一节。
 
-**动作是什么**：现有写工具的具名组合，写成数据，放在 `aisep/action_catalog.json`（随 `aisep` 源码树一起，不在模型仓库里，不铸 IRI，不改元模型）。动作用字符串 id 标识。动作是**推荐通道**，不是唯一通道：逐个调写工具、直接编辑 `.ttl` 照旧允许，`gate` 与合并核对不知道改动是否经动作做的。动作不产生审批项，不留执行记录，不写日志文件。
+**动作是什么**：现有写工具的具名组合，写成元模型里的 `aisep:ActionType` 个体，放在扩展模块 `modules/ext-actions/` 的 `catalog.ttl`（词汇在 `onto.ttl`，L3 形状 EA1–EA10 在 `shapes.ttl`）。`catalog.ttl` 列在模块清单的 `aisep:loads` 里，所以 `gate` 会用 `shapes.ttl` 校验它，`model_query` 也能查到有哪些动作。动作有 IRI（形如 `aisep:Action<名>`），调用时用短 id（`dcterms:identifier`）。动作个体不是模型元素：不在 `arch:Element` 之下，没有 `arch:inModel`，也没有批准状态。动作是**推荐通道**，不是唯一通道：逐个调写工具、直接编辑 `.ttl` 照旧允许，`gate` 与合并核对不知道改动是否经动作做的。动作不产生审批项，不留执行记录，不写日志文件。
 
 **两个工具的形状是固定的**：目录增删改动作，`tools/list` 都不变（参数 schema 由本工具返回，不进 `inputSchema`）。
 
-**输入**：无（`inputSchema` 为空对象）。
+**输入**：无（`inputSchema` 为空对象）。读服务器所服务工作区（`--repo`，缺省为当前目录）里的 `modules/ext-actions/catalog.ttl`。
 
-**输出**：`{ catalogVersion, operations, actions: [...] }`。`operations` 是执行器认识的原子操作，固定为 `add_element`、`add_relationship`、`set_labels`、`remove`（分别是 §5.2、§5.3、§5.10、§5.5 的计划函数）。`actions` 每项：
+**输出**：`{ catalogVersion, operations, actions: [...] }`。`catalogVersion` 是模块清单的 `owl:versionInfo`。`operations` 是执行器认识的基本动作对应的写工具，固定为 `model_add_element`、`model_add_relationship`、`model_set_labels`、`model_set_attributes`、`model_remove`（用的是 §5.2、§5.3、§5.10、§5.12、§5.5 的计划函数）。`actions` 按动作 IRI 排序，每项：
 
-- 有效的定义：`{ id, title, description, valid: true, params, iriParams, destructive, requiresPlanDigest, guards: [{id, hint}], steps: [{id, op}], definitionDigest }`。`params` 是该动作参数的 JSON Schema；`iriParams` 列出哪些参数是 IRI；`destructive` 与 `requiresPlanDigest` 都由执行器按「含 `remove` 步骤」推导，目录里没有能改低它的字段；`definitionDigest` 是定义的 sha256，计入 §5.14 的 `planDigest`。
-- 无效的定义：`{ id, valid: false, problems: [中文原因…] }`（`id` 不是字符串时为 `null`）。一条定义坏了只影响它自己：其他动作照常列出、照常可执行，两个工具都不因此报 `INTERNAL`。
+- 有效的定义：`{ id, iri, title, description, version, valid: true, params, iriParams, destructive, requiresPlanDigest, guards: [{id, hint}], steps: [{id, op}], definitionDigest }`。`params` 是由 `sh:parameter` 推出的 JSON Schema（`type: object`、`additionalProperties: false`，每个参数都是字符串，没标 `sh:optional true` 的进 `required`）；`iriParams` 列出带 `sh:nodeKind sh:IRI` 的参数；`steps[].op` 是该步基本动作对应的写工具名；`destructive` 与 `requiresPlanDigest` 都由执行器按「含删除步骤」推导，目录里没有能改低它的字段；`definitionDigest` 见下，计入 §5.14 的 `planDigest`。
+- 无效的定义：`{ id, iri, valid: false, problems: [中文原因…] }`（取不到唯一的字符串 id 时 `id` 为 `null`，空白节点的动作 `iri` 为 `null`）。每条原因以规则号开头（EA*、X*）。一条定义坏了只影响它自己：执行器逐条校验，单条校验里的任何异常只把这一条判无效；其他动作照常列出、照常可执行，两个工具都不因此报 `INTERNAL`。
 
-目录每次调用都从磁盘重读，不缓存。目录文件本身读不了或不是合法 JSON → `INTERNAL`。
+目录每次调用都从磁盘重读，不缓存。`catalog.ttl` 不是合法 Turtle → `PARSE_FAILED`（`details.file` 点名文件；这时 `gate`、pre-commit 同样失败）。`modules/ext-actions/` 不存在（很老的检出）→ `actions: []`，不报错。
 
-**目录格式**（`aisep/action_catalog.json`）：`{ version, actions: [<定义>…] }`。每条定义：
+**定义的写法**（`catalog.ttl`，前缀 `ap:` = `https://aisep.example/ont/action-param#`，参数键在这里，不声明为属性）：
 
-| 字段 | 必填 | 规则 |
+| 部分 | 写法 | 规则 |
 |---|---|---|
-| `id` | ✔ | `^[a-z][a-z0-9-]{0,63}` 且到此为止（不放过结尾换行），目录内唯一（重复的都判无效） |
-| `title` | ✔ | 字符串 |
-| `description` | — | 字符串 |
-| `params` | ✔ | JSON Schema，须为 `type: object`、`additionalProperties: false` |
-| `iriParams` | — | `params` 里声明为字符串的参数名。这些参数只接受完整 IRI，且在 `https://aisep.example/model/<模型>/<本地名>` 之下（本地名限 `[A-Za-z0-9._~%-]`），不接受 `slug:local` 短写 |
-| `guards` | — | `[{id, ask, bind?, expect, hint}]`：`ask` 是只读 SPARQL ASK 正文（不带 `PREFIX`，前缀由执行器补；不许 `SERVICE`），`bind` 把查询变量绑到 `{param}`、`{modelOf}` 或 `{const}`，`expect` 是期望的布尔值，`hint` 是中文修法 |
-| `steps` | ✔ | 至少一步，`[{id, op, args}]`；`op` 只能是上面四个原子操作之一 |
+| 动作 | `aisep:Action<名> a aisep:ActionType` | IRI 形如 `aisep:Action<驼峰名>`（EA1） |
+| id | `dcterms:identifier` | 恰好一个，`^[a-z][a-z0-9-]{0,63}` 且到此为止（不放过结尾换行），目录内唯一（重复的都判无效）（EA2、X9） |
+| 标题、说明 | `skos:prefLabel`@zh 恰好一个、`skos:definition`@zh 至多一个 | EA3；列表输出里叫 `title`、`description` |
+| 版本 | `owl:versionInfo` | 恰好一个，形如 `1.0.0`（EA4）；历史靠 Git |
+| 参数 | `sh:parameter [ sh:path ap:<名> ; sh:datatype xsd:string 或 sh:nodeKind sh:IRI ; sh:optional true? ; sh:description "…"@zh? ]` | 参数名 = `sh:path` 的本地名（SHACL 的约定），本动作内唯一；只认这几个键（EA8、X7）。IRI 参数只接受完整 IRI，且在 `https://aisep.example/model/<模型>/<本地名>` 之下（本地名限 `[A-Za-z0-9._~%-]`），不接受 `slug:local` 短写 |
+| 前置检查 | `aisep:guard [ a sh:SPARQLAskValidator ; dcterms:identifier "…" ; sh:ask "ASK { … }" ; sh:message "…"@zh ]` | `sh:ask` 是只读 SPARQL ASK 正文（不带 `PREFIX`，前缀由执行器补；不许 `SERVICE`），**结果为 true 即通过**（SHACL 原义）；查询里写作 `$名` 的本动作参数被预绑定（SHACL-SPARQL 的约定），预绑定的变量须在查询作用域里（只出现在 `FILTER NOT EXISTS { … }` 里不行，要写成 `$x a ?type . FILTER NOT EXISTS { … }`）；加载时用哑值试跑一次，跑不了即判无效（EA9、X8）。`sh:message` 是中文修法，列表与错误里叫 `hint` |
+| 步骤 | `aisep:steps ( <步骤> … )`，每步 `[ a aisep:ActionStep ; dcterms:identifier "…" ; aisep:invokes <基本动作> ; aisep:binding … ]` | 非空的良构 `rdf:List`，按表的顺序执行；步骤 id 本动作内唯一；基本动作只能是 `aisep:BasicAddElement`、`aisep:BasicAddRelationship`、`aisep:BasicSetLabels`、`aisep:BasicSetAttributes`、`aisep:BasicRemove` 之一（EA5、EA6、X2、X3） |
+| 绑定 | `aisep:binding [ aisep:argument "<入参名>" ; <取值来源> ; aisep:attributePredicate <谓词>? ]` | 取值来源恰好一个：`aisep:constant <IRI 或字面量>`、`aisep:fromParameter ap:<名>`（本动作的参数）、`aisep:fromStep <前面某步>`（取该步产出的 IRI，删除步骤不产出）、`aisep:modelOf ap:<名>`（该 IRI 参数所指成员的 `arch:inModel`）（EA7、X4、X5） |
 
-`args` 的每个值只能是四种引用之一，或由它们组成的列表、对象（没有字符串模板）：`{const: <JSON 值>}`、`{param: <参数名>}`、`{stepIri: <前面某步的 id>}`（取该步产出的 IRI，`remove` 步骤不产出）、`{modelOf: <参数名>}`（该 IRI 参数所属模型的 IRI）。各 `op` 允许与必填的 `args` 同对应写工具的参数（`remove` 只有 `iri`，执行器固定按级联规划）。
+入参名与必填入参同对应写工具的参数（删除步骤只有 `iri`，执行器固定按级联规划；`model_set_attributes` 的 `set`、`unset` 至少绑定一项）。标量入参每个名字至多一个绑定；`attributes`、`set` 每项一个绑定，须带 `aisep:attributePredicate`，值是字面量还是 IRI 由参数类型或常量本身推出；`unset` 每项是 `aisep:constant <谓词 IRI>`。列表项按（谓词，值）排序后交给写工具，与书写顺序无关。可选参数没给时，引用它的标量入参或列表项省略（X3）。
 
-**加载校验同时拒绝「两步作用于同一个目标」的定义**（判 `valid: false`，原因写进 `problems`），因为这类动作重放会被拒（§5.14「幂等」）：`set_labels` 或 `remove` 步骤的 `iri` 引用本动作前一步新建的资源（`{stepIri}`）；两个 `set_labels` / `remove` 步骤的 `iri` 是同一个 `{param}` 或同一个 `{const}`；`remove` 步骤的 `iri` 与某个 `add_relationship` 步骤的 `source` 或 `target` 是同一个 `{param}` 或 `{const}`（级联会删掉那条新关系）。这一校验只看引用本身：两个**不同**参数在调用时被填成同一个 IRI、`add_element` 的 slug 恰好等于被删的 IRI，取决于调用时的值，加载时判不出来。
+所有嵌套节点（表节点、步骤、绑定、参数、guard）都须是空白节点，一个空白节点只能属于一个动作（X10）。**`definitionDigest`** = sha256（从动作 IRI 出发、沿宾语里的空白节点展开得到的三元组，空白节点按 RDF 规范化，N-Triples 行排序）。IRI 宾语不展开，所以改 `onto.ttl` 里基本动作的标签不会让 `planDigest` 失效；定义本身的任何改动（包括只改标题或说明）都会。
 
-其余不合上述规则的定义（未知 `op`、多余字段、引用未声明的参数、guard 不能执行等）同样判 `valid: false`。
+**加载校验同时拒绝「两步作用于同一个目标」的定义**（X6，判 `valid: false`，原因写进 `problems`），因为这类动作重放会被拒（§5.14「幂等」）：改已有资源的步骤（`BasicSetLabels`、`BasicSetAttributes`、`BasicRemove`）的 `iri` 取自本动作前一步的产出（`aisep:fromStep`）；两个这类步骤的 `iri` 取自同一个参数或同一个常量；删除步骤的 `iri` 与某个 `BasicAddRelationship` 步骤的 `source` 或 `target` 取自同一个参数或常量（级联会删掉那条新关系）。这一校验只看绑定本身：两个**不同**参数在调用时被填成同一个 IRI、`add_element` 的 slug 恰好等于同一动作里被删的 IRI，取决于调用时的值，加载时判不出来。X6 只由执行器判，`gate` 不知道它；仓库里的目录靠 CI 的 pytest（「仓库目录每条定义都有效」）挡在合并前。
+
+`gate` 的 L3 用 `shapes.ttl` 判 EA1–EA10（SHACL Core 能说的结构）；执行器每次读目录都自己再判一遍同样的结构（X1，它不能假定 `gate` 跑过），再加 SHACL Core 说不了的 X2–X10。EA10 管模型文件：动作词汇（`aisep:steps`、`aisep:binding`、`aisep:argument` 等）写在模型元素上会在 L3 报 EA10。
 
 **校验层**：无（只读目录，不读模型）。
 
-**错误**：`INVALID_ARGUMENT`（多传了参数）、`INTERNAL`（目录文件读不了）。
+**错误**：`INVALID_ARGUMENT`（多传了参数）、`PARSE_FAILED`（`catalog.ttl` 不能解析），以及定位工作区的 `NOT_A_GIT_REPO`、`PATH_OUTSIDE_ROOT`。
 
 ### 5.14 `model_apply_action`（执行一个动作，规范外）
 
@@ -882,7 +885,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 | 字段 | 必填 | 说明 |
 |---|---|---|
-| `action` | ✔ | 动作 id |
+| `action` | ✔ | 动作 id（`dcterms:identifier` 的短 id，不是 IRI） |
 | `params` | — | 对象，按该动作的 `params` schema 校验；缺省为 `{}` |
 | `dryRun` | — | §5.1 |
 | `planDigest` | — | 上次 `dryRun` 返回的计划哈希。含删除步骤的动作实际执行时必填；其他动作给了也核对 |
@@ -890,25 +893,25 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 **执行顺序**
 
-1. 读目录。没有这个动作 → `INVALID_ARGUMENT`（`details.available` 列出可用的 id）；定义无效 → `INVALID_ARGUMENT`（`details.problems`）。
-2. 按 `params` schema 校验参数，再校验 `iriParams` 的形状；不合规 → `INVALID_ARGUMENT`，`details.rejectedFields` 形如 `params.<名>`。参数只作为预绑定的项进入 guard 查询，不拼进查询文本。
-3. 进入一次 §5.1 写入（加锁、读工作区、基线）。依次跑各步的计划函数；后一步在前一步结果的内存叠加上规划，与第二次工具调用看到的相同。中间结果只检查能否解析，不能 → `EDIT_UNSAFE`。步骤自己的拒绝原样抛出（`ELEMENT_NOT_FOUND`、`IRI_EXISTS`、`UNKNOWN_TYPE`、`PROTECTED_RESOURCE`、`REFERENCED` 等），`details.step` 标出是哪一步。可选参数没给时，引用它的那一项 `args` 省略；某步的必填 `args` 因此缺失 → `INVALID_ARGUMENT`。
+1. 读目录（`repo` 所指工作区的 `modules/ext-actions/catalog.ttl`）。没有这个动作 → `INVALID_ARGUMENT`（`details.available` 列出可用的 id）；定义无效 → `INVALID_ARGUMENT`（`details.problems`）。
+2. 按 `params` schema 校验参数，再校验 IRI 参数（`iriParams`）的形状；不合规 → `INVALID_ARGUMENT`，`details.rejectedFields` 形如 `params.<名>`。参数只作为预绑定的项进入 guard 查询，不拼进查询文本。
+3. 进入一次 §5.1 写入（加锁、读工作区、基线）。依次跑各步的计划函数；后一步在前一步结果的内存叠加上规划，与第二次工具调用看到的相同。中间结果只检查能否解析，不能 → `EDIT_UNSAFE`。步骤自己的拒绝原样抛出（`ELEMENT_NOT_FOUND`、`IRI_EXISTS`、`UNKNOWN_TYPE`、`PROTECTED_RESOURCE`、`REFERENCED` 等），`details.step` 标出是哪一步。可选参数没给时，引用它的入参或列表项省略；某步的必填入参因此缺失 → `INVALID_ARGUMENT`。
 4. **判重放**：每一步在当前工作区上都无变化 → 成功，`changed: false`，**不跑 guard**。
-5. **跑 guard**：每条 guard 的 ASK 结果与 `expect` 不符即失败 → `PRECONDITION_FAILED`，零写入，`hint` 是第一条失败 guard 的修法，`details.failedGuards: [{id, hint}]`。guard 与 `{modelOf}` 都看动作开始时的工作区，不看前面步骤的产出。绑定的可选参数没给时这条 guard 跳过。
-6. 算 `planDigest` = sha256（动作 id、`definitionDigest`、`params`、计划触及的每个文件改前与改后的 sha256）。带了 `planDigest` 而不等 → `PLAN_STALE`（相关模型文件、动作定义或参数在 `dryRun` 之后变了；定义的任何改动，包括只改 `title` 或 `description`，都会让旧哈希失效）。含删除步骤、不是 `dryRun`、也没带 `planDigest` → `PLAN_REQUIRED`。这两种错误的 `details` 带 `planDigest`、`steps`、`files`，含删除步骤时另带 `cascade` 和 `impact`。它们在候选图判定之前抛出，所以不含 L0–L2 结论。
+5. **跑 guard**：每条 guard 的 ASK 结果为 false 即失败 → `PRECONDITION_FAILED`，零写入，`hint` 是第一条失败 guard 的修法（`sh:message`），`details.failedGuards: [{id, hint}]`。IRI 参数预绑定为 IRI，字符串参数预绑定为普通字面量。guard 与 `aisep:modelOf` 都看动作开始时的工作区，不看前面步骤的产出。查询用到的可选参数没给时这条 guard 跳过。
+6. 算 `planDigest` = sha256（动作 id、`definitionDigest`、`params`、计划触及的每个文件改前与改后的 sha256）。带了 `planDigest` 而不等 → `PLAN_STALE`（相关模型文件、动作定义或参数在 `dryRun` 之后变了；定义的任何改动，包括只改标题或说明，都会让旧哈希失效）。含删除步骤、不是 `dryRun`、也没带 `planDigest` → `PLAN_REQUIRED`。这两种错误的 `details` 带 `planDigest`、`steps`、`files`，含删除步骤时另带 `cascade` 和 `impact`。它们在候选图判定之前抛出，所以不含 L0–L2 结论。
 7. 把各步合并后的计划交回 §5.1 第 5–10 步：图等价断言、候选图 L0–L2 判定（只拒新增违规）、落盘。**一次动作就是一次写入**：工作区内全有或全无，不 `git add`、不提交。
 
 **只判最终候选图，比逐步调用宽**：逐个调写工具时每一步的中间状态都要过 L0–L2；动作只把合并后的候选图判一次。中间状态有违规、最终合法的组合，动作能过，逐步调用不能。动作层不另写合法性判断：guard 只是提示，不是不变式，直接编辑或逐步调用不受它约束，`gate` 也不知道它。
 
-**破坏性动作（含 `remove` 步骤）**：`remove` 步骤固定按级联规划（同 `model_remove` 带 `cascade: true`），有阻塞引用仍是 `REFERENCED`。必须两段式：先 `dryRun: true` 取 `planDigest`，再带它执行。`dryRun` 的返回附 `cascade`（级联闭包，`[{step, target, delete, detach, blockers}]`）和 `impact`（依赖闭包摘要：对每个删除目标跑 `model_impact`，`mode: depends`、`depth: 3`，最多 50 项，`[{focus, mode, depth, count, truncated, invalidModel, items}]`；`model_impact` 报错时该项为 `{focus, error}`）；`PLAN_REQUIRED`、`PLAN_STALE`、`REFERENCED` 的 `details` 也附 `impact`。**影响摘要只是提示**：它不计入 `planDigest`，在写入锁之外另读一次工作区，与计划不是同一份快照。`planDigest` 只保证执行的就是看过的那份计划，不代表批准；人的把关仍在关口。
+**破坏性动作（含删除步骤，即 `aisep:BasicRemove`）**：删除步骤固定按级联规划（同 `model_remove` 带 `cascade: true`），有阻塞引用仍是 `REFERENCED`。必须两段式：先 `dryRun: true` 取 `planDigest`，再带它执行。`dryRun` 的返回附 `cascade`（级联闭包，`[{step, target, delete, detach, blockers}]`）和 `impact`（依赖闭包摘要：对每个删除目标跑 `model_impact`，`mode: depends`、`depth: 3`，最多 50 项，`[{focus, mode, depth, count, truncated, invalidModel, items}]`；`model_impact` 报错时该项为 `{focus, error}`）；`PLAN_REQUIRED`、`PLAN_STALE`、`REFERENCED` 的 `details` 也附 `impact`。**影响摘要只是提示**：它不计入 `planDigest`，在写入锁之外另读一次工作区，与计划不是同一份快照。`planDigest` 只保证执行的就是看过的那份计划，不代表批准；人的把关仍在关口。
 
-**幂等**：重放判定是「每一步在当前工作区上都无变化」（第 4 步），所以同参数重放返回 `changed: false` **只对各步互不覆盖的动作成立**。同一动作里先删后加同一 IRI、加元素后再改它这类组合，首次执行正常，重放会被拒（`PLAN_STALE`、`PLAN_REQUIRED` 或 `IRI_EXISTS`）。§5.13 的加载校验把能从定义上判出的这类组合判为无效，目录里不会出现；判不出的（见 §5.13）重放同样被拒，零写入。破坏性动作重放沿用 `model_remove` 的约定：目标已不在且带了 `planDigest` → `changed: false`，删除步骤的结果里 `alreadyAbsent: true`（此时不核对哈希的值）；不带 → `ELEMENT_NOT_FOUND`。
+**幂等（重放边界）**：重放判定是「每一步在当前工作区上都无变化」（第 4 步），所以同参数重放返回 `changed: false` **只对各步互不覆盖的动作成立**。同一动作里先删后加同一 IRI、加元素后再改它这类组合，首次执行正常，重放会被拒（`PLAN_STALE`、`PLAN_REQUIRED` 或 `IRI_EXISTS`）。§5.13 的加载校验（X6）把能从定义上判出的这类组合判为无效，目录里不会出现。判不出的只有两类，都取决于调用时的值：调用方把两个**不同**参数填成同一个 IRI；`add_element` 的 `slug` 恰好等于同一动作里被删的 IRI。这两类首次执行的结果与依次调用写工具相同，但重放会被拒（`IRI_EXISTS`、`PLAN_STALE`、`PLAN_REQUIRED` 之一），零写入，不保证返回 `changed: false`。破坏性动作重放沿用 `model_remove` 的约定：目标已不在且带了 `planDigest` → `changed: false`，删除步骤的结果里 `alreadyAbsent: true`（此时不核对哈希的值）；不带 → `ELEMENT_NOT_FOUND`。
 
-**输出**：在 §5.1 的通用字段（`changed`、`dryRun`、`filesChanged`、`findings`、`preexistingViolations`）之上：`action`、`definitionDigest`、`destructive`、`steps: [{id, op, changed, result}]`（`result` 是对应写工具的结果：`iri`/`file`/`turtle`，删除步骤是 `target`/`plan`/`alreadyAbsent`）、`iris: {步骤 id: 产出的 IRI}`、`planDigest`（重放时回显入参）；含删除步骤时另有 `cascade`，`dryRun` 且有变化时另有 `impact`。
+**输出**：在 §5.1 的通用字段（`changed`、`dryRun`、`filesChanged`、`findings`、`preexistingViolations`）之上：`action`（短 id）、`actionIri`（动作的 IRI）、`definitionDigest`、`destructive`、`steps: [{id, op, changed, result}]`（`op` 是写工具名；`result` 是对应写工具的结果：`iri`/`file`/`turtle`，改名称是 `iri`/`before`/`after`，改属性同 §5.12，删除步骤是 `target`/`plan`/`alreadyAbsent`）、`iris: {步骤 id: 产出的 IRI}`、`planDigest`（重放时回显入参）；含删除步骤时另有 `cascade`，`dryRun` 且有变化时另有 `impact`。
 
 **参数里的特殊字符**：`}`、`>`、`;`、引号等只会得到 `INVALID_ARGUMENT` 或正常的 guard 结论，不会改变查询含义。字符串参数不另加限制，交给步骤对应写工具原有的检查；例如 `register-acceptance-criterion` 的 `gherkin` 经 `model_add_element` 的 `attributes` 写入，值里含回车（U+000D）时与直接调 `model_add_element` 一样返回 `EDIT_UNSAFE`，不写。
 
-**错误**：`INVALID_ARGUMENT`、`PRECONDITION_FAILED`、`PLAN_REQUIRED`、`PLAN_STALE`，步骤对应写工具的全部错误（见 §5.2、§5.3、§5.5、§5.10），以及 §5.1 的 `WRITE_REJECTED`、`PARSE_FAILED`、`EDIT_UNSAFE`、`NOT_A_WORKTREE`、`LOCKED`、`CONFLICT`。
+**错误**：`INVALID_ARGUMENT`、`PRECONDITION_FAILED`、`PLAN_REQUIRED`、`PLAN_STALE`，步骤对应写工具的全部错误（见 §5.2、§5.3、§5.5、§5.10、§5.12），以及 §5.1 的 `WRITE_REJECTED`、`PARSE_FAILED`、`EDIT_UNSAFE`、`NOT_A_WORKTREE`、`LOCKED`、`CONFLICT`。
 
 **校验层**：候选图 L0–L2（只判最终状态）。
 

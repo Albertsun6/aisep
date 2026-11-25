@@ -1,0 +1,111 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# Actions extension vocabulary. License: CC-BY-4.0.
+# Reused, not re-minted: parameters are sh:parameter / sh:Parameter (parameter name = local name of sh:path),
+# guards are sh:SPARQLAskValidator (sh:ask true = pass, sh:message = hint, $param pre-bound), ids are
+# dcterms:identifier, versions owl:versionInfo, titles skos:prefLabel / skos:definition.
+# Parameter keys live in https://aisep.example/ont/action-param# and are deliberately NOT declared as properties,
+# so the closed world (G7) still refuses them as predicates in model files.
+# None of these classes is under arch:Element: an action type is not a model element (no arch:inModel, no
+# approval state). Instances only take effect in modules/ext-actions/catalog.ttl.
+
+<https://aisep.example/ont/aisep/ext-actions> a owl:Ontology ;
+    rdfs:label "AISEP actions extension"@en ;
+    owl:versionInfo "0.1.0" .
+
+########## Classes ##########
+
+# Documentation only (no SHACL vocabulary is loaded, no reasoning): sh:parameter has domain sh:Parameterizable.
+aisep:ActionType a owl:Class ;
+    rdfs:subClassOf sh:Parameterizable ;
+    skos:prefLabel "动作类型"@zh , "Action type"@en ;
+    skos:definition "A named composition of writes made of ordered steps, each invoking one basic action. Takes effect only when declared in modules/ext-actions/catalog.ttl. Not a model element: not under arch:Element, no arch:inModel, no approval state."@en .
+
+aisep:ActionStep a owl:Class ;
+    skos:prefLabel "动作步骤"@zh , "Action step"@en ;
+    skos:definition "One step of an action: invokes one basic action and binds each of its arguments to a source."@en .
+
+aisep:BasicAction a owl:Class ;
+    skos:prefLabel "基本动作"@zh , "Basic action"@en ;
+    skos:definition "A write operation the executor knows, one per MCP write tool. Closed set: the five individuals below."@en .
+
+########## Properties ##########
+
+aisep:steps a owl:ObjectProperty ;
+    rdfs:domain aisep:ActionType ;
+    rdfs:range rdf:List ;
+    skos:prefLabel "步骤"@zh , "steps"@en ;
+    skos:definition "The steps of an action, a non-empty rdf:List of aisep:ActionStep, executed in list order."@en .
+
+aisep:guard a owl:ObjectProperty ;
+    rdfs:domain aisep:ActionType ;
+    rdfs:range sh:SPARQLAskValidator ;
+    skos:prefLabel "前置检查"@zh , "guard"@en ;
+    skos:definition "A hint-level precondition: a read-only ASK that passes when true. Not a legality rule: direct edits are not bound by it and `gate` does not know it."@en .
+
+aisep:invokes a owl:ObjectProperty ;
+    rdfs:domain aisep:ActionStep ;
+    rdfs:range aisep:BasicAction ;
+    skos:prefLabel "调用"@zh , "invokes"@en ;
+    skos:definition "The basic action a step invokes."@en .
+
+# The object of aisep:binding is an untyped blank node (no aisep:Binding class is minted).
+aisep:binding a owl:ObjectProperty ;
+    rdfs:domain aisep:ActionStep ;
+    skos:prefLabel "参数绑定"@zh , "binding"@en ;
+    skos:definition "The value of one argument of the step's basic action."@en .
+
+aisep:argument a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    skos:prefLabel "入参名"@zh , "argument"@en ;
+    skos:definition "Name of the basic action's argument a binding gives a value to (e.g. type, source, attributes). The legal names are listed in the executor."@en .
+
+aisep:constant a rdf:Property ;
+    skos:prefLabel "常量"@zh , "constant"@en ;
+    skos:definition "Value source: this constant term (IRI or literal)."@en .
+
+aisep:fromParameter a owl:ObjectProperty ;
+    skos:prefLabel "取动作参数"@zh , "from parameter"@en ;
+    skos:definition "Value source: the value of one of the action's parameters, named by that parameter's sh:path IRI."@en .
+
+aisep:fromStep a owl:ObjectProperty ;
+    rdfs:range aisep:ActionStep ;
+    skos:prefLabel "取前一步产出"@zh , "from step"@en ;
+    skos:definition "Value source: the IRI produced by an earlier step of the same action."@en .
+
+aisep:modelOf a owl:ObjectProperty ;
+    skos:prefLabel "取参数所属模型"@zh , "model of"@en ;
+    skos:definition "Value source: the arch:inModel of the model member an IRI parameter (named by its sh:path IRI) points to."@en .
+
+aisep:attributePredicate a owl:ObjectProperty ;
+    rdfs:range rdf:Property ;
+    skos:prefLabel "属性谓词"@zh , "attribute predicate"@en ;
+    skos:definition "For one item of a list argument (attributes, set): the predicate the bound value is given to."@en .
+
+########## Basic actions (closed set; the executor's table and the EA6 sh:in list hold the same five IRIs) ##########
+
+aisep:BasicAddElement a aisep:BasicAction ;
+    skos:notation "model_add_element" ;
+    skos:prefLabel "新增元素"@zh , "Add element"@en .
+
+aisep:BasicAddRelationship a aisep:BasicAction ;
+    skos:notation "model_add_relationship" ;
+    skos:prefLabel "新增关系"@zh , "Add relationship"@en .
+
+aisep:BasicSetLabels a aisep:BasicAction ;
+    skos:notation "model_set_labels" ;
+    skos:prefLabel "改名称与定义"@zh , "Set labels"@en .
+
+aisep:BasicSetAttributes a aisep:BasicAction ;
+    skos:notation "model_set_attributes" ;
+    skos:prefLabel "改属性"@zh , "Set attributes"@en .
+
+aisep:BasicRemove a aisep:BasicAction ;
+    skos:notation "model_remove" ;
+    skos:prefLabel "删除"@zh , "Remove"@en .

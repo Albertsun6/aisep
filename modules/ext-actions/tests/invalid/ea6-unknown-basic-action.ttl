@@ -1,0 +1,15 @@
+# expect: EA6:
+# Invalid: a step invokes aisep:BasicRename, not one of the five basic actions.
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix aisep:   <https://aisep.example/ont/aisep#> .
+@prefix ap:      <https://aisep.example/ont/action-param#> .
+@prefix :        <https://aisep.example/model/ext-actions-test/> .
+
+:step a aisep:ActionStep ;
+    dcterms:identifier "rename" ;
+    aisep:invokes aisep:BasicRename .

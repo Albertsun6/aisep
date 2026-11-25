@@ -106,7 +106,7 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
     "model_remove": (write_tools.model_remove, "删除元素/关系/视图；牵连时返回计划，需 cascade + planDigest",
                      obj({"iri": S(), "cascade": B, "dryRun": B, "planDigest": S(), "repo": REPO}, ["iri"]),
                      out("target", "planDigest"), ANN_DESTRUCTIVE, {"agent"}),
-    # the two tools are fixed; what the catalogue (aisep/action_catalog.json) holds never changes tools/list
+    # the two tools are fixed; what the catalogue (modules/ext-actions/catalog.ttl) holds never changes tools/list
     "model_list_actions": (actions.model_list_actions, "动作目录（只读）：每个动作的参数 schema、步骤、前置检查提示",
                            obj({}), out("actions"), ANN_READ, {"agent"}),
     "model_apply_action": (actions.model_apply_action,

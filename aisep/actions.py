@@ -1,232 +1,476 @@
 """Action catalogue (docs/mcp-interface.md §5.13, §5.14): model_list_actions, model_apply_action.
 
-An action is DATA (aisep/action_catalog.json): a named list of steps, each naming one of the closed set of atomic
-operations below (the plan functions of the existing write tools), plus hint-level guards. This module only reads the
-catalogue, validates the parameters, resolves step arguments, runs the steps' plan functions one after another on an
-in-memory overlay of the workspace and hands the merged plan to ONE writer.transaction. Legality is whatever that
-transaction's L0-L2 judgement of the candidate graph says; nothing here defines what a legal model is. Guards are
-advice (PRECONDITION_FAILED), not invariants: a direct edit is not bound by them and `gate` does not know them.
-No state is kept: no execution record, no log, no git add, no commit."""
+An action is an aisep:ActionType defined in RDF in modules/ext-actions/catalog.ttl (vocabulary in onto.ttl, L3 shapes
+EA1-EA10 in shapes.ttl): parameters (sh:parameter), an ordered rdf:List of steps each invoking one of the closed set
+of basic actions below (the plan functions of the existing write tools), plus hint-level guards
+(sh:SPARQLAskValidator, ASK true = pass). This module only reads the catalogue, re-checks every definition on its own
+(X1-X10: it cannot assume `gate` ran), validates the parameters, resolves step arguments, runs the steps' plan
+functions one after another on an in-memory overlay of the workspace and hands the merged plan to ONE
+writer.transaction. Legality is whatever that transaction's L0-L2 judgement of the candidate graph says; nothing here
+defines what a legal model is. Guards are advice (PRECONDITION_FAILED), not invariants: a direct edit is not bound by
+them and `gate` does not know them. No state is kept: no execution record, no log, no git add, no commit."""
 import copy, hashlib, json, os, re
 
 import jsonschema
 import pyoxigraph as ox
+from rdflib import Graph
+from rdflib.compare import to_canonical_graph
 
-from aisep import core, tools, write_tools, writer
+from aisep import core, gitio, tools, write_tools, writer
 from aisep.errors import AisepError
 
-CATALOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "action_catalog.json")
-# the closed set of atomic operations: name -> (plan-function factory, allowed args, required args, yields an IRI)
+CATALOG = "modules/ext-actions/catalog.ttl"  # relative to the served worktree, next to the modules it loads
+MANIFEST = "metamodel.ttl"  # in the catalogue's directory; its owl:versionInfo is the catalogVersion
+CATALOG_PATH = None  # when set (tests), this file is read instead of <worktree>/modules/ext-actions/catalog.ttl
+
+RDF, SH, XSD, SKOS = core.NS["rdf"], core.NS["sh"], core.NS["xsd"], core.NS["skos"]
+AI, A, NIL = core.AISEP, core.A, core.NS["rdf"] + "nil"
+DCT_ID, VERSION = core.NS["dcterms"] + "identifier", core.NS["owl"] + "versionInfo"
+XSD_STRING = XSD + "string"
+
+
+def _op(tool, build, scalar, lists, required, yields, modifies):
+    return {"tool": tool, "build": build, "scalar": set(scalar), "lists": set(lists), "required": set(required),
+            "yields": yields, "modifies": modifies}
+
+
+# the closed set of basic actions (onto.ttl declares the same five individuals, shapes.ttl EA6 lists them in sh:in):
+# plan function, scalar / list arguments, required arguments, whether the step yields an IRI, whether its `iri`
+# argument names an EXISTING resource it changes
 OPS = {
-    "add_element": (write_tools.add_element_build,
-                    {"model", "type", "prefLabel", "altLabel", "slug", "definition", "attributes", "file"},
-                    {"model", "type", "prefLabel"}, True),
-    "add_relationship": (write_tools.add_relationship_build, {"type", "source", "target", "model", "file"},
-                         {"type", "source", "target"}, True),
-    "set_labels": (write_tools.set_labels_build, {"iri", "prefLabel", "altLabel", "definition"}, {"iri"}, True),
-    "remove": (write_tools.remove_build, {"iri"}, {"iri"}, False),
+    AI + "BasicAddElement": _op("model_add_element", write_tools.add_element_build,
+                                ("model", "type", "prefLabel", "altLabel", "slug", "definition", "file"), ("attributes",),
+                                ("model", "type", "prefLabel"), True, False),
+    AI + "BasicAddRelationship": _op("model_add_relationship", write_tools.add_relationship_build,
+                                     ("type", "source", "target", "model", "file"), (), ("type", "source", "target"),
+                                     True, False),
+    AI + "BasicSetLabels": _op("model_set_labels", write_tools.set_labels_build,
+                               ("iri", "prefLabel", "altLabel", "definition"), (), ("iri",), True, True),
+    AI + "BasicSetAttributes": _op("model_set_attributes", write_tools.set_attributes_build, ("iri",), ("set", "unset"),
+                                   ("iri",), True, True),
+    AI + "BasicRemove": _op("model_remove", write_tools.remove_build, ("iri",), (), ("iri",), False, True),
 }
-DESTRUCTIVE_OPS = {"remove"}  # derived by the executor; the catalogue has no field that could lower it
-MODIFYING_ARG = {"set_labels": "iri", "remove": "iri"}  # ops that change an EXISTING resource, and the argument naming it
-REF_KEYS = ("const", "param", "stepIri", "modelOf")
-ID_RE = r"^[a-z][a-z0-9-]{0,63}\Z"  # \Z, not $: $ also matches before a trailing newline (#77)
+DESTRUCTIVE_OPS = {AI + "BasicRemove"}  # derived by the executor; the catalogue has no field that could lower it
+ITEM_LISTS = {"attributes", "set"}  # list arguments whose items are {predicate, value}; `unset` items are predicates
+
+ID_RE = re.compile(r"[a-z][a-z0-9-]{0,63}\Z")  # \Z, not $: $ also matches before a trailing newline (#77)
+ACTION_IRI_RE = re.compile(re.escape(AI) + r"Action[A-Z][A-Za-z0-9]*\Z")
+SEMVER_RE = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+\Z")
+VAR_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 # an IRI parameter is a full IRI of a model member: https://aisep.example/model/<slug>/<local name>
 IRI_RE = re.compile(re.escape(core.MODEL_BASE) + r"[A-Za-z0-9][A-Za-z0-9_-]*/[A-Za-z0-9._~%-]+")
 IMPACT_DEPTH, IMPACT_ITEMS = 3, 50
 MISSING = object()
 
-_STR = {"type": "string"}
-ACTION_SCHEMA = {
-    "type": "object", "additionalProperties": False, "required": ["id", "title", "params", "steps"],
-    "properties": {
-        "id": {"type": "string", "pattern": ID_RE}, "title": _STR, "description": _STR,
-        "params": {"type": "object"}, "iriParams": {"type": "array", "items": _STR},
-        "guards": {"type": "array", "items": {
-            "type": "object", "additionalProperties": False, "required": ["id", "ask", "expect", "hint"],
-            "properties": {"id": {"type": "string", "pattern": ID_RE}, "ask": _STR, "bind": {"type": "object"},
-                           "expect": {"type": "boolean"}, "hint": {"type": "string", "minLength": 1}}}},
-        "steps": {"type": "array", "minItems": 1, "items": {
-            "type": "object", "additionalProperties": False, "required": ["id", "op", "args"],
-            "properties": {"id": {"type": "string", "pattern": ID_RE}, "op": _STR, "args": {"type": "object"}}}},
-    },
-}
+# predicates each node may carry (rdf:type is free on the nodes SHACL leaves open to it)
+ACTION_KEYS = {A, DCT_ID, SKOS + "prefLabel", SKOS + "definition", VERSION, SH + "parameter", AI + "guard", AI + "steps"}
+STEP_KEYS = {A, DCT_ID, AI + "invokes", AI + "binding"}
+SOURCES = {AI + "constant": "const", AI + "fromParameter": "param", AI + "fromStep": "step", AI + "modelOf": "modelOf"}
+BINDING_KEYS = {A, AI + "argument", AI + "attributePredicate"} | set(SOURCES)
+PARAM_KEYS = {A, SH + "path", SH + "datatype", SH + "nodeKind", SH + "optional", SH + "description"}
+GUARD_KEYS = {A, DCT_ID, SH + "ask", SH + "message"}
 
 
-# ---------------------------------------------------------------- catalogue
+# ---------------------------------------------------------------- reading the catalogue
 
-def _is_ref(v):
-    return isinstance(v, dict) and len(v) == 1 and next(iter(v)) in REF_KEYS
+class _Graph:
+    """subject -> [(predicate IRI, object term)] of one parse of the catalogue file."""
+
+    def __init__(self, quads):
+        self.out = {}
+        for q in quads:
+            self.out.setdefault(q.subject, []).append((q.predicate.value, q.object))
+
+    def vals(self, n, p):
+        return [o for pp, o in self.out.get(n, ()) if pp == p]
+
+    def keys(self, n):
+        return {p for p, _ in self.out.get(n, ())}
+
+    def closure(self, n):
+        """n and every blank node reachable from it through objects (list nodes included)."""
+        seen, todo = [], [n]
+        while todo:
+            x = todo.pop()
+            if x in seen:
+                continue
+            seen.append(x)
+            todo += [o for _, o in self.out.get(x, ()) if isinstance(o, ox.BlankNode)]
+        return seen
 
 
-def _check_value(v, where, props, earlier, problems, allow_step=True):
-    """A step argument is one of the four references, or a list / object whose leaves are such references."""
-    if _is_ref(v):
-        (k, x), = v.items()
-        if k in ("param", "modelOf") and x not in props:
-            problems.append(f"{where}：引用了未声明的参数 {x!r}")
-        elif k == "stepIri" and (not allow_step or x not in earlier):
-            problems.append(f"{where}：stepIri 只能引用前面产出 IRI 的步骤，{x!r} 不是")
-    elif isinstance(v, list):
-        for i, x in enumerate(v):
-            _check_value(x, f"{where}[{i}]", props, earlier, problems, allow_step)
-    elif isinstance(v, dict) and v and not any(k in REF_KEYS for k in v):
-        for k, x in v.items():
-            _check_value(x, f"{where}.{k}", props, earlier, problems, allow_step)
-    else:
-        problems.append(f"{where}：取值只能是 {{const}}、{{param}}、{{stepIri}}、{{modelOf}} 之一（或由它们组成的列表、对象）")
+def _is_str(t):
+    return isinstance(t, ox.Literal) and not t.language and t.datatype.value == XSD_STRING
 
 
-def _ref_key(v):
-    """A comparable key for a {param} / {const} / {stepIri} reference; None for anything else."""
-    if _is_ref(v):
-        (k, x), = v.items()
-        if k in ("param", "const", "stepIri"):
-            return k, json.dumps(x, sort_keys=True, ensure_ascii=False)
-    return None
+def _is_zh(t):
+    return isinstance(t, ox.Literal) and bool(t.language) and (t.language == "zh" or t.language.startswith("zh-"))
+
+
+def _show(t):
+    return core.short(t.value) if isinstance(t, ox.NamedNode) else str(t)
+
+
+def _closed(g, n, allowed, where, rule, P):
+    extra = sorted(g.keys(n) - allowed)
+    if extra:
+        P.append(f"{rule} {where}：不认识的谓词 {', '.join(core.short(p) for p in extra)}")
+
+
+def _ident(g, n, where, rule, P):
+    vs = g.vals(n, DCT_ID)
+    if len(vs) != 1 or not _is_str(vs[0]) or not ID_RE.match(vs[0].value):
+        P.append(f"{rule} {where}：须恰好一个 dcterms:identifier，匹配 ^[a-z][a-z0-9-]{{0,63}} 且到此为止（不含换行）")
+        return None
+    return vs[0].value
+
+
+def _param(g, n, P):
+    where = f"参数 {_show(n)}"
+    if not isinstance(n, ox.BlankNode):
+        P.append(f"EA8 {where}：参数须为空白节点")
+        return None
+    _closed(g, n, PARAM_KEYS, where, "EA8", P)
+    paths, dts, nks = g.vals(n, SH + "path"), g.vals(n, SH + "datatype"), g.vals(n, SH + "nodeKind")
+    opts, descs = g.vals(n, SH + "optional"), g.vals(n, SH + "description")
+    bad = len(paths) != 1 or not isinstance(paths[0], ox.NamedNode)
+    bad |= (len(dts), len(nks)) not in ((1, 0), (0, 1))
+    bad |= any(t.value != XSD_STRING for t in dts) or any(t.value != SH + "IRI" for t in nks)
+    bad |= len(opts) > 1 or any(not isinstance(t, ox.Literal) or t.datatype.value != XSD + "boolean"
+                                or t.value not in ("true", "false", "1", "0") for t in opts)
+    bad |= len(descs) > 1 or not all(_is_zh(t) for t in descs)
+    if bad:
+        P.append(f"EA8 {where}：须恰好一个 IRI 形式的 sh:path；sh:datatype xsd:string 与 sh:nodeKind sh:IRI 恰好一个；"
+                 "sh:optional 至多一个布尔值；sh:description 至多一个 @zh")
+        return None
+    name = re.split(r"[#/]", paths[0].value)[-1]
+    if not VAR_RE.match(name):
+        P.append(f"X7 {where}：参数名（sh:path 的本地名）{name!r} 须为合法的变量名 [A-Za-z_][A-Za-z0-9_]*")
+        return None
+    return {"name": name, "path": paths[0].value, "iri": bool(nks),
+            "optional": bool(opts) and opts[0].value in ("true", "1"),
+            "description": descs[0].value if descs else ""}
+
+
+def _guard(g, n, params, P):
+    where = f"guard {_show(n)}"
+    if not isinstance(n, ox.BlankNode) or ox.NamedNode(SH + "SPARQLAskValidator") not in g.vals(n, A):
+        P.append(f"EA9 {where}：guard 须为类型 sh:SPARQLAskValidator 的空白节点")
+        return None
+    _closed(g, n, GUARD_KEYS, where, "EA9", P)
+    gid = _ident(g, n, where, "EA9", P)
+    asks, msgs = g.vals(n, SH + "ask"), g.vals(n, SH + "message")
+    if len(asks) != 1 or not _is_str(asks[0]) or len(msgs) != 1 or not _is_zh(msgs[0]):
+        P.append(f"EA9 {where}：须恰好一个字符串 sh:ask 和一个 @zh 的 sh:message")
+        return None
+    if gid is None:
+        return None
+    ask, where = asks[0].value, f"guard {gid}"
+    if not re.match(r"\s*ASK\b", ask) or re.search(r"\bSERVICE\b", ask, re.I):
+        P.append(f"X8 {where}：只能是只读的 SPARQL ASK（不带 PREFIX 声明，不许 SERVICE）")
+        return None
+    names = sorted({m for m in re.findall(r"[?$]([A-Za-z_][A-Za-z0-9_]*)", ask) if m in params})
+    try:  # syntax, and every pre-bound parameter must be in scope (pyoxigraph refuses it otherwise)
+        ox.Store().query(core.SPARQL_PREFIXES + ask, use_default_graph_as_union=True,
+                         substitutions={ox.Variable(v): ox.NamedNode("urn:aisep:probe") if params[v]["iri"]
+                                        else ox.Literal("probe") for v in names})
+    except (SyntaxError, ValueError, RuntimeError, OSError) as e:
+        P.append(f"X8 {where}：查询不能执行：{str(e)[:200]}")
+        return None
+    return {"id": gid, "ask": ask, "hint": msgs[0].value, "vars": names}
+
+
+def _members(g, head, P):
+    """The members of a well-formed rdf:List (X2); None when it is not one."""
+    out, seen, n = [], [], head
+    while n != ox.NamedNode(NIL):
+        if not isinstance(n, ox.BlankNode) or n in seen or g.keys(n) != {RDF + "first", RDF + "rest"} \
+                or len(g.vals(n, RDF + "first")) != 1 or len(g.vals(n, RDF + "rest")) != 1:
+            P.append("X2 aisep:steps 不是良构的表（每个表节点恰好一个 rdf:first、一个 rdf:rest，以 rdf:nil 结尾，无环）")
+            return None
+        seen.append(n)
+        out.append(g.vals(n, RDF + "first")[0])
+        n = g.vals(n, RDF + "rest")[0]
+    if len(set(out)) != len(out):
+        P.append("X2 aisep:steps 的成员有重复")
+        return None
+    return out
+
+
+def _binding(g, n, where, P):
+    if not isinstance(n, ox.BlankNode):
+        P.append(f"EA7 {where}：绑定须为空白节点")
+        return None
+    _closed(g, n, BINDING_KEYS, where, "EA7", P)
+    args, preds = g.vals(n, AI + "argument"), g.vals(n, AI + "attributePredicate")
+    srcs = [(SOURCES[p], o) for p, o in g.out.get(n, ()) if p in SOURCES]
+    if len(args) != 1 or not _is_str(args[0]) or len(srcs) != 1 or len(preds) > 1 \
+            or any(not isinstance(t, ox.NamedNode) for t in preds):
+        P.append(f"EA7 {where}：绑定须恰好一个字符串 aisep:argument、恰好一个取值来源"
+                 "（aisep:constant / fromParameter / fromStep / modelOf），aisep:attributePredicate 至多一个 IRI")
+        return None
+    kind, o = srcs[0]
+    if (kind == "const" and isinstance(o, ox.BlankNode)) or (kind in ("param", "modelOf") and not isinstance(o, ox.NamedNode)):
+        P.append(f"EA7 {where}：aisep:constant 须为 IRI 或字面量，aisep:fromParameter / modelOf 须为参数的 sh:path IRI")
+        return None
+    return {"arg": args[0].value, "pred": preds[0].value if preds else None, "kind": kind, "obj": o}
+
+
+def _steps(g, members, params, P):
+    """Steps with resolved bindings: {id, op, scalar: {arg: src}, lists: {arg: [(predicate, src)]}} (EA5-EA7, X3-X5)."""
+    by_path = {p["path"]: p for p in params.values()}
+    out, ids, earlier = [], [], {}  # earlier: step node -> step id, for the steps before the current one that yield
+    for m in members:
+        where = f"步骤 {_show(m)}"
+        if not isinstance(m, ox.BlankNode) or ox.NamedNode(AI + "ActionStep") not in g.vals(m, A):
+            P.append(f"EA5 {where}：表成员须为类型 aisep:ActionStep 的空白节点")
+            return None
+        _closed(g, m, STEP_KEYS, where, "EA6", P)
+        sid = _ident(g, m, where, "EA6", P)
+        inv = g.vals(m, AI + "invokes")
+        if len(inv) != 1 or not isinstance(inv[0], ox.NamedNode) or inv[0].value not in OPS:
+            P.append(f"EA6 {where}：须恰好调用一个基本动作（{', '.join(core.short(o) for o in sorted(OPS))}），"
+                     f"现为 {', '.join(_show(t) for t in inv) or '无'}")
+            return None
+        if sid is None:
+            return None
+        where, op = f"步骤 {sid}", OPS[inv[0].value]
+        if sid in ids:
+            P.append(f"X9 步骤 id 重复：{sid}")
+        ids.append(sid)
+        scalar, lists = {}, {}
+        for b in sorted(g.vals(m, AI + "binding"), key=str):
+            b = _binding(g, b, where, P)
+            if b is None:
+                continue
+            arg, kind, o = b["arg"], b["kind"], b["obj"]
+            if kind in ("param", "modelOf"):
+                if o.value not in by_path:
+                    P.append(f"X4 {where}.{arg}：引用了本动作没有声明的参数 {core.short(o.value)}")
+                    continue
+                p = by_path[o.value]
+                if kind == "modelOf" and not p["iri"]:
+                    P.append(f"X4 {where}.{arg}：aisep:modelOf 只能指向 IRI 参数，{p['name']} 不是")
+                    continue
+                src = (kind, p["name"])
+            elif kind == "step":
+                if o not in earlier:
+                    P.append(f"X5 {where}.{arg}：aisep:fromStep 只能指向本动作里排在前面、且产出 IRI 的步骤")
+                    continue
+                src = ("step", earlier[o])
+            else:
+                src = ("const", o)
+            if arg in op["scalar"]:
+                if b["pred"] is not None or arg in scalar:
+                    P.append(f"X3 {where}.{arg}：标量入参只能有一个绑定，且不能带 aisep:attributePredicate")
+                elif kind == "const" and isinstance(o, ox.Literal) and not _is_str(o):
+                    P.append(f"X3 {where}.{arg}：标量入参的常量只能是 IRI 或普通字符串字面量")
+                else:
+                    scalar[arg] = src
+            elif arg in ITEM_LISTS & op["lists"]:
+                if b["pred"] is None or kind == "modelOf":
+                    P.append(f"X3 {where}.{arg}：每项须带 aisep:attributePredicate，取值不能用 aisep:modelOf")
+                else:
+                    lists.setdefault(arg, []).append((b["pred"], src))
+            elif arg in op["lists"]:  # unset: a list of predicates
+                if b["pred"] is not None or kind != "const" or not isinstance(o, ox.NamedNode):
+                    P.append(f"X3 {where}.{arg}：每项只能是 aisep:constant <谓词 IRI>")
+                else:
+                    lists.setdefault(arg, []).append((None, src))
+            else:
+                P.append(f"X3 {where}：{op['tool']} 没有入参 {arg!r}（只认 {', '.join(sorted(op['scalar'] | op['lists']))}）")
+        for a in sorted(op["required"] - set(scalar)):
+            P.append(f"X3 {where}：{op['tool']} 缺必填入参 {a!r}")
+        if inv[0].value == AI + "BasicSetAttributes" and not lists:
+            P.append(f"X3 {where}：model_set_attributes 的 set、unset 至少绑定一项")
+        out.append({"id": sid, "op": inv[0].value, "scalar": scalar, "lists": lists})
+        if op["yields"]:
+            earlier[m] = sid
+    return out
 
 
 def _overlap_problems(steps):
-    """Two steps acting on the same IRI make a replay fail (a step is then no longer a no-op: PLAN_STALE, PLAN_REQUIRED,
-    IRI_EXISTS, ELEMENT_NOT_FOUND), so the catalogue may not hold such an action. Decided on the references alone:
-    a set_labels / remove step on what an earlier step of the same action created ({stepIri}); two set_labels / remove
-    steps naming the same {param} or {const}; a remove step naming the same {param} / {const} as an end of an
-    add_relationship step (the cascade deletes that relationship). Two DIFFERENT parameters that the caller sets to the
-    same IRI, or an add_element whose slug equals a removed IRI, depend on run-time values and are not caught here."""
+    """X6. Two steps acting on the same IRI make a replay fail (a step is then no longer a no-op: PLAN_STALE,
+    PLAN_REQUIRED, IRI_EXISTS, ELEMENT_NOT_FOUND), so the catalogue may not hold such an action. Decided on the
+    bindings alone: a set_labels / set_attributes / remove step on what an earlier step of the same action created
+    (aisep:fromStep); two such steps naming the same parameter or constant; a remove step naming the same parameter /
+    constant as an end of an add_relationship step (the cascade deletes that relationship). Two DIFFERENT parameters
+    the caller sets to the same IRI, or an add_element whose slug equals a removed IRI, depend on run-time values and
+    are not caught here."""
+    def key(src):
+        return None if src is None or src[0] == "modelOf" else (src[0], str(src[1]))
+
     problems, touched = [], {}
     for s in steps:
-        arg = MODIFYING_ARG.get(s["op"]) if s["op"] in OPS else None
-        key = _ref_key(s["args"].get(arg)) if arg else None
-        if key is None:
+        if not OPS[s["op"]]["modifies"]:
             continue
-        if key[0] == "stepIri":
-            problems.append(f"步骤 {s['id']}：{s['op']} 作用于本动作里前一步新建的资源（{s['args'][arg]['stepIri']}），"
-                            "同一动作里先建后改或先建后删，重放会被拒")
-        elif key in touched:
-            problems.append(f"步骤 {s['id']} 与步骤 {touched[key]} 作用于同一个目标 IRI，重放会被拒")
+        k = key(s["scalar"].get("iri"))
+        if k is None:
+            continue
+        if k[0] == "step":
+            problems.append(f"X6 步骤 {s['id']}：{OPS[s['op']]['tool']} 作用于本动作里前一步新建或改过的资源（{k[1]}），重放会被拒")
+        elif k in touched:
+            problems.append(f"X6 步骤 {s['id']} 与步骤 {touched[k]} 作用于同一个目标 IRI，重放会被拒")
         else:
-            touched[key] = s["id"]
+            touched[k] = s["id"]
     for r in steps:
-        key = _ref_key(r["args"].get("iri")) if r["op"] == "remove" else None
-        if key is None or key[0] == "stepIri":
+        k = key(r["scalar"].get("iri")) if r["op"] in DESTRUCTIVE_OPS else None
+        if k is None or k[0] == "step":
             continue
         for a in steps:
-            if a["op"] == "add_relationship" and key in (_ref_key(a["args"].get("source")), _ref_key(a["args"].get("target"))):
-                problems.append(f"步骤 {r['id']} 删除的资源是步骤 {a['id']} 新增关系的端点，级联会删掉它，重放会被拒")
+            if a["op"] == AI + "BasicAddRelationship" and k in (key(a["scalar"].get("source")), key(a["scalar"].get("target"))):
+                problems.append(f"X6 步骤 {r['id']} 删除的资源是步骤 {a['id']} 新增关系的端点，级联会删掉它，重放会被拒")
     return problems
 
 
-def _definition_problems(d):
-    errs = sorted(jsonschema.Draft202012Validator(ACTION_SCHEMA).iter_errors(d), key=lambda e: list(e.absolute_path))
-    if errs:
-        return [f"{'/'.join(map(str, e.absolute_path)) or '(动作)'}：{e.message[:200]}" for e in errs]
-    problems = []
-    schema = d["params"]
-    try:
-        jsonschema.Draft202012Validator.check_schema(schema)
-    except jsonschema.SchemaError as e:
-        return [f"params 不是合法的 JSON Schema：{e.message[:200]}"]
-    props = schema.get("properties", {})
-    if schema.get("type") != "object" or schema.get("additionalProperties") is not False or not isinstance(props, dict):
-        problems.append("params 须为 type: object、additionalProperties: false 的 JSON Schema")
-        props = props if isinstance(props, dict) else {}
-    for p in d.get("iriParams", ()):
-        if not isinstance(props.get(p), dict) or props[p].get("type") != "string":
-            problems.append(f"iriParams：{p!r} 不是 params 里声明的字符串参数")
-    earlier, seen = set(), set()
-    for s in d["steps"]:
-        if s["id"] in seen:
-            problems.append(f"步骤 id 重复：{s['id']}")
-        seen.add(s["id"])
-        if s["op"] not in OPS:
-            problems.append(f"步骤 {s['id']}：未知操作 {s['op']!r}（只认 {', '.join(sorted(OPS))}）")
+def _definition(g, a):
+    """(definition, problems) of one aisep:ActionType subject (X1 = the EA rules again, X2-X9)."""
+    P = []
+    if not isinstance(a, ox.NamedNode) or not ACTION_IRI_RE.match(a.value):
+        P.append(f"EA1 动作 {_show(a)}：须为形如 aisep:Action<驼峰名> 的 IRI")
+    _closed(g, a, ACTION_KEYS, "动作", "EA1", P)
+    aid = _ident(g, a, "动作", "EA2", P)
+    titles, defs, vers = g.vals(a, SKOS + "prefLabel"), g.vals(a, SKOS + "definition"), g.vals(a, VERSION)
+    if len(titles) != 1 or not _is_zh(titles[0]) or len(defs) > 1 or not all(_is_zh(t) for t in defs):
+        P.append("EA3 动作：skos:prefLabel 须恰好一个 @zh，skos:definition 至多一个 @zh")
+    if len(vers) != 1 or not _is_str(vers[0]) or not SEMVER_RE.match(vers[0].value):
+        P.append("EA4 动作：须恰好一个 owl:versionInfo，形如 <主>.<次>.<修订>")
+    params = {}
+    for n in sorted(g.vals(a, SH + "parameter"), key=str):
+        p = _param(g, n, P)
+        if p is None:
             continue
-        _, allowed, required, yields = OPS[s["op"]]
-        for a in sorted(set(s["args"]) - allowed):
-            problems.append(f"步骤 {s['id']}：操作 {s['op']} 没有参数 {a!r}")
-        for a in sorted(required - set(s["args"])):
-            problems.append(f"步骤 {s['id']}：操作 {s['op']} 缺必填参数 {a!r}")
-        for a, v in s["args"].items():
-            _check_value(v, f"步骤 {s['id']}.{a}", props, earlier, problems)
-        if yields:
-            earlier.add(s["id"])
-    problems += _overlap_problems(d["steps"])
-    gids = set()
-    for g in d.get("guards", ()):
-        if g["id"] in gids:
-            problems.append(f"guard id 重复：{g['id']}")
-        gids.add(g["id"])
-        where = f"guard {g['id']}"
-        bind = g.get("bind", {})
-        for var, v in bind.items():
-            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", var) or not _is_ref(v):
-                problems.append(f"{where}：bind 须为 变量名 -> {{param}} / {{modelOf}} / {{const}}")
-            else:
-                _check_value(v, f"{where}.bind.{var}", props, (), problems, allow_step=False)
-        if not re.match(r"\s*ASK\b", g["ask"]) or re.search(r"\bSERVICE\b", g["ask"], re.I):
-            problems.append(f"{where}：只能是只读的 SPARQL ASK（不带 PREFIX 声明，不许 SERVICE）")
-            continue
-        try:  # syntax, and every bound variable must be visible in the query (pyoxigraph refuses it otherwise)
-            ox.Store().query(core.SPARQL_PREFIXES + g["ask"], use_default_graph_as_union=True,
-                             substitutions={ox.Variable(v): ox.NamedNode("urn:aisep:probe") for v in bind
-                                            if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", v)})
-        except (SyntaxError, ValueError, RuntimeError, OSError) as e:
-            problems.append(f"{where}：查询不能执行：{str(e)[:200]}")
-    return problems
+        if p["name"] in params:
+            P.append(f"X7 参数名重复：{p['name']}")
+        params[p["name"]] = p
+    guards = [x for x in (_guard(g, n, params, P) for n in sorted(g.vals(a, AI + "guard"), key=str)) if x is not None]
+    gids = [x["id"] for x in guards]
+    P += [f"X9 guard id 重复：{i}" for i in sorted({i for i in gids if gids.count(i) > 1})]
+    heads, steps = g.vals(a, AI + "steps"), None
+    if len(heads) != 1 or heads[0] == ox.NamedNode(NIL):
+        P.append("EA5 动作：须恰好一个非空的 aisep:steps 表")
+    else:
+        members = _members(g, heads[0], P)
+        if members is not None:
+            steps = _steps(g, members, params, P)
+    if steps is not None:
+        P += _overlap_problems(steps)
+    d = {"iri": a.value if isinstance(a, ox.NamedNode) else None, "id": aid,
+         "title": titles[0].value if titles else None, "description": defs[0].value if defs else "",
+         "version": vers[0].value if vers else None,
+         "params": sorted(params.values(), key=lambda p: p["name"]), "guards": sorted(guards, key=lambda x: x["id"]),
+         "steps": steps}
+    return d, P
 
 
-def definition_digest(d):
-    return "sha256:" + hashlib.sha256(json.dumps(d, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+def definition_digest(g, a):
+    """sha256 over the closed description of the action: its own triples plus those of every blank node reachable
+    from it (list nodes included), blank nodes canonicalised, N-Triples lines sorted. IRI objects are not followed, so
+    relabelling a basic action in onto.ttl does not make a dryRun stale."""
+    ts = [ox.Triple(n, ox.NamedNode(p), o) for n in g.closure(a) for p, o in g.out.get(n, ())]
+    rg = Graph().parse(data=ox.serialize(ts, format=ox.RdfFormat.N_TRIPLES).decode("utf-8"), format="nt")
+    lines = sorted(to_canonical_graph(rg).serialize(format="nt").strip().splitlines())
+    return "sha256:" + hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
 
 
-def load_catalog(path=None):
-    """[(definition, problems)] in file order, read from disk on every call (no cache: a changed definition takes effect
-    at once and makes older planDigests stale). An entry with problems is listed as invalid and cannot be applied."""
-    path = path or CATALOG_PATH
+def _catalog_path(root):
+    return CATALOG_PATH or os.path.join(root, CATALOG)
+
+
+def load_catalog(path):
+    """([(definition, problems)] sorted by IRI, catalogVersion), read from disk on every call (no cache: a changed
+    definition takes effect at once and makes older planDigests stale). An entry with problems is listed as invalid
+    and cannot be applied; one bad definition never makes the others unusable. No catalogue file -> no actions."""
     try:
-        with open(path, encoding="utf-8") as fh:
-            doc = json.load(fh)
-        entries = doc["actions"]
-        if not isinstance(entries, list):
-            raise ValueError("actions 不是列表")
-    except (OSError, ValueError, KeyError, TypeError) as e:
-        raise AisepError("INTERNAL", f"动作目录 {os.path.basename(path)} 读不了：{type(e).__name__}: {str(e)[:200]}") from None
+        with open(path, "rb") as fh:
+            data = fh.read()
+    except FileNotFoundError:
+        return [], None
+    rel = CATALOG if CATALOG_PATH is None else os.path.basename(path)
+    try:
+        quads = list(ox.parse(input=data, format=core.TTL))
+    except (SyntaxError, ValueError) as e:
+        raise AisepError("PARSE_FAILED", f"动作目录 {rel} 不能解析：{str(e)[:200]}", hint="先修好这个文件（gate 同样会报）",
+                         details={"file": rel, "error": str(e)[:200]}) from None
+    g = _Graph(quads)
+    version = None
+    try:
+        mq = ox.parse(path=os.path.join(os.path.dirname(path), MANIFEST), format=core.TTL)
+        version = next((q.object.value for q in mq if q.predicate.value == VERSION
+                        and q.subject.value.startswith("https://aisep.example/module/")), None)
+    except (OSError, SyntaxError, ValueError):
+        pass
+    subjects = sorted({s for s, ps in g.out.items() if (A, ox.NamedNode(AI + "ActionType")) in ps},
+                      key=lambda s: (not isinstance(s, ox.NamedNode), s.value if isinstance(s, ox.NamedNode) else str(s)))
     out = []
-    for d in entries:  # one bad definition is listed as invalid; it never makes the whole catalogue unreadable
+    for a in subjects:  # each definition is checked on its own: an exception marks only this one invalid
         try:
-            problems = _definition_problems(d) if isinstance(d, dict) else ["动作定义须为对象"]
+            d, problems = _definition(g, a)
+            if not problems:
+                d["definitionDigest"] = definition_digest(g, a)
         except Exception as e:  # noqa: BLE001 — a definition shape the checks above did not foresee
+            d = {"iri": a.value if isinstance(a, ox.NamedNode) else None, "id": None}
+            ids = g.vals(a, DCT_ID)
+            if len(ids) == 1 and isinstance(ids[0], ox.Literal):
+                d["id"] = ids[0].value
             problems = [f"定义校验出错：{type(e).__name__}: {str(e)[:200]}"]
         out.append((d, problems))
-    ids = [d.get("id") if isinstance(d, dict) and isinstance(d.get("id"), str) else None for d, _ in out]
-    for (d, problems), aid in zip(out, ids):  # every copy of a duplicated id is invalid, not just the later ones
+    ids = [d.get("id") for d, _ in out]
+    owner = {}  # X10: a blank node in the description of two actions
+    for d_p, a in zip(out, subjects):
+        for n in g.closure(a):
+            if isinstance(n, ox.BlankNode):
+                owner.setdefault(n, []).append(d_p)
+    for (d, problems), aid in zip(out, ids):  # X9: every copy of a duplicated id is invalid, not just the later ones
         if aid is not None and ids.count(aid) > 1:
-            problems.append(f"动作 id 重复：{aid}")
-    return out, doc.get("version")
+            problems.append(f"X9 动作 id 重复：{aid}")
+    for n, owners in owner.items():
+        if len(owners) > 1:
+            for d, problems in owners:
+                msg = "X10 有空白节点同时属于两个动作的定义"
+                if msg not in problems:
+                    problems.append(msg)
+    for d, problems in out:
+        if problems:
+            d.pop("definitionDigest", None)
+    return out, version
 
 
 def _destructive(d):
     return any(s["op"] in DESTRUCTIVE_OPS for s in d["steps"])
 
 
+def _schema(d):
+    """The JSON Schema of the parameters, derived from sh:parameter (every parameter is a string)."""
+    props = {p["name"]: dict({"type": "string"}, **({"description": p["description"]} if p["description"] else {}))
+             for p in d["params"]}
+    return {"type": "object", "properties": props, "required": [p["name"] for p in d["params"] if not p["optional"]],
+            "additionalProperties": False}
+
+
+def _iri_params(d):
+    return [p["name"] for p in d["params"] if p["iri"]]
+
+
 def model_list_actions(cfg, **extra):
     """Read-only: the catalogue with each action's parameter schema. The result depends on the catalogue; the tool
     list of the server does not."""
     write_tools._no_extra(extra)
-    entries, version = load_catalog()
+    root = None if CATALOG_PATH else gitio.locate_repo(None, cfg.allow_roots, cfg.repo)
+    entries, version = load_catalog(_catalog_path(root))
     actions = []
     for d, problems in entries:
         if problems:
-            aid = d.get("id") if isinstance(d, dict) else None
-            actions.append({"id": aid if isinstance(aid, str) else None, "valid": False, "problems": problems})
+            actions.append({"id": d.get("id"), "iri": d.get("iri"), "valid": False, "problems": problems})
             continue
         destructive = _destructive(d)
-        actions.append({"id": d["id"], "title": d["title"], "description": d.get("description", ""), "valid": True,
-                        "params": d["params"], "iriParams": list(d.get("iriParams", ())),
+        actions.append({"id": d["id"], "iri": d["iri"], "title": d["title"], "description": d["description"],
+                        "version": d["version"], "valid": True, "params": _schema(d), "iriParams": _iri_params(d),
                         "destructive": destructive, "requiresPlanDigest": destructive,
-                        "guards": [{"id": g["id"], "hint": g["hint"]} for g in d.get("guards", ())],
-                        "steps": [{"id": s["id"], "op": s["op"]} for s in d["steps"]],
-                        "definitionDigest": definition_digest(d)})
-    return {"catalogVersion": version, "operations": sorted(OPS), "actions": actions}
+                        "guards": [{"id": x["id"], "hint": x["hint"]} for x in d["guards"]],
+                        "steps": [{"id": s["id"], "op": OPS[s["op"]]["tool"]} for s in d["steps"]],
+                        "definitionDigest": d["definitionDigest"]})
+    return {"catalogVersion": version, "operations": sorted(o["tool"] for o in OPS.values()), "actions": actions}
 
 
 # ---------------------------------------------------------------- parameters
@@ -242,7 +486,7 @@ def _rejected(err, acc):
 
 
 def _check_params(d, params):
-    errors = list(jsonschema.Draft202012Validator(d["params"]).iter_errors(params))
+    errors = list(jsonschema.Draft202012Validator(_schema(d)).iter_errors(params))
     if errors:
         fields = set()
         for e in errors:
@@ -250,7 +494,7 @@ def _check_params(d, params):
         raise AisepError("INVALID_ARGUMENT", f"动作 {d['id']} 的参数不合规：{errors[0].message[:200]}",
                          hint="按 model_list_actions 返回的 params schema 修改",
                          details={"rejectedFields": sorted(f"params.{f}" for f in fields)})
-    for name in d.get("iriParams", ()):
+    for name in _iri_params(d):
         v = params.get(name)
         if v is None:
             continue
@@ -265,47 +509,56 @@ def _check_params(d, params):
                              details={"rejectedFields": [f"params.{name}"]})
 
 
-def _resolve(v, params, iris, model_of):
-    """The value of a step argument; MISSING when it depends on an optional parameter that was not given (the
-    enclosing list item, or the whole argument, is then left out)."""
-    if _is_ref(v):
-        (k, x), = v.items()
-        if k == "const":
-            return x
-        if k == "param":
-            return params.get(x, MISSING)
-        if k == "stepIri":
-            return iris[x]
-        return model_of(x)
-    if isinstance(v, list):
-        return [r for r in (_resolve(x, params, iris, model_of) for x in v) if r is not MISSING]
-    out = {k: _resolve(x, params, iris, model_of) for k, x in v.items()}
-    return MISSING if any(r is MISSING for r in out.values()) else out
+def _resolve(src, iri_params, params, iris, model_of, scalar):
+    """The value of one binding; MISSING when it depends on an optional parameter that was not given (the list item,
+    or the whole scalar argument, is then left out). Scalars are strings; list items are {iri} / {value, ...}."""
+    kind, x = src
+    if kind == "const":
+        if isinstance(x, ox.NamedNode):
+            return x.value if scalar else {"iri": x.value}
+        if scalar:
+            return x.value
+        if x.language:
+            return {"value": x.value, "lang": x.language}
+        return {"value": x.value} if x.datatype.value == XSD_STRING else {"value": x.value, "datatype": x.datatype.value}
+    if kind == "param":
+        v = params.get(x, MISSING)
+        if v is MISSING or scalar:
+            return v
+        return {"iri": v} if x in iri_params else {"value": v}
+    if kind == "step":
+        return iris[x] if scalar else {"iri": iris[x]}
+    return model_of(x)
 
 
-def _failed_guards(d, params, ctx, model_of):
-    """Guards whose ASK result differs from `expect`. Parameters reach the query only as pre-bound terms
-    (substitutions), never as query text. A guard bound to an optional parameter that was not given is skipped."""
-    failed = []
-    for g in d.get("guards", ()):
-        subs, skip = {}, False
-        for var, ref in g.get("bind", {}).items():
-            (k, x), = ref.items()
-            val = _resolve(ref, params, {}, model_of)
-            if val is MISSING:
-                skip = True
-            elif k == "modelOf" or (k == "param" and x in d.get("iriParams", ())):
-                subs[ox.Variable(var)] = ox.NamedNode(val)
-            elif isinstance(val, str):
-                subs[ox.Variable(var)] = ox.Literal(val)
-            else:
-                raise AisepError("INVALID_ARGUMENT", f"guard {g['id']} 的绑定 {var} 不是字符串",
-                                 details={"rejectedFields": [f"params.{x}"]})
-        if skip:
+def _args(step, iri_params, params, iris, model_of):
+    args = {}
+    for a, src in step["scalar"].items():
+        v = _resolve(src, iri_params, params, iris, model_of, True)
+        if v is not MISSING:
+            args[a] = v
+    for a, items in step["lists"].items():
+        if a in ITEM_LISTS:
+            vals = [{"predicate": p, "value": v} for p, v in
+                    ((p, _resolve(src, iri_params, params, iris, model_of, False)) for p, src in items) if v is not MISSING]
+            vals.sort(key=lambda i: (i["predicate"], json.dumps(i["value"], sort_keys=True, ensure_ascii=False)))
+        else:  # unset
+            vals = sorted(src[1].value for _, src in items)
+        if vals:
+            args[a] = vals
+    return args
+
+
+def _failed_guards(d, params, ctx):
+    """Guards whose ASK is false. Parameters reach the query only as pre-bound terms ($name, substitutions), never as
+    query text. A guard that uses an optional parameter that was not given is skipped."""
+    failed, iri_params = [], set(_iri_params(d))
+    for x in d["guards"]:
+        if any(params.get(v) is None for v in x["vars"]):
             continue
-        got = bool(ctx.store.query(core.SPARQL_PREFIXES + g["ask"], use_default_graph_as_union=True, substitutions=subs))
-        if got != g["expect"]:
-            failed.append({"id": g["id"], "hint": g["hint"]})
+        subs = {ox.Variable(v): ox.NamedNode(params[v]) if v in iri_params else ox.Literal(params[v]) for v in x["vars"]}
+        if not bool(ctx.store.query(core.SPARQL_PREFIXES + x["ask"], use_default_graph_as_union=True, substitutions=subs)):
+            failed.append({"id": x["id"], "hint": x["hint"]})
     return failed
 
 
@@ -338,20 +591,20 @@ def _impact(cfg, repo, targets):
 
 def model_apply_action(cfg, action, params=None, dryRun=False, planDigest=None, repo=None, **extra):
     write_tools._no_extra(extra)
-    entries, _ = load_catalog()
-    found = [(d, p) for d, p in entries if isinstance(d, dict) and d.get("id") == action]
+    root = None if CATALOG_PATH else writer.locate_worktree_root(cfg, repo)
+    entries, _ = load_catalog(_catalog_path(root))
+    found = [(d, p) for d, p in entries if d.get("id") == action]
     if not found:
         raise AisepError("INVALID_ARGUMENT", f"没有动作 {action!r}", hint="用 model_list_actions 看目录",
                          details={"rejectedFields": ["action"],
-                                  "available": [d["id"] for d, p in entries if not p]})
+                                  "available": sorted(d["id"] for d, p in entries if not p)})
     d, problems = found[0]
     if problems or len(found) > 1:
         raise AisepError("INVALID_ARGUMENT", f"动作 {action} 的定义无效，不能执行：{(problems or ['id 重复'])[0]}",
                          details={"rejectedFields": ["action"], "problems": problems})
     params = {} if params is None else params
     _check_params(d, params)
-    destructive = _destructive(d)
-    ddigest = definition_digest(d)
+    destructive, ddigest, iri_params = _destructive(d), d["definitionDigest"], set(_iri_params(d))
     targets = []  # IRIs the remove steps act on (for the impact summary)
 
     def build(ws, ctx):
@@ -370,27 +623,26 @@ def model_apply_action(cfg, action, params=None, dryRun=False, planDigest=None, 
         cur_ws, cur_ctx = ws, ctx
         edits, added, removed, steps_out, iris, cascade = {}, {}, {}, [], {}, []
         for n, step in enumerate(d["steps"]):
-            factory, _, required, _ = OPS[step["op"]]
-            args = {a: r for a, r in ((a, _resolve(v, params, iris, model_of)) for a, v in step["args"].items())
-                    if r is not MISSING}
-            lacking = sorted(required - set(args))
+            op = OPS[step["op"]]
+            args = _args(step, iri_params, params, iris, model_of)
+            lacking = sorted(op["required"] - set(args))
             if lacking:
                 raise AisepError("INVALID_ARGUMENT", f"步骤 {step['id']} 缺必填参数 {', '.join(lacking)}（对应的动作参数没给）",
                                  details={"step": step["id"], "rejectedFields": lacking})
             try:
-                if step["op"] == "remove":  # always the full cascade: the caller sees the plan first (two-phase)
-                    plan = factory(args["iri"], cascade=True, dryRun=dryRun, planDigest=planDigest,
-                                   verify_digest=False)(cur_ws, cur_ctx)
+                if step["op"] in DESTRUCTIVE_OPS:  # always the full cascade: the caller sees the plan first (two-phase)
+                    plan = op["build"](args["iri"], cascade=True, dryRun=dryRun, planDigest=planDigest,
+                                       verify_digest=False)(cur_ws, cur_ctx)
                 else:
-                    plan = factory(**args)(cur_ws, cur_ctx)
+                    plan = op["build"](**args)(cur_ws, cur_ctx)
             except AisepError as e:
-                if step["op"] == "remove" and isinstance(args["iri"], str):
+                if step["op"] in DESTRUCTIVE_OPS and isinstance(args["iri"], str):
                     targets.append(args["iri"])
                 e.details.pop("planDigest", None)  # model_remove's own digest is not valid for model_apply_action
                 e.details.setdefault("step", step["id"])
                 raise
             res = dict(plan["result"])
-            if step["op"] == "remove":
+            if step["op"] in DESTRUCTIVE_OPS:
                 targets.append(res["target"])
                 res.pop("planDigest", None)
                 res.pop("written", None)
@@ -398,7 +650,7 @@ def model_apply_action(cfg, action, params=None, dryRun=False, planDigest=None, 
                     cascade.append(dict(res["plan"], step=step["id"], target=res["target"]))
             if "iri" in res:
                 iris[step["id"]] = res["iri"]
-            steps_out.append({"id": step["id"], "op": step["op"], "changed": bool(plan["edits"]), "result": res})
+            steps_out.append({"id": step["id"], "op": op["tool"], "changed": bool(plan["edits"]), "result": res})
             if not plan["edits"]:
                 continue
             edits.update(plan["edits"])
@@ -417,13 +669,13 @@ def model_apply_action(cfg, action, params=None, dryRun=False, planDigest=None, 
                     raise AisepError("EDIT_UNSAFE", f"步骤 {step['id']} 之后的中间结果不能解析，未写入",
                                      details={"step": step["id"]})
                 core.run_check(cur_ctx)
-        result = {"action": d["id"], "definitionDigest": ddigest, "destructive": destructive, "steps": steps_out,
-                  "iris": iris, "planDigest": planDigest}
+        result = {"action": d["id"], "actionIri": d["iri"], "definitionDigest": ddigest, "destructive": destructive,
+                  "steps": steps_out, "iris": iris, "planDigest": planDigest}
         if destructive:
             result["cascade"] = cascade
         if not edits:  # replay: every step is a no-op on this workspace -> changed:false, guards are not run
             return {"result": result, "edits": {}}
-        failed = _failed_guards(d, params, ctx, model_of)
+        failed = _failed_guards(d, params, ctx)
         if failed:
             raise AisepError("PRECONDITION_FAILED", f"动作 {d['id']} 的前置检查没过：{failed[0]['hint']}",
                              hint=failed[0]["hint"], details={"action": d["id"], "failedGuards": failed})

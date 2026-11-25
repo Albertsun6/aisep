@@ -1,0 +1,21 @@
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# AISEP module manifest — actions extension: action DEFINITIONS (aisep:ActionType, its parameters, ordered steps
+# and hint-level guards), modelled after Palantir Foundry action types. No execution record is modelled (ADR-013).
+# catalog.ttl (the actions the executor aisep/actions.py offers through model_list_actions / model_apply_action)
+# is in aisep:loads, so `gate` checks it against shapes.ttl at L3 and model_query can list the actions.
+# aisep:ownsNamespace is NOT declared: aisep# is shared with aisep-core and the other ext-* modules.
+# owl:versionInfo is also the catalogVersion that model_list_actions reports.
+
+<https://aisep.example/module/ext-actions>
+    a                arch:Metamodel ;
+    skos:prefLabel   "动作扩展"@zh ;
+    skos:altLabel    "Actions extension"@en ;
+    aisep:moduleKind aisep:Extension ;
+    owl:versionInfo  "0.1.0" ;
+    aisep:loads      "modules/ext-actions/onto.ttl" ,
+                     "modules/ext-actions/catalog.ttl" ;
+    aisep:shapesFile "modules/ext-actions/shapes.ttl" .

@@ -1,0 +1,14 @@
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix :      <https://aisep.example/model/ext-actions-test/> .
+
+# Valid: a minimal model. The manifest loads modules/ext-actions/catalog.ttl into the L3 data graph, so this fixture
+# passes only when the shipped catalogue satisfies EA1-EA10.
+
+:model a arch:Model ;
+    skos:prefLabel "动作扩展测试模型"@zh .
+
+:req a am4:Requirement ;
+    arch:inModel :model ;
+    skos:prefLabel "需求"@zh .

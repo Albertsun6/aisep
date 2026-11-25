@@ -538,7 +538,12 @@ def _settable(ctx, name, field):
     return p
 
 
-def _set_attributes(cfg, iri, new, drop, dryRun, repo):
+def set_attributes_build(iri, set=None, unset=None):
+    """The plan function of model_set_attributes."""
+    return _set_attributes_build(iri, set, unset)
+
+
+def _set_attributes_build(iri, new, drop):  # not set/unset: the body uses the builtin set()
     if not new and not drop:
         raise AisepError("INVALID_ARGUMENT", "set、unset 至少给一个，且不能都为空", details={"rejectedFields": ["set", "unset"]})
     for field, v in (("set", new), ("unset", drop)):
@@ -616,11 +621,11 @@ def _set_attributes(cfg, iri, new, drop, dryRun, repo):
                 edits[f] = edits[f].replace(body, body.replace("\r", "\\r"))  # step 6 (graph equivalence) still judges it
         return {"result": {"iri": x, "before": before, "after": after}, "edits": edits, "removed": removed, "added": added}
 
-    return writer.transaction(cfg, repo, build, dryRun)
+    return build
 
 
 def model_set_attributes(cfg, iri, set=None, unset=None, dryRun=False, repo=None, **extra):
     """Replace, per predicate, ALL values the subject has on it (`set`) or drop them (`unset`). Which predicates are
     legal is decided by L1 on the candidate graph (closed world, hand-written approvalState), not by a list here."""
     _no_extra(extra)
-    return _set_attributes(cfg, iri, set, unset, dryRun, repo)
+    return writer.transaction(cfg, repo, set_attributes_build(iri, set, unset), dryRun)
