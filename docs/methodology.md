@@ -237,7 +237,7 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
 
 **批准人要选被批模型自己的干系人**
 
-- 批准工具和全仓库 `gate` 接受任意模型的 `arch:Stakeholder` 作批准人。#68 的批准记录（`approval-20261121155736-architecture-101ddaf`）选了 procurement 示例模型的 `chiefArchitect` 来批 workbench 的元素：全仓库视图合法；只看 workbench 模型时看不到这个干系人，报 EG13，推导批准状态时也不计入这条记录。服务端的跟踪在 aisep issue #73；工作台关口页已改为只列被批模型的干系人、不默认选中（aisep-workbench PR #22）。
+- 批准人须是被批模型的干系人（`arch:inModel` 指向被批模型）。#68 的批准记录（`approval-20261121155736-architecture-101ddaf`）选了 procurement 示例模型的 `chiefArchitect` 来批 workbench 的元素：全仓库视图合法；只看 workbench 模型时看不到这个干系人，报 EG13，推导批准状态时也不计入这条记录。PR #96 起批准工具拒绝别的模型的干系人（`APPROVER_NOT_ALLOWED`，`reason: approver-not-in-model`，`aisep/approval.py`），关闭 issue #73；`mergecheck` 与全仓库 `gate` 未加对应检查，#68 那条已合入的记录不动。工作台关口页只列被批模型的干系人、不默认选中（aisep-workbench PR #22）。
 
 **事后补批与「批准专用 PR」**
 
@@ -254,4 +254,4 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
 
 1. 工作台前端判断「批准提交」只经 `model_diff` 看 `models/` 里的改动，`mergecheck` 要求整个提交只新增一个文件，两者不完全一致：另外改了 `models/` 以外文件的提交会被前端当成批准提交，偏向少批（aisep-workbench issue #21）。
 2. 第一条链路的 `tcApprovalProgressStages` 至今没有测试结果。
-3. 批准人不必属于被批模型（aisep issue #73，见上）。
+3. 批准工具已拒绝别的模型的干系人（PR #96），`mergecheck` 与全仓库 `gate` 还没有对应检查（见上）。
