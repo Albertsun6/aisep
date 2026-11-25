@@ -18,6 +18,9 @@
 6. 范例：`models/procurement/am4.ttl`、`models/procurement/verification.ttl`、`models/procurement/bpmn.ttl`。
 7. 现有模型（如已存在；`models/<slug>/` 下全部 `.ttl`，含 `governance/` 子目录）：先查有没有同义的需求、目标、使用者，有就复用，不另建。
 
+### 先跑 ADM 向导（只读）
+`$PY tools/aisep.py adm requirements --model <slug>` 列出本阶段在模型里已有的元素、空节和缺口（检查项在 `docs/queries/adm/requirements-*.rq`，设计见 `docs/specs/adm-wizard.md`）。追问从空节和缺口开始，已有的元素只引用、不重建。落完模型后再跑一次，缺口应相应减少。要交付物时加 `--deliverable`，默认只打印，生成结果不提交。向导不是门禁，结论仍以 `gate` 为准。
+
 ### 第一步：追问（在写任何文件之前）
 
 攒成一次提问，给出你根据已读材料推出的候选答案让用户选或改，回答含糊或矛盾时再追问细节。至少覆盖：

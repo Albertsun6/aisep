@@ -16,6 +16,9 @@
 7. 本阶段模板：`docs/adm/04-app-tech/template.md`
 8. 不确定某两类元素能否直接相连时，查 `vendor/meta.linked.archi/ttl/archimate4_relationship-tables.ttl`（`am4rt:permitsDirect…`），或直接跑 gate 看 L2
 
+## 先跑 ADM 向导（只读）
+`$PY tools/aisep.py adm 04-app-tech --model <slug>` 列出本阶段在模型里已有的元素、空节和缺口（检查项在 `docs/queries/adm/04-app-tech-*.rq`，设计见 `docs/specs/adm-wizard.md`）。追问从空节和缺口开始，已有的元素只引用、不重建。落完模型后再跑一次，缺口应相应减少。要交付物时加 `--deliverable`，默认只打印，生成结果不提交。向导不是门禁，结论仍以 `gate` 为准。
+
 ## 动手前先问用户（宁可多问，不要猜）
 攒成一次提问，给出候选答案让用户选或改：
 1. 哪些限界上下文合并部署成一个系统，哪些必须独立？依据（团队、发布节奏、伸缩、安全隔离）？

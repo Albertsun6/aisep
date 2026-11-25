@@ -1,0 +1,39 @@
+# expect: 恰好属于一个软件系统
+# R2: a container no software system contains.
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix c4:    <https://meta.linked.archi/c4/onto#> .
+@prefix structurizr: <https://meta.linked.archi/c4/structurizr#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+# am4 side: component -> function -> service -> capability; two data objects aggregated
+:orderComp a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "订单管理"@zh .
+:orderFn a am4:Function ; arch:inModel :t ; skos:prefLabel "订单校验"@zh .
+:orderSvc a am4:Service ; arch:inModel :t ; skos:prefLabel "下单服务"@zh .
+:orderCap a am4:Capability ; arch:inModel :t ; skos:prefLabel "订单履约"@zh .
+:orderData a am4:DataObject ; arch:inModel :t ; skos:prefLabel "订单数据"@zh .
+:orderHead a am4:DataObject ; arch:inModel :t ; skos:prefLabel "订单头"@zh .
+:orderLine a am4:DataObject ; arch:inModel :t ; skos:prefLabel "订单行"@zh .
+:orderRole a am4:Role ; arch:inModel :t ; skos:prefLabel "订单处理角色"@zh .
+# upstream am4 4.0 tables: a component is assigned directly only to a Role; the Role performs the Function
+:rel-orderComp-assigned-orderRole a am4:Assignment ; arch:inModel :t ; arch:source :orderComp ; arch:target :orderRole .
+:rel-orderRole-assigned-orderFn a am4:Assignment ; arch:inModel :t ; arch:source :orderRole ; arch:target :orderFn .
+:rel-orderFn-realizes-orderSvc a am4:Realization ; arch:inModel :t ; arch:source :orderFn ; arch:target :orderSvc .
+:rel-orderFn-realizes-orderCap a am4:Realization ; arch:inModel :t ; arch:source :orderFn ; arch:target :orderCap .
+:rel-orderData-aggregates-orderHead a am4:Aggregation ; arch:inModel :t ; arch:source :orderData ; arch:target :orderHead .
+:rel-orderData-aggregates-orderLine a am4:Aggregation ; arch:inModel :t ; arch:source :orderData ; arch:target :orderLine .
+:rel-orderFn-accesses-orderData a am4:ReadWriteAccess ; arch:inModel :t ; arch:source :orderFn ; arch:target :orderData .
+
+# C4 side: the system and its API container; the system refines the am4 component (gate A: arch:refines)
+:orderSys a c4:SoftwareSystem ; arch:inModel :t ; skos:prefLabel "订单管理系统"@zh .
+:orderApi a c4:Container ; arch:inModel :t ; skos:prefLabel "订单 API"@zh ; c4:technology "Spring Boot" .
+:rel-orderSys-has-orderApi a c4:ContainerContainment ; arch:inModel :t ; arch:source :orderSys ; arch:target :orderApi .
+:rel-orderSys-refines-orderComp a arch:Refines ; arch:inModel :t ; arch:source :orderSys ; arch:target :orderComp .
+
+:strayWorker a c4:Container ; arch:inModel :t ; skos:prefLabel "游离任务"@zh .

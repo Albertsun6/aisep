@@ -1,0 +1,22 @@
+# adm-phase: 01-vision
+# section: 5. 范围
+# kind: gap
+# title: 没有任何 Wont 级需求（范围外至少一条）
+# source: 01-vision/template.md 第 5 节、出口条件第 2 条
+# 用法：经 tools/aisep.py adm 运行；直接交给 model_query 时只改 VALUES ?model 一行。
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+PREFIX prov:  <http://www.w3.org/ns/prov#>
+PREFIX arch:  <https://meta.linked.archi/core#>
+PREFIX am4:   <https://meta.linked.archi/archimate4/onto#>
+PREFIX bpmn:  <https://meta.linked.archi/bpmn/onto#>
+PREFIX ad:    <https://meta.linked.archi/arch-decision#>
+PREFIX ddd:   <https://aisep.example/ont/ddd#>
+PREFIX aisep: <https://aisep.example/ont/aisep#>
+SELECT ?element ?label WHERE {
+  VALUES ?model { <https://aisep.example/model/workbench/> }
+  ?model a arch:Model .
+  FILTER NOT EXISTS { ?q arch:inModel ?model ; a/rdfs:subClassOf* am4:Requirement ; aisep:priority aisep:Wont }
+  BIND(?model AS ?element)
+  BIND("模型里没有 aisep:priority aisep:Wont 的需求" AS ?label)
+}

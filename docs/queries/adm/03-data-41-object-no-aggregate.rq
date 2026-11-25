@@ -1,0 +1,25 @@
+# adm-phase: 03-data
+# section: 5. 主数据
+# kind: gap
+# title: 业务对象没有聚合实现
+# source: 03-data/template.md 出口条件第 1 条
+# 用法：经 tools/aisep.py adm 运行；直接交给 model_query 时只改 VALUES ?model 一行。
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+PREFIX prov:  <http://www.w3.org/ns/prov#>
+PREFIX arch:  <https://meta.linked.archi/core#>
+PREFIX am4:   <https://meta.linked.archi/archimate4/onto#>
+PREFIX bpmn:  <https://meta.linked.archi/bpmn/onto#>
+PREFIX ad:    <https://meta.linked.archi/arch-decision#>
+PREFIX ddd:   <https://aisep.example/ont/ddd#>
+PREFIX aisep: <https://aisep.example/ont/aisep#>
+SELECT ?element ?label WHERE {
+  VALUES ?model { <https://aisep.example/model/workbench/> }
+  ?element arch:inModel ?model ; a ?t .
+  ?t rdfs:subClassOf* am4:BusinessObject .
+  FILTER(STRSTARTS(STR(?t), STR(am4:)))
+  FILTER NOT EXISTS {
+    ?r a/rdfs:subClassOf* am4:Realization ; arch:source ?agg ; arch:target ?element .
+    ?agg a/rdfs:subClassOf* ddd:Aggregate }
+  OPTIONAL { ?element skos:prefLabel ?label FILTER(lang(?label) = "zh") }
+} ORDER BY ?element
