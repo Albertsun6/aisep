@@ -36,14 +36,17 @@ Transformation, Business, Application & Data, and Technical architecture layers.
 Relationships follow the Linked.Archi qualified relationship pattern. This is not an
 official SAP document.'''@en ;
     dcterms:created               "2025-01-01"^^xsd:date ;
-    dcterms:modified              "2026-11-16"^^xsd:date ;
+    dcterms:modified              "2026-11-22"^^xsd:date ;
     dcterms:publisher                  "Linked.Archi"@en,
                                   <https://linked.archi> ;
     dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
     bibo:status                   "draft" ;
     owl:versionIRI                <https://meta.linked.archi/leanix/onto/v4#> ;
-    owl:versionInfo               "4.2.0"@en ;
+    owl:versionInfo               "4.3.0"@en ;
     owl:priorVersion              <https://meta.linked.archi/leanix/v3/onto#> ;
+    skos:changeNote               '''4.3.0 (2026-11-22): :uses is a subproperty of the core's arch:dependsOn (core 0.7.0),
+from the fact sheet that uses to the one used, so a question about dependencies follows it with the core's
+and other languages' (DD-44).'''@en ;
     skos:editorialNote
             "Meta Model v4 revises the set of fact sheet types: introduces Objective, Initiative, Business Context and Platform; replaces v3 User Group, Project, Process and Tech Platform; and adds subtypes for Application and Organization."@en ,
             '''The relationship types are the relations SAP's Meta Model v4 diagram draws, one per label
@@ -636,6 +639,7 @@ fact sheet types change substantially.'''@en ;
 
 :uses
     a                    owl:ObjectProperty ;
+    rdfs:subPropertyOf   arch:dependsOn ;
     dcterms:source       <https://help.sap.com/docs/leanix/ea/meta-model> ;
     skos:prefLabel       "Uses"@en ;
     skos:definition      "A fact sheet uses another: an application or an interface an IT component, an organization an application."@en ;

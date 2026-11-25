@@ -9,9 +9,10 @@
 @prefix cc:      <http://creativecommons.org/ns#> .
 @prefix sh:      <http://www.w3.org/ns/shacl#> .
 
-@prefix arch:    <https://meta.linked.archi/core#> .
-@prefix c4:      <https://meta.linked.archi/c4/onto#> .
-@prefix :        <https://meta.linked.archi/c4/shapes#> .
+@prefix arch:        <https://meta.linked.archi/core#> .
+@prefix c4:          <https://meta.linked.archi/c4/onto#> .
+@prefix structurizr: <https://meta.linked.archi/c4/structurizr#> .
+@prefix :            <https://meta.linked.archi/c4/shapes#> .
 
 #################################################################
 # Ontology Declaration
@@ -27,8 +28,10 @@
     dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
     dcterms:title                      "Linked.Archi C4 Model SHACL Shapes"@en ;
     dcterms:description                '''SHACL shapes for validating C4 model data. Covers the abstract C4 model
-relationships (Using, ContainerContainment, ComponentContainment). For Structurizr deployment
-shapes, see structurizr-shapes.ttl.'''@en ;
+relationships (Using, ContainerContainment, ComponentContainment) as ArchiMate's relationship shapes do:
+for each relationship type the pairs of element types it relates, and for each element type the targets
+its direct triples may reach. Using also relates the Structurizr extension's deployment and
+infrastructure nodes. For Structurizr deployment shapes, see structurizr-shapes.ttl.'''@en ;
     dcterms:created               "2019-03-17"^^xsd:date ;
     dcterms:modified              "2026-10-10"^^xsd:date ;
     dcterms:publisher                  "Linked.Archi"@en,
@@ -42,48 +45,224 @@ shapes, see structurizr-shapes.ttl.'''@en ;
 # C4 Core Shapes
 #################################################################
 
+# ── Using (qualified) — 36 valid pairs ──
 :UsingShape
     a              sh:NodeShape ;
+    rdfs:comment   '''Using relates any two of C4's elements, and the Structurizr extension's deployment and
+infrastructure nodes, which the extension adds to both ends of c4:uses: a load balancer uses a web server.'''@en ;
     sh:targetClass c4:Using ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:class    arch:Element ;
-        sh:message  "Using source must be an Element."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    arch:Element ;
-        sh:message  "Using target must be an Element."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class c4:Person ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class c4:SoftwareSystem ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class c4:Container ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class c4:Component ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class structurizr:DeploymentNode ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class structurizr:InfrastructureNode ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+            ) ] ]
+        ) ]
+    ) ;
+    sh:message "Using relationship has an invalid source/target combination per the C4 model. Valid sources and targets: Person, SoftwareSystem, Container, Component, DeploymentNode, InfrastructureNode."@en ;
 .
 
+# ── ContainerContainment (qualified) — 1 valid pair ──
 :ContainerContainmentShape
     a              sh:NodeShape ;
     sh:targetClass c4:ContainerContainment ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:class    c4:SoftwareSystem ;
-        sh:message  "ContainerContainment source must be a SoftwareSystem."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    c4:Container ;
-        sh:message  "ContainerContainment target must be a Container."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class c4:SoftwareSystem ] ]
+            [ sh:property [ sh:path arch:target ; sh:class c4:Container ] ]
+        ) ]
+    ) ;
+    sh:message "ContainerContainment relationship has an invalid source/target combination per the C4 model: it runs from a SoftwareSystem to a Container."@en ;
 .
 
+# ── ComponentContainment (qualified) — 1 valid pair ──
 :ComponentContainmentShape
     a              sh:NodeShape ;
     sh:targetClass c4:ComponentContainment ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class c4:Container ] ]
+            [ sh:property [ sh:path arch:target ; sh:class c4:Component ] ]
+        ) ]
+    ) ;
+    sh:message "ComponentContainment relationship has an invalid source/target combination per the C4 model: it runs from a Container to a Component."@en ;
+.
+
+# ════════════════════════════════════════════════════════════════════
+# Unqualified shapes — one per source element class
+# Validates direct triples (e.g., ex:A c4:uses ex:B) against the same
+# pairs as the qualified shapes above
+# ════════════════════════════════════════════════════════════════════
+
+:PersonUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass c4:Person ;
     sh:property [
-        sh:path     arch:source ;
-        sh:class    c4:Container ;
-        sh:message  "ComponentContainment source must be a Container."@en ;
+        sh:path c4:uses ;
+        sh:message "Person cannot use {$value} — permitted targets: Person, SoftwareSystem, Container, Component, DeploymentNode, InfrastructureNode."@en ;
+        sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+        ) ;
     ] ;
     sh:property [
-        sh:path     arch:target ;
-        sh:class    c4:Component ;
-        sh:message  "ComponentContainment target must be a Component."@en ;
+        sh:path c4:hasContainer ;
+        sh:maxCount 0 ;
+        sh:message "Person cannot have container containment to anything — the C4 model permits it from a SoftwareSystem only."@en ;
+    ] ;
+    sh:property [
+        sh:path c4:hasComponent ;
+        sh:maxCount 0 ;
+        sh:message "Person cannot have component containment to anything — the C4 model permits it from a Container only."@en ;
+    ] ;
+.
+
+:SoftwareSystemUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass c4:SoftwareSystem ;
+    sh:property [
+        sh:path c4:uses ;
+        sh:message "SoftwareSystem cannot use {$value} — permitted targets: Person, SoftwareSystem, Container, Component, DeploymentNode, InfrastructureNode."@en ;
+        sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path c4:hasContainer ;
+        sh:message "SoftwareSystem cannot have container containment to {$value} — permitted targets: Container."@en ;
+        sh:or (
+                [ sh:class c4:Container ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path c4:hasComponent ;
+        sh:maxCount 0 ;
+        sh:message "SoftwareSystem cannot have component containment to anything — the C4 model permits it from a Container only."@en ;
+    ] ;
+.
+
+:ContainerUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass c4:Container ;
+    sh:property [
+        sh:path c4:uses ;
+        sh:message "Container cannot use {$value} — permitted targets: Person, SoftwareSystem, Container, Component, DeploymentNode, InfrastructureNode."@en ;
+        sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path c4:hasContainer ;
+        sh:maxCount 0 ;
+        sh:message "Container cannot have container containment to anything — the C4 model permits it from a SoftwareSystem only."@en ;
+    ] ;
+    sh:property [
+        sh:path c4:hasComponent ;
+        sh:message "Container cannot have component containment to {$value} — permitted targets: Component."@en ;
+        sh:or (
+                [ sh:class c4:Component ]
+        ) ;
+    ] ;
+.
+
+:ComponentUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass c4:Component ;
+    sh:property [
+        sh:path c4:uses ;
+        sh:message "Component cannot use {$value} — permitted targets: Person, SoftwareSystem, Container, Component, DeploymentNode, InfrastructureNode."@en ;
+        sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path c4:hasContainer ;
+        sh:maxCount 0 ;
+        sh:message "Component cannot have container containment to anything — the C4 model permits it from a SoftwareSystem only."@en ;
+    ] ;
+    sh:property [
+        sh:path c4:hasComponent ;
+        sh:maxCount 0 ;
+        sh:message "Component cannot have component containment to anything — the C4 model permits it from a Container only."@en ;
     ] ;
 .
 

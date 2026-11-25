@@ -38,14 +38,12 @@
     skos:editorialNote '''Backstage has no formal visual notation specification. Shapes
 and colours in this notation set are derived from the Backstage UI conventions and
 the system model documentation. Entity types follow the catalog descriptor format
-(kind: Component, System, API, Resource, Domain, User, Group, Template).
+(kind: Component, System, API, Resource, Domain, User, Group, Template, Location).
 
-Element coverage is complete: the metamodel publishes eight of the descriptor format's nine kinds and
-each has a descriptor here, Template added in 0.2.0 alongside the ontology class. The Location kind is
-out of scope for the metamodel and therefore has no descriptor — see the scope statement on the
-ontology header, which says so and says what to do with a Location entity instead.
+Element coverage is complete: the metamodel publishes a class for each of the descriptor format's nine
+kinds, and each has a descriptor here.
 
-bs:StatusItem likewise has no notation, and for a different reason: it is not an arch:Element. A status
+bs:StatusItem has no notation, because it is not an arch:Element. A status
 item is a diagnostic about a node rather than a node, so there is nothing to draw. The same holds for
 bs:Link.
 
@@ -232,6 +230,27 @@ property.'''@en ;
         arch-vis:lineColor     "#F57F17" ;
         arch-vis:renderingMode arch-vis:ShapeWithBadge ;
         arch-vis:iconSymbol    "https://meta.linked.archi/backstage/icons/glyphs/template.svg"^^xsd:anyURI ;
+        arch-vis:iconPlacement arch-vis:TopRight ;
+        arch-vis:defaultWidth  "120.0"^^xsd:double ;
+        arch-vis:defaultHeight "55.0"^^xsd:double ;
+    ] .
+
+:LocationNotation
+    a                    arch-vis:VisualNotation ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-location> ;
+    skos:scopeNote       '''A brown palette, apart from the software and organizational ones: a location is
+where the catalog reads descriptors from, not a part of the architecture, and a reader of a view that shows
+one has to be able to tell it from the entities it brings in.'''@en ;
+    arch-vis:notationFor bs:Location ;
+    arch-vis:inNotationSet :BackstageStandardNotation ;
+    arch-vis:defaultStyle [
+        a                      arch-vis:Style ;
+        arch-vis:shapeType     arch-vis:RoundedRectangle ;
+        arch-vis:fillColor     "#EFEBE9" ;
+        arch-vis:lineColor     "#4E342E" ;
+        arch-vis:renderingMode arch-vis:ShapeWithBadge ;
+        arch-vis:iconSymbol    "https://meta.linked.archi/backstage/icons/glyphs/location.svg"^^xsd:anyURI ;
         arch-vis:iconPlacement arch-vis:TopRight ;
         arch-vis:defaultWidth  "120.0"^^xsd:double ;
         arch-vis:defaultHeight "55.0"^^xsd:double ;

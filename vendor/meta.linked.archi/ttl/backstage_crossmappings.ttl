@@ -44,8 +44,8 @@ correspondence is asserted in the catalog itself, through the Linked.Archi
 catalog index (skos:exactMatch and friends against a shared id namespace).
 
 Not mapped, deliberately: bs:Template and bs:Scaffolding (they describe how
-entities are created, not the architecture), bs:TechDocsDelegation (documentation
-ownership), and the enumerations for lifecycle, component type and API type,
+entities are created, not the architecture), bs:Location (where the catalog reads
+descriptors from), bs:TechDocsDelegation (documentation ownership), and the enumerations for lifecycle, component type and API type,
 which are reference data rather than concepts.'''@en ;
     dcterms:issued   "2026-09-25"^^xsd:date ;
     dcterms:modified "2026-09-25"^^xsd:date ;

@@ -29,7 +29,7 @@
     dcterms:title                 "Linked.Archi Core Visual Notation SHACL Shapes"@en ;
     dcterms:description           '''SHACL shapes for the Linked.Archi diagram and visual notation
 layer (core-vis). Constrains the diagram interchange classes — ArchNode, LabelNode,
-ContainerNode, Link, Point, PointList — and the type-level notation classes NotationSet,
+ViewReferenceNode, ContainerNode, Link, Point, PointList — and the type-level notation classes NotationSet,
 VisualNotation and Style.
 
 Until 0.1.0 the diagram layer had no shapes at all: a validate run loaded the notation's
@@ -40,14 +40,17 @@ clean. The two load-bearing rules here are ArchNodeShape (a diagram node that cl
 stand for a model element must say which one) and PlacedDiagElementShape (a shape or edge
 must belong to exactly one view); the remainder is cardinality and datatype hygiene.'''@en ;
     dcterms:created               "2026-08-13"^^xsd:date ;
-    dcterms:modified              "2026-11-09"^^xsd:date ;
+    dcterms:modified              "2026-11-20"^^xsd:date ;
     dcterms:publisher             "Linked.Archi"@en,
                                   <https://linked.archi> ;
     bibo:status                   "draft" ;
-    owl:versionIRI                <https://meta.linked.archi/core-vis-shapes/0.4.0#> ;
-    owl:versionInfo               "0.4.0"@en ;
-    owl:priorVersion              <https://meta.linked.archi/core-vis-shapes/0.3.0#> ;
-    skos:historyNote              '''0.4.0 — StyleShape checks arch-vis:useElementPicture, which core-vis 0.8
+    owl:versionIRI                <https://meta.linked.archi/core-vis-shapes/0.5.0#> ;
+    owl:versionInfo               "0.5.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/core-vis-shapes/0.4.0#> ;
+    skos:historyNote              '''0.5.0 — ViewReferenceNodeShape: a reference to another view, which
+core-vis 0.9 adds, opens exactly one arch:View, named by IRI through arch-vis:referencesView, and carries
+no arch-vis:archElement, as a LabelNode carries none.
+0.4.0 — StyleShape checks arch-vis:useElementPicture, which core-vis 0.8
 adds: a single xsd:boolean.
 
 0.3.0 — StyleShape checks the style terms core-vis 0.7 adds:
@@ -130,6 +133,16 @@ reasoner should use, not a closed-world check.'''@en ;
 #     to give an Exchange file's Container or Label node somewhere to
 #     hang.
 #
+#  6. Reading a reference to another view as a note. An Exchange Label
+#     node with a viewRef, a reference to another view, is the
+#     appearance of the view it names, as an ArchNode is an element's:
+#     an arch-vis:ViewReferenceNode, not a LabelNode, whose
+#     arch-vis:referencesView is that view. Unlike a note it stands for
+#     a model concept, and that view is presented in this one: state its
+#     arch:inView too, as for an element an ArchNode draws, so the
+#     presence survives when the diagram layer is dropped. A viewRef
+#     naming no view leaves a note.
+#
 # Bounds are not required. A LabelNode whose position a renderer derives
 # from its owner has no bounds of its own, and a notation is free to
 # leave geometry to the layout engine. Where bounds are present all four
@@ -152,8 +165,8 @@ reasoner should use, not a closed-world check.'''@en ;
         sh:nodeKind sh:IRI ;
         sh:message  '''An ArchNode is the diagram appearance of a model element, so it must
 carry exactly one arch-vis:archElement naming that element by IRI. A diagram node with no
-archElement is either a ContainerNode (group, pool, lane, plain shape) or a LabelNode (a
-label, a note) — type it as one of those instead.'''@en ;
+archElement is a ContainerNode (group, pool, lane, plain shape), a LabelNode (a label, a
+note) or a ViewReferenceNode (a reference to another view) — type it as one of those instead.'''@en ;
     ] ;
 .
 
@@ -317,6 +330,33 @@ nodes, the outer one is the labelled element and should be typed for what it is.
         sh:message  '''A LabelNode carries rendered text; it does not stand for a model element,
 so it must not carry arch-vis:archElement. Typing a label as ArchNode to give it somewhere
 to hang is the single most common diagram-layer defect.'''@en ;
+    ] ;
+.
+
+
+#################################################################
+# ViewReferenceNode — must say which view it stands for
+#################################################################
+
+:ViewReferenceNodeShape
+    a              sh:NodeShape ;
+    sh:targetClass arch-vis:ViewReferenceNode ;
+    rdfs:label     "ViewReferenceNode shape"@en ;
+    sh:property [
+        sh:path     arch-vis:referencesView ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:class    arch:View ;
+        sh:message  '''A ViewReferenceNode is the appearance of a view on another diagram, so it must
+carry exactly one arch-vis:referencesView naming that view by IRI. Text that opens no view is a note:
+type it arch-vis:LabelNode instead.'''@en ;
+    ] ;
+    sh:property [
+        sh:path     arch-vis:archElement ;
+        sh:maxCount 0 ;
+        sh:message  '''A ViewReferenceNode stands for a view, not a model element, so it must not carry
+arch-vis:archElement. A box that draws an element is an ArchNode, whatever it opens.'''@en ;
     ] ;
 .
 

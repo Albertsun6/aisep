@@ -1,0 +1,21 @@
+# expect: notation mixing — core relationship
+# modules: bpmn uml
+# G5 (PR #103 review B1): arch:DependsOn (core 0.7.0) connects one notation only, like Association/HasPart.
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix am4:  <https://meta.linked.archi/archimate4/onto#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+:task a bpmn:Task ; arch:inModel :t ; skos:prefLabel "任务"@zh .
+:cls a uml:Class ; arch:inModel :t ; skos:prefLabel "类"@zh .
+:r1 a arch:DependsOn ; arch:inModel :t ; arch:source :task ; arch:target :cls .

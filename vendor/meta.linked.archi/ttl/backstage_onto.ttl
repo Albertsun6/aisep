@@ -28,7 +28,7 @@
 relationships, extending the Linked.Archi core ontology.
 This is not an official Spotify document.'''@en ;
     dcterms:created               "2019-03-17"^^xsd:date ;
-    dcterms:modified              "2026-08-24"^^xsd:date ;
+    dcterms:modified              "2026-11-22"^^xsd:date ;
     dcterms:publisher                  "Linked.Archi"@en,
                                   <https://linked.archi> ;
     bibo:status                   "draft" ;
@@ -59,7 +59,7 @@ term — the Backstage analogue of a singlepage alternative, since the docs are 
 rather than published as one document.
 
 prov:wasQuotedFrom is asserted ONLY where skos:definition reproduces the documentation wording
-verbatim, which here is :Resource and :User. Everywhere else the definition is a Linked.Archi
+verbatim, which here is :Resource, :User and :Location. Everywhere else the definition is a Linked.Archi
 rendering — condensed, or generalised across the several sections that define one term — and
 asserting wasQuotedFrom on it would be a false provenance claim. The explanatory prose from the
 source section is carried in skos:scopeNote instead, paraphrased.
@@ -89,9 +89,9 @@ properties. They exist because of the three-declaration pattern (DD-10 / P-4), n
 documents anything corresponding to them, so pointing them at a specification section would
 misattribute a Linked.Archi construct to the source. Their provenance is arch:unqualifiedForm, which
 already names the spec-derived predicate they belong to.'''@en ;
-    owl:versionIRI                <https://meta.linked.archi/backstage/onto/0.5.0#> ;
-    owl:versionInfo               "0.5.0"@en ;
-    owl:priorVersion              <https://meta.linked.archi/backstage/onto/0.4.0#> ;
+    owl:versionIRI                <https://meta.linked.archi/backstage/onto/0.6.0#> ;
+    owl:versionInfo               "0.6.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/backstage/onto/0.5.0#> ;
     rdfs:seeAlso                  <https://backstage.io/> ,
                                   <https://backstage.io/docs/features/software-catalog/> ,
                                   <https://backstage.io/docs/features/software-catalog/well-known-relations> ,
@@ -119,25 +119,20 @@ vocabulary while nothing defines it, and two organisations inventing the same lo
 things is worse than either having none. That rule only works if a converter author can tell a deliberate
 omission from an oversight. Absent this note they cannot, and silence reads as a gap to be filled.
 
-IN SCOPE — the descriptor format's eight architecture-bearing kinds, each with a class here and a
-skos:notation carrying its kind token: Component, System, API, Resource, Domain, Group, User, Template.
-The envelope (:apiVersion, :kind), the reserved metadata fields, the well-known relations, the well-known
-annotations, the spec.type and state vocabularies, and status.items.
+IN SCOPE — the descriptor format's nine kinds, each with a class here and a skos:notation carrying its
+kind token: Component, System, API, Resource, Domain, Group, User, Template, Location. The envelope
+(:apiVersion, :kind), the reserved metadata fields, the well-known relations, the well-known annotations,
+the spec.type and state vocabularies, a Location's own fields, and status.items.
+
+Location is the one kind that is not a part of the architecture: it tells the catalogue where to read
+descriptors, which is ingestion configuration, and every entity read through one records it in
+:managedByLocation and :managedByOriginLocation. It has a class all the same, so that a lift types a
+Location entity as it types any other kind and keeps what the catalogue holds, and a question about the
+architecture leaves it out by its class.
 
 OUT OF SCOPE, by decision, with what to do instead:
 
-1. The Location kind — descriptor-format#kind-location, and
-   packages/catalog-model/src/schema/kinds/Location.v1alpha1.schema.json. A location is, in the
-   specification's own words, a marker that references other
-   places to look for catalog data — it is ingestion configuration, not a node in an architecture, and
-   nothing else in this ontology depends on it. Its content is already published from the other direction
-   and in the form the specification defines: :managedByLocation and :managedByOriginLocation retain the
-   <type>:<target> reference on every entity a location produced, which answers "where did this record come
-   from" without a Location entity in the graph. A lift SHOULD therefore drop Location entities and report
-   the count, rather than emit an untyped node. An adopter who genuinely wants them as nodes declares a
-   class in their own namespace; that is a local modelling choice, not a gap here.
-
-2. A Template's execution detail — spec.parameters, spec.steps, spec.secrets, spec.output,
+1. A Template's execution detail — spec.parameters, spec.steps, spec.secrets, spec.output,
    spec.presentation and the form decorators, per Template.v1beta3.schema.json. The wizard form schema and
    the executable action pipeline. All are unbounded JSON whose shape is set by the scaffolder plugin
    rather than by the catalog model, and none is an architectural fact about the template — they are its
@@ -146,23 +141,26 @@ OUT OF SCOPE, by decision, with what to do instead:
    them declares a predicate they own. Note that the schema, unlike the rendered page, requires only
    spec.type and spec.steps.
 
-3. status.items[].error. The serialised error object. Its shape is not fixed upstream, and a stack trace is
+2. status.items[].error. The serialised error object. Its shape is not fixed upstream, and a stack trace is
    a debugging artifact rather than an architectural fact. The item's type, level and message ARE published
    (see the Entity Status section) because they are what says whether the record beside them was ingested
    cleanly; the error body adds detail no architecture query asks for.
 
-4. Per-key label and annotation predicates. metadata.labels and metadata.annotations are open key spaces
+3. Per-key label and annotation predicates. metadata.labels and metadata.annotations are open key spaces
    that organisations define, so this document publishes the family super-properties :label and
    :externalIdentifier and no members beyond the vendor annotations the specification itself documents. The
    intended pattern is a per-key subproperty in the READER's namespace — see the scope note on :label,
    which states it as intent rather than leaving it to be inferred.
 
-5. The relations root field as data. Already modelled, as the twelve relationship types; a lift normalises
+4. The relations root field as data. Already modelled, as the twelve relationship types; a lift normalises
    the array onto them rather than retaining it. This is the one omission that is genuinely covered
    elsewhere rather than declined.
 
 Anything else a catalog API dump carries and this list does not name is an oversight worth reporting
 upstream, not a decision.'''@en ;
+    skos:historyNote              '''0.6.0: :dependsOn is a subproperty of the core's arch:dependsOn (core 0.7.0), from
+the dependent entity to the one it needs, so a question about dependencies follows it with the core's and
+other languages' (DD-44).'''@en ;
     skos:historyNote              '''0.5.0: Template, scaffolding, and entity status.
 
 Answers three gaps found by asking what a catalog API dump loses on conversion.
@@ -272,17 +270,16 @@ qualified relationship pattern. Added @en language tags. Added full ontology hea
 #################################################################
 # Element Classes
 #
-# One class per architecture-bearing catalog kind, and
+# One class per catalog kind, and
 # skos:notation on each carrying the exact kind token. That
 # publishes the token->class map a lift needs — "Component" ->
 # :Component — in the metamodel instead of hardcoded in every lift,
 # the same role notation plays for the value vocabularies below.
 #
-# Eight of the descriptor format's nine kinds are here. Location is
-# the one that is not, deliberately; the scope statement on the
-# ontology header says so and says what to do with a Location
-# entity instead, so that its absence reads as a decision rather
-# than as an omission a lift should quietly patch.
+# All nine of the descriptor format's kinds are here. Location is
+# the one that is not a part of the architecture; it is classified
+# so that a lift types it like any other kind and a query leaves it
+# out by its class. See the scope statement on the ontology header.
 #
 # The map is a DEFAULT, not an identity. rdf:type is a modelling
 # decision and :kind is what the descriptor said, and the two are
@@ -440,6 +437,32 @@ That divergence is itself the reason to keep :apiVersion per entity rather than 
 the reason to treat this kind as less settled than its neighbours.'''@en ;
 .
 
+:Location
+    a               owl:Class ;
+    dcterms:source       <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    prov:wasQuotedFrom   <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-location> ,
+                         <https://backstage.io/docs/features/software-catalog/configuration#static-location-configuration> ,
+                         <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Location.v1alpha1.schema.json> ;
+    rdfs:subClassOf arch:Element ;
+    skos:prefLabel  "Location"@en ;
+    skos:notation   "Location" ;
+    skos:definition "A location is a marker that references other places to look for catalog data."@en ;
+    skos:scopeNote  '''Catalogue configuration rather than a part of the architecture. A location tells the
+catalogue where to read descriptors, one or more catalog-info.yaml files named by URL or by path. Every
+entity read through one records it, as :managedByLocation and :managedByOriginLocation, so "where did this
+record come from" is answerable from the entity alone.
+
+Classified because it is one of the kinds the descriptor format documents. A lift types a Location entity as
+it types any other kind rather than leaving an untyped node, and keeps what the catalogue holds; a question
+about the architecture leaves it out by this class.
+
+Its own fields are spec.type, carried by :locationType; spec.target and spec.targets, both carried by
+:locationTarget; and spec.presence, carried by :locationPresence. The schema requires spec and nothing in
+it. A Location has no spec.owner, spec.system or other field that states a relation, though like an entity
+of any kind it may be owned, delegate its TechDocs or record the template it was created from.'''@en ;
+.
+
 
 #################################################################
 # Relationship Types
@@ -456,8 +479,9 @@ the reason to treat this kind as less settled than its neighbours.'''@en ;
     skos:scopeNote       '''The well-known-relations spec says the owner is "usually an
 organizational entity (User or Group)". Group owners dominate in practice, but User owners are
 ordinary Backstage — common in small organisations — so the range lists both. The spec frames
-ownership as singular ultimate responsibility for display purposes, not as an authorization source.'''@en ;
-    arch:domainIncludes  arch:Element ;
+ownership as singular ultimate responsibility for display purposes, not as an authorization source.
+The owned entity can be of any kind, so the domain lists every kind this ontology models.'''@en ;
+    arch:domainIncludes  :Component, :System, :API, :Resource, :Domain, :User, :Group, :Template, :Location ;
     arch:rangeIncludes   :Group, :User ;
 .
 
@@ -574,6 +598,7 @@ question, mirroring providesAPI.'''@en ;
 
 :dependsOn
     a                    owl:ObjectProperty ;
+    rdfs:subPropertyOf   arch:dependsOn ;
     dcterms:source       <https://backstage.io/docs/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
     rdfs:seeAlso         <https://backstage.io/docs/next/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
     skos:prefLabel       "Depends On"@en ;
@@ -586,7 +611,8 @@ resource. Targets are commonly Components and Resources; the relation itself is 
 
 This is the property a faithful lift of the catalog API's relations array emits. The resource-facing
 slice has a dedicated subproperty, :usesResource, retained for continuity — data asserted with either
-term participates in dependsOn queries via subproperty entailment.'''@en ;
+term participates in dependsOn queries via subproperty entailment. Itself a subproperty of the core's
+arch:dependsOn (0.6.0, DD-44), it is followed with the dependencies of every other language.'''@en ;
     arch:domainIncludes  :Component, :Resource ;
     arch:rangeIncludes   :Component, :Resource ;
 .
@@ -818,9 +844,10 @@ sharing a single repo and a single docs build. This is the only well-known annot
 is an intra-catalog entity reference, which is why it is modeled as a relation while the rest of
 the annotation vocabulary lifts to literals. The companion backstage.io/techdocs-entity-path
 annotation deep-links into the target's docs; it is an attribute of the delegation edge, not of
-either entity, so it lives on the qualified relationship — see :techdocsEntityPath.'''@en ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+either entity, so it lives on the qualified relationship — see :techdocsEntityPath. Either end can be
+of any kind, so both list every kind this ontology models.'''@en ;
+    arch:domainIncludes  :Component, :System, :API, :Resource, :Domain, :User, :Group, :Template, :Location ;
+    arch:rangeIncludes   :Component, :System, :API, :Resource, :Domain, :User, :Group, :Template, :Location ;
 .
 
 :TechDocsDelegation
@@ -873,13 +900,13 @@ outside the pulled scope, or one since deleted — still has somewhere to put th
 derived from the other; emit both where the target resolves.
 
 Direction is created entity -> template, matching the annotation's own direction and the canonical-direction
-policy on the ontology header. The domain is arch:Element rather than :Component because the Scaffolder is
-not restricted to producing components, even though a component is the ordinary case.
+policy on the ontology header. The domain lists every kind this ontology models rather than :Component alone,
+because the Scaffolder is not restricted to producing components, even though a component is the ordinary case.
 
 This is the edge the documented use of the annotation needs. Tracking adherence to software standards means
 asking which entities came from an approved template and which came from none, and the second half of that
 question — entities with no :scaffoldedFrom at all — is only askable once the first half is a relation.'''@en ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :Component, :System, :API, :Resource, :Domain, :User, :Group, :Template, :Location ;
     arch:rangeIncludes   :Template ;
 .
 
@@ -2313,4 +2340,121 @@ type. The bare token is on skos:notation, which is what a lift matches.'''@en ;
     skos:prefLabel  "bundle"@en ;
     skos:notation   "bundle" ;
     skos:definition "A bundle."@en ;
+.
+
+#################################################################
+# Location fields (descriptor format, kind Location)
+#
+# A location's own fields: the type its targets share, the
+# targets, and whether they must exist. The type is an open
+# vocabulary like the spec.type sets above; the presence is
+# closed, as the schema fixes it at two values, and the closure
+# is stated in SHACL as API visibility's is (DD-23).
+#################################################################
+
+:LocationType
+    a               owl:Class ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    rdfs:seeAlso    <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-location> ,
+                    <https://backstage.io/docs/features/software-catalog/configuration#static-location-configuration> ;
+    skos:prefLabel  "Location Type"@en ;
+    skos:definition "The kind of place a location's targets are read from, e.g. url or file."@en ;
+    skos:scopeNote  '''Open class. The type names the processor that reads the targets, and integrations add
+their own, so the members below are the two the catalogue itself documents: url, read through an integration
+such as GitHub's, and file, read from the local file system. Adopters add their own individuals of this class
+in their own namespace.
+
+Member IRIs carry the vocabulary name as a suffix, as the other spec.type sets' do, and the bare token is on
+skos:notation, which is what a lift matches. It is the same token that prefixes a :managedByLocation
+reference, url:https://… or file:/…'''@en ;
+.
+
+:locationType
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-location> ,
+                        <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Location.v1alpha1.schema.json> ;
+    skos:prefLabel      "Location Type"@en ;
+    skos:definition     "The single location type that is common to the targets of this location (spec.type, optional)."@en ;
+    skos:scopeNote      '''At most one value, enforced in shapes rather than with owl:FunctionalProperty (DD-23).
+Absent, the type is inherited from the location that read this entity, so a lift leaves it absent rather than
+guessing one.'''@en ;
+    arch:domainIncludes :Location ;
+    arch:rangeIncludes  :LocationType ;
+.
+
+:UrlLocationType
+    a               owl:NamedIndividual, :LocationType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/configuration#static-location-configuration> ;
+    rdfs:seeAlso    <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    skos:prefLabel  "url"@en ;
+    skos:notation   "url" ;
+    skos:definition "Targets read by URL, through the integration configured for the host they are on."@en ;
+.
+
+:FileLocationType
+    a               owl:NamedIndividual, :LocationType ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/configuration#local-file-type-file-configurations> ;
+    skos:prefLabel  "file"@en ;
+    skos:notation   "file" ;
+    skos:definition "Targets read from the local file system, meant for local development, tests and example data."@en ;
+.
+
+:locationTarget
+    a                   owl:DatatypeProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-location> ,
+                        <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Location.v1alpha1.schema.json> ;
+    skos:prefLabel      "Location Target"@en ;
+    skos:definition     "A place this location points the catalogue to: an absolute path or URL, depending on the type, or a path relative to the location itself (spec.target, spec.targets)."@en ;
+    skos:scopeNote      '''One property for both fields. spec.target holds a single target and spec.targets a
+list of them; each target is one value here, so a query reads them alike whichever field the descriptor used.
+xsd:string rather than xsd:anyURI, for the reason the catalog provenance properties give: a target may be a
+relative path such as ./details/catalog-info.yaml, which is no URI.'''@en ;
+    arch:domainIncludes :Location ;
+    rdfs:range          xsd:string ;
+.
+
+:LocationPresence
+    a               owl:Class ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    rdfs:seeAlso    <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-location> ,
+                    <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Location.v1alpha1.schema.json> ;
+    skos:prefLabel  "Location Presence"@en ;
+    skos:definition "Whether a location's targets must exist: required or optional."@en ;
+    skos:scopeNote  '''A DD-23 vocabulary of named individuals, and a closed one: the schema fixes these two
+values, so the closure is stated in SHACL at Violation, as for :ApiVisibility, rather than with owl:oneOf.
+
+Member IRIs carry the vocabulary name as a suffix, because "required" and "optional" are among the most
+collision-prone tokens there are; the bare token is on skos:notation.'''@en ;
+.
+
+:locationPresence
+    a                   owl:ObjectProperty ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    rdfs:seeAlso        <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-location> ,
+                        <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Location.v1alpha1.schema.json> ;
+    skos:prefLabel      "Location Presence"@en ;
+    skos:definition     "Whether the targets of this location are required to exist (spec.presence, optional)."@en ;
+    skos:scopeNote      '''At most one value, drawn from the LocationPresence vocabulary — enforced in shapes
+(sh:maxCount 1 + sh:in), never in OWL, per DD-23. Absent means required, the schema's default; a lift records
+what the descriptor states.'''@en ;
+    arch:domainIncludes :Location ;
+    arch:rangeIncludes  :LocationPresence ;
+.
+
+:RequiredPresence
+    a               owl:NamedIndividual, :LocationPresence ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    skos:prefLabel  "required"@en ;
+    skos:notation   "required" ;
+    skos:definition "The targets must exist, and a target that cannot be found is an error."@en ;
+.
+
+:OptionalPresence
+    a               owl:NamedIndividual, :LocationPresence ;
+    dcterms:source  <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    skos:prefLabel  "optional"@en ;
+    skos:notation   "optional" ;
+    skos:definition "The targets may be absent, and a target that cannot be found is not an error."@en ;
 .
