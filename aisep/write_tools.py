@@ -575,6 +575,8 @@ def _set_attributes(cfg, iri, new, drop, dryRun, repo):
             have = {t.object for _, t in old}
             before[p], after[p] = _attr_values(have), _attr_values(objs)
             gone = [(f, t) for f, t in old if t.object not in objs]  # values that stay are left where they are
+            if any(isinstance(t.object, ox.BlankNode) for _, t in gone):  # a fresh parse relabels it: the plan could not name it
+                raise AisepError("EDIT_UNSAFE", f"{core.short(p)} 的现有值是空白节点，不自动改写，请手工编辑")
             for f, t in gone:
                 removed.setdefault(f, set()).add((x, p, t.object))
             f = gone[0][0] if gone else type_file  # a file where rewrite_blocks finds a statement of x to put them in
@@ -585,6 +587,10 @@ def _set_attributes(cfg, iri, new, drop, dryRun, repo):
                     adds.setdefault(f, {}).setdefault(x, []).append((nt.predicate, nt.object))
         files = sorted(set(removed) | set(added))
         edits = {f: writer.rewrite_blocks(ws.text(f), removed.get(f, set()), adds.get(f, {})) for f in files}
+        for f, ts in added.items():  # writer.term leaves U+000D raw, which a short string may not hold: escape it here
+            for body in {writer.term(ox.Literal(t.object.value), {}) for t in ts
+                         if isinstance(t.object, ox.Literal) and "\r" in t.object.value}:
+                edits[f] = edits[f].replace(body, body.replace("\r", "\\r"))  # step 6 (graph equivalence) still judges it
         return {"result": {"iri": x, "before": before, "after": after}, "edits": edits, "removed": removed, "added": added}
 
     return writer.transaction(cfg, repo, build, dryRun)

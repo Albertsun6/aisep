@@ -807,7 +807,8 @@ Albert 已定：新增为独立工具，不改 `model_set_labels` 的契约，�
 - `set`、`unset` 至少给一个且不能都为空，否则 `INVALID_ARGUMENT`。同一个谓词同时出现在 `set` 和 `unset` 里 → `INVALID_ARGUMENT`。没有出现的谓词保持不变。
 - **不接受的谓词**（出现在 `set` 或 `unset` 里 → `INVALID_ARGUMENT`，`details.rejectedFields` 为所在字段）：`rdf:type`、`arch:inModel`、`arch:source`、`arch:target`，以及 `skos:prefLabel`、`skos:altLabel`、`skos:definition`（这三个走 `model_set_labels`，那里有语言与长度约束）。
 - **其余谓词合不合法不另写白名单**，由候选图上的 L1 规则判定，与 `model_add_element` 的 `attributes` 同一口径：闭世界不允许的谓词（G7）、手写的 `arch:approvalState`（§6.6）都表现为新增违规 → `WRITE_REJECTED`。
-- 不合法的 IRI、前缀名、语言标签或值 → `INVALID_ARGUMENT`。
+- 不合法的 IRI、语言标签或值 → `INVALID_ARGUMENT`。没有声明过的前缀不在此列：`x:y` 按 `slug:local` 展开（§5.0），得到的谓词没有声明，结果是 `WRITE_REJECTED`。
+- `value.value` 给 JSON 数或布尔值时与 §5.2 的 `attributes` 一样，写成 `xsd:integer`、`xsd:double`、`xsd:boolean` 字面量。字符串里的换行与回车（U+000D）转义后写入，读回来逐字相同。
 - 不接受 `file`：值没有变的三元组留在原处；新值写进被替换的三元组所在的文件，这个谓词原来没有被替换的值时，写进该主语 `rdf:type` 三元组所在的文件。
 
 **前置检查**
