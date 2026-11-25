@@ -176,7 +176,7 @@
   - **不存"作用于哪些元素"**：由 `model.diff(baseCommit, headCommit)` 实时算出（§8.3）。
 - 提交、构建、部署的溯源只定义词汇（PROV-O），不做接入。
 
-### 6.8 C4（Language，`inheritsHubRules=false`，level=design）
+### 6.8 C4（Language，`inheritsHubRules=false`，level=design；第一批之后由 PR #106 加入）
 - 模块 `modules/c4`（`https://aisep.example/module/c4`）。需求与关口 A 的决定见 `docs/specs/c4-archimate4-dual-model.md` 和 `docs/specs/c4-archimate4-verification.md` §9.3，实施说明见 `docs/specs/c4-archimate4-step4.md`。
 - **双模型**：ArchiMate 记录系统对企业意味着什么，C4 记录系统在技术上长什么样。同一事实只在一边记录，两边通过 `arch:refines` 关联（§7）。C4 不是 ArchiMate 的视图，模块**不声明任何对齐公理**（没有 C4 ⊑ am4）。
 - 词汇只用上游原样文件：`c4/onto`（人、软件系统、容器及其子类 Database/MobileApp/ClientSideWebApp、组件、外部人、外部系统；`c4:Using`、`c4:ContainerContainment`、`c4:ComponentContainment`；`c4:technology`），以及 `c4/structurizr`（部署节点、基础设施节点，`structurizr:Deployment`）。模块拥有这两个命名空间。上游 `c4/shapes`、`c4/structurizr-shapes` 原样运行。
@@ -186,7 +186,10 @@
   - R3：`c4:Database` 必须 refines 一个 `am4:DataObject`。按主锚唯一（§7.2），多个逻辑数据对象要先在 am4 侧聚合，数据库再 refines 聚合后的那个。
   - R4：不另写规则，由 §8.1 只写限定关系覆盖。
   - R5：跨容器的 `c4:Using` 必须写 `c4:technology`。
-  - R6–R8 是 Warning：被 C4 refines 的组件应经一个 Role 或直接执行 Function/Process（上游 am4 4.0 关系表中，组件只能直接分派到 Role，见核实报告 §8）；这类组件所实现的服务应能追溯到 Capability 或 Requirement；一个 DataObject 至多一个权威来源。
+  - R6–R8 是 Warning：
+    - R6：被 C4 软件系统或容器 refines 的 am4 组件，应直接或经一个 Role 执行 Function/Process。上游 am4 4.0 关系表中，组件只能直接分派到 Role 和 DataObject；分派到 Function/Process 必须经过 Role，直接画属于派生，见核实报告 §8 S10。
+    - R7：这类组件（直接或经 Role）执行的行为所实现的服务，应能追溯到 Capability 或 Requirement。只检查追溯这一半。
+    - R8：一个 DataObject 至多有一个权威来源（被 ApplicationComponent 分派）。作用于全部 DataObject，不限于 C4 所描述的系统。
 - 不加载 c4 的 viewpoints、notation、deliverable-templates；不加载 core-vis、edgy（§12）。
 
 ## 7. 跨记法追溯
