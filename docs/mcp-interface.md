@@ -185,7 +185,7 @@
 
 画像**不是安全边界**：代理可以直接手写 Turtle 伪造批准记录，真正的约束是代码评审和分支保护。画像只防"顺手调用"。
 
-**加了两个规范外的工具**：`model_gate`、`model_set_labels`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。之后又加了第三个：`model_set_attributes`（Albert 已定，§5.12），补上非标签属性的修改入口。
+**加了三个规范外的工具**：`model_gate`、`model_set_labels`、`model_set_attributes`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。`model_set_attributes`：补上非标签属性的修改入口（Albert 2026-11-25 定，§5.12）。
 
 ---
 
@@ -793,7 +793,7 @@ CI 设为受保护分支的必需检查，PR 每次更新都跑；合并前由�
 
 ### 5.12 `model_set_attributes`（对 §8.3 的扩展）
 
-Albert 已定：新增为独立工具，不改 `model_set_labels` 的契约，多值谓词按整体替换。改已存在元素或关系的非标签属性（如 `aisep:priority`、`aisep:gherkin`、`aisep:path`）的写入口，是 `model_set_labels` 模式的平移。不动 IRI、类型、所属模型和关系端点；改类型仍是"不在本版"（§1）。用法与组合见 `docs/actions.md`。
+Albert 2026-11-25 定：新增为独立工具，不改 `model_set_labels` 的契约，多值谓词按整体替换。改已存在元素或关系的非标签属性（如 `aisep:priority`、`aisep:gherkin`、`aisep:path`）的写入口，是 `model_set_labels` 模式的平移。不动 IRI、类型、所属模型和关系端点；改类型仍是"不在本版"（§1）。用法与组合见 `docs/actions.md`。
 
 **输入**
 

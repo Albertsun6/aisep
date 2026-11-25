@@ -39,8 +39,8 @@ sh tools/aisep-mcp
 | 画像 | 谁用 | 工具 |
 |---|---|---|
 | `agent`（`tools/aisep-mcp` 固定用它） | 编码代理 | 12 个：只读的 `model_check`、`model_validate`、`model_findings`、`model_gate`、`model_query`、`model_impact`、`model_diff`；写入的 `model_add_element`、`model_add_relationship`、`model_set_labels`、`model_set_attributes`、`model_remove`（怎么选、怎么组合见 `docs/actions.md`） |
-| `workbench` | 工作台（经 HTTP） | 6 个：`model_findings`、`model_gate`、`model_query`、`model_impact`、`model_diff`、`governance_record_approval` |
-| `all` | 调试 | 以上 13 个 |
+| `workbench` | 工作台（经 HTTP） | 7 个：`model_findings`、`model_gate`、`model_query`、`model_impact`、`model_diff`、`model_branches`、`governance_record_approval` |
+| `all` | 调试 | 以上 14 个 |
 
 - 批准工具 `governance_record_approval` **不在 agent 画像里**，编码代理看不到它。批准记录只能由 Albert 本人做出（`AGENTS.md`「分支与合并」），经工作台关口页触发（`docs/mcp-interface.md`）。
 - `model_check`、`model_validate` 只做快速诊断；提交和 CI 只认 `gate`，读 `model_gate` 的结论看返回里的 `structuredContent.result`。

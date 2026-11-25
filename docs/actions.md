@@ -25,7 +25,7 @@
 - `dryRun` 为 `true` 时只算不写，返回与实际写入相同的结果。
 - 同参数重放是安全的：返回里的 `changed` 为 `false`，文件不变。调用超时后可以直接重试。
 - 批准记录、AI 活动和模型本身（`arch:Model`）不能经这些工具新增、修改或删除，返回 `PROTECTED_RESOURCE`。
-- 写完用 `model_check` 快速自查；提交前以 `model_gate` 的结论为准。
+- 写完用 `model_check` 快速自查（不带 `model` 参数：只查单个模型时，指向别的模型的引用会被报成违规）；提交前以 `model_gate` 的结论为准。
 
 **没有对应动作的改法**（当前只能直接编辑 `.ttl`，或按下面的办法绕开）：
 
@@ -60,13 +60,14 @@
 ```json
 {"tool": "model_add_element",
  "arguments": {"model": "workbench", "type": "aisep:AcceptanceCriterion",
+               "slug": "acProgressStagesShown",
                "prefLabel": "批准进度的四个阶段都能显示",
                "altLabel": "All four approval progress stages are shown",
                "attributes": [{"predicate": "aisep:gherkin",
                                "value": {"value": "Given 一个带待批准关口的分支\nWhen 批准记录被提交\nThen 工作台显示已批准待推送"}}]}}
 ```
 
-返回里的 `iri` 是新元素的 IRI，下一步要用。
+显式给 `slug`，IRI 就是 `workbench:acProgressStagesShown`；不给时由 `altLabel` 转 camelCase，英文名长 IRI 就长。返回里的 `iri` 是新元素的 IRI，下一步要用。
 
 第 2 步，用聚合关系把它挂到需求上，源端是需求，目标端是验收标准：
 
@@ -76,6 +77,8 @@
                "source": "workbench:reqApprovalProgress",
                "target": "<第 1 步返回的 iri>"}}
 ```
+
+`source`、`target` 写完整 IRI 或前缀名（`workbench:acProgressStagesShown`）都可以。
 
 - 顺序不能反：验收标准还不存在时先建关系，返回 `ELEMENT_NOT_FOUND`，文件不变。
 - 第 2 步被拒绝时，第 1 步的验收标准已经在工作区里。改正参数后重试第 2 步；不想要了就按配方三删掉它。
@@ -102,39 +105,39 @@
 
 ### 配方三：删除元素
 
-用途：删掉一个元素（连同以它为端点的关系）。删除是唯一的破坏性动作，固定走「看影响 → 取计划 → 按计划执行」三步。
+用途：删掉一个元素（连同以它为端点的关系）。删除是唯一的破坏性动作，固定走「看影响 → 取计划 → 按计划执行」三步。示例删的是配方一刚建的那条验收标准，它还没被批准过；已批准的元素删不掉，见本节末尾。
 
 第 1 步，看影响面，两种模式各跑一次：
 
 ```json
-{"tool": "model_impact", "arguments": {"focus": "workbench:acProgressFourStages", "mode": "depends"}}
+{"tool": "model_impact", "arguments": {"focus": "workbench:acProgressStagesShown", "mode": "depends"}}
 ```
 
 ```json
-{"tool": "model_impact", "arguments": {"focus": "workbench:acProgressFourStages", "mode": "ripple"}}
+{"tool": "model_impact", "arguments": {"focus": "workbench:acProgressStagesShown", "mode": "ripple"}}
 ```
 
 第 2 步，取删除计划，不落盘：
 
 ```json
 {"tool": "model_remove",
- "arguments": {"iri": "workbench:acProgressFourStages", "cascade": true, "dryRun": true}}
+ "arguments": {"iri": "workbench:acProgressStagesShown", "cascade": true, "dryRun": true}}
 ```
 
-返回里的 `plan` 列出会删除的资源（`delete`）、会摘除的成员关系（`detach`），`planDigest` 是这份计划的哈希。核对计划与第 1 步看到的影响是否一致，确认没有不该删的东西。
+返回里的 `plan` 列出会删除的资源（`delete`）、会摘除的成员关系（`detach`），`planDigest` 是这份计划的哈希。确认 `delete` 里只有目标本身和以它为端点的关系，没有不该删的东西；第 1 步的影响面用来判断删掉之后哪些元素要跟着复查，它列的是邻居，不会和计划逐项对上。
 
 第 3 步，带着计划哈希执行：
 
 ```json
 {"tool": "model_remove",
- "arguments": {"iri": "workbench:acProgressFourStages", "cascade": true,
+ "arguments": {"iri": "workbench:acProgressStagesShown", "cascade": true,
                "planDigest": "<第 2 步返回的 planDigest>"}}
 ```
 
 - 第 2 步之后相关文件被改过，第 3 步返回 `PLAN_STALE`，文件不变：回到第 2 步取新计划。
 - 第 3 步成功后响应丢了，带同一个 `planDigest` 重放是安全的，返回里的 `changed` 为 `false`。
 - 不带 `cascade` 而删除会牵连别的资源，返回 `CASCADE_REQUIRED`，错误详情里带同一份计划和 `planDigest`。
-- 返回 `REFERENCED` 说明元素被批准记录、追溯或别的模型引用，不能删除（被批准过的元素都属于这一类）。这时改为**退役**：用配方二给它写上 `owl:deprecated` 和 `dcterms:isReplacedBy`，元素保留、标为已被取代。
+- 返回 `REFERENCED` 说明元素被批准记录、追溯或别的模型引用，不能删除（被批准过的元素都属于这一类）。第 2 步带 `dryRun` 时就会返回它，不用等到第 3 步。这时改为**退役**：用配方二给它写上 `owl:deprecated` 和 `dcterms:isReplacedBy`，元素保留、标为已被取代。
 
 ```json
 {"tool": "model_set_attributes",
@@ -147,13 +150,13 @@
 
 ## 4. 升级信号
 
-现在的做法是「基本动作在代码里、组合写成本文件的配方」。下表列的是说明这个做法不够用了的可观测信号。出现任一条时，由发现的会话开一个 GitHub issue 写明证据，并在表里「记录」一列填上 issue 编号；在那之前不新增动作机制。表里的阈值是暂定值。
+现在的做法是「基本动作在代码里、组合写成本文件的配方」。下表列的是说明这个做法开始吃力的可观测信号，留作日后判断动作机制要不要再升一档时的证据。本表只列信号：不规定信号出现之后做什么，也不限制信号出现之前做什么。表里的阈值是暂定值；遇到信号时怎么记账（是否开 GitHub issue、由谁登记）待 Albert 确认。
 
-| # | 信号 | 怎么观测 | 记录 |
-|---|---|---|---|
-| S1 | 出现一个真实改动：按任何顺序逐步调用基本动作都会被 L0–L2 拒绝，而整体是合法的 | 一个可复现的最小用例 | — |
-| S2 | 同一条配方因为代理漏步或顺序错而返工，累计 3 次 | PR 评审评论里按配方名计数 | — |
-| S3 | 出现第一条依赖「改之前」与「改之后」两个状态的业务规则（例如优先级只能调高不能调低） | 规则的一句话陈述。只看某一时刻模型状态的规则不算，它们应当写成校验规则，对直接编辑也生效 | — |
-| S4 | 新增一种组合需要改 Python，而提出者不写代码 | 提出者与实现者不是同一方的需求条目 | — |
-| S5 | 工作台要对选中的元素列出「可以做哪些动作」并按动作渲染表单 | 工作台的需求条目 | — |
-| S6 | 治理加固恢复的任一情形出现：第二个批准人或使用者；外部或受监管数据进入模型；HTTP 服务不再只绑本机 | `docs/decisions.md` ADR-019 第 2 款的判据 | — |
+| # | 信号 | 怎么观测 |
+|---|---|---|
+| S1 | 出现一个真实改动：按任何顺序逐步调用基本动作都会被 L0–L2 拒绝，而整体是合法的 | 一个可复现的最小用例 |
+| S2 | 同一条配方因为代理漏步或顺序错而返工，累计 3 次 | PR 评审评论里按配方名计数 |
+| S3 | 出现第一条依赖「改之前」与「改之后」两个状态的业务规则（例如优先级只能调高不能调低） | 规则的一句话陈述。只看某一时刻模型状态的规则不算，它们应当写成校验规则，对直接编辑也生效 |
+| S4 | 新增一种组合需要改 Python，而提出者不写代码 | 提出者与实现者不是同一方的需求条目 |
+| S5 | 工作台要对选中的元素列出「可以做哪些动作」并按动作渲染表单 | 工作台的需求条目 |
+| S6 | 治理加固恢复的任一情形出现：第二个批准人或使用者；外部或受监管数据进入模型；HTTP 服务不再只绑本机 | `docs/decisions.md` ADR-019 第 2 款的判据 |

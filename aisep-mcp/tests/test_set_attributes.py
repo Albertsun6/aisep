@@ -239,6 +239,36 @@ def test_A1_error_codes_in_actions_doc_exist():
     assert codes and codes <= CODES, sorted(codes - CODES)
 
 
+def test_actions_doc_signal_table_makes_no_commitment_about_future_mechanisms():
+    """回归（评审阻塞问题）：升级信号一节只列信号。它不得写成「信号出现之前不新增动作机制」之类对后续阶段的
+    否定式承诺（与 Albert 已确认的阶段安排冲突），也不得替 Albert 定记账流程（「记录」列、由谁开 issue）。"""
+    section = _doc().split("\n## 4. 升级信号\n", 1)[1]
+    assert not re.search(r"不新增|在那之前|不得新增|不再新增", section), section
+    rows = [line for line in section.splitlines() if re.match(r"\| S\d \|", line)]
+    assert [r.split("|")[1].strip() for r in rows] == ["S1", "S2", "S3", "S4", "S5", "S6"]
+    header = next(line for line in section.splitlines() if line.startswith("| # |"))
+    assert [c.strip() for c in header.strip("|").split("|")] == ["#", "信号", "怎么观测"]
+    assert all(r.count("|") == header.count("|") for r in rows)
+    assert "待 Albert 确认" in section
+
+
+def test_actions_doc_recipe_examples_do_not_collide_with_existing_elements():
+    """回归（评审与 A2 试跑）：配方一的示例显式给 slug，且这个 IRI 在仓库里还不存在；配方三删的就是它，
+    不是一个已批准、只会返回 REFERENCED 的现有元素。"""
+    calls = _doc_calls()
+    add = next(a for t, a in calls if t == "model_add_element")
+    new = f"{add['model']}:{add['slug']}"
+    removed = {a["iri"] for t, a in calls if t == "model_remove"}
+    assert removed == {new}
+    assert {a["focus"] for t, a in calls if t == "model_impact"} == {new}
+    model_dir = os.path.join(ROOT, "models", add["model"])
+    assert os.path.isdir(model_dir)
+    for name in sorted(os.listdir(model_dir)):
+        if name.endswith(".ttl"):
+            with open(os.path.join(model_dir, name), encoding="utf-8") as f:
+                assert not re.search(rf"\b{re.escape(add['slug'])}\b", f.read()), name
+
+
 def test_tool_registration_profiles_annotations_and_schema():
     assert "model_set_attributes" in S.listed("agent") and "model_set_attributes" in S.listed("all")
     assert "model_set_attributes" not in S.listed("workbench")
