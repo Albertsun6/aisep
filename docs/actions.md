@@ -148,6 +148,40 @@
 
 退役改的是已批准元素，合并时同样需要新的批准记录（见配方二末段）。
 
+### 动作目录：配方一、三的一次调用版
+
+配方一、三另有一份写成数据的版本，放在动作目录里（`aisep/action_catalog.json`），由两个固定工具使用：`model_list_actions` 列出目录里的动作和每个动作的参数说明，`model_apply_action` 按动作 id 执行一个动作。完整定义见接口文档 §5.13、§5.14。
+
+动作目录也是**推荐通道**：上面的配方照旧可以逐个调写工具来做，两种做法写出的文件逐字节相同；`gate` 和合并核对不知道、也不关心改动是不是经动作做的。区别只有两点：
+
+- 一个动作的几步在**一次写入**里完成，全有或全无：任何一步被拒绝，工作区一个字节都不改，不会留下配方一第 2 步失败时那种「只做了一半」的状态。
+- 动作可以带**前置检查**（只读查询），不满足时返回 `PRECONDITION_FAILED` 和中文修法提示，不写。前置检查只是提示，不是合法性规则：逐个调写工具或直接编辑时不受它约束，`gate` 也不检查它。
+
+目录里现在有两个动作：
+
+- `register-acceptance-criterion`（登记验收标准并挂到需求）对应配方一：新增一条 `aisep:AcceptanceCriterion`，再用 `am4:Aggregation`（源端是需求，目标端是验收标准）挂上去。所属模型取需求所在的模型。需求必须写完整 IRI，不接受前缀名。两条前置检查：被挂的对象本身不能是一条验收标准；被挂的需求不能已退役（`owl:deprecated true`）。
+
+```json
+{"tool": "model_apply_action",
+ "arguments": {"action": "register-acceptance-criterion",
+               "params": {"requirement": "https://aisep.example/model/workbench/reqApprovalProgress",
+                          "slug": "acProgressStagesShown",
+                          "prefLabel": "批准进度的四个阶段都能显示",
+                          "altLabel": "All four approval progress stages are shown",
+                          "gherkin": "Given 一个带待批准关口的分支\nWhen 批准记录被提交\nThen 工作台显示已批准待推送"}}}
+```
+
+- `remove-element`（删除元素）对应配方三的第 2、3 步：固定按级联规划，必须先带 `dryRun` 为 `true` 调一次，取返回里的 `planDigest`，再带它执行；不带 `planDigest` 直接执行返回 `PLAN_REQUIRED`，错误详情里带计划和影响摘要。影响摘要只是提示，不受 `planDigest` 保护；配方三第 1 步的两种影响面仍建议自己跑。被引用的元素同样返回 `REFERENCED`，改为按配方三末尾退役。
+
+```json
+{"tool": "model_apply_action",
+ "arguments": {"action": "remove-element",
+               "params": {"iri": "https://aisep.example/model/workbench/acProgressStagesShown"},
+               "dryRun": true}}
+```
+
+同参数重放同样安全：两个动作重放都返回 `changed` 为 `false`，文件不变（删除要带同一个 `planDigest`）。
+
 ## 4. 升级信号
 
 现在的做法是「基本动作在代码里、组合写成本文件的配方」。下表列的是说明这个做法开始吃力的可观测信号，留作日后判断动作机制要不要再升一档时的证据。本表只列信号：不规定信号出现之后做什么，也不限制信号出现之前做什么。表里的阈值是暂定值；遇到信号时怎么记账（是否开 GitHub issue、由谁登记）待 Albert 确认。

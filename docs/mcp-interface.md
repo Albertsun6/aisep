@@ -173,6 +173,8 @@
 | `model_remove` | `model.remove` | false | **true** | true（带 `planDigest` 重放、目标已不在 → 成功，`changed:false, alreadyAbsent:true`，同 add 的 `changed:false`） | 无（§8.2 未原型化） | **新实现** |
 | `model_set_labels` | `model.set_labels`（**新增**） | false | **true**（覆盖原值，不是追加；原值留在 Git 历史里） | true（同参数重放 = 无变化） | 无 | **新实现**（校验复用 `check`） |
 | `model_set_attributes` | `model.set_attributes`（**新增**） | false | **true**（按谓词整体替换原值；原值留在 Git 历史里） | true（同参数重放 = 无变化） | 无 | **新实现**（校验复用 `check`，§5.12） |
+| `model_list_actions` | 无（规范外） | true | — | true | 无 | **新实现**：列动作目录（§5.13） |
+| `model_apply_action` | 无（规范外） | false | **true**（目录里有含删除步骤的动作；按目录内容逐个变就会让 `tools/list` 随数据变，所以固定按最坏情形标） | true（各步互不覆盖的动作同参数重放 = 无变化，边界见 §5.14） | 无 | **新实现**：把现有写工具的计划函数按目录组合，交给一次 §5.1 写入（§5.14） |
 | `governance_record_approval` | `governance.record_approval` | false | false | true（完全重复的请求不写；去重键含调用方给的 `headCommit`，重放稳定） | 无 | **新实现**（gate 复用） |
 
 **画像**：启动参数 `--profile agent|workbench|all`，决定 `tools/list` 列出哪些工具。按进程定，不按连接变（满足 2026-07-28"`tools/list` 不得随连接变化"）。
@@ -185,7 +187,7 @@
 
 画像**不是安全边界**：代理可以直接手写 Turtle 伪造批准记录，真正的约束是代码评审和分支保护。画像只防"顺手调用"。
 
-**加了三个规范外的工具**：`model_gate`、`model_set_labels`、`model_set_attributes`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。`model_set_attributes`：补上非标签属性的修改入口（Albert 2026-11-25 放行阶段 A 时随之加入，§5.12）。
+**加了五个规范外的工具**：`model_gate`、`model_set_labels`、`model_set_attributes`、`model_list_actions`、`model_apply_action`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。`model_set_attributes`：补上非标签属性的修改入口（Albert 2026-11-25 放行阶段 A 时随之加入，§5.12）。`model_list_actions`、`model_apply_action`：动作目录的两个固定入口，把几次写工具调用合成一次写入（§5.13、§5.14）。
 
 ---
 
@@ -833,6 +835,83 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 **对 diff 的影响**：`model_diff` 报该元素 `modified`，`changedPredicates` 只含值有变化的谓词。
 
+### 5.13 `model_list_actions`（动作目录，规范外）
+
+出处：Albert 2026-11-25 确认动作机制走「薄封装」方向，并于 2026-11-26 放行阶段 C，本节与 §5.14 随之加入。字段名、错误码名、目录格式等细节是实现时的取舍，Albert 没有逐条定过。用法见 `docs/actions.md`「动作目录」一节。
+
+**动作是什么**：现有写工具的具名组合，写成数据，放在 `aisep/action_catalog.json`（随 `aisep` 源码树一起，不在模型仓库里，不铸 IRI，不改元模型）。动作用字符串 id 标识。动作是**推荐通道**，不是唯一通道：逐个调写工具、直接编辑 `.ttl` 照旧允许，`gate` 与合并核对不知道改动是否经动作做的。动作不产生审批项，不留执行记录，不写日志文件。
+
+**两个工具的形状是固定的**：目录增删改动作，`tools/list` 都不变（参数 schema 由本工具返回，不进 `inputSchema`）。
+
+**输入**：无（`inputSchema` 为空对象）。
+
+**输出**：`{ catalogVersion, operations, actions: [...] }`。`operations` 是执行器认识的原子操作，固定为 `add_element`、`add_relationship`、`set_labels`、`remove`（分别是 §5.2、§5.3、§5.10、§5.5 的计划函数）。`actions` 每项：
+
+- 有效的定义：`{ id, title, description, valid: true, params, iriParams, destructive, requiresPlanDigest, guards: [{id, hint}], steps: [{id, op}], definitionDigest }`。`params` 是该动作参数的 JSON Schema；`iriParams` 列出哪些参数是 IRI；`destructive` 与 `requiresPlanDigest` 都由执行器按「含 `remove` 步骤」推导，目录里没有能改低它的字段；`definitionDigest` 是定义的 sha256，计入 §5.14 的 `planDigest`。
+- 无效的定义：`{ id, valid: false, problems: [中文原因…] }`（`id` 不是字符串时为 `null`）。一条定义坏了只影响它自己：其他动作照常列出、照常可执行，两个工具都不因此报 `INTERNAL`。
+
+目录每次调用都从磁盘重读，不缓存。目录文件本身读不了或不是合法 JSON → `INTERNAL`。
+
+**目录格式**（`aisep/action_catalog.json`）：`{ version, actions: [<定义>…] }`。每条定义：
+
+| 字段 | 必填 | 规则 |
+|---|---|---|
+| `id` | ✔ | `^[a-z][a-z0-9-]{0,63}` 且到此为止（不放过结尾换行），目录内唯一（重复的都判无效） |
+| `title` | ✔ | 字符串 |
+| `description` | — | 字符串 |
+| `params` | ✔ | JSON Schema，须为 `type: object`、`additionalProperties: false` |
+| `iriParams` | — | `params` 里声明为字符串的参数名。这些参数只接受完整 IRI，且在 `https://aisep.example/model/<模型>/<本地名>` 之下（本地名限 `[A-Za-z0-9._~%-]`），不接受 `slug:local` 短写 |
+| `guards` | — | `[{id, ask, bind?, expect, hint}]`：`ask` 是只读 SPARQL ASK 正文（不带 `PREFIX`，前缀由执行器补；不许 `SERVICE`），`bind` 把查询变量绑到 `{param}`、`{modelOf}` 或 `{const}`，`expect` 是期望的布尔值，`hint` 是中文修法 |
+| `steps` | ✔ | 至少一步，`[{id, op, args}]`；`op` 只能是上面四个原子操作之一 |
+
+`args` 的每个值只能是四种引用之一，或由它们组成的列表、对象（没有字符串模板）：`{const: <JSON 值>}`、`{param: <参数名>}`、`{stepIri: <前面某步的 id>}`（取该步产出的 IRI，`remove` 步骤不产出）、`{modelOf: <参数名>}`（该 IRI 参数所属模型的 IRI）。各 `op` 允许与必填的 `args` 同对应写工具的参数（`remove` 只有 `iri`，执行器固定按级联规划）。
+
+**加载校验同时拒绝「两步作用于同一个目标」的定义**（判 `valid: false`，原因写进 `problems`），因为这类动作重放会被拒（§5.14「幂等」）：`set_labels` 或 `remove` 步骤的 `iri` 引用本动作前一步新建的资源（`{stepIri}`）；两个 `set_labels` / `remove` 步骤的 `iri` 是同一个 `{param}` 或同一个 `{const}`；`remove` 步骤的 `iri` 与某个 `add_relationship` 步骤的 `source` 或 `target` 是同一个 `{param}` 或 `{const}`（级联会删掉那条新关系）。这一校验只看引用本身：两个**不同**参数在调用时被填成同一个 IRI、`add_element` 的 slug 恰好等于被删的 IRI，取决于调用时的值，加载时判不出来。
+
+其余不合上述规则的定义（未知 `op`、多余字段、引用未声明的参数、guard 不能执行等）同样判 `valid: false`。
+
+**校验层**：无（只读目录，不读模型）。
+
+**错误**：`INVALID_ARGUMENT`（多传了参数）、`INTERNAL`（目录文件读不了）。
+
+### 5.14 `model_apply_action`（执行一个动作，规范外）
+
+出处同 §5.13。
+
+**输入**
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `action` | ✔ | 动作 id |
+| `params` | — | 对象，按该动作的 `params` schema 校验；缺省为 `{}` |
+| `dryRun` | — | §5.1 |
+| `planDigest` | — | 上次 `dryRun` 返回的计划哈希。含删除步骤的动作实际执行时必填；其他动作给了也核对 |
+| `repo` | — | §3.3 |
+
+**执行顺序**
+
+1. 读目录。没有这个动作 → `INVALID_ARGUMENT`（`details.available` 列出可用的 id）；定义无效 → `INVALID_ARGUMENT`（`details.problems`）。
+2. 按 `params` schema 校验参数，再校验 `iriParams` 的形状；不合规 → `INVALID_ARGUMENT`，`details.rejectedFields` 形如 `params.<名>`。参数只作为预绑定的项进入 guard 查询，不拼进查询文本。
+3. 进入一次 §5.1 写入（加锁、读工作区、基线）。依次跑各步的计划函数；后一步在前一步结果的内存叠加上规划，与第二次工具调用看到的相同。中间结果只检查能否解析，不能 → `EDIT_UNSAFE`。步骤自己的拒绝原样抛出（`ELEMENT_NOT_FOUND`、`IRI_EXISTS`、`UNKNOWN_TYPE`、`PROTECTED_RESOURCE`、`REFERENCED` 等），`details.step` 标出是哪一步。可选参数没给时，引用它的那一项 `args` 省略；某步的必填 `args` 因此缺失 → `INVALID_ARGUMENT`。
+4. **判重放**：每一步在当前工作区上都无变化 → 成功，`changed: false`，**不跑 guard**。
+5. **跑 guard**：每条 guard 的 ASK 结果与 `expect` 不符即失败 → `PRECONDITION_FAILED`，零写入，`hint` 是第一条失败 guard 的修法，`details.failedGuards: [{id, hint}]`。guard 与 `{modelOf}` 都看动作开始时的工作区，不看前面步骤的产出。绑定的可选参数没给时这条 guard 跳过。
+6. 算 `planDigest` = sha256（动作 id、`definitionDigest`、`params`、计划触及的每个文件改前与改后的 sha256）。带了 `planDigest` 而不等 → `PLAN_STALE`（相关模型文件、动作定义或参数在 `dryRun` 之后变了；定义的任何改动，包括只改 `title` 或 `description`，都会让旧哈希失效）。含删除步骤、不是 `dryRun`、也没带 `planDigest` → `PLAN_REQUIRED`。这两种错误的 `details` 带 `planDigest`、`steps`、`files`，含删除步骤时另带 `cascade` 和 `impact`。它们在候选图判定之前抛出，所以不含 L0–L2 结论。
+7. 把各步合并后的计划交回 §5.1 第 5–10 步：图等价断言、候选图 L0–L2 判定（只拒新增违规）、落盘。**一次动作就是一次写入**：工作区内全有或全无，不 `git add`、不提交。
+
+**只判最终候选图，比逐步调用宽**：逐个调写工具时每一步的中间状态都要过 L0–L2；动作只把合并后的候选图判一次。中间状态有违规、最终合法的组合，动作能过，逐步调用不能。动作层不另写合法性判断：guard 只是提示，不是不变式，直接编辑或逐步调用不受它约束，`gate` 也不知道它。
+
+**破坏性动作（含 `remove` 步骤）**：`remove` 步骤固定按级联规划（同 `model_remove` 带 `cascade: true`），有阻塞引用仍是 `REFERENCED`。必须两段式：先 `dryRun: true` 取 `planDigest`，再带它执行。`dryRun` 的返回附 `cascade`（级联闭包，`[{step, target, delete, detach, blockers}]`）和 `impact`（依赖闭包摘要：对每个删除目标跑 `model_impact`，`mode: depends`、`depth: 3`，最多 50 项，`[{focus, mode, depth, count, truncated, invalidModel, items}]`；`model_impact` 报错时该项为 `{focus, error}`）；`PLAN_REQUIRED`、`PLAN_STALE`、`REFERENCED` 的 `details` 也附 `impact`。**影响摘要只是提示**：它不计入 `planDigest`，在写入锁之外另读一次工作区，与计划不是同一份快照。`planDigest` 只保证执行的就是看过的那份计划，不代表批准；人的把关仍在关口。
+
+**幂等**：重放判定是「每一步在当前工作区上都无变化」（第 4 步），所以同参数重放返回 `changed: false` **只对各步互不覆盖的动作成立**。同一动作里先删后加同一 IRI、加元素后再改它这类组合，首次执行正常，重放会被拒（`PLAN_STALE`、`PLAN_REQUIRED` 或 `IRI_EXISTS`）。§5.13 的加载校验把能从定义上判出的这类组合判为无效，目录里不会出现；判不出的（见 §5.13）重放同样被拒，零写入。破坏性动作重放沿用 `model_remove` 的约定：目标已不在且带了 `planDigest` → `changed: false`，删除步骤的结果里 `alreadyAbsent: true`（此时不核对哈希的值）；不带 → `ELEMENT_NOT_FOUND`。
+
+**输出**：在 §5.1 的通用字段（`changed`、`dryRun`、`filesChanged`、`findings`、`preexistingViolations`）之上：`action`、`definitionDigest`、`destructive`、`steps: [{id, op, changed, result}]`（`result` 是对应写工具的结果：`iri`/`file`/`turtle`，删除步骤是 `target`/`plan`/`alreadyAbsent`）、`iris: {步骤 id: 产出的 IRI}`、`planDigest`（重放时回显入参）；含删除步骤时另有 `cascade`，`dryRun` 且有变化时另有 `impact`。
+
+**参数里的特殊字符**：`}`、`>`、`;`、引号等只会得到 `INVALID_ARGUMENT` 或正常的 guard 结论，不会改变查询含义。字符串参数不另加限制，交给步骤对应写工具原有的检查；例如 `register-acceptance-criterion` 的 `gherkin` 经 `model_add_element` 的 `attributes` 写入，值里含回车（U+000D）时与直接调 `model_add_element` 一样返回 `EDIT_UNSAFE`，不写。
+
+**错误**：`INVALID_ARGUMENT`、`PRECONDITION_FAILED`、`PLAN_REQUIRED`、`PLAN_STALE`，步骤对应写工具的全部错误（见 §5.2、§5.3、§5.5、§5.10），以及 §5.1 的 `WRITE_REJECTED`、`PARSE_FAILED`、`EDIT_UNSAFE`、`NOT_A_WORKTREE`、`LOCKED`、`CONFLICT`。
+
+**校验层**：候选图 L0–L2（只判最终状态）。
+
 ---
 
 ## 6. `aisep:AgentActivity` 定稿与 PROV-O
@@ -903,7 +982,7 @@ C 的附带决定（同在 Q4，已拍板收紧）：`aisep:approvedBy` **只接
 |---|---|---|
 | 参数 | `INVALID_ARGUMENT`、`UNKNOWN_TYPE`、`ABSTRACT_TYPE`、`INVALID_DATETIME`、`ACTIVITY_TIME_ORDER`、`GATE_UNKNOWN` | 否 |
 | 定位 | `MODULES_NOT_IN_REF`、`PATH_OUTSIDE_ROOT`、`NOT_A_GIT_REPO`、`NOT_A_WORKTREE`、`MODEL_NOT_FOUND`、`ELEMENT_NOT_FOUND`、`REF_NOT_FOUND`、`BRANCH_NOT_CHECKED_OUT`、`WORKTREE_NOT_FOUND` | 否 |
-| 语义拒绝 | `PLAN_STALE`、`STALE_BASE`、`WRITE_REJECTED`、`REFERENCED`、`CASCADE_REQUIRED`、`PROTECTED_RESOURCE`、`IRI_EXISTS`、`MODEL_INVALID`（G9）、`GATE_FAILED`、`APPROVER_NOT_ALLOWED`、`AGENT_NOT_ALLOWED`、`STALE_HEAD` | 否 |
+| 语义拒绝 | `PLAN_STALE`、`PLAN_REQUIRED`（§5.14）、`PRECONDITION_FAILED`（§5.14）、`STALE_BASE`、`WRITE_REJECTED`、`REFERENCED`、`CASCADE_REQUIRED`、`PROTECTED_RESOURCE`、`IRI_EXISTS`、`MODEL_INVALID`（G9）、`GATE_FAILED`、`APPROVER_NOT_ALLOWED`、`AGENT_NOT_ALLOWED`、`STALE_HEAD` | 否 |
 | Git | `NO_MERGE_BASE`、`AMBIGUOUS_MERGE_BASE`、`DETACHED_HEAD`、`DIRTY_WORKTREE`、`COMMIT_FAILED` | `COMMIT_FAILED` 只在 `index.lock` 被占用、且已回滚时是；回滚未完成（`orphanApproval`）为否；`git add --intent-to-add` 失败遇到 taken 时不报 `COMMIT_FAILED`，报 `CONFLICT`（不可重试），见本表下 `COMMIT_FAILED` 一段 |
 | 并发 | `LOCKED`、`CONFLICT`、`WORKTREE_CHANGED` | `LOCKED`、`WORKTREE_CHANGED` 是；`CONFLICT` 见表下 |
 | 解析 | `PARSE_FAILED`、`EDIT_UNSAFE`、`DIFF_PARSE_FAILED`、`DIFF_BNODE_UNSUPPORTED`、`QUERY_FAILED`、`QUERY_NOT_READONLY`、`QUERY_TIMEOUT` | 只有超时是 |
