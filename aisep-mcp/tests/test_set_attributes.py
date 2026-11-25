@@ -698,12 +698,17 @@ def test_special_characters_round_trip_exactly(repo, value):
     assert not res.is_error and res.structured_content["after"][GHERKIN] == [{"value": value}]
 
 
-@pytest.mark.xfail(strict=True, reason="实现缺陷（已上报）：值里含回车符 U+000D 时，写入层把它原样写进短字符串，生成的文件不能解析，"
-                                      "结果是 EDIT_UNSAFE（零写入）。model_add_element 的 attributes 有同样的问题。")
-@pytest.mark.parametrize("value", ["a\r\nb\rc", "只有一个回车\r"], ids=["crlf", "cr"])
+@pytest.mark.parametrize("value", ["a\r\nb\rc", "只有一个回车\r", "反斜杠后跟回车\\\r尾", '引号"与\r\n"""三引号'],
+                         ids=["crlf", "cr", "backslash-cr", "quotes-crlf"])
 def test_carriage_return_round_trips_exactly(repo, value):
     old = next(o for s, p, o in file_triples(repo, VERIF) if s == n(AC) and p == n(GHERKIN))
-    applied(repo, AC, set=one("aisep:gherkin", {"value": value}), minus=[tr(AC, GHERKIN, old)], plus=[tr(AC, GHERKIN, lit(value))])
+    r = applied(repo, AC, set=one("aisep:gherkin", {"value": value}), minus=[tr(AC, GHERKIN, old)], plus=[tr(AC, GHERKIN, lit(value))])
+    assert r["after"][GHERKIN] == [{"value": value}]
+    assert violations(repo) == 0
+    s = snap(repo)
+    assert sa(repo, AC, set=one("aisep:gherkin", {"value": value}))["changed"] is False and snap(repo) == s
+    # a value with U+000D can be replaced again (the escaped form in the file is found and removed)
+    applied(repo, AC, set=one("aisep:gherkin", {"value": "后续"}), minus=[tr(AC, GHERKIN, lit(value))], plus=[tr(AC, GHERKIN, lit("后续"))])
 
 
 @pytest.mark.parametrize("value", ["a\r\nb\rc", "只有一个回车\r"], ids=["crlf", "cr"])
@@ -802,15 +807,12 @@ def _bnode_value(repo):
     assert any(s == n(SUPPLIER) and p == n(RDFS_COMMENT) and isinstance(o, ox.BlankNode) for s, p, o in graph(repo))
 
 
-@pytest.mark.xfail(strict=True, reason="实现缺陷（已上报）：§5.12 写明被替换的值是空白节点时返回 EDIT_UNSAFE、不写；"
-                                      "实际返回成功（changed:true、after 里不含该空白节点），而空白节点三元组仍在文件里。")
 @pytest.mark.parametrize("kw", [{"unset": ["rdfs:comment"]}, {"set": one("rdfs:comment", {"value": "x"})}], ids=["unset", "set"])
 def test_blank_node_value_is_edit_unsafe_and_untouched(repo, kw):
     _bnode_value(repo)
     refused(repo, "EDIT_UNSAFE", SUPPLIER, **kw)
 
 
-@pytest.mark.xfail(strict=True, reason="同上一条缺陷的另一面：返回的 after 与写入后的图不一致（声称已删除的空白节点值还在）。")
 @pytest.mark.parametrize("kw", [{"unset": ["rdfs:comment"]}, {"set": one("rdfs:comment", {"value": "x"})}], ids=["unset", "set"])
 def test_blank_node_value_result_matches_the_graph(repo, kw):
     """Weaker than the previous test and independent of the error code: a successful result must tell the truth."""
@@ -821,6 +823,20 @@ def test_blank_node_value_result_matches_the_graph(repo, kw):
         return
     left = [o for s, p, o in graph(repo) if s == n(SUPPLIER) and p == n(RDFS_COMMENT)]
     assert len(left) == len(r["after"][RDFS_COMMENT]), (left, r["after"])
+
+
+def test_blank_node_value_on_another_predicate_does_not_block(repo):
+    """The EDIT_UNSAFE refusal is per replaced predicate: a blank-node value elsewhere on the subject is left alone."""
+    _bnode_value(repo)
+    g0 = graph(repo)                       # blank-node labels differ between parses, so compare without them
+    r = sa(repo, SUPPLIER, set=one("skos:note", {"value": "旁边", "lang": "zh"}))
+    assert r["changed"] is True and [f["path"] for f in r["filesChanged"]] == [AM4]
+    g1 = graph(repo)
+    named = lambda g: {t for t in g if not any(isinstance(x, ox.BlankNode) for x in t)}
+    assert tr(SUPPLIER, NOTE, lit("旁边", "zh")) in g1 and len(g1) == len(g0) + 1
+    assert named(g1) - named(g0) == {tr(SUPPLIER, NOTE, lit("旁边", "zh"))} and named(g0) <= named(g1)
+    assert violations(repo) == 0
+    assert any(s == n(SUPPLIER) and p == n(RDFS_COMMENT) and isinstance(o, ox.BlankNode) for s, p, o in graph(repo))
 
 
 def test_inline_comment_after_the_statement_survives(repo):
