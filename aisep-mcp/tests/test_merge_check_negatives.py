@@ -1485,6 +1485,78 @@ def test_layer1_derivation_ignores_record_whose_in_model_is_not_a_model(fixture,
     assert states == {ARCH_NS + "Proposed"}
 
 
+# ================================================================== #105：模块或 vendor 声明的批准记录 / 活动子类
+# The derivation honours a record typed with any subclass of aisep:ApprovalRecord declared anywhere in the merge result
+# (modules/ and vendor/ included); merge_check must recognise the same records and activities, or checks 1, 3 and 4 are
+# skipped for them (PR #104 independent review, issue #105).
+
+SUB_REC = "https://aisep.example/ont/ddd#Signoff"
+SUB_ACT = "https://aisep.example/ont/ddd#AgentRun"
+SUB_SITES = {"module": "modules/ddd/onto.ttl", "vendor": "vendor/meta.linked.archi/ttl/archimate4_onto.ttl"}
+NO_COMMIT = "ab" * 20  # 40 hex, not a commit in the repository
+
+
+def declare_sub(t, site, sub=SUB_REC, sup="https://aisep.example/ont/aisep#ApprovalRecord"):
+    t.write(SUB_SITES[site], f"\n<{sub}> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <{sup}> .\n", "a")
+    return t.commit_all(f"declare {sub} in {site}")
+
+
+def sub_record(t, local, approves, evidence, decision="Approved", activity=None, msg=None):
+    from fixtures.topology import record_ttl
+    body = record_ttl(local, "GateArchitecture", approves, evidence, decision=decision, activity=activity)
+    assert " a aisep:ApprovalRecord ;" in body
+    t.write(f"{GOV}/{local}.ttl", PREFIXES_() + body.replace(" a aisep:ApprovalRecord ;", f" a <{SUB_REC}> ;"))
+    return t.commit_all(msg or f"aisep: GateArchitecture {decision} {local}", trailers=[f"AISEP-Evidence: {evidence}"])
+
+
+@pytest.mark.parametrize("site", ["module", "vendor"])
+def test_105_subclass_record_with_unchecked_evidence_rejected(t, site):
+    """A record typed with a subclass declared in a module / vendor file, evidence not a commit: the derivation makes
+    :newThing Approved, so merge_check must run check 3 on it. Positive twin: the declaration alone is clean."""
+    feature(t)
+    d = declare_sub(t, site)
+    assert_clean(check(t, d, "feat/x"))
+    a = sub_record(t, "approval-20261120110000-architecture-forged", ["newThing"], NO_COMMIT)
+    assert state(t, a, M + "newThing") == {ARCH_NS + "Approved"}  # the fixture really reaches the derivation
+    assert_rejected(check(t, a, "feat/x"), "evidence-not-ancestor", iri=M + "approval-20261120110000-architecture-forged")
+
+
+@pytest.mark.parametrize("change", ["modified", "removed"])
+def test_105_existing_subclass_record_rewritten_rejected(t, change):
+    """Check 1 on a record already on T whose type is a module-declared subclass. Positive twin: an unrelated PR."""
+    declare_sub(t, "module")
+    local = "approval-20261120110000-architecture-onmain"
+    sub_record(t, local, ["submitQuotation"], t.rev(MAIN), decision="Rejected")
+    t.checkout("main", new="feat/x")
+    rel = f"{GOV}/{local}.ttl"
+    assert_clean(check(t, t.relabel("submitQuotation", "提交报价单V2"), "feat/x"))
+    if change == "modified":
+        t.write(rel, t.read(rel).replace("GateArchitectureRejected", "GateArchitectureRejected2"))
+    else:
+        os.remove(t.path(rel))
+    h = t.commit_all(f"{change} the record")
+    assert_rejected(check(t, h, "feat/x"), f"governance-record-{change}", iri=M + local)
+
+
+def test_105_subclass_activity_branch_checked(t):
+    """Check 4 on an activity typed with a module-declared subclass of aisep:AgentActivity. Positive twin: the same
+    activity with the right branch."""
+    from fixtures.topology import activity_ttl
+    feature(t)
+    h0 = declare_sub(t, "module", SUB_ACT, "https://aisep.example/ont/aisep#AgentActivity")
+    for branch, bad in (("other/branch", True), ("feat/x", False)):
+        t.git("reset", "-q", "--hard", h0)
+        a = act(t, h0, branch)
+        t.write(f"{GOV}/{a['local']}.ttl", PREFIXES_() + activity_ttl(**a).replace(
+            " a aisep:AgentActivity ;", f" a <{SUB_ACT}> ;"))
+        h = t.commit_all("add activity")
+        p = check(t, h, "feat/x")
+        if bad:
+            assert_rejected(p, "activity-branch-mismatch", iri=M + a["local"])
+        else:
+            assert "activity-branch-mismatch" not in reasons(p), p
+
+
 # ------------------------------------------------------------------ every test: build all fixtures, then XFAIL if the
 # checker was missing for any call (see "checker access" above)
 
