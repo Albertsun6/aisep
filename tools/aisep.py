@@ -12,6 +12,9 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
   aisep.py query  FILE.rq|'SPARQL' [model files...]   -> over build graph + all ontologies + all alignments
   aisep.py impact <element IRI or prefixed name> [--mode depends|ripple] [--depth N] [--allow-invalid] [model files...]
                                           (spec §9; runs L1+L2 first and refuses an invalid model unless --allow-invalid)
+  aisep.py diagram (--view IRI | --viewpoint NAME --model SLUG) [-o OUT.svg] [model files...]
+                                       -> ArchiMate 4 view as SVG (default build/views/<model>/<view>.svg); a declared
+                                          arch:Diagram, or every element of the model the am4 viewpoint includes
   aisep.py test [--no-pytest]          -> every modules/*/tests fixture + tests/acceptance/*.py + aisep-mcp/tests (pytest);
                                           exit 1 on failure. --no-pytest skips aisep-mcp/tests (CI runs it in its own job)
 Default model files = models/**/*.ttl. Problem lines start with [Violation], [Warning] or [Info].
@@ -289,7 +292,50 @@ def cmd_test(no_pytest=False):
     return 1 if failed else 0
 
 
+def cmd_diagram(args):
+    """ArchiMate 4 view -> SVG (aisep/diagram.py). Read-only; not part of gate."""
+    from aisep import diagram
+    opts = {}
+    for k in ("--view", "--viewpoint", "--model", "-o"):
+        if k in args:
+            i = args.index(k)
+            if i + 1 >= len(args):
+                print(__doc__); return 2
+            opts[k] = args[i + 1]; args = args[:i] + args[i + 2:]
+    if ("--view" in opts) == ("--viewpoint" in opts) or ("--viewpoint" in opts and "--model" not in opts):
+        print(__doc__); return 2
+    files, read = model_files(args)
+    ctx = Ctx(discover(), files, read=read)
+    if report(ctx, ("L0",))[0]:
+        return 1
+    if "--view" in opts:
+        view = expand(ctx, opts["--view"])
+        ms = ctx.rows(f"SELECT ?m WHERE {{ <{view}> arch:inModel ?m }}")
+        if not ms:
+            print(f"[Violation] {opts['--view']}: no arch:inModel, not a view of any model"); return 1
+        model, name = ms[0][0], diagram.local(view)
+    else:
+        model, name = f"https://aisep.example/model/{opts['--model']}/", opts["--viewpoint"].rsplit("#", 1)[-1]
+    try:
+        title, sub, elements, rels, warnings = diagram.select(ctx, model, view=opts.get("--view") and view,
+                                                              viewpoint=opts.get("--viewpoint"))
+    except ValueError as e:
+        print(f"[Violation] {e}"); return 1
+    for w in warnings:
+        print(f"[Warning] diagram {w}")
+    slug = model.rstrip("/").rsplit("/", 1)[-1]
+    out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".svg")
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    with open(out, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(diagram.render(title, sub, elements, rels))
+    print(f"SUMMARY diagram model={slug} view={name} elements={len(elements)} relationships={len(rels)} "
+          f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
+    return 0
+
+
 def main(argv):
+    if argv and argv[0] == "diagram":
+        return cmd_diagram(argv[1:])
     if not argv or argv[0] not in ("build", "check", "validate", "findings", "gate", "query", "impact", "test"):
         print(__doc__); return 2
     cmd, args = argv[0], argv[1:]

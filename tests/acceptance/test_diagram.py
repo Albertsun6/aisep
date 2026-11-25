@@ -1,0 +1,152 @@
+"""Acceptance test for `aisep.py diagram` (ArchiMate 4 view -> SVG generated from the model).
+
+Every expected number comes from an independent SPARQL query run through `aisep.py query`, never from aisep/diagram.py.
+Each claim prints CONFIRMED / REFUTED with evidence; exit 0 only if every claim is CONFIRMED.
+
+Run:  <venv python> tests/acceptance/test_diagram.py      (also run by `aisep.py test`)
+"""
+import glob, os, re, shutil, subprocess, sys, tempfile
+from xml.etree import ElementTree
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+AISEP = os.path.join(ROOT, "tools", "aisep.py")
+M = "https://aisep.example/model/"
+VP = "https://meta.linked.archi/archimate4/viewpoints#"
+results = []
+
+
+def run(*args):
+    p = subprocess.run([sys.executable, AISEP, *args], cwd=ROOT, capture_output=True, text=True, timeout=600)
+    return p.returncode, p.stdout + p.stderr
+
+
+def files(slug, d=None):
+    return sorted(glob.glob(os.path.join(d or os.path.join(ROOT, "models", slug), "*.ttl")))
+
+
+def count(q, fs):
+    rc, out = run("query", q, *fs)
+    lines = [l for l in out.splitlines() if l and not l.startswith("--")]
+    assert rc == 0 and lines[0] == "n", out
+    return int(lines[1])
+
+
+def iris_in_model(model, fs):
+    rc, out = run("query", f"SELECT DISTINCT ?x WHERE {{ ?x arch:inModel <{model}> }}", *fs)
+    assert rc == 0, out
+    return {l for l in out.splitlines()[1:] if l and not l.startswith("--")}
+
+
+def short(iri):
+    slug, loc = iri[len(M):].split("/", 1)
+    return f"{slug}:{loc}"
+
+
+def claim(text, ok, evidence):
+    results.append(ok)
+    print(f"[{'CONFIRMED' if ok else 'REFUTED'}] {text}\n      evidence: {evidence}")
+
+
+def diagram(out, *args):
+    rc, log = run("diagram", *args, "-o", out)
+    assert rc == 0, log
+    with open(out, encoding="utf-8") as fh:
+        svg = fh.read()
+    root = ElementTree.fromstring(svg)  # claim: well-formed XML (raises otherwise)
+    kinds = {}
+    for e in root.iter():
+        k = e.get("data-kind")
+        if k:
+            kinds.setdefault(k, []).append(e.get("data-iri"))
+    return svg, kinds.get("element", []), kinds.get("relationship", [])
+
+
+ELEM = ("{{ ?x arch:inModel <{m}> . ?x a ?t . <{vp}> arch:includesConcept ?t "
+        "FILTER NOT EXISTS {{ ?x arch:source ?s0 }} }}")
+
+
+def viewpoint_case(slug, viewpoint, tmp):
+    model, vp, fs = f"{M}{slug}/", VP + viewpoint, files(slug)
+    want_e = count(f"SELECT (COUNT(DISTINCT ?x) AS ?n) WHERE {ELEM.format(m=model, vp=vp)}", fs)
+    el_s = ELEM.format(m=model, vp=vp).replace("?x", "?s").replace("?t ", "?ts ").replace("?s0", "?s1")
+    el_t = ELEM.format(m=model, vp=vp).replace("?x", "?o").replace("?t ", "?to ").replace("?s0", "?s2")
+    want_r = count(f"""SELECT (COUNT(DISTINCT ?r) AS ?n) WHERE {{ ?r arch:inModel <{model}> ; arch:source ?s ;
+                       arch:target ?o FILTER(?s != ?o) {el_s} {el_t} }}""", fs)
+    out = os.path.join(tmp, f"{slug}-{viewpoint}.svg")
+    svg, els, rels = diagram(out, "--viewpoint", viewpoint, "--model", slug, *fs)
+    claim(f"{slug} {viewpoint}: element count equals SPARQL count (>0)", len(els) == want_e > 0,
+          f"svg={len(els)} sparql={want_e}")
+    claim(f"{slug} {viewpoint}: relationship count equals SPARQL count (>0)", len(rels) == want_r > 0,
+          f"svg={len(rels)} sparql={want_r}")
+    members = iris_in_model(model, fs)
+    ghosts = [i for i in els + rels if short(i) not in members]
+    claim(f"{slug} {viewpoint}: every data-iri is a member of the model", not ghosts, f"not members: {ghosts[:3]}")
+    claim(f"{slug} {viewpoint}: no element or relationship drawn twice", len(set(els)) == len(els)
+          and len(set(rels)) == len(rels), f"elements={len(els)} distinct={len(set(els))}")
+    svg2, _, _ = diagram(out + ".2.svg", "--viewpoint", viewpoint, "--model", slug, *fs)
+    claim(f"{slug} {viewpoint}: generating twice gives identical bytes", svg == svg2, f"len={len(svg)}")
+    return svg, els, rels
+
+
+def main():
+    tmp = tempfile.mkdtemp(prefix="aisep-diagram-")
+    try:
+        # 1-2: one view per sample model (workbench: requirements realization incl. business-common Process/Role;
+        #      procurement: layered = business + application)
+        svg, els, rels = viewpoint_case("workbench", "RequirementsRealizationViewpoint", tmp)
+        claim("workbench view contains a business/common-domain element (am4:Process)",
+              'data-type="am4:Process"' in svg, "am4:Process present" if 'am4:Process' in svg else "absent")
+        viewpoint_case("procurement", "LayeredViewpoint", tmp)
+
+        # 3: renaming an element changes the picture, nothing else
+        d = os.path.join(tmp, "wb")
+        shutil.copytree(os.path.join(ROOT, "models", "workbench"), d)
+        am4 = os.path.join(d, "am4.ttl")
+        txt = open(am4, encoding="utf-8").read()
+        old, new = '"关口批准流转"@zh', '"关口批准流转（改名探针）"@zh'
+        assert txt.count(old) == 1
+        open(am4, "w", encoding="utf-8").write(txt.replace(old, new))
+        svg3, els3, rels3 = diagram(os.path.join(tmp, "renamed.svg"), "--viewpoint", "RequirementsRealizationViewpoint",
+                                    "--model", "workbench", *files("workbench", d))
+        claim("rename: new label drawn, old label gone, same data-iri sets",
+              "关口批准流转（改名探针）" in svg3 and ">关口批准流转<" in svg and ">关口批准流转<" not in svg3
+              and sorted(els3) == sorted(els) and sorted(rels3) == sorted(rels),
+              f"new_in={'关口批准流转（改名探针）' in svg3} old_before={'>关口批准流转<' in svg}")
+
+        # 5: declared view (arch:Diagram + arch:inView): exactly its members, plus relationships between them
+        d2 = os.path.join(tmp, "wb2")
+        shutil.copytree(os.path.join(ROOT, "models", "workbench"), d2)
+        view = f"{M}workbench/view-diagramProbe"
+        members = ["gateApprovalFlow", "approverRole", "reqApprovalProgress"]
+        with open(os.path.join(d2, "am4.ttl"), "a", encoding="utf-8") as fh:
+            fh.write(f"\n<{view}> a arch:Diagram ;\n    arch:inModel <{M}workbench/> ;\n"
+                     f'    skos:prefLabel "出图探针视图"@zh ;\n'
+                     f"    arch:viewConformsToViewpoint <{VP}RequirementsRealizationViewpoint> .\n"
+                     + "".join(f":{x} arch:inView <{view}> .\n" for x in members))
+        fs2 = files("workbench", d2)
+        rc, log = run("gate", *fs2)
+        claim("declared view fixture passes gate", rc == 0, log.strip().splitlines()[-1])
+        vals = " ".join(f":{x}" for x in members)
+        want_r = count(f"""PREFIX : <{M}workbench/> SELECT (COUNT(DISTINCT ?r) AS ?n) WHERE {{
+                           VALUES ?s {{ {vals} }} VALUES ?o {{ {vals} }} ?r arch:source ?s ; arch:target ?o
+                           FILTER(?s != ?o) }}""", fs2)
+        svg5, els5, rels5 = diagram(os.path.join(tmp, "declared.svg"), "--view", view, *fs2)
+        claim("declared view: exactly the 3 arch:inView members are drawn",
+              sorted(els5) == sorted(f"{M}workbench/{x}" for x in members), f"drawn={[short(i) for i in els5]}")
+        claim("declared view: relationship count equals SPARQL count (>0)", len(rels5) == want_r > 0,
+              f"svg={len(rels5)} sparql={want_r}")
+        claim("declared view: title is the view's prefLabel", ">出图探针视图<" in svg5, "title checked")
+
+        # errors are reported, not drawn
+        rc, log = run("diagram", "--viewpoint", "NoSuchViewpoint", "--model", "workbench", "-o",
+                      os.path.join(tmp, "x.svg"), *files("workbench"))
+        claim("unknown viewpoint exits 1 with a Violation", rc == 1 and "[Violation]" in log, log.strip()[-120:])
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    ok = all(results)
+    print(f"SUMMARY diagram-acceptance claims={len(results)} confirmed={sum(results)} result={'PASS' if ok else 'FAIL'}")
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
