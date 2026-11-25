@@ -99,7 +99,7 @@ def canon(triples):
 
 # ---------------------------------------------------------------- rendering
 
-_LOCAL = re.compile(r"^[A-Za-z_][\w-]*$|^$")
+_LOCAL = re.compile(r"^[A-Za-z_][\w-]*\Z|^\Z")
 
 
 def term(t, pfx):

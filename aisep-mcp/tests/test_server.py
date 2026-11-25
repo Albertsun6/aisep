@@ -331,3 +331,15 @@ def test_mcp_json_launcher_starts_the_agent_profile(repo):
     names, gate = anyio.run(go)
     assert names == EXPECTED_PROFILES["agent"] and gate.structured_content["result"] == "PASS"
     assert gate.structured_content["source"]["repo"] == os.path.realpath(repo)
+
+
+@pytest.mark.parametrize("field", ["headCommit", "expectedBaseCommit"])
+def test_sha_argument_with_trailing_newline_is_rejected_by_schema(field):
+    """#77: jsonschema runs `pattern` with Python re.search, where $ also matches before a trailing newline; the
+    inputSchema's maxLength refuses "<40 hex>\\n" before the tool runs."""
+    args = {"model": "procurement", "gate": "GateArchitecture", "decision": "Approved", "approvedBy": "x",
+            "approves": ["x"], "branch": "feat/x", "headCommit": "a" * 40}
+    S.validate_args("governance_record_approval", args)
+    with pytest.raises(S.AisepError) as e:
+        S.validate_args("governance_record_approval", {**args, field: "a" * 40 + "\n"})
+    assert e.value.code == "INVALID_ARGUMENT" and "too long" in e.value.message, e.value.message

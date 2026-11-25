@@ -33,6 +33,9 @@ B = {"type": "boolean"}
 REPO = S(description="仓库内任意路径（主 checkout 或 worktree）；缺省取服务器的 --repo")
 REF = S(description="分支、标签或 commit；不传则读工作区（含未提交改动）")
 MODEL = S(description="模型 IRI 或 slug，如 procurement")
+# pattern stays ECMA-262 ($, not \Z); jsonschema runs it with Python re.search, where $ also matches before a
+# trailing newline, so maxLength closes that (#77)
+SHA40 = S(pattern="^[0-9a-f]{40}$", maxLength=40)
 
 
 def obj(props, required=()):
@@ -102,7 +105,7 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
         obj({"model": MODEL, "gate": S(enum=["GateRequirements", "GateArchitecture", "GateDesign", "GateMerge", "GateRelease"]),
              "decision": S(enum=["Approved", "Rejected"]), "approvedBy": S(),
              "approves": {"type": "array", "items": S(), "minItems": 1}, "branch": S(),
-             "headCommit": S(pattern="^[0-9a-f]{40}$"), "expectedBaseCommit": S(pattern="^[0-9a-f]{40}$"), "slug": S(),
+             "headCommit": SHA40, "expectedBaseCommit": SHA40, "slug": S(),
              "prefLabel": S(), "activity": obj({"agent": S(), "sessionRef": S(), "startedAt": S(), "endedAt": S(),
                                                 "branch": S(), "label": S()}, ["agent", "sessionRef", "startedAt"]),
              "mainRef": S(), "repo": REPO},

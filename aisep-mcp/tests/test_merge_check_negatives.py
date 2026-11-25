@@ -410,6 +410,28 @@ def test_T38_sha256_evidence_rejected(t):
     assert_clean(check(t, a, "feat/x"))
 
 
+def test_T38_evidence_with_trailing_newline_rejected(t):
+    """#77: "<40 hex>\\n" is not a commit id ($ would also match before the trailing newline), neither as a record's
+    evidence (the merge-result gate's EG16 refuses it first) nor as the PR head."""
+    h = feature(t)
+    a, _, _ = t.approve("GateArchitecture", ["newThing"], evidence=h + "\\n", trailer=h)  # Turtle escape -> real "\n"
+    p = check(t, a, "feat/x")
+    assert_rejected(p, "merge-result-gate-failed")
+    assert not isinstance(p, _Pending) and all("aisep:evidence" in _get(x, "message") for x in p), p
+    assert_rejected(check(t, a + "\n", "feat/x"), "git-error")
+    t.git("reset", "-q", "--hard", h)
+    a, _, _ = t.approve("GateArchitecture", ["newThing"], evidence=h)
+    assert_clean(check(t, a, "feat/x"))
+
+
+def test_whole_string_patterns_reject_trailing_newline():
+    """#77: the whole-string checks in mergecheck / release / writer end in \\Z, not $."""
+    from aisep import mergecheck, release, writer
+    for rx, ok in [(mergecheck.RECORD_FILE, "models/p/governance/a.ttl"), (mergecheck.TAG_DATED, "release/20261120-abcdef0"),
+                   (release.RELEASE_BRANCH, "approval/release-abcdef0-20261120120000"), (writer._LOCAL, "quoteApproval")]:
+        assert rx.match(ok) and not rx.match(ok + "\n"), rx.pattern
+
+
 @pytest.mark.parametrize("at,forge_committer,bad", [
     ("2026-11-20T12:06:00Z", False, True),
     ("2026-11-20T12:06:00Z", True, True),   # committer time forged to the same future instant: verdict unchanged
