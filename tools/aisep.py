@@ -13,7 +13,8 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
   aisep.py impact <element IRI or prefixed name> [--mode depends|ripple] [--depth N] [--allow-invalid] [model files...]
                                           (spec §9; runs L1+L2 first and refuses an invalid model unless --allow-invalid)
   aisep.py diagram (--view IRI | --viewpoint NAME --model SLUG) [-o OUT.svg] [model files...]
-                                       -> ArchiMate 4 view as SVG (default build/views/<model>/<view>.svg); a declared
+                                       -> ArchiMate 4 view as SVG (default build/views/<model>/<view>.svg; layout by elkjs, needs
+                                          Node and `npm ci --prefix tools/elk --ignore-scripts`); a declared
                                           arch:Diagram, or every element of the model the am4 viewpoint includes
   aisep.py test [--no-pytest]          -> every modules/*/tests fixture + tests/acceptance/*.py + aisep-mcp/tests (pytest);
                                           exit 1 on failure. --no-pytest skips aisep-mcp/tests (CI runs it in its own job)
@@ -326,8 +327,12 @@ def cmd_diagram(args):
     slug = model.rstrip("/").rsplit("/", 1)[-1]
     out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".svg")
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    try:
+        svg = diagram.render(title, sub, elements, rels)
+    except RuntimeError as e:
+        print(f"[Violation] diagram: {e}"); return 1
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
-        fh.write(diagram.render(title, sub, elements, rels))
+        fh.write(svg)
     print(f"SUMMARY diagram model={slug} view={name} elements={len(elements)} relationships={len(rels)} "
           f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
     return 0

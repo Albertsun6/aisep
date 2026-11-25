@@ -6,10 +6,11 @@ A view is either
   * a viewpoint projection: every model element whose asserted type is in the viewpoint's `arch:includesConcept`
     (vendor archimate4_viewpoints.ttl), plus every relationship whose two ends are both in the view.
 
-Layout is a deterministic layered layout in the spirit of dagre's phases (rank by longest path, order by barycenter
-sweeps, assign coordinates), stacked in ArchiMate domain bands. Shapes, icons and colours follow the `amnode` renderer
+Layout is ELK layered (elkjs, pinned in tools/elk/package-lock.json, run with Node) with fixed options and seed;
+each ArchiMate domain band is an ELK partition, so bands stack top to bottom. Shapes, icons and colours follow the `amnode` renderer
 of the AISEP architecture document. The output is a pure function of the model: same model, same bytes.
 """
+import json, os, subprocess
 from html import escape
 
 from aisep.core import ARCH, NS
@@ -87,7 +88,7 @@ ZH = {"MotivationElement": "动机", "Requirement": "需求", "Driver": "驱动�
       "Flow": "流", "Triggering": "触发", "Composition": "组合", "Aggregation": "聚合", "Influence": "影响",
       "Association": "关联", "DirectedAssociation": "有向关联", "Specialization": "特化"}
 
-NODE_W, GAP_X, GAP_Y, BAND_PAD, LABEL_W, MAX_COLS, MARGIN = 168, 28, 46, 18, 64, 6, 20
+NODE_W, BAND_PAD, LABEL_W, MARGIN = 168, 18, 64, 20
 
 STYLE = """
 svg{--bg:#ffffff;--fg:#18202d;--muted:#586375;--edge:#3d495b;--band:#f3f5f8;
@@ -220,66 +221,55 @@ def wrap(s, max_w, px):
     return lines or [""]
 
 
-# ------------------------------------------------------------------ layout
+# ------------------------------------------------------------------ layout (ELK, tools/elk)
 
-def _ranks(nodes, edges):
-    """Longest-path rank inside a band; back edges of a DFS in IRI order are ignored (cycle breaking)."""
-    out = {n: sorted(t for s, t in edges if s == n) for n in nodes}
-    state, order = {}, []
-
-    def dfs(n):
-        state[n] = 1
-        for m in out[n]:
-            if state.get(m) is None:
-                dfs(m)
-        state[n] = 2; order.append(n)
-    for n in sorted(nodes):
-        if n not in state:
-            dfs(n)
-    pos = {n: i for i, n in enumerate(reversed(order))}  # topological order of the DAG without back edges
-    rank = {n: 0 for n in nodes}
-    for n in reversed(order):
-        for m in out[n]:
-            if pos[m] > pos[n]:
-                rank[m] = max(rank[m], rank[n] + 1)
-    return rank
+ELK_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools", "elk")
+# Fixed options and a fixed seed: the same graph always gets the same coordinates (asserted by test_diagram.py).
+ELK_OPTIONS = {
+    "elk.algorithm": "layered", "elk.direction": "DOWN", "elk.randomSeed": "1",
+    "elk.partitioning.activate": "true", "elk.edgeRouting": "ORTHOGONAL",
+    "elk.layered.considerModelOrder.strategy": "NODES_AND_EDGES",
+    "elk.spacing.nodeNode": "28", "elk.layered.spacing.nodeNodeBetweenLayers": "46",
+    "elk.spacing.edgeNode": "14", "elk.spacing.edgeEdge": "8",
+    "elk.padding": f"[top=0,left={LABEL_W + BAND_PAD},bottom=0,right={BAND_PAD}]",
+}
 
 
-def layout(elements, rels):
-    """Rows of node IRIs (top to bottom), each row tagged with its band, after barycenter ordering."""
-    band_of = {e["iri"]: e["band"] for e in elements}
-    label = {e["iri"]: e["label"] for e in elements}
-    groups = []  # [(band, [iris])]
-    for key, _, _ in BANDS:
-        nodes = [e["iri"] for e in elements if e["band"] == key]
-        if not nodes:
-            continue
-        # Aggregation / Composition draw the whole above its parts; every other intra-band edge goes source → target
-        inner = [(r["source"], r["target"]) for r in rels if band_of[r["source"]] == key == band_of[r["target"]]]
-        rank = _ranks(nodes, inner)
-        for r in sorted(set(rank.values())):
-            groups.append((key, sorted((n for n in nodes if rank[n] == r), key=lambda n: (label[n], n))))
-    nbrs = {e["iri"]: set() for e in elements}
-    for r in rels:
-        nbrs[r["source"]].add(r["target"]); nbrs[r["target"]].add(r["source"])
+def elk_layout(graph):
+    """Run tools/elk/layout.cjs (elkjs, pinned in tools/elk/package-lock.json) on an ELK JSON graph."""
+    if not os.path.isdir(os.path.join(ELK_DIR, "node_modules", "elkjs")):
+        raise RuntimeError("elkjs is not installed: run `npm ci --prefix tools/elk --ignore-scripts`")
+    try:
+        p = subprocess.run(["node", os.path.join(ELK_DIR, "layout.cjs")], input=json.dumps(graph), cwd=ELK_DIR,
+                           capture_output=True, text=True, timeout=120)
+    except FileNotFoundError:
+        raise RuntimeError("node is not on PATH (needed by elkjs; Node >= 20)") from None
+    if p.returncode != 0:
+        raise RuntimeError(f"ELK layout failed: {p.stderr.strip()[-400:]}")
+    return json.loads(p.stdout)
 
-    def place():
-        return {n: i - (len(g) - 1) / 2 for _, g in groups for i, n in enumerate(g)}
-    for sweep in range(8):
-        idx = range(len(groups)) if sweep % 2 == 0 else range(len(groups) - 1, -1, -1)
-        for gi in idx:
-            pos = place()
-            band, g = groups[gi]
-            own = set(g)
-            def key(n, pos=pos, own=own):
-                ps = [pos[m] for m in nbrs[n] if m not in own]
-                return (sum(ps) / len(ps) if ps else pos[n], label[n], n)
-            groups[gi] = (band, sorted(g, key=key))
-    rows = []
-    for band, g in groups:
-        for i in range(0, len(g), MAX_COLS):
-            rows.append((band, g[i:i + MAX_COLS]))
-    return rows
+
+def layout(elements, rels, lines):
+    """{iri: (x, y, w, h)}, {rel iri: [(x, y), ...]} from ELK. Nodes are sized by their wrapped labels; each ArchiMate
+    domain band is an ELK partition, so bands come out top to bottom without overlapping."""
+    order = [k for k, _, _ in BANDS]
+    nid = {e["iri"]: f"n{i}" for i, e in enumerate(elements)}
+    graph = {"id": "root", "layoutOptions": ELK_OPTIONS,
+             "children": [{"id": nid[e["iri"]], "width": NODE_W, "height": max(54, 22 + 16 * len(lines[e["iri"]])),
+                           "layoutOptions": {"elk.partitioning.partition": str(order.index(e["band"]))}}
+                          for e in elements],
+             "edges": [{"id": f"e{i}", "sources": [nid[r["source"]]], "targets": [nid[r["target"]]]}
+                       for i, r in enumerate(rels)]}
+    out = elk_layout(graph)
+    pos = {c["id"]: (c["x"], c["y"], c["width"], c["height"]) for c in out.get("children", [])}
+    routes = {}
+    for e in out.get("edges", []):
+        s = e["sections"][0]
+        routes[e["id"]] = [(s["startPoint"]["x"], s["startPoint"]["y"])] + \
+                          [(b["x"], b["y"]) for b in s.get("bendPoints", [])] + [(s["endPoint"]["x"], s["endPoint"]["y"])]
+    return ({e["iri"]: pos[nid[e["iri"]]] for e in elements},
+            {r["iri"]: routes[f"e{i}"] for i, r in enumerate(rels)}, out.get("width", 0), out.get("height", 0))
+
 
 
 # ------------------------------------------------------------------ rendering
@@ -321,40 +311,19 @@ def _icon(name, ox, oy):
     return out
 
 
-def _clip(b, px, py):
-    x, y, w, h = b
-    cx, cy = x + w / 2, y + h / 2
-    dx, dy = px - cx, py - cy
-    if not dx and not dy:
-        return cx, cy
-    s = min((w / 2) / abs(dx) if dx else float("inf"), (h / 2) / abs(dy) if dy else float("inf"))
-    return cx + dx * s, cy + dy * s
-
-
 def render(title, sub, elements, rels):
-    rows = layout(elements, rels)
     by = {e["iri"]: e for e in elements}
     lines = {e["iri"]: wrap(e["label"], NODE_W - 48, 12) for e in elements}
-    row_h = [max(54, 22 + 16 * max(len(lines[n]) for n in r)) for _, r in rows]
-    widest = max([len(r) for _, r in rows] + [1])
-    inner_w = widest * NODE_W + (widest - 1) * GAP_X
-    width = MARGIN * 2 + LABEL_W + inner_w + BAND_PAD * 2
-    box, bands, y = {}, [], MARGIN + 46
-    for i, (band, r) in enumerate(rows):
-        if not bands or bands[-1][0] != band:
-            if bands:
-                y += GAP_Y - BAND_PAD * 2 + 12
-            bands.append([band, y, y])
-            y += BAND_PAD
-        row_w = len(r) * NODE_W + (len(r) - 1) * GAP_X
-        x0 = MARGIN + LABEL_W + BAND_PAD + (inner_w - row_w) / 2
-        for j, n in enumerate(r):
-            box[n] = (x0 + j * (NODE_W + GAP_X), y, NODE_W, row_h[i])
-        y += row_h[i]
-        bands[-1][2] = y + BAND_PAD
-        y += GAP_Y if i + 1 < len(rows) and rows[i + 1][0] == band else BAND_PAD
-    y = (bands[-1][2] if bands else y) + 24
-    # legend: only the types that occur
+    box, route, gw, gh = layout(elements, rels, lines) if elements else ({}, {}, 0, 0)
+    top = MARGIN + 46 + BAND_PAD  # graph origin
+    width = max(MARGIN * 2 + gw, 560)
+    # bands: vertical extent of each band's nodes (ELK partitions do not interleave)
+    bands = []
+    for key, _, name in BANDS:
+        ys = [(box[e["iri"]][1], box[e["iri"]][1] + box[e["iri"]][3]) for e in elements if e["band"] == key]
+        if ys:
+            bands.append((name, top + min(a for a, _ in ys) - BAND_PAD, top + max(b for _, b in ys) + BAND_PAD))
+    y = top + gh + BAND_PAD + 24
     etypes = sorted({(e["band"], e["type"]) for e in elements}, key=lambda t: ([b[0] for b in BANDS].index(t[0]), t[1]))
     rtypes = sorted({r["type"] for r in rels})
     per_row = max(1, int((width - 2 * MARGIN - 60) // 150))
@@ -367,39 +336,30 @@ def render(title, sub, elements, rels):
            f'<rect class="bg" x="0" y="0" width="{f(width)}" height="{f(height)}"/>',
            f'<text x="{MARGIN}" y="{MARGIN + 14}" class="title">{escape(title)}</text>',
            f'<text x="{MARGIN}" y="{MARGIN + 32}" class="sub">{escape(sub)}</text>']
-    names = dict((k, t) for k, _, t in BANDS)
-    for band, y0, y1 in bands:
+    for name, y0, y1 in bands:
         out.append(f'<rect class="band" x="{MARGIN}" y="{f(y0)}" width="{f(width - 2 * MARGIN)}" height="{f(y1 - y0)}" rx="8"/>')
-        out.append(f'<text class="band-t" x="{MARGIN + 12}" y="{f(y0 + 20)}">{names[band]}</text>')
+        out.append(f'<text class="band-t" x="{MARGIN + 12}" y="{f(y0 + 20)}">{name}</text>')
     for r in rels:
-        a, b = box[r["source"]], box[r["target"]]
-        ca, cb = (a[0] + a[2] / 2, a[1] + a[3] / 2), (b[0] + b[2] / 2, b[1] + b[3] / 2)
+        pts = [(MARGIN + x, top + y_) for x, y_ in route[r["iri"]]]
+        d = "M" + " L".join(f"{f(x)},{f(y_)}" for x, y_ in pts)
         cls, ms, me = EDGES.get(r["type"], ("e", None, None))
-        if abs(ca[1] - cb[1]) < 1:  # same row: arc above the row so the line does not run through neighbours
-            bend = 18 + abs(cb[0] - ca[0]) * 0.12
-            mx, my = (ca[0] + cb[0]) / 2, min(a[1], b[1]) - bend
-            p0, p1 = _clip(a, mx, my), _clip(b, mx, my)
-            d = f"M{f(p0[0])},{f(p0[1])} Q{f(mx)},{f(my)} {f(p1[0])},{f(p1[1])}"
-        else:
-            p0, p1 = _clip(a, *cb), _clip(b, *ca)
-            d = f"M{f(p0[0])},{f(p0[1])} L{f(p1[0])},{f(p1[1])}"
         mk = (f' marker-start="url(#{ms})"' if ms else "") + (f' marker-end="url(#{me})"' if me else "")
         tip = f'{ZH.get(r["type"], r["type"])}：{by[r["source"]]["label"]} → {by[r["target"]]["label"]}'
         out.append(f'<path data-kind="relationship" data-iri="{escape(r["iri"])}" data-type="am4:{r["type"]}" '
                    f'd="{d}" class="{cls}"{mk}><title>{escape(tip)}</title></path>')
     for n in sorted(box):
-        e, (x, y0, w, h) = by[n], box[n]
+        e = by[n]
+        x, y0, w, h = MARGIN + box[n][0], top + box[n][1], box[n][2], box[n][3]
         shape, icon = SHAPES.get(e["type"], ("rect", None))
         tip = f'{ZH.get(e["type"], e["type"])}：{e["label"]}' + (f'\n{e["definition"]}' if e["definition"] else "")
         out.append(f'<g data-kind="element" data-iri="{escape(n)}" data-type="am4:{e["type"]}"><title>{escape(tip)}</title>')
         out += _shape(e, x, y0, w, h)
         out += _icon(icon, x + w - 21, y0 + 6)
-        top = y0 + (16 if shape == "obj" else 0)
-        ty = top + (y0 + h - top) / 2 - 8 * len(lines[n]) + 12
+        t0 = y0 + (16 if shape == "obj" else 0)
+        ty = t0 + (y0 + h - t0) / 2 - 8 * len(lines[n]) + 12
         for k, s in enumerate(lines[n]):
             out.append(f'<text x="{f(x + w / 2)}" y="{f(ty + 16 * k)}" text-anchor="middle" class="am-t">{escape(s)}</text>')
         out.append("</g>")
-    # legend
     out.append(f'<text class="lg-h" x="{MARGIN}" y="{f(y + 12)}">图例</text>')
     ly = y + 22
     for i, (band, t) in enumerate(etypes):

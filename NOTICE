@@ -53,6 +53,16 @@ vendor/meta.linked.archi/
   documentation, Copyright The Backstage Authors, licensed under the Apache
   License, Version 2.0.
 
+tools/elk/ (npm dependency, not vendored)
+  elkjs 0.12.1 (https://github.com/kieler/elkjs), the JavaScript build of the
+  Eclipse Layout Kernel by Kiel University and the ELK contributors. elkjs is
+  dual-licensed EPL-2.0 OR GPL-3.0-or-later; AISEP uses it under the Eclipse
+  Public License 2.0 (https://www.eclipse.org/legal/epl-2.0/). It is not
+  stored in this repository: `npm ci --prefix tools/elk --ignore-scripts`
+  installs it into tools/elk/node_modules/ from the exact version and sha512
+  integrity pinned in tools/elk/package-lock.json. Its source code is
+  available from the URL above.
+
 Trademarks
 ----------
 
