@@ -17,7 +17,7 @@
 | 6 | 视图定义、文档模板、生成器能否直接用 | C4 视点 7 个可复用；C4 模板只有 2 个，部署那节查询用了不存在的谓词，且只取 `@en` 标签；没有 arc42 模板；生成器 la-generate **未找到下载** |
 | 7 | `c4/structurizr#` 的用途 | 是部署词汇扩展，不是导入导出工具。导入由上游转换器 structurizr2linkedarchi 完成（读 workspace JSON），**未找到** RDF→DSL 导出 |
 
-另有 9 处规范与上游不一致，见第 8 节；第 6 节的建议方案见第 9 节。
+另有 10 处规范与上游不一致，见第 8 节（S10 于 2026-11-26 补入）；第 6 节的建议方案见第 9 节。
 
 ## 1. ArchiMate 4.0 本体是否有正式版，core 0.6.0 是否兼容
 
@@ -168,6 +168,7 @@
 | S7 | §8 “优先复用上游的视图定义、文档模板和文档生成规范” | 隐含上游模板可以直接用 | 上游 C4 部署节用了不存在的谓词，所有查询只取 `@en` 标签；没有 arc42 模板；la-generate 未公开下载（见第 6 项） |
 | S8 | §4 写法规定第 2 条“三重声明模式” | 直接谓词 + 限定资源 | core 的 `arch:QualifiedRelationship` 定义列了四种表示（直接三元组、限定谓词、限定资源、`rdf:reifies` 桥）；AISEP 禁止第四种（RDF 1.2），所以实际仍是前三种，这条不受影响，只是名称有出入 |
 | S9 | §6 开头“Linked.Archi 示例里靠同名标签关联的做法只能用于查询辅助” | — | 与上游一致：practice 页确实只靠 `skos:prefLabel` 同名关联，而 DD-11 要求显式链接。不算冲突，在此记录出处：<https://meta.linked.archi/docs/practice/archimate-application-layer-vs-c4-containers/#the-connection-same-name-queryable-together> |
+| S10 | §5 表“组件执行某项功能或流程”：`am4:ApplicationComponent` `am4:assignedTo` `am4:Function` 或 `am4:Process` | 组件直接分派到行为 | 上游 `archimate4_relationship-tables`（<https://meta.linked.archi/archimate4/relationship-tables>）中，组件只对 `am4:Role` 和 `am4:DataObject` 有 `am4rt:permitsDirectAssignment`；组件 → Function/Process 只在 `am4rt:permitsAssignment` 里，也就是只能派生，直接写会被 L2 报 derived-only。以上游为准：写成“组件 → Role → Function/Process”，C4 模块的 R6、R7 同时接受直接分派和经一个 Role 的分派（PR #106，`docs/specs/c4-archimate4-step4.md` §4 偏离 6）。此项在 2026-11-26 补入，规范原文未改 |
 
 已顺带核对、与规范一致的项：§5、§10 末段列出的 am4 类和谓词在线上本体里都存在（`ApplicationComponent`、`Function`、`Process`、`Service`、`Role`、`ApplicationInterface`、`DataObject`、`Event`、`Capability`、`Requirement`、`BusinessActor`、`ReadAccess`/`WriteAccess`/`ReadWriteAccess`、`Composition`、`Aggregation`、`Node`、`Device`、`SystemSoftware`，以及 `assignedTo`、`realizes`、`serves`、`accesses`、`composedOf`、`aggregates`、`triggers`）；`am4:accessType` 标为 `owl:deprecated`；`Interaction`、`Contract`、`Constraint`、`Gap`、`Representation`、`ImplementationEvent` 在本体里都不存在。上游 practice 页关于基础设施的分工（“ArchiMate owns the enterprise infrastructure model … C4 deployment diagrams … detail the specific container-to-node mapping”）也与规范 §3 一致。
 
