@@ -37,7 +37,7 @@
 4. **PR 即锁**：开工前看开着的 PR；某文件已在别的 PR 里被改，就不碰它，去那个 PR 留言或等合并。
 
 ## 工作方式
-- 改元模型（`modules/`）或 `vendor/` 后在本地跑 `$PY tools/aisep.py test --no-pytest`，应全绿；`aisep-mcp/tests`（含第四轮负例）交给 CI 的 `pytest` 与 `negatives`，本地不必跑全量；`negatives` 的结论由协调会话合并前按上面「分支与合并」第 2 条核对（ADR-024）。
+- 改元模型（`modules/`）或 `vendor/` 后在本地跑 `$PY tools/aisep.py test --no-pytest`（其中出图验收要先装 elkjs，见「环境」），应全绿；`aisep-mcp/tests`（含第四轮负例）交给 CI 的 `pytest` 与 `negatives`，本地不必跑全量；`negatives` 的结论由协调会话合并前按上面「分支与合并」第 2 条核对（ADR-024）。
 - 改模型（`models/`）后跑 `gate`。
 - 各 ADM 阶段的模板与提示词在 `docs/adm/<阶段>/`。阶段出口的关口评审（`docs/adm/governance/`）在 MVP 期间暂停，不作为进入下一阶段的前提，各阶段模板出口条件里的「已完成关口评审并写入批准记录」一项在此期间不要求勾选（ADR-024）；Albert 要求做时照做。
 - 跨模型评审只用于不可逆设计（IRI 方案与命名空间迁移、元模型语义、MCP 接口契约、批准与合并判据），每个设计限一轮，有新证据才追加，结论要有实跑支撑；发起前先问 Albert（ADR-021 第 2 款）。

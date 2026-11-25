@@ -152,13 +152,15 @@ def select(ctx, model, view=None, viewpoint=None):
     """(title, subtitle, elements, relationships, warnings). elements: [{iri,type,label,band,definition}];
     relationships: [{iri,type,source,target}]. Exactly one of view / viewpoint."""
     members = _members(ctx, model)
-    ends = {x: (s, t) for x, s, t in ctx.rows(
-        f"SELECT ?x ?s ?t WHERE {{ ?x arch:inModel <{model}> ; arch:source ?s ; arch:target ?t }}")}
+    ends = {}  # a relationship with several sources/targets is an L1 Violation; still pick deterministically
+    for x, s, t in sorted(ctx.rows(
+            f"SELECT ?x ?s ?t WHERE {{ ?x arch:inModel <{model}> ; arch:source ?s ; arch:target ?t }}")):
+        ends.setdefault(x, (s, t))
     warnings = []
     if view:
         if view not in members or not ctx.is_a(view, ARCH + "Diagram"):
             raise ValueError(f"{view} is not an arch:Diagram in model {model}")
-        vps = [v for (v,) in ctx.rows(f"SELECT ?v WHERE {{ <{view}> arch:viewConformsToViewpoint ?v }}")]
+        vps = sorted(v for (v,) in ctx.rows(f"SELECT ?v WHERE {{ <{view}> arch:viewConformsToViewpoint ?v }}"))
         inview = {x for (x,) in ctx.rows(f"SELECT ?x WHERE {{ ?x arch:inView <{view}> }}")}
         elem_iris = {x for x in inview if x in members and x not in ends}
         explicit_rels = {x for x in inview if x in ends}
@@ -345,14 +347,15 @@ def render(title, sub, elements, rels):
         cls, ms, me = EDGES.get(r["type"], ("e", None, None))
         mk = (f' marker-start="url(#{ms})"' if ms else "") + (f' marker-end="url(#{me})"' if me else "")
         tip = f'{ZH.get(r["type"], r["type"])}：{by[r["source"]]["label"]} → {by[r["target"]]["label"]}'
-        out.append(f'<path data-kind="relationship" data-iri="{escape(r["iri"])}" data-type="am4:{r["type"]}" '
+        out.append(f'<path data-kind="relationship" data-iri="{escape(r["iri"])}" data-type="am4:{escape(r["type"])}" '
+                   f'data-source="{escape(r["source"])}" data-target="{escape(r["target"])}" '
                    f'd="{d}" class="{cls}"{mk}><title>{escape(tip)}</title></path>')
     for n in sorted(box):
         e = by[n]
         x, y0, w, h = MARGIN + box[n][0], top + box[n][1], box[n][2], box[n][3]
         shape, icon = SHAPES.get(e["type"], ("rect", None))
         tip = f'{ZH.get(e["type"], e["type"])}：{e["label"]}' + (f'\n{e["definition"]}' if e["definition"] else "")
-        out.append(f'<g data-kind="element" data-iri="{escape(n)}" data-type="am4:{e["type"]}"><title>{escape(tip)}</title>')
+        out.append(f'<g data-kind="element" data-iri="{escape(n)}" data-type="am4:{escape(e["type"])}"><title>{escape(tip)}</title>')
         out += _shape(e, x, y0, w, h)
         out += _icon(icon, x + w - 21, y0 + 6)
         t0 = y0 + (16 if shape == "obj" else 0)

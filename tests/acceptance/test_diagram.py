@@ -13,6 +13,7 @@ AISEP = os.path.join(ROOT, "tools", "aisep.py")
 M = "https://aisep.example/model/"
 VP = "https://meta.linked.archi/archimate4/viewpoints#"
 results = []
+LAST_ENDS = {}  # relationship IRI -> (source, target, data-type) of the last diagram() call
 
 
 def run(*args):
@@ -37,6 +38,12 @@ def iris_in_model(model, fs):
     return {l for l in out.splitlines()[1:] if l and not l.startswith("--")}
 
 
+def rows(q, fs):
+    rc, out = run("query", q, *fs)
+    assert rc == 0, out
+    return [tuple(l.split("\t")) for l in out.splitlines()[1:] if l and not l.startswith("--")]
+
+
 def short(iri):
     slug, loc = iri[len(M):].split("/", 1)
     return f"{slug}:{loc}"
@@ -53,11 +60,14 @@ def diagram(out, *args):
     with open(out, encoding="utf-8") as fh:
         svg = fh.read()
     root = ElementTree.fromstring(svg)  # claim: well-formed XML (raises otherwise)
-    kinds = {}
+    kinds, ends = {}, {}
     for e in root.iter():
         k = e.get("data-kind")
         if k:
             kinds.setdefault(k, []).append(e.get("data-iri"))
+        if k == "relationship":
+            ends[e.get("data-iri")] = (e.get("data-source"), e.get("data-target"), e.get("data-type"))
+    LAST_ENDS.clear(); LAST_ENDS.update(ends)
     return svg, kinds.get("element", []), kinds.get("relationship", [])
 
 
@@ -76,6 +86,20 @@ def viewpoint_case(slug, viewpoint, tmp):
     svg, els, rels = diagram(out, "--viewpoint", viewpoint, "--model", slug, *fs)
     claim(f"{slug} {viewpoint}: element count equals SPARQL count (>0)", len(els) == want_e > 0,
           f"svg={len(els)} sparql={want_e}")
+    want_set = {x for (x,) in rows(f"SELECT DISTINCT ?x WHERE {ELEM.format(m=model, vp=vp)}", fs)}
+    claim(f"{slug} {viewpoint}: drawn element set equals the SPARQL element set",
+          {short(i) for i in els} == want_set, f"only_svg={sorted({short(i) for i in els} - want_set)[:3]} "
+          f"only_sparql={sorted(want_set - {short(i) for i in els})[:3]}")
+    ends = dict(LAST_ENDS)
+    facts = rows(f"SELECT ?r ?s ?o ?t WHERE {{ ?r arch:inModel <{model}> ; arch:source ?s ; arch:target ?o ; a ?t }}", fs)
+    st = {r: (s, o) for r, s, o, _ in facts}
+    types = {}
+    for r, _, _, t in facts:
+        types.setdefault(r, set()).add(t)
+    bad = [short(r) for r, (s, o, t) in ends.items()
+           if (short(s), short(o)) != st.get(short(r)) or t not in types.get(short(r), set())]
+    claim(f"{slug} {viewpoint}: every drawn relationship has the model's source, target and type", not bad and bool(ends),
+          f"mismatched={bad[:3]} checked={len(ends)}")
     claim(f"{slug} {viewpoint}: relationship count equals SPARQL count (>0)", len(rels) == want_r > 0,
           f"svg={len(rels)} sparql={want_r}")
     members = iris_in_model(model, fs)
@@ -141,6 +165,14 @@ def main():
         rc, log = run("diagram", "--viewpoint", "NoSuchViewpoint", "--model", "workbench", "-o",
                       os.path.join(tmp, "x.svg"), *files("workbench"))
         claim("unknown viewpoint exits 1 with a Violation", rc == 1 and "[Violation]" in log, log.strip()[-120:])
+        rc, log = run("diagram", "--viewpoint", "LayeredViewpoint", "--model", "procurement/> } #", "-o",
+                      os.path.join(tmp, "y.svg"), *files("procurement"))
+        claim("--model that is not a plain name is refused (no SPARQL injection)", rc == 1 and "[Violation]" in log
+              and not os.path.exists(os.path.join(tmp, "y.svg")), log.strip()[-120:])
+        rc, log = run("diagram", "--viewpoint", "LayeredViewpoint", "--model", "noSuchModel", "-o",
+                      os.path.join(tmp, "z.svg"), *files("procurement"))
+        claim("a view with no element exits 1 instead of writing an empty picture", rc == 1 and "[Violation]" in log
+              and not os.path.exists(os.path.join(tmp, "z.svg")), log.strip()[-120:])
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     ok = all(results)

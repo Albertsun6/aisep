@@ -35,7 +35,7 @@ with open(pyrun.__file__, encoding="utf-8") as _f:
 
 ROOT = pyrun.ROOT
 
-import glob, subprocess, tempfile, time  # noqa: E402
+import glob, re, subprocess, tempfile, time  # noqa: E402
 from xml.etree import ElementTree  # noqa: E402
 
 import pyoxigraph as ox  # noqa: E402
@@ -305,6 +305,9 @@ def cmd_diagram(args):
             opts[k] = args[i + 1]; args = args[:i] + args[i + 2:]
     if ("--view" in opts) == ("--viewpoint" in opts) or ("--viewpoint" in opts and "--model" not in opts):
         print(__doc__); return 2
+    for k in ("--viewpoint", "--model"):  # both end up inside SPARQL text: plain names only
+        if k in opts and not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", opts[k]):
+            print(f"[Violation] diagram: {k} {opts[k]!r} must be a plain name (letters, digits, _ and -)"); return 1
     files, read = model_files(args)
     ctx = Ctx(discover(), files, read=read)
     if report(ctx, ("L0",))[0]:
@@ -324,6 +327,8 @@ def cmd_diagram(args):
         print(f"[Violation] {e}"); return 1
     for w in warnings:
         print(f"[Warning] diagram {w}")
+    if not elements:
+        print(f"[Violation] diagram: no element of {model} is in this view (wrong --model or an empty view?)"); return 1
     slug = model.rstrip("/").rsplit("/", 1)[-1]
     out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".svg")
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
