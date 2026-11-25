@@ -1,0 +1,24 @@
+# adm-phase: 04-app-tech
+# section: 2. 系统边界（应用组件）
+# kind: gap
+# title: 限界上下文不是恰好落在一个应用组件里
+# source: 04-app-tech/template.md 出口条件第 1 条
+# 用法：经 tools/aisep.py adm 运行；直接交给 model_query 时只改 VALUES ?model 一行。
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+PREFIX prov:  <http://www.w3.org/ns/prov#>
+PREFIX arch:  <https://meta.linked.archi/core#>
+PREFIX am4:   <https://meta.linked.archi/archimate4/onto#>
+PREFIX bpmn:  <https://meta.linked.archi/bpmn/onto#>
+PREFIX ad:    <https://meta.linked.archi/arch-decision#>
+PREFIX ddd:   <https://aisep.example/ont/ddd#>
+PREFIX aisep: <https://aisep.example/ont/aisep#>
+SELECT ?element ?label (COUNT(DISTINCT ?c) AS ?detail) WHERE {
+  VALUES ?model { <https://aisep.example/model/workbench/> }
+  ?element arch:inModel ?model ; a/rdfs:subClassOf* ddd:BoundedContext .
+  OPTIONAL {
+    ?r a/rdfs:subClassOf* am4:Composition ; arch:source ?c ; arch:target ?element .
+    ?c a ?ct . ?ct rdfs:subClassOf* am4:ApplicationComponent .
+    FILTER(STRSTARTS(STR(?ct), STR(am4:))) }
+  OPTIONAL { ?element skos:prefLabel ?label FILTER(lang(?label) = "zh") }
+} GROUP BY ?element ?label HAVING (COUNT(DISTINCT ?c) != 1) ORDER BY ?element

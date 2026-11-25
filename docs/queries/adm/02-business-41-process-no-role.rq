@@ -1,0 +1,25 @@
+# adm-phase: 02-business
+# section: 4. 业务流程
+# kind: gap
+# title: am4 流程没有执行角色
+# source: 02-business/template.md 出口条件第 2 条
+# 用法：经 tools/aisep.py adm 运行；直接交给 model_query 时只改 VALUES ?model 一行。
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+PREFIX prov:  <http://www.w3.org/ns/prov#>
+PREFIX arch:  <https://meta.linked.archi/core#>
+PREFIX am4:   <https://meta.linked.archi/archimate4/onto#>
+PREFIX bpmn:  <https://meta.linked.archi/bpmn/onto#>
+PREFIX ad:    <https://meta.linked.archi/arch-decision#>
+PREFIX ddd:   <https://aisep.example/ont/ddd#>
+PREFIX aisep: <https://aisep.example/ont/aisep#>
+SELECT ?element ?label WHERE {
+  VALUES ?model { <https://aisep.example/model/workbench/> }
+  ?element arch:inModel ?model ; a ?t .
+  ?t rdfs:subClassOf* am4:Process .
+  FILTER(STRSTARTS(STR(?t), STR(am4:)))
+  FILTER NOT EXISTS {
+    ?r a/rdfs:subClassOf* am4:Assignment ; arch:source ?who ; arch:target ?element .
+    { ?who a/rdfs:subClassOf* am4:Role } UNION { ?who a/rdfs:subClassOf* am4:BusinessActor } }
+  OPTIONAL { ?element skos:prefLabel ?label FILTER(lang(?label) = "zh") }
+} ORDER BY ?element

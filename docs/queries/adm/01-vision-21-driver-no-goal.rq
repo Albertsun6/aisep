@@ -1,0 +1,28 @@
+# adm-phase: 01-vision
+# section: 3. 驱动力与评估
+# kind: gap
+# title: 驱动力没有影响任何目标（直接或经评估）
+# source: 01-vision/template.md 追溯；requirements/template.md 第 4 节 驱动因素—目标
+# 用法：经 tools/aisep.py adm 运行；直接交给 model_query 时只改 VALUES ?model 一行。
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+PREFIX prov:  <http://www.w3.org/ns/prov#>
+PREFIX arch:  <https://meta.linked.archi/core#>
+PREFIX am4:   <https://meta.linked.archi/archimate4/onto#>
+PREFIX bpmn:  <https://meta.linked.archi/bpmn/onto#>
+PREFIX ad:    <https://meta.linked.archi/arch-decision#>
+PREFIX ddd:   <https://aisep.example/ont/ddd#>
+PREFIX aisep: <https://aisep.example/ont/aisep#>
+SELECT ?element ?label WHERE {
+  VALUES ?model { <https://aisep.example/model/workbench/> }
+  ?element arch:inModel ?model ; a/rdfs:subClassOf* am4:Driver .
+  FILTER NOT EXISTS {
+    ?i a/rdfs:subClassOf* am4:Influence ; arch:source ?element ; arch:target ?g .
+    ?g a/rdfs:subClassOf* am4:Goal }
+  FILTER NOT EXISTS {
+    ?x arch:source|arch:target ?element . ?x arch:source|arch:target ?a .
+    ?a a/rdfs:subClassOf* am4:Assessment .
+    ?i a/rdfs:subClassOf* am4:Influence ; arch:source ?a ; arch:target ?g .
+    ?g a/rdfs:subClassOf* am4:Goal }
+  OPTIONAL { ?element skos:prefLabel ?label FILTER(lang(?label) = "zh") }
+} ORDER BY ?element
