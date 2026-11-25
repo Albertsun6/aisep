@@ -97,7 +97,7 @@ def test_acNoTagOnRejectedRelease_and_acRejectedReleasePushed(t, gh):
     assert t.git("tag", "-l", "release/*") == "" and t.git("ls-remote", "--tags", "origin") == ""
     assert remote_branch(t, name) == t.rev(f"refs/heads/{name}")
     args = json.loads(gh[1].read_text())
-    assert args[args.index("--head") + 1] == name
+    assert args[args.index("--head") + 1] == name and args[args.index("--base") + 1] == "main"
 
 
 def test_acReleaseTagReused(t, gh):

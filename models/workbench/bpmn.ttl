@@ -107,7 +107,6 @@
     arch:source :bpmnApproverSelection ;
     arch:target :gateApprovalFlow .
 
-
 :bpmnRelStart a bpmn:StartEvent ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "准备发布"@zh .
@@ -140,7 +139,7 @@
 
 :bpmnRelTag a bpmn:ServiceTask ;
     arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "会话脚本：跑合并时校验，批准才打 release 标签"@zh .
+    skos:prefLabel "会话脚本：打 release 标签"@zh .
 
 :bpmnRelPublish a bpmn:ServiceTask ;
     arch:inModel <https://aisep.example/model/workbench/> ;
@@ -177,11 +176,6 @@
     arch:target :bpmnRelStale ;
     skos:prefLabel "已前进"@zh .
 
-:rel-bpmnRelDecide-sequenceFlow-bpmnRelDecisionGateway a bpmn:SequenceFlow ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :bpmnRelDecide ;
-    arch:target :bpmnRelDecisionGateway .
-
 :rel-bpmnRelDecisionGateway-sequenceFlow-bpmnRelTag a bpmn:SequenceFlow ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :bpmnRelDecisionGateway ;
@@ -194,39 +188,41 @@
     arch:target :bpmnRelPublish ;
     skos:prefLabel "驳回"@zh .
 
-
 :rel-bpmnRelPublish-sequenceFlow-bpmnRelOpened a bpmn:SequenceFlow ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :bpmnRelPublish ;
     arch:target :bpmnRelOpened .
 
-
-
 :bpmnRelCheckGateway a bpmn:ExclusiveGateway ;
     arch:inModel <https://aisep.example/model/workbench/> ;
-    skos:prefLabel "核对通过且标签不冲突吗？"@zh ;
+    skos:prefLabel "会话脚本核对记录与合并时校验通过、且标签不冲突吗？"@zh ;
     bpmn:gatewayDirection "Diverging" .
 
 :bpmnRelStopped a bpmn:EndEvent ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "停下由人处理，什么都不推"@zh .
 
-:rel-bpmnRelTag-sequenceFlow-bpmnRelCheckGateway a bpmn:SequenceFlow ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :bpmnRelTag ;
-    arch:target :bpmnRelCheckGateway .
-
-:rel-bpmnRelCheckGateway-sequenceFlow-bpmnRelPublish a bpmn:SequenceFlow ;
-    arch:inModel <https://aisep.example/model/workbench/> ;
-    arch:source :bpmnRelCheckGateway ;
-    arch:target :bpmnRelPublish ;
-    skos:prefLabel "通过"@zh .
-
 :rel-bpmnRelCheckGateway-sequenceFlow-bpmnRelStopped a bpmn:SequenceFlow ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :bpmnRelCheckGateway ;
     arch:target :bpmnRelStopped ;
     skos:prefLabel "不通过或标签冲突"@zh .
+
+:rel-bpmnRelDecide-sequenceFlow-bpmnRelCheckGateway a bpmn:SequenceFlow ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnRelDecide ;
+    arch:target :bpmnRelCheckGateway .
+
+:rel-bpmnRelCheckGateway-sequenceFlow-bpmnRelDecisionGateway a bpmn:SequenceFlow ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnRelCheckGateway ;
+    arch:target :bpmnRelDecisionGateway ;
+    skos:prefLabel "通过"@zh .
+
+:rel-bpmnRelTag-sequenceFlow-bpmnRelPublish a bpmn:SequenceFlow ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :bpmnRelTag ;
+    arch:target :bpmnRelPublish .
 
 :bpmnReleaseApproval a bpmn:Process ;
     arch:inModel <https://aisep.example/model/workbench/> ;
@@ -250,13 +246,13 @@
     bpmn:flowElements :rel-bpmnRelOpenGate-sequenceFlow-bpmnRelStaleGateway ;
     bpmn:flowElements :rel-bpmnRelStaleGateway-sequenceFlow-bpmnRelDecide ;
     bpmn:flowElements :rel-bpmnRelStaleGateway-sequenceFlow-bpmnRelStale ;
-    bpmn:flowElements :rel-bpmnRelDecide-sequenceFlow-bpmnRelDecisionGateway ;
     bpmn:flowElements :rel-bpmnRelDecisionGateway-sequenceFlow-bpmnRelTag ;
     bpmn:flowElements :rel-bpmnRelDecisionGateway-sequenceFlow-bpmnRelPublish ;
     bpmn:flowElements :rel-bpmnRelPublish-sequenceFlow-bpmnRelOpened ;
-    bpmn:flowElements :rel-bpmnRelTag-sequenceFlow-bpmnRelCheckGateway ;
-    bpmn:flowElements :rel-bpmnRelCheckGateway-sequenceFlow-bpmnRelPublish ;
-    bpmn:flowElements :rel-bpmnRelCheckGateway-sequenceFlow-bpmnRelStopped .
+    bpmn:flowElements :rel-bpmnRelCheckGateway-sequenceFlow-bpmnRelStopped ;
+    bpmn:flowElements :rel-bpmnRelDecide-sequenceFlow-bpmnRelCheckGateway ;
+    bpmn:flowElements :rel-bpmnRelCheckGateway-sequenceFlow-bpmnRelDecisionGateway ;
+    bpmn:flowElements :rel-bpmnRelTag-sequenceFlow-bpmnRelPublish .
 
 :rel-bpmnReleaseApproval-refines-gateApprovalFlow a arch:Refines ;
     arch:inModel <https://aisep.example/model/workbench/> ;

@@ -842,6 +842,16 @@
     arch:source :tcReleaseGateFail ;
     arch:target :acReleaseGateFailBlocksApprove .
 
+:tcReleaseGateReject a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "驳回发布记一条发布关口驳回记录测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「AisepGatePage on a release approval branch」 里的测试「rejects a release as a GateRelease record on R (acRejectReleaseRecorded)」（vitest）。"@zh .
+
+:rel-tcReleaseGateReject-verifies-acRejectReleaseRecorded a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcReleaseGateReject ;
+    arch:target :acRejectReleaseRecorded .
+
 :tcReleaseBranchListed a aisep:TestCase ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "首页列出发布批准分支测试"@zh ;
