@@ -11,7 +11,7 @@ from aisep import core, gitio, mergecheck, tools, writer
 from aisep.errors import AisepError
 
 AISEP, ARCH, PROV = core.AISEP, core.ARCH, core.NS["prov"]
-HEX40 = re.compile(r"^[0-9a-f]{40}$")
+HEX40 = re.compile(r"^[0-9a-f]{40}\Z")  # \Z, not $: $ also matches before a trailing newline (#77)
 SESSION_REF_RE = re.compile(r"[!-~]{1,200}")
 ACTIVITY_KEYS = {"agent", "sessionRef", "startedAt", "endedAt", "branch", "label"}
 GOV_DIR = "governance"
