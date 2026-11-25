@@ -1053,3 +1053,113 @@
     aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45472332687> ;
     schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
     skos:definition "aisep-workbench 仓库 aisep-main 分支提交 949422452438027ecdd4569ca39af53d48810f88（合并 PR #27）上，GitHub Actions CI 运行 45472332687（push 触发）：「frontend / vitest (2)」任务（138723424694）里 frontend/src/renderer/aisep/AisepWorkbenchPage.test.tsx 整个文件通过（38 tests），日志时间 2026-11-24T19:39:50Z，其中包括「lists a release approval branch while it waits for a decision or for its merge (acReleaseBranchListed)」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
+
+:acWholeModelOffered a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "改动已批准模型时提供整个模型"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 模型在主分支上已批准，分支改动了它的元素或关系\nWhen 打开分支的关口页\nThen 可选模型里有它\nAnd 批准对象里有「整个模型」一项且默认勾选\nAnd 批准时 approves 含模型 IRI" .
+
+:acApprovedModelsUnknownBlocks a aisep:AcceptanceCriterion ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "读不到主分支批准状态时不能批准"@zh ;
+    aisep:priority aisep:Must ;
+    aisep:gherkin "Given 分支的关口页\nWhen 主分支上模型的批准状态还没读到或读取失败\nThen 批准与驳回都不可用\nAnd 读取失败时提示原因" .
+
+:rel-reqReapproveChangedApprovedModel-aggregates-acWholeModelOffered a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqReapproveChangedApprovedModel ;
+    arch:target :acWholeModelOffered .
+
+:rel-reqReapproveChangedApprovedModel-aggregates-acApprovedModelsUnknownBlocks a am4:Aggregation ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqReapproveChangedApprovedModel ;
+    arch:target :acApprovedModelsUnknownBlocks .
+
+:tcWholeModelOffered a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "改动已批准模型时提供并批准整个模型测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「AisepGatePage on a branch that changes a model Approved on main」 里的测试「offers the whole model, checked, ahead of the elements, and reads main's approval state」（vitest）。"@zh .
+
+:rel-tcWholeModelOffered-verifies-acWholeModelOffered a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcWholeModelOffered ;
+    arch:target :acWholeModelOffered .
+
+:tcWholeModelRelationshipOnly a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "只改关系时也提供整个模型测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「AisepGatePage on a branch that changes a model Approved on main」 里的测试「offers the model even when the branch changes only its relationships」（vitest）。"@zh .
+
+:rel-tcWholeModelRelationshipOnly-verifies-acWholeModelOffered a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcWholeModelRelationshipOnly ;
+    arch:target :acWholeModelOffered .
+
+:tcApprovedModelsPending a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "主分支批准状态读取中不能批准测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「AisepGatePage on a branch that changes a model Approved on main」 里的测试「cannot approve until main's approval state is read」（vitest）。"@zh .
+
+:rel-tcApprovedModelsPending-verifies-acApprovedModelsUnknownBlocks a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcApprovedModelsPending ;
+    arch:target :acApprovedModelsUnknownBlocks .
+
+:tcApprovedModelsFailed a aisep:TestCase ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "读不到主分支批准状态时报错且不给批准测试"@zh ;
+    skos:definition "aisep-workbench 仓库 frontend/src/renderer/aisep/AisepGatePage.test.tsx 中 describe「AisepGatePage on a branch that changes a model Approved on main」 里的测试「says main's approval state could not be read and offers no approval, even for a relationship-only change」（vitest）。"@zh .
+
+:rel-tcApprovedModelsFailed-verifies-acApprovedModelsUnknownBlocks a aisep:Verification ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :tcApprovedModelsFailed ;
+    arch:target :acApprovedModelsUnknownBlocks .
+
+:trWholeModelOffered606c9a0 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "改动已批准模型时提供并批准整个模型测试：通过（aisep-main 606c9a0）"@zh ;
+    skos:altLabel "Whole model offered for a changed approved model test: passed (aisep-main 606c9a0)"@en ;
+    aisep:resultOf :tcWholeModelOffered ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-25T05:14:21Z"^^xsd:dateTime ;
+    aisep:testedCommit "606c9a0c2a15fa12bb6e70835fba6a871cb3a952" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45551964777> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 606c9a0c2a15fa12bb6e70835fba6a871cb3a952（合并 PR #30）上，GitHub Actions CI 运行 45551964777（push 触发）：「frontend / vitest (2)」任务（138995039110）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（53 tests），日志时间 2026-11-25T05:14:21Z，其中包括「offers the whole model, checked, ahead of the elements, and reads main's approval state」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
+
+:trWholeModelRelationshipOnly606c9a0 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "只改关系时也提供整个模型测试：通过（aisep-main 606c9a0）"@zh ;
+    skos:altLabel "Whole model offered for a relationship-only change test: passed (aisep-main 606c9a0)"@en ;
+    aisep:resultOf :tcWholeModelRelationshipOnly ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-25T05:14:21Z"^^xsd:dateTime ;
+    aisep:testedCommit "606c9a0c2a15fa12bb6e70835fba6a871cb3a952" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45551964777> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 606c9a0c2a15fa12bb6e70835fba6a871cb3a952（合并 PR #30）上，GitHub Actions CI 运行 45551964777（push 触发）：「frontend / vitest (2)」任务（138995039110）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（53 tests），日志时间 2026-11-25T05:14:21Z，其中包括「offers the model even when the branch changes only its relationships」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
+
+:trApprovedModelsPending606c9a0 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "主分支批准状态读取中不能批准测试：通过（aisep-main 606c9a0）"@zh ;
+    skos:altLabel "No approval while main's approval state is read test: passed (aisep-main 606c9a0)"@en ;
+    aisep:resultOf :tcApprovedModelsPending ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-25T05:14:21Z"^^xsd:dateTime ;
+    aisep:testedCommit "606c9a0c2a15fa12bb6e70835fba6a871cb3a952" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45551964777> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 606c9a0c2a15fa12bb6e70835fba6a871cb3a952（合并 PR #30）上，GitHub Actions CI 运行 45551964777（push 触发）：「frontend / vitest (2)」任务（138995039110）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（53 tests），日志时间 2026-11-25T05:14:21Z，其中包括「cannot approve until main's approval state is read」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
+
+:trApprovedModelsFailed606c9a0 a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "读不到主分支批准状态时报错且不给批准测试：通过（aisep-main 606c9a0）"@zh ;
+    skos:altLabel "No approval when main's approval state cannot be read test: passed (aisep-main 606c9a0)"@en ;
+    aisep:resultOf :tcApprovedModelsFailed ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-25T05:14:21Z"^^xsd:dateTime ;
+    aisep:testedCommit "606c9a0c2a15fa12bb6e70835fba6a871cb3a952" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45551964777> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 606c9a0c2a15fa12bb6e70835fba6a871cb3a952（合并 PR #30）上，GitHub Actions CI 运行 45551964777（push 触发）：「frontend / vitest (2)」任务（138995039110）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（53 tests），日志时间 2026-11-25T05:14:21Z，其中包括「says main's approval state could not be read and offers no approval, even for a relationship-only change」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .

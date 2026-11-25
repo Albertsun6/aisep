@@ -75,3 +75,9 @@
 
 - 远端规则集 `release-tags-immutable` 只禁删除和移动 `release/*` 标签、不禁创建；会话脚本不是防恶意会话的安全边界，有推送权限的会话可以绕过脚本直接打标签。
 - 形状与内容都合法、但不是 Albert 本人做出的伪造发布批准记录，任何机械核对（脚本的 `merge_check`、CI）都分不出；据此打出的标签删不掉，而批准专用 PR 尚可 revert。挡住它的仍是「AI 不得新增批准记录」的硬规则（AGENTS.md）。两条都已写进 ADR `:adrReleaseStepsBySessionScript` 的代价。
+
+## 9. 后续：已批准模型的整模型重批（aisep #95，2026-11-25）
+
+- 问题：发布批准的是整个模型。按 §5.9 检查项 6 与「对象的比较范围」，此后改动该模型的任何成员，都须新增一条覆盖模型 IRI 的 Approved 记录。关口页原来只能逐个勾选元素，这类 PR（第一个是 #94）无法放行。
+- Albert 选方向 2：规则不变，工作台加功能（aisep-workbench #30）。新增 `:reqReapproveChangedApprovedModel`（Must），聚合 `:acWholeModelOffered` 和 `:acApprovedModelsUnknownBlocks`；由 `:gateApprovalFlow` 实现，并实现 `:outReleaseTagged`，因为发布之后模型还能继续改、再发布。
+- 测试用例 4 个（`:tcWholeModelOffered`、`:tcWholeModelRelationshipOnly`、`:tcApprovedModelsPending`、`:tcApprovedModelsFailed`），测试结果取自 aisep-workbench aisep-main 上合并 #30 的 CI。
