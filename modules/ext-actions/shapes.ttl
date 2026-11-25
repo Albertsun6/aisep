@@ -21,7 +21,7 @@
     sh:targetClass aisep:ActionType ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https://aisep\\.example/ont/aisep#Action[A-Z][A-Za-z0-9]*$" ;
-    sh:message "EA1: an aisep:ActionType must be an IRI aisep:Action<Name> declared in modules/ext-actions/catalog.ttl." ;
+    sh:message "EA1: an aisep:ActionType must be an IRI of the form aisep:Action<Name>." ;
     sh:property [
         sh:path dcterms:identifier ;
         sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;

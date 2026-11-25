@@ -560,7 +560,14 @@ aisep:ActionTestBadOdd a aisep:ActionType ; dcterms:identifier 42 ; skos:prefLab
     "duplicate-action-id": act("ActionTestBadSameId", "test-dup-id", [new_criterion_step(slug_const="acDi1")], params=[sp("label")])
                            + act("ActionTestBadSameIdToo", "test-dup-id", [new_criterion_step(slug_const="acDi2")],
                                  params=[sp("label")]),
+    # 绑定常量是 RDF 1.2 三元组项：pyoxigraph 能解析，规则 EA/X 都没预料到，definitionDigest 重新解析时才出错，
+    # 只能靠 load_catalog 的兜底分支判这一条无效（原因以「定义校验出错」开头，见 FALLBACK_CASES）
+    "triple-term-constant": act("ActionTestBadTripleTerm", "test-bad-triple-term",
+                                [new_criterion_step(slug_const="acTt", extra=[
+                                    b("definition", "constant", f"<<( <{WB}a> <{WB}b> <{WB}c> )>>")])],
+                                params=[sp("label")]),
 }
+FALLBACK_CASES = {"triple-term-constant"}
 
 ALL_BAD = dict(BAD_DEFS, **RAW_BAD)
 BAD_IRIS = {k: sorted(AISEP + m for m in re.findall(r"^aisep:(ActionTest\w+) a aisep:ActionType", v, re.M))
@@ -608,7 +615,8 @@ def test_bad_definition_is_isolated(mk, case):
         bad = [lst[i] for i in BAD_IRIS[case]]
     for a in bad:
         assert a["valid"] is False, (case, a)
-        assert a["problems"] and all(re.match(r"(EA|X)\d+\b", p) for p in a["problems"]), (case, a["problems"])
+        rule = r"定义校验出错：" if case in FALLBACK_CASES else r"(EA|X)\d+\b"
+        assert a["problems"] and all(re.match(rule, p) for p in a["problems"]), (case, a["problems"])
         assert "definitionDigest" not in a
     # 其余照常：两个真实动作和控制组的好动作都有效
     for iri in (AISEP + "ActionRegisterAcceptanceCriterion", AISEP + "ActionRemoveElement", AISEP + "ActionTestGood"):
@@ -1105,6 +1113,27 @@ def test_B6_replay_of_set_attributes_action(mk):
     after = snap(r)
     assert apply(r, "test-set-gherkin", p)["changed"] is False
     assert snap(r) == after
+
+
+def test_B6_replay_two_params_same_iri_is_unchanged(mk):
+    """评审阻塞问题：两个不同参数在调用时填成同一 IRI（X6 判不出），各步先改后改回，合并后字节与磁盘相同。
+    重放必须 changed:false、filesChanged 为空、不重写文件（mtime 不变），与依次调两次 model_set_labels 一致。"""
+    r = mk()
+    add_actions(r, act("ActionTestTwoSame", "test-two-same",
+                       [("a", "BasicSetLabels", [b("iri", "fromParameter", "ap:t1"), b("prefLabel", "constant", '"甲名称"')]),
+                        ("b", "BasicSetLabels", [b("iri", "fromParameter", "ap:t2"), b("prefLabel", "constant", '"乙名称"')])],
+                       params=[sp("t1", iri=True), sp("t2", iri=True)]))
+    p = {"t1": REQ, "t2": REQ}
+    assert apply(r, "test-two-same", p)["changed"] is True
+    after = snap(r)
+    mtimes = {f: os.stat(r / f).st_mtime_ns for f in after}
+    for kw in ({"dryRun": True}, {}):
+        is_err, res = call(r, "model_apply_action", action="test-two-same", params=p, **kw)
+        assert not is_err, f"重放被拒绝：{res}"
+        assert res["changed"] is False
+        assert res["filesChanged"] == []
+    assert snap(r) == after
+    assert {f: os.stat(r / f).st_mtime_ns for f in after} == mtimes
 
 
 # ================================================================== B7 破坏性动作绑定计划

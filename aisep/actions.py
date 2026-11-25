@@ -673,7 +673,12 @@ def model_apply_action(cfg, action, params=None, dryRun=False, planDigest=None, 
                   "steps": steps_out, "iris": iris, "planDigest": planDigest}
         if destructive:
             result["cascade"] = cascade
-        if not edits:  # replay: every step is a no-op on this workspace -> changed:false, guards are not run
+        # steps that change a file and change it back net out: a file whose merged text equals the workspace bytes
+        # is not an edit (e.g. two parameters given the same IRI at call time, which X6 cannot see)
+        edits = {f: t for f, t in edits.items() if t.encode("utf-8") != ws.data.get(f)}
+        added = {f: v for f, v in added.items() if f in edits}
+        removed = {f: v for f, v in removed.items() if f in edits}
+        if not edits:  # replay: the merged plan is a no-op on this workspace -> changed:false, guards are not run
             return {"result": result, "edits": {}}
         failed = _failed_guards(d, params, ctx)
         if failed:
