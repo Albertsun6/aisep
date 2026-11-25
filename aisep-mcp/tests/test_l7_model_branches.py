@@ -1,6 +1,6 @@
 """L7「关口页入口」的先行契约测试：只读工具 model_branches（工具还不存在，整份文件现在应当 XFAIL）。
 
-契约来自 ~/Desktop/AISEP/coordination/evidence-20261121/工作台前端与进度推导.md 第 2 节末尾，下面是本测试替草图做的取舍
+契约来自 ~/code/AISEP/coordination/evidence-20261121/工作台前端与进度推导.md 第 2 节末尾，下面是本测试替草图做的取舍
 （实现方有异议就在 PR 里提，不要改断言让它通过）：
 
 - 经 `aisep.server.TOOLS` 注册、走 `server.call`（与其他工具同一条路径，含入参校验）；annotations 与读工具相同
