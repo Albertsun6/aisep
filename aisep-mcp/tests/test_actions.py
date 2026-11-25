@@ -1602,10 +1602,14 @@ def test_C2_tool_lists_against_origin_main(tmp_path):
     assert codes_new - codes_old <= {"PLAN_REQUIRED", "PRECONDITION_FAILED"}, codes_new - codes_old
 
 
-@pytest.mark.xfail(strict=True, reason="【偏离 C2 字面】aisep/errors.py 新增 PLAN_REQUIRED、PRECONDITION_FAILED，"
-                                       "所有工具 outputSchema 的错误码枚举随之变化，workbench 画像的 tools/list 不再逐字节相同")
 def test_C2_workbench_tools_list_byte_identical(tmp_path):
+    """C2 字面：workbench 画像 tools/list 不变，agent 画像里原有工具的条目也不变。
+    另核：model_apply_action 会抛 PLAN_REQUIRED、PRECONDITION_FAILED，它的 outputSchema 错误码枚举必须含这两个码，
+    否则按 outputSchema 校验的客户端会拒收这两种错误结果。"""
     old, new = _tool_lists(tmp_path)
     assert new["workbench"] == old["workbench"]
     for n in old["agent"]:
         assert new["agent"][n] == old["agent"][n], n
+    apply_codes = set()
+    _error_enums(new["agent"]["model_apply_action"][2], apply_codes)
+    assert {"PLAN_REQUIRED", "PRECONDITION_FAILED"} <= apply_codes, apply_codes
