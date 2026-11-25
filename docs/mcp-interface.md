@@ -991,6 +991,8 @@ C 的附带决定（同在 Q4，已拍板收紧）：`aisep:approvedBy` **只接
 | 解析 | `PARSE_FAILED`、`EDIT_UNSAFE`、`DIFF_PARSE_FAILED`、`DIFF_BNODE_UNSUPPORTED`、`QUERY_FAILED`、`QUERY_NOT_READONLY`、`QUERY_TIMEOUT` | 只有超时是 |
 | 其他 | `INTERNAL`（带 stderr 摘要） | 否 |
 
+各工具 `outputSchema` 里 `error.code` 的枚举是上表全部错误码，只有 `PLAN_REQUIRED`、`PRECONDITION_FAILED` 例外：它们只由 `model_apply_action` 返回，只出现在它的枚举里（`aisep/errors.py` 的 `ACTION_CODES`），所以加入动作工具后，其余工具在 `tools/list` 里的条目与加入前相同。
+
 **`CONFLICT` 的 retryable**：缺省为 true（`aisep/errors.py` 的 `RETRYABLE`）。三类为 false（已拍板）：**回滚时保留了文件**（kept：文件被钩子或编辑器改过而保留，原样重试会先撞上 `DIRTY_WORKTREE`，没有意义，§5.9 第 8 步）；**记录已被别的提交带走**（taken：带走它的提交还含代理的改动，要人判断，§5.9 第 7 步"风险"）；**撤回失败**（提交或 index 条目留在原处，要人处理）。kept 出口 `details` 带 `fileKept: true` 和 `recover`；taken 出口 `details` 带 `takenByCommit`（带走记录的提交），`details.commit` 只在已有本次批准提交 A 时给出 A。`record_approval`（`aisep/approval.py`）逐项：
 
 | 情形 | 现场 | 可重试 |

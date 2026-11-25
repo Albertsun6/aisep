@@ -12,6 +12,9 @@ LOCKED CONFLICT WORKTREE_CHANGED
 PARSE_FAILED EDIT_UNSAFE DIFF_PARSE_FAILED DIFF_BNODE_UNSUPPORTED QUERY_FAILED QUERY_NOT_READONLY QUERY_TIMEOUT
 INTERNAL
 """.split())
+# raised only by model_apply_action (§5.14); the other tools' outputSchema leaves them out of its error-code enum, so
+# adding the action tools leaves the tools/list entries the other tools already had unchanged (stage C, C2)
+ACTION_CODES = frozenset({"PLAN_REQUIRED", "PRECONDITION_FAILED"})
 # §7.1 rule 4: retrying unchanged makes sense only for these (callers override for the exceptions §7.1 names)
 RETRYABLE = frozenset({"LOCKED", "CONFLICT", "WORKTREE_CHANGED", "QUERY_TIMEOUT"})
 
