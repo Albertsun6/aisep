@@ -1,16 +1,16 @@
 # AISEP 第二步：元模型规范（v0.4）
 
-状态：§14 的 D1–D10 已于 2026-11-19 全部按建议拍板（ADR-011）；v0.3 = v0.2 + 三轮审计和第二次 GPT 评审之后补的 R1–R4、G1–G10，全部已在原型里实现并验证。v0.4 = v0.3 + “AI 进行中”的数据来源（ADR-013）：新增 `aisep:AgentActivity`（§6.7）、批准记录的 `aisep:activity`（§6.6）、MCP 的 `model.diff` 与 `governance.record_approval` 改动（§8.3）；AgentActivity 与 `model.diff`、`governance.record_approval` 已在《MCP Server 接口设计》中定稿（ADR-014）。v0.4 之后补入动作扩展（ADR-025）：新增扩展模块 ext-actions（§6.9），动作定义建进元模型，MCP 增加 `model.list_actions`、`model.apply_action`（§8.3）。依据：`spike-linked-archi/spike-result.md`（第一步结论）、《方法论总纲（草案1）》§6/§6a、《AISEP 架构原则》、`decisions.md`（ADR-003/004/007/008/009/010）。
-基线：Linked.Archi core 0.6.0 + ArchiMate 4.0（vendored，按 SHA256 锁定）。命名空间先用占位符 `https://aisep.example/`，第三步建正式仓库前统一替换。
+状态：§14 的 D1–D10 已于 2026-11-19 全部按建议拍板（ADR-011）；v0.3 = v0.2 + 三轮审计和第二次 GPT 评审之后补的 R1–R4、G1–G10，全部已在原型里实现并验证。v0.4 = v0.3 + “AI 进行中”的数据来源（ADR-013）：新增 `aisep:AgentActivity`（§6.7）、批准记录的 `aisep:activity`（§6.6）、MCP 的 `model.diff` 与 `governance.record_approval` 改动（§8.3）；AgentActivity 与 `model.diff`、`governance.record_approval` 已在《MCP Server 接口设计》中定稿（ADR-014）。v0.4 之后补入动作扩展（ADR-026）：新增扩展模块 ext-actions（§6.9），动作定义建进元模型，MCP 增加 `model.list_actions`、`model.apply_action`（§8.3）。依据：`spike-linked-archi/spike-result.md`（第一步结论）、《方法论总纲（草案1）》§6/§6a、《AISEP 架构原则》、`decisions.md`（ADR-003/004/007/008/009/010）。
+基线：Linked.Archi core 0.7.0 + ArchiMate 4.0（vendored，按 SHA256 锁定）。命名空间先用占位符 `https://aisep.example/`，第三步建正式仓库前统一替换。
 原型：`metamodel-prototype/`（179 项测试全部通过，详见 [`docs/history/metamodel-spec-prototype-and-revisions.md`](history/metamodel-spec-prototype-and-revisions.md) 的「§15」）。修订与辩论记录见同一文件的「附 B」，已知限制见本文附 C。
 
 ## 0. 一页摘要
 
 - **底座照搬 Linked.Archi core**：元素 `arch:Element`、关系 `arch:QualifiedRelationship`、视图 `arch:View`、容器 `arch:Model`、记法清单 `arch:Metamodel`。AISEP 不发明新的原语。
-- **枢纽记法 ArchiMate 4.0**。其他记法用 `rdfs:subClassOf`/`subPropertyOf` 挂到 4.0 上，这层对齐**由 AISEP 自己写**（ADR-010）。
-- **AISEP 自己补的部分**：闭世界规则、写入层（只写限定关系）、记法混用规则、`refines` 层级规则、按模块划定校验范围、影响分析口径（作为数据）、批准记录（ADR-009）、验证扩展、代码追溯扩展、动作定义（ADR-025）、IRI 与版本策略。
+- **枢纽记法 ArchiMate 4.0**。其他记法用 `rdfs:subClassOf`/`subPropertyOf` 挂到 4.0 上，这层对齐**由 AISEP 自己写**（ADR-010）。例外是 C4：它与 4.0 是双模型，不挂到 4.0 上，两边用 `arch:refines` 关联（§6.8，ADR-025）。
+- **AISEP 自己补的部分**：闭世界规则、写入层（只写限定关系）、记法混用规则、`refines` 层级规则、按模块划定校验范围、影响分析口径（作为数据）、批准记录（ADR-009）、验证扩展、代码追溯扩展、动作定义（ADR-026）、IRI 与版本策略。
 - **对外形态**：以上能力都通过 MCP Server 暴露（ADR-008）；本规范定义它的语义契约（§8.3）。
-- **第一批模块**：ArchiMate 4.0（枢纽）、BPMN、UML（子集）、DDD（新建，基于 Context Mapper CML）；扩展：治理与批准、架构决策（ADR）、质量、验证、代码追溯、动作（ext-actions，ADR-025）。
+- **第一批模块**：ArchiMate 4.0（枢纽）、BPMN、UML（子集）、DDD（新建，基于 Context Mapper CML）；扩展：治理与批准、架构决策（ADR）、质量、验证、代码追溯、动作（ext-actions，ADR-026）。
 
 ## 1. 架构原则如何落到元模型
 
@@ -45,7 +45,7 @@
 - 跨模型引用直接写对方的 IRI；被引用元素被删除时 L1 报错（原型已验证）。
 - 修订历史交给 Git。
 - 现有手写 IRI 不按本表重命名（slug 一经创建不改）；本表只约束写入层新生成的 IRI。
-- 动作（ADR-025）：动作类型个体是 `{base}ont/aisep#Action{驼峰名}`（只在 `modules/ext-actions/catalog.ttl` 里声明，L3 EA1）；参数键是 `{base}ont/ext-actions#{参数名}`（即上表「AISEP 模块本体」一行，参数名 = `sh:path` 的本地名，不声明为属性）；动作的短 id 是 `dcterms:identifier`（`^[a-z][a-z0-9-]{0,63}\Z`），由 `model.apply_action` 用来调用。动作 IRI 与参数键同样一经创建不改。
+- 动作（ADR-026）：动作类型个体是 `{base}ont/aisep#Action{驼峰名}`（只在 `modules/ext-actions/catalog.ttl` 里声明，L3 EA1）；参数键是 `{base}ont/ext-actions#{参数名}`（即上表「AISEP 模块本体」一行，参数名 = `sh:path` 的本地名，不声明为属性）；动作的短 id 是 `dcterms:identifier`（`^[a-z][a-z0-9-]{0,63}\Z`），由 `model.apply_action` 用来调用。动作 IRI 与参数键同样一经创建不改。
 
 ## 4. 三原语骨架（AISEP 最小必填）
 
@@ -193,7 +193,7 @@
     - R8：一个 DataObject 至多有一个权威来源（被 ApplicationComponent 分派）。作用于全部 DataObject，不限于 C4 所描述的系统。
 - 不加载 c4 的 viewpoints、notation、deliverable-templates；不加载 core-vis、edgy（§12）。
 
-### 6.9 动作（Extension，ADR-025）
+### 6.9 动作（Extension，ADR-026）
 - 动作是现有写工具的具名组合，参照 Palantir Foundry 的 Action type；只建定义，不建执行记录（ADR-013）。动作是推荐通道，直接编辑照旧允许；`gate` 与合并核对不知道改动是否经动作做的。
 - `aisep:ActionType` ⊑ `sh:Parameterizable`（只作文档，不加载 SHACL 词汇，不参与推理），**不在 `arch:Element` 之下**：没有 `arch:inModel`，也没有批准状态。个体只在 `modules/ext-actions/catalog.ttl` 里声明才生效，IRI 形如 `aisep:Action<名>`（§3）。字段：`dcterms:identifier`（短 id，恰好一个）、`skos:prefLabel`@zh 恰好一个、`skos:definition`@zh 至多一个、`owl:versionInfo`（semver，恰好一个）、`sh:parameter`（参数）、`aisep:guard`（前置检查）、`aisep:steps`（步骤表，恰好一个、非空）。
 - 参数：`sh:parameter [ sh:path <参数键> ; sh:datatype xsd:string 或 sh:nodeKind sh:IRI ; sh:optional true? ; sh:description @zh? ]`，只认这几个键。参数键在 `ont/ext-actions#`，不声明为属性，G7 照样拒绝模型文件把它们当谓词用。
@@ -306,7 +306,7 @@ spike 里 AI 试验用的 7 元素标准答案，其实是无向的 3 跳邻域�
 ### 10.2 对齐公理和校验范围
 - **L3 跑 am4 shapes 时**，数据图里放入：枢纽和核心模块、`inheritsHubRules=true` 的 Language 模块、**所有 Extension 模块**（例如 `Deployable ⊑ Artifact` 必须常驻，否则 Deployable 会逃过矩阵）的对齐公理。不放入 `inheritsHubRules=false` 的 Language 对齐。
 - 其他每个模块的 shapes，在"源文件 + 构建出的直连三元组 + 本模块依赖"上单独运行。
-- ext-actions 的 shapes 另外还校验本模块 `aisep:loads` 的 `catalog.ttl`（动作目录），所以 `catalog.ttl` 写坏会让 L3 报 EA1–EA10（ADR-025）。
+- ext-actions 的 shapes 另外还校验本模块 `aisep:loads` 的 `catalog.ttl`（动作目录），所以 `catalog.ttl` 写坏会让 L3 报 EA1–EA10（ADR-026）。
 - 查询和影响分析加载全部对齐公理。
 
 ## 11. 版本与 vendoring
