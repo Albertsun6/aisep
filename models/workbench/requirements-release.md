@@ -68,9 +68,16 @@
   - 2026-11-25 更新（追溯 PR）：15 个测试用例与 CI 测试结果已补——脚本 8 个（aisep main 1b84c74，运行 45471079546），关口页与首页 7 个（aisep-workbench aisep-main 9494224，运行 45472332687）；`:releaseScriptCode` 与 `:gatePageCode` 经 `aisep:Implementation` 实现 `:bpmnReleaseApproval`。12 条 Must 追溯缺口全部清零，全仓库 gate 只剩采购模型原有的 1 条 Warning。
   - 1 条是采购模型原有的 Warning，与本需求无关。
 - Info：5 条新的 Won't 需求是孤立元素，按设计不连（另 3 条是前段链路的 Won't）。
+- 两条 Verification 直连需求、不经验收标准：`:tcReleaseMergeCheckFirst` → `:reqTagOnlyApprovedRelease`（打标签前先跑合并时校验，是需求整体的约束，不对应某一条 Given/When/Then）；`:tcReleaseGateMainUnknown` → `:reqApproveRelease`（读不到 origin/main 时不能决定，是需求的前置条件，第 3 节的验收标准没有单列）。
+- 批准范围（若过需求确认关口）：第 3 节的全部元素。限定关系不能被批准（规范 §6.6）。
 
 ## 8. 残余风险（aisep #89 评审）
 
 - 远端规则集 `release-tags-immutable` 只禁删除和移动 `release/*` 标签、不禁创建；会话脚本不是防恶意会话的安全边界，有推送权限的会话可以绕过脚本直接打标签。
 - 形状与内容都合法、但不是 Albert 本人做出的伪造发布批准记录，任何机械核对（脚本的 `merge_check`、CI）都分不出；据此打出的标签删不掉，而批准专用 PR 尚可 revert。挡住它的仍是「AI 不得新增批准记录」的硬规则（AGENTS.md）。两条都已写进 ADR `:adrReleaseStepsBySessionScript` 的代价。
-- 批准范围（若过需求确认关口）：第 3 节的全部元素。限定关系不能被批准（规范 §6.6）。
+
+## 9. 后续：已批准模型的整模型重批（aisep #95，2026-11-25）
+
+- 问题：发布批准的是整个模型。按 §5.9 检查项 6 与「对象的比较范围」，此后改动该模型的任何成员，都须新增一条覆盖模型 IRI 的 Approved 记录。关口页原来只能逐个勾选元素，这类 PR（第一个是 #94）无法放行。
+- Albert 选方向 2：规则不变，工作台加功能（aisep-workbench #30）。新增 `:reqReapproveChangedApprovedModel`（Must），聚合 `:acWholeModelOffered` 和 `:acApprovedModelsUnknownBlocks`；由 `:gateApprovalFlow` 实现，并实现 `:outReleaseTagged`，因为发布之后模型还能继续改、再发布。
+- 测试用例 4 个（`:tcWholeModelOffered`、`:tcWholeModelRelationshipOnly`、`:tcApprovedModelsPending`、`:tcApprovedModelsFailed`），测试结果取自 aisep-workbench aisep-main 上合并 #30 的 CI。

@@ -18,10 +18,6 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "批准工具与形状规则强制批准人属于被批模型"@zh .
 
-
-
-
-
 :forceKeepApprovalCriteriaFrozen a ad:Force ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "不动批准与合并判据"@zh .
@@ -34,8 +30,6 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :optApproverFilterInWorkbench ;
     arch:target :forceKeepApprovalCriteriaFrozen .
-
-
 
 :rel-optApproverEnforcedByServer-addressesForce-forceBlockAllEntryPoints a ad:AddressesForce ;
     arch:inModel <https://aisep.example/model/workbench/> ;
@@ -70,10 +64,6 @@
 :optReleaseStepsByWorkbenchBackend a ad:Option ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "工作台加本地后端，照接口规范 §5.9 原文自己完成这些步骤"@zh .
-
-
-
-
 
 :forceWorkbenchNoGitWrites a ad:Force ;
     arch:inModel <https://aisep.example/model/workbench/> ;

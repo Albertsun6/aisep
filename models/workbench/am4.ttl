@@ -242,3 +242,20 @@
     arch:inModel <https://aisep.example/model/workbench/> ;
     arch:source :gateApprovalFlow ;
     arch:target :reqRejectRelease .
+
+:reqReapproveChangedApprovedModel a am4:Requirement ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "改动主分支上已批准的模型时能整模型重批"@zh ;
+    skos:altLabel "Gate page re-approves a changed model that is approved on main"@en ;
+    skos:definition "主分支上整体批准过的模型（如发布批准的模型）被分支改动时，关口页在批准对象里提供「整个模型」，默认勾选；读不到主分支的批准状态时不给批准。aisep #95 方向 2。"@zh ;
+    aisep:priority aisep:Must .
+
+:rel-gateApprovalFlow-realizes-reqReapproveChangedApprovedModel a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :gateApprovalFlow ;
+    arch:target :reqReapproveChangedApprovedModel .
+
+:rel-reqReapproveChangedApprovedModel-realizes-outReleaseTagged a am4:Realization ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    arch:source :reqReapproveChangedApprovedModel ;
+    arch:target :outReleaseTagged .

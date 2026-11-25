@@ -1,0 +1,16 @@
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/workbench/> .
+
+:approval-20261125063530-architecture-1cac09c a aisep:ApprovalRecord ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "架构决策批准：AISEP 工作台等 17 项"@zh ;
+    aisep:gate aisep:GateArchitecture ;
+    aisep:decision aisep:DecisionApproved ;
+    aisep:approvedBy <https://aisep.example/model/workbench/projectLead> ;
+    aisep:approves <https://aisep.example/model/workbench/> , <https://aisep.example/model/workbench/acApprovedModelsUnknownBlocks> , <https://aisep.example/model/workbench/acWholeModelOffered> , <https://aisep.example/model/workbench/bpmnRelCheckGateway> , <https://aisep.example/model/workbench/bpmnRelTag> , <https://aisep.example/model/workbench/bpmnReleaseApproval> , <https://aisep.example/model/workbench/reqReapproveChangedApprovedModel> , <https://aisep.example/model/workbench/tcApprovedModelsFailed> , <https://aisep.example/model/workbench/tcApprovedModelsPending> , <https://aisep.example/model/workbench/tcReleaseGateReject> , <https://aisep.example/model/workbench/tcWholeModelOffered> , <https://aisep.example/model/workbench/tcWholeModelRelationshipOnly> , <https://aisep.example/model/workbench/trApprovedModelsFailed606c9a0> , <https://aisep.example/model/workbench/trApprovedModelsPending606c9a0> , <https://aisep.example/model/workbench/trReleaseGateReject90830bc> , <https://aisep.example/model/workbench/trWholeModelOffered606c9a0> , <https://aisep.example/model/workbench/trWholeModelRelationshipOnly606c9a0> ;
+    aisep:evidence "1cac09cbec36a695311081f4876677f73a41229c" ;
+    prov:generatedAtTime "2026-11-25T06:35:30Z"^^xsd:dateTime .
