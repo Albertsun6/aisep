@@ -219,11 +219,11 @@
 
 - **状态**：已采纳（Albert 2026-11-25 在协调会话拍板「按清单改」；临时放宽；自合入 `main` 起生效）。修订下列条款的适用范围，各自原文不改：ADR-019 第 1 款（评审分级及其末句「两级都照走三步」）；ADR-017 的三步合并与 R2 末句「合并提交说明记下 T、H 和结果」；ADR-015 U3 与 `docs/mcp-interface.md` §5.9「合并前重算」中「执行合并的人对每个 PR 重算」的说法；元模型规范 §11；`docs/adm/**/template.md` 出口条件里的关口评审项。
 - **决策**：可追溯、可审计、可复现三个质量目标的**校验与留痕**在 MVP 期间放宽，先让模型能建、能查、能出图（含 C4 与 ArchiMate 4 双模型）。数据采集和安全约束不动。
-  1. **评审分级只放宽模型数据。** 新增 IRI 的 `models/` 下的 `.ttl`（不含 `models/<slug>/governance/**` 与 `models/<slug>/governance.ttl`）由合并前评审改为合并后评审。这两类 governance 路径也不属于 ADR-019 第 1 款白名单③：即使不新增 IRI，也走合并前评审。`vendor/**` 与 `modules/**` **暂不放宽**：本条的独立评审实跑证明，在任一模块文件里声明 `aisep:ApprovalRecord` 的子类，用它做类型的记录会被 approvalState 推导认可（推导读全部模块与 vendor 的并集图），却不进 `mergecheck` 的记录检查（它只看模型文件里的类链），gate 与 mergecheck 都通过；合并前评审是目前唯一的拦截点。等 `mergecheck` 的记录识别改用与 `check_bnodes` 相同的类闭包并补上负例后，由 Albert 决定是否把这两个目录的 `.ttl` 放进合并后评审。
+  1. **评审分级只放宽模型数据。** 新增 IRI 的 `models/` 下的 `.ttl`（不含 `models/<slug>/governance/**` 与 `models/<slug>/governance.ttl`）由合并前评审改为合并后评审。`vendor/**` 与 `modules/**` **暂不放宽**：本条的独立评审实跑证明，在任一模块文件里声明 `aisep:ApprovalRecord` 的子类，用它做类型的记录会被 approvalState 推导认可（推导读全部模块与 vendor 的并集图），却不进 `mergecheck` 的记录检查（它只看模型文件里的类链），gate 与 mergecheck 都通过；合并前评审是目前唯一的拦截点。等 `mergecheck` 的记录识别改用与 `check_bnodes` 相同的类闭包并补上负例后，由 Albert 决定是否把这两个目录的 `.ttl` 放进合并后评审。
   2. **三步合并缩小范围。** 合并前重算、复核目标分支、合并后核验只对改到 `models/**`、`modules/**`、`vendor/**` 或负例清单的 PR 执行；其余 PR 必需检查通过、评审条件满足后直接合并（仍用 `--merge --match-head-commit H`）。拿不准就执行三步。
   3. **合并说明不再记 T、H 与各步结果。** `negatives` 结论照旧记。
   4. **上游升级不要求批准记录。** 元模型规范 §11 的「人工批准（一条批准记录）」暂停，差异报告写进 PR 即可；`vendor/` 只读、`MANIFEST.json` 与 SHA256 清单照旧。
-  5. **本地不跑全量测试。** 改 `modules/` 或 `vendor/` 后本地只跑 `tools/aisep.py test --no-pytest`，`aisep-mcp/tests` 与负例交给 CI；改到 `modules/**` 或 `vendor/**` 的 PR 与负例清单一样核对 `negatives`：合并前由协调会话按 ADR-022 的命令核对 H 上为 `["success"]`，合并后同样核对 M 上为 `["success"]`。
+  5. **本地不跑全量测试。** 改 `modules/` 或 `vendor/` 后本地只跑 `tools/aisep.py test --no-pytest`，`aisep-mcp/tests` 与负例交给 CI；改到 `modules/**` 的 PR 合并前由协调会话按 ADR-022 的命令核对 H 上 `negatives` 为 `["success"]`。
   6. **ADM 阶段关口评审暂停。** 各阶段模板出口条件里的关口评审项在此期间不要求。
   7. **不放宽的**：硬规则 1–5、7；批准记录只能由 Albert 本人做出；CI 必需检查；涉及 mergecheck 的 PR 核对 `negatives`（ADR-022）；用合并提交；PR 即锁；跨模型评审先问 Albert。
 - **理由**：Albert 原话「把可追溯，可审计，可复现这三个质量目标先搁置，后期再做，先做 mvp，不然太慢了」。放宽的都是事后可以补做的校验与留痕（批准记录、三步合并的留痕、本地约 48 分钟的全量测试、阶段关口）；IRI、限定关系、vendor 哈希、批准只能由本人做出这些事后补不回来或属于安全约束的不动。根目录文件、`aisep/**`、`aisep-mcp/**`、`tests/**`、`tools/**` 不放宽，因为 ADR-019 的评审实测过在这些位置放文件可以让 `mergecheck` 空跑通过；`modules/**` 与 `vendor/**` 不放宽的原因见第 1 款。分支保护不要求分支与 `main` 同步（`strict:false`），CI 的结论是对开 PR 时的 `main` 算的，所以会改变 gate 结论的 `modules/**`、`vendor/**` 仍走三步。
