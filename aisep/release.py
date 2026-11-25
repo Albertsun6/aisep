@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 
 from aisep import core, gitio, mergecheck as mc
 
-RELEASE_BRANCH = re.compile(r"^approval/release-([0-9a-f]{7})-[0-9]{14}$")
+RELEASE_BRANCH = re.compile(r"^approval/release-([0-9a-f]{7})-[0-9]{14}\Z")
 DECISIONS = {mc.APPROVED: "批准", core.AISEP + "DecisionRejected": "驳回"}
 
 
