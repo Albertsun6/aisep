@@ -1,0 +1,63 @@
+# expect-no-warning: C4：
+# Spec §3/§6/§7: a complete dual model. am4 says what the system means (component, function, service,
+# capability, aggregated data); C4 says what it looks like (system, containers, database, deployment). The
+# two meet only through arch:Refines from C4 (design) to am4 (hub). External system and person included.
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix c4:    <https://meta.linked.archi/c4/onto#> .
+@prefix structurizr: <https://meta.linked.archi/c4/structurizr#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+# am4 side: component -> function -> service -> capability; two data objects aggregated
+:orderComp a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "订单管理"@zh .
+:orderFn a am4:Function ; arch:inModel :t ; skos:prefLabel "订单校验"@zh .
+:orderSvc a am4:Service ; arch:inModel :t ; skos:prefLabel "下单服务"@zh .
+:orderCap a am4:Capability ; arch:inModel :t ; skos:prefLabel "订单履约"@zh .
+:orderData a am4:DataObject ; arch:inModel :t ; skos:prefLabel "订单数据"@zh .
+:orderHead a am4:DataObject ; arch:inModel :t ; skos:prefLabel "订单头"@zh .
+:orderLine a am4:DataObject ; arch:inModel :t ; skos:prefLabel "订单行"@zh .
+:rel-orderComp-assigned-orderFn a am4:Assignment ; arch:inModel :t ; arch:source :orderComp ; arch:target :orderFn .
+:rel-orderFn-realizes-orderSvc a am4:Realization ; arch:inModel :t ; arch:source :orderFn ; arch:target :orderSvc .
+:rel-orderFn-realizes-orderCap a am4:Realization ; arch:inModel :t ; arch:source :orderFn ; arch:target :orderCap .
+:rel-orderData-aggregates-orderHead a am4:Aggregation ; arch:inModel :t ; arch:source :orderData ; arch:target :orderHead .
+:rel-orderData-aggregates-orderLine a am4:Aggregation ; arch:inModel :t ; arch:source :orderData ; arch:target :orderLine .
+:rel-orderFn-accesses-orderData a am4:ReadWriteAccess ; arch:inModel :t ; arch:source :orderFn ; arch:target :orderData .
+
+# C4 side: the system and its API container; the system refines the am4 component (gate A: arch:refines)
+:orderSys a c4:SoftwareSystem ; arch:inModel :t ; skos:prefLabel "订单管理系统"@zh .
+:orderApi a c4:Container ; arch:inModel :t ; skos:prefLabel "订单 API"@zh ; c4:technology "Spring Boot" .
+:rel-orderSys-has-orderApi a c4:ContainerContainment ; arch:inModel :t ; arch:source :orderSys ; arch:target :orderApi .
+:rel-orderSys-refines-orderComp a arch:Refines ; arch:inModel :t ; arch:source :orderSys ; arch:target :orderComp .
+
+:orderDb a c4:Database ; arch:inModel :t ; skos:prefLabel "订单库"@zh ; c4:technology "PostgreSQL" .
+:rel-orderSys-has-orderDb a c4:ContainerContainment ; arch:inModel :t ; arch:source :orderSys ; arch:target :orderDb .
+:rel-orderDb-refines-orderData a arch:Refines ; arch:inModel :t ; arch:source :orderDb ; arch:target :orderData .
+:rel-orderApi-uses-orderDb a c4:Using ; arch:inModel :t ; arch:source :orderApi ; arch:target :orderDb ;
+    skos:prefLabel "读写订单"@zh ; c4:technology "SQL" .
+
+:validator a c4:Component ; arch:inModel :t ; skos:prefLabel "订单校验器"@zh .
+:rel-orderApi-has-validator a c4:ComponentContainment ; arch:inModel :t ; arch:source :orderApi ; arch:target :validator .
+:rel-validator-uses-orderDb a c4:Using ; arch:inModel :t ; arch:source :validator ; arch:target :orderDb ;
+    skos:prefLabel "查重"@zh ; c4:technology "JDBC" .
+
+:buyer a c4:Person ; arch:inModel :t ; skos:prefLabel "采购员"@zh .
+:buyerActor a am4:BusinessActor ; arch:inModel :t ; skos:prefLabel "采购员"@zh .
+:rel-buyer-refines-buyerActor a arch:Refines ; arch:inModel :t ; arch:source :buyer ; arch:target :buyerActor .
+:rel-buyer-uses-orderSys a c4:Using ; arch:inModel :t ; arch:source :buyer ; arch:target :orderSys ;
+    skos:prefLabel "下单"@zh ; c4:technology "HTTPS" .
+
+:payment a c4:ExternalSoftwareSystem ; arch:inModel :t ; skos:prefLabel "支付平台"@zh .
+:rel-orderSys-uses-payment a c4:Using ; arch:inModel :t ; arch:source :orderSys ; arch:target :payment ;
+    skos:prefLabel "发起支付"@zh .
+
+:k8s a structurizr:DeploymentNode ; arch:inModel :t ; skos:prefLabel "生产集群"@zh ;
+    structurizr:environment "Production" ; structurizr:instances 3 .
+:rel-orderApi-deployed-k8s a structurizr:Deployment ; arch:inModel :t ; arch:source :orderApi ; arch:target :k8s .
+:euWest a structurizr:DeploymentNode ; arch:inModel :t ; skos:prefLabel "欧洲西区"@zh .
+:rel-euWest-haspart-k8s a arch:HasPart ; arch:inModel :t ; arch:source :euWest ; arch:target :k8s .

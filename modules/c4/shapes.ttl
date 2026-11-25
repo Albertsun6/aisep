@@ -1,0 +1,166 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix c4:    <https://meta.linked.archi/c4/onto#> .
+@prefix c4ash: <https://aisep.example/ont/c4/shapes#> .
+
+# AISEP's own C4 rules: docs/specs/c4-archimate4-dual-model.md §7, "AISEP 自有规则" table, rows R1-R8 below.
+# Level 1 = sh:Violation (blocks the gate), level 2 = sh:Warning. Upstream c4/shapes and
+# c4/structurizr-shapes run beside these and are not repeated here.
+# Runs on the built graph (direct triples generated from the qualified resources, spec §10.2): the
+# cross-model link is the direct arch:refines built from a qualified arch:Refines (gate A decision).
+# Data graph has every module's ontology but no alignment, so class tests follow rdfs:subClassOf* there.
+# SPARQL here keeps to the SHACL §5.3.1 pre-binding rules (no MINUS, VALUES, SERV-ICE, or sub-SELECT), and never has the
+# word SERV-ICE followed by whitespace (pyshacl, docs/module-contract.md), hence FILTER (… IN (…)) below.
+#
+# R4 (每条关系同时有直接谓词和限定资源，两者端点一致) has no shape here: in AISEP authors write only the
+# qualified resource and `aisep build` generates the direct triple from it (AGENTS.md hard rule 2, spec §8.1);
+# a hand-written direct triple is an L1 Violation. tests/invalid/direct-uses-triple.ttl pins that.
+
+c4ash:prefixes a owl:Ontology ;
+    sh:declare [ sh:prefix "rdf" ;  sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^<http://www.w3.org/2001/XMLSchema#anyURI> ] ,
+               [ sh:prefix "rdfs" ; sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^<http://www.w3.org/2001/XMLSchema#anyURI> ] ,
+               [ sh:prefix "arch" ; sh:namespace "https://meta.linked.archi/core#"^^<http://www.w3.org/2001/XMLSchema#anyURI> ] ,
+               [ sh:prefix "am4" ;  sh:namespace "https://meta.linked.archi/archimate4/onto#"^^<http://www.w3.org/2001/XMLSchema#anyURI> ] ,
+               [ sh:prefix "c4" ;   sh:namespace "https://meta.linked.archi/c4/onto#"^^<http://www.w3.org/2001/XMLSchema#anyURI> ] .
+
+# R1 (level 1): an own (non-external) software system refines exactly one am4 Application Component.
+c4ash:SystemRefinesOneComponentShape a sh:NodeShape ;
+    sh:targetClass c4:SoftwareSystem ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes c4ash:prefixes ;
+        sh:message "C4：本方软件系统必须恰好 refines 一个 am4:ApplicationComponent（外部系统 c4:ExternalSoftwareSystem 除外）"@zh ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS { $this rdf:type/rdfs:subClassOf* c4:ExternalSoftwareSystem }
+                {   FILTER NOT EXISTS { $this arch:refines ?c . ?c rdf:type/rdfs:subClassOf* am4:ApplicationComponent }
+                } UNION {
+                    $this arch:refines ?c1 , ?c2 .
+                    ?c1 rdf:type/rdfs:subClassOf* am4:ApplicationComponent .
+                    ?c2 rdf:type/rdfs:subClassOf* am4:ApplicationComponent .
+                    FILTER (?c1 != ?c2)
+                }
+            }""" ;
+    ] .
+
+# R1, the other way round (level 1): an am4 Application Component is refined by at most one C4 software system.
+# "At most": most am4 components have no C4 description at all (spec §3 hard rule 1).
+c4ash:ComponentRefinedByOneSystemShape a sh:NodeShape ;
+    sh:targetClass am4:ApplicationComponent ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes c4ash:prefixes ;
+        sh:message "C4：一个 am4:ApplicationComponent 至多被一个 C4 软件系统 refines"@zh ;
+        sh:select """
+            SELECT $this WHERE {
+                ?s1 arch:refines $this . ?s1 rdf:type/rdfs:subClassOf* c4:SoftwareSystem .
+                ?s2 arch:refines $this . ?s2 rdf:type/rdfs:subClassOf* c4:SoftwareSystem .
+                FILTER (?s1 != ?s2)
+            }""" ;
+    ] .
+
+# R2 (level 1): a container belongs to exactly one software system (upstream c4/shapes checks only the
+# endpoint types of ContainerContainment, verification report §5).
+c4ash:ContainerInOneSystemShape a sh:NodeShape ;
+    sh:targetClass c4:Container ;
+    sh:property [
+        sh:path [ sh:inversePath c4:hasContainer ] ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "C4：每个容器必须恰好属于一个软件系统（一条 c4:ContainerContainment）"@zh ;
+    ] .
+
+# R3 (level 1): a database refines an am4 Data Object. Gate A: one anchor (spec §7.2); several logical data
+# objects are first aggregated on the am4 side (am4:Aggregation) and the database refines the aggregate.
+c4ash:DatabaseRefinesDataObjectShape a sh:NodeShape ;
+    sh:targetClass c4:Database ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes c4ash:prefixes ;
+        sh:message "C4：每个数据库容器必须 refines 一个 am4:DataObject（多个逻辑数据对象先在 am4 侧聚合）"@zh ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS { $this arch:refines ?d . ?d rdf:type/rdfs:subClassOf* am4:DataObject }
+            }""" ;
+    ] .
+
+# R5 (level 1): a Using between two different containers (a component counts as the container that has it)
+# states its technology/protocol.
+c4ash:CrossContainerUsingTechnologyShape a sh:NodeShape ;
+    sh:targetClass c4:Using ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes c4ash:prefixes ;
+        sh:message "C4：跨容器的使用关系（c4:Using）必须写 c4:technology（协议或技术）"@zh ;
+        sh:select """
+            SELECT $this WHERE {
+                $this arch:source ?s ; arch:target ?t .
+                { ?s rdf:type/rdfs:subClassOf* c4:Container . BIND (?s AS ?cs) }
+                UNION { ?cs c4:hasComponent ?s }
+                { ?t rdf:type/rdfs:subClassOf* c4:Container . BIND (?t AS ?ct) }
+                UNION { ?ct c4:hasComponent ?t }
+                FILTER (?cs != ?ct)
+                FILTER NOT EXISTS { $this c4:technology ?tech }
+            }""" ;
+    ] .
+
+# R6 (level 2): an am4 Application Component that a C4 element refines performs at least one Function or Process.
+c4ash:ComponentPerformsBehaviourShape a sh:NodeShape ;
+    sh:severity sh:Warning ;
+    sh:targetClass am4:ApplicationComponent ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes c4ash:prefixes ;
+        sh:message "C4：被 C4 元素 refines 的 am4:ApplicationComponent 应至少 assignedTo 一个 Function 或 Process，否则无法向业务追溯"@zh ;
+        sh:select """
+            SELECT $this WHERE {
+                ?x arch:refines $this . ?x rdf:type/rdfs:subClassOf* ?c4c .
+                FILTER (?c4c IN (c4:SoftwareSystem, c4:Container))
+                FILTER NOT EXISTS {
+                    $this am4:assignedTo ?b . ?b rdf:type/rdfs:subClassOf* ?bc .
+                    FILTER (?bc IN (am4:Function, am4:Process))
+                }
+            }""" ;
+    ] .
+
+# R7 (level 2): a Service of such a component's behaviour is realized by a behaviour and traces to a
+# Capability or Requirement (the service, or a behaviour realizing it, realizes one).
+c4ash:ServiceTraceShape a sh:NodeShape ;
+    sh:severity sh:Warning ;
+    sh:targetClass am4:Service ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes c4ash:prefixes ;
+        sh:message "C4：C4 所描述系统的 am4:Service 应由行为实现，并能追溯到 Capability 或 Requirement"@zh ;
+        sh:select """
+            SELECT $this WHERE {
+                ?x arch:refines ?comp . ?x rdf:type/rdfs:subClassOf* ?c4c .
+                FILTER (?c4c IN (c4:SoftwareSystem, c4:Container))
+                ?comp am4:assignedTo ?b . ?b am4:realizes $this .
+                FILTER NOT EXISTS {
+                    { $this am4:realizes ?goal } UNION { ?b2 am4:realizes $this . ?b2 am4:realizes ?goal }
+                    ?goal rdf:type/rdfs:subClassOf* ?gc .
+                    FILTER (?gc IN (am4:Capability, am4:Requirement))
+                }
+            }""" ;
+    ] .
+
+# R8 (level 2): a Data Object has at most one authoritative source (a component assigned to it, am4 4.0).
+c4ash:DataObjectOneSourceShape a sh:NodeShape ;
+    sh:severity sh:Warning ;
+    sh:targetClass am4:DataObject ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes c4ash:prefixes ;
+        sh:message "C4：一个 am4:DataObject 至多一个权威来源（被一个 ApplicationComponent assignedTo）"@zh ;
+        sh:select """
+            SELECT $this WHERE {
+                ?a am4:assignedTo $this . ?a rdf:type/rdfs:subClassOf* am4:ApplicationComponent .
+                ?b am4:assignedTo $this . ?b rdf:type/rdfs:subClassOf* am4:ApplicationComponent .
+                FILTER (?a != ?b)
+            }""" ;
+    ] .
