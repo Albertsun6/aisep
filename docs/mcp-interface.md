@@ -584,7 +584,7 @@
 | `model` | ✔ | 记录写进新建的 `models/<slug>/governance/<记录本地名>.ttl`，一条记录一个文件（U2，第 5 步） |
 | `gate` | ✔ | `GateRequirements` / `GateArchitecture` / `GateDesign` / `GateMerge` / `GateRelease`，展开为 `aisep:<gate>`；取值集合来自模块（F14、G2） |
 | `decision` | ✔ | `Approved` / `Rejected` |
-| `approvedBy` | ✔ | **已有**的 `arch:Stakeholder` 实例 IRI，且**不能**是 `aisep:AIAgent` 的实例（Q4=C 已拍板：AI 不能批准，违反 → `APPROVER_NOT_ALLOWED`）。不自动建人 |
+| `approvedBy` | ✔ | **已有**的 `arch:Stakeholder` 实例 IRI，且**不能**是 `aisep:AIAgent` 的实例（Q4=C 已拍板：AI 不能批准，违反 → `APPROVER_NOT_ALLOWED`）；还须是被批模型 `model` 的成员（`arch:inModel` 指向它），否则 → `APPROVER_NOT_ALLOWED`（`details.reason: "approver-not-in-model"`，#73：别的模型的干系人在全仓库视图里算数，在被批模型自己的视图里不算；只约束新记录，主干上已有的跨模型记录不动）。不自动建人 |
 | `approves` | ✔ | IRI 数组，≥1。每个都必须在 `headCommit` 里存在，是元素、模型或 ADR：元素不含 `aisep:ApprovalRecord`、`aisep:AgentActivity`、`arch:Stakeholder`；限定关系、视图不可被批准，它们的改动只计入所属模型的比较范围、不计入端点元素（规范 §6.6，第四轮 R4-5、G4-4）。工作台用 diff 的 added + modified 元素预填，人可以删减 |
 | `branch` | ✔ | 记录提交到哪条分支（Q2=A：缺省传会话分支，随 PR 合入；主线上已有提交的批准只有发布关口（U4①），传短命批准分支，见下文"发布关口"，R2-15）。只收分支短名，校验同 §5.8 第 0 步：以 `-`、`/`、`refs/` 开头或含 `\`、NUL → `INVALID_ARGUMENT`；`git check-ref-format --branch <名>` 失败或输出不等于原文 → `INVALID_ARGUMENT`；`refs/heads/<名>` 必须存在。`feat/x` 可以，`refs/heads/feat/x` 不行（第四轮 G4-5：存完整 ref 会让合并时检查项 4 与 `pull_request.head.ref` 比较失败）。标签、远端跟踪分支、`HEAD~1` 这类修订表达式 → `INVALID_ARGUMENT`。`branch` 不能是模型主分支（按短名比：mainRef 的分支短名，即解析前的短名，或远端跟踪引用去掉 `refs/remotes/<remote>/` 后的部分；第四轮复查）→ `INVALID_ARGUMENT`（`details.reason: "protected-branch"`），hint 指向"发布关口"的批准分支流程。理由：受保护分支禁止直接 push、不开例外（R2-15 已拍板），提交在本地主分支上的批准推不上去。原"本地主分支须等于跟踪远端，否则 `STALE_HEAD`"的同步校验随之取消 |
 | `headCommit` | ✔ | 40 位十六进制；**人在差异图上看到的那个 commit**（diff 结果的 `head.commit`）。evidence 固定取它，服务器不再读"当前分支头"来定 evidence。有没有 `activity` 都必填 |
