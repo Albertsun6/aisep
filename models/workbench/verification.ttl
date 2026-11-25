@@ -852,6 +852,18 @@
     arch:source :tcReleaseGateReject ;
     arch:target :acRejectReleaseRecorded .
 
+:trReleaseGateReject90830bc a aisep:TestResult ;
+    arch:inModel <https://aisep.example/model/workbench/> ;
+    skos:prefLabel "驳回发布记一条发布关口驳回记录测试：通过（aisep-main 90830bc）"@zh ;
+    skos:altLabel "Rejecting a release records a GateRelease rejection test: passed (aisep-main 90830bc)"@en ;
+    aisep:resultOf :tcReleaseGateReject ;
+    aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-25T04:35:50Z"^^xsd:dateTime ;
+    aisep:testedCommit "90830bc3d74a438ae017648c476582c0ba5b42ad" ;
+    aisep:ciRun <https://github.com/Albertsun6/aisep-workbench/actions/runs/45547690702> ;
+    schema:codeRepository <https://github.com/Albertsun6/aisep-workbench> ;
+    skos:definition "aisep-workbench 仓库 aisep-main 分支提交 90830bc3d74a438ae017648c476582c0ba5b42ad（合并 PR #29）上，GitHub Actions CI 运行 45547690702（push 触发）：「frontend / vitest (2)」任务（138981199033）里 frontend/src/renderer/aisep/AisepGatePage.test.tsx 整个文件通过（46 tests），日志时间 2026-11-25T04:35:50Z，其中包括「rejects a release as a GateRelease record on R (acRejectReleaseRecorded)」。CI 日志只打印文件级结果（vitest 默认报告器），所以这里按文件全部通过推出这一条通过。"@zh .
+
 :tcReleaseBranchListed a aisep:TestCase ;
     arch:inModel <https://aisep.example/model/workbench/> ;
     skos:prefLabel "首页列出发布批准分支测试"@zh ;
