@@ -37,7 +37,7 @@ HEAD_COMMIT, BASE_COMMIT, BRANCH = AISEP + "headCommit", AISEP + "baseCommit", A
 GATE_RELEASE, APPROVED = AISEP + "GateRelease", AISEP + "DecisionApproved"
 IN_MODEL, SOURCE, TARGET = ARCH + "inModel", ARCH + "source", ARCH + "target"
 ADR_UNEXPANDED = {core.A, IN_MODEL, core.NS["ad"] + "relatedConcept"}
-HEX40 = re.compile(r"^[0-9a-f]{40}$")
+HEX40 = re.compile(r"^[0-9a-f]{40}\Z")  # \Z, not $: $ also matches before a trailing newline (#77)
 RECORD_FILE = re.compile(r"^models/([^/]+)/governance/([^/]+)\.ttl$")
 TAG_DATED = re.compile(r"^release/([0-9]{8})-([0-9a-f]{7})$")
 FUTURE_SLACK = timedelta(minutes=5)

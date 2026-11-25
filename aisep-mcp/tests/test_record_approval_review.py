@@ -554,3 +554,14 @@ def test_approver_from_another_model_is_rejected(t):
     assert refs(t) == before and new_records(t) == [] and t.git("status", "--porcelain") == ""
     # the same commit, approved by the approved model's own Stakeholder, is recorded
     assert call(t)["evidence"] == t.head
+
+
+# ================================================================== #77: a commit id with a trailing newline
+
+def test_head_commit_with_trailing_newline_is_rejected_up_front(t):
+    """#77: `$` matches before a trailing newline, so "<40 hex>\\n" used to pass the format check and fail later
+    (REF_NOT_FOUND). It is now rejected as a malformed headCommit. 变红: put `$` back in approval.HEX40."""
+    from aisep import mergecheck
+    e = err(t, headCommit=t.head + "\n")
+    assert e.code == "INVALID_ARGUMENT" and e.details["rejectedFields"] == ["headCommit"], (e.code, e.details)
+    assert mergecheck.HEX40.match(t.head + "\n") is None and mergecheck.HEX40.match(t.head)
