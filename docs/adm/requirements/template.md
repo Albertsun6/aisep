@@ -8,7 +8,7 @@
 
 - 模型：`https://aisep.example/model/<slug>/`
 - 需求范围：<一句话：这次讨论的是哪块业务>
-- 业务负责人（`am4:Stakeholder`）：<IRI>
+- 业务负责人（`am4:Stakeholder`）：<IRI>（关口批准人另建 `arch:Stakeholder`，放 `governance.ttl`）
 - 关联阶段：<架构愿景 / 业务架构 / 数据架构 / 应用架构 / 技术架构 / 路线图 中的哪些>
 
 ## 1. 访谈记录（AI 追问的结论）
@@ -50,7 +50,7 @@
 
 | 连接 | 种类 | 方向 |
 |---|---|---|
-| 干系人 — 驱动因素 | 枢纽关系 `am4:Association` | Stakeholder → Driver |
+| 干系人 — 驱动因素 | 枢纽关系 `am4:Association` | `am4:Stakeholder` → Driver（不是批准人 `arch:Stakeholder`：关系表不允许它连驱动因素，aisep #83） |
 | 驱动因素 — 目标 | 枢纽关系 `am4:Influence` | Driver → Goal |
 | 成果 — 目标；需求 — 成果 | 枢纽关系 `am4:Realization` | Outcome → Goal；Requirement → Outcome |
 | 需求 — 验收标准 | 枢纽关系 `am4:Aggregation` | Requirement → AcceptanceCriterion |
