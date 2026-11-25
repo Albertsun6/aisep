@@ -317,6 +317,7 @@
 ```
 
 - gate FAIL **不是工具错误**（`isError: false`），是正常结果。
+- aisep-core 的 SHACL-SPARQL 约束（L1 与批准核对用，取自被检查内容自己的 `modules/`）在 §5.6 的同一种无网络子进程里执行（issue #66）：约束尝试建立网络连接 → `QUERY_NOT_READONLY`，无网络子进程建立不了 → `INTERNAL`。两者都是工具错误，gate 不会给出 PASS。
 - 判定逻辑就是原型的那几个函数，只把 `report()` 改成返回数据。
 
 **`model_findings` 的 `openViolations`**（Q6 条件二：写前只拒新增违规留下的遗留违规要查得到）

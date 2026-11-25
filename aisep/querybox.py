@@ -128,9 +128,15 @@ def _child():
     import pyoxigraph as ox
     head = json.loads(sys.stdin.buffer.readline())
     store = ox.Store()
-    store.load(sys.stdin.buffer.read(), format=ox.RdfFormat.N_QUADS)
+    if "batch" in head:  # keep the blank node labels: Ctx.shape_hits callers match bindings against the parent's store
+        store.extend(ox.parse(sys.stdin.buffer.read(), format=ox.RdfFormat.N_QUADS))
+    else:
+        store.load(sys.stdin.buffer.read(), format=ox.RdfFormat.N_QUADS)
     try:
-        out = {"result": run_query(store, head["sparql"], head["prefixes"], head["limit"])}
+        if "batch" in head:  # run_batch: every query, in order, no row limit
+            out = {"result": [run_query(store, q, head["prefixes"], None) for q in head["batch"]]}
+        else:
+            out = {"result": run_query(store, head["sparql"], head["prefixes"], head["limit"])}
     except Exception as e:  # noqa: BLE001 — handed to the parent, which maps it as before
         kind = next((c.__name__ for c in _ERRORS.values() if isinstance(e, c)), "Exception")
         out = {"error": {"type": kind, "message": str(e)}}
@@ -145,9 +151,19 @@ _ERRORS = {c.__name__: c for c in (SyntaxError, OSError, ValueError, RuntimeErro
 def run(store, sparql, prefixes, limit, timeout_s):
     """run_query(store, ...) in a network-less child. Raises NetworkAttempt, Timeout, Unavailable, or the query's own
     SyntaxError / OSError / ValueError / RuntimeError (anything else as Exception)."""
+    return _spawn({"sparql": sparql, "prefixes": prefixes, "limit": limit}, store, timeout_s)
+
+
+def run_batch(store, queries, prefixes, timeout_s=None):
+    """[run_query(store, q, prefixes, no limit) for q in queries] in ONE network-less child (issue #66: the module's
+    SHACL-SPARQL constraints of Ctx.shape_hits). Raises like run(); the first failing query fails the whole batch."""
+    return _spawn({"batch": list(queries), "prefixes": prefixes}, store, timeout_s)
+
+
+def _spawn(head, store, timeout_s):
     if sys.platform not in _KILLED_BY:
         raise Unavailable(f"平台 {sys.platform} 上没有无网络的查询进程")
-    head = json.dumps({"sparql": sparql, "prefixes": prefixes, "limit": limit}).encode() + b"\n"
+    head = json.dumps(head).encode() + b"\n"
     data = head + store.dump(format=__import__("pyoxigraph").RdfFormat.N_QUADS)
     try:
         p = subprocess.run([sys.executable, "-I", os.path.abspath(__file__)], input=data, capture_output=True,

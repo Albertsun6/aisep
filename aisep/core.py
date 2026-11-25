@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 import pyoxigraph as ox
 
+from aisep import querybox
 from aisep.errors import AisepError
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -89,6 +90,19 @@ def parse_xsd_datetime(lex):
         return t.astimezone(timezone.utc) if t.tzinfo else t.replace(tzinfo=timezone.utc)
     except (ValueError, OverflowError):  # OverflowError: 0001-01-01T00:00:00+13:00 is before datetime.min in UTC
         return None
+
+
+def _ox_term(t):
+    """Inverse of querybox._term (None for an unbound variable)."""
+    if t is None:
+        return None
+    if t["type"] == "iri":
+        return ox.NamedNode(t["value"])
+    if t["type"] == "bnode":
+        return ox.BlankNode(t["value"])
+    if "lang" in t:
+        return ox.Literal(t["value"], language=t["lang"])
+    return ox.Literal(t["value"], datatype=ox.NamedNode(t["datatype"]))
 
 
 def short(v):
@@ -305,16 +319,26 @@ class Ctx:
 
     def shape_hits(self, shape=None):
         """Solutions of the aisep-core SHACL-SPARQL constraints over the store ($this unbound):
-        (shape, severity, message template, bindings). shape= restricts to one sh:NodeShape."""
+        (shape, severity, message template, bindings). shape= restricts to one sh:NodeShape.
+        The constraints come from the checked commit's own modules/ and pyoxigraph really sends HTTP for SERVICE, so
+        they all run in one network-less child (querybox.run_batch, issue #66); an attempt to connect, or no such child
+        on this platform, raises instead of returning hits (fail closed: the check cannot pass)."""
         core = [m for m in self.mods if m.name == "aisep-core"]
-        for sf in (core[0].shapes if core else []):
-            for shp, sev, msg, sel, prefixes in sparql_constraints(sf):
-                if shape and shp != shape:
-                    continue
-                res = self.store.query(prefixes + re.sub(r"\$this\b", "?this", sel), use_default_graph_as_union=True)
-                names = [v.value for v in res.variables]
-                for sol in res:
-                    yield shp, sev, msg, {n: sol[n] for n in names}
+        cons = [(shp, sev, msg, prefixes + re.sub(r"\$this\b", "?this", sel))
+                for sf in (core[0].shapes if core else []) for shp, sev, msg, sel, prefixes in sparql_constraints(sf)
+                if not shape or shp == shape]
+        if not cons:
+            return
+        try:
+            results = querybox.run_batch(self.store, [q for *_, q in cons], {})
+        except querybox.NetworkAttempt:
+            raise AisepError("QUERY_NOT_READONLY", "aisep-core 的 SHACL-SPARQL 约束试图访问外部端点（SERVICE），"
+                             "执行约束的进程已被终止，没有发出请求", hint="去掉 modules/aisep-core 约束里的 SERVICE 子句") from None
+        except querybox.Unavailable as e:
+            raise AisepError("INTERNAL", f"本机无法建立无网络的查询进程，模块约束未执行：{e}") from None
+        for (shp, sev, msg, _), res in zip(cons, results):
+            for row in res["rows"]:
+                yield shp, sev, msg, {n: _ox_term(row.get(n)) for n in res["variables"]}
 
     def language_of_type(self, t):
         """R2: the notation (Language module) of a class = owner of its nearest ancestor owned by a Language module;
