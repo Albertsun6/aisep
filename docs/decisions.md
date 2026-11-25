@@ -85,7 +85,7 @@
   - G2：关口只能来自模块定义。
   - G3：evidence 必须是 git commit 或 sha256。
   - G4：日期格式严格校验。
-  - G5：核心的 Association/HasPart 也受记法混用规则约束。
+  - G5：核心的 Association/HasPart/DependsOn 也受记法混用规则约束（DependsOn 由 core 0.7.0 新增，PR #103 补入；原文只列前两者）。
   - G6：禁止继承抽象根类。
   - G7：模型文件里的谓词也是闭世界。
   - G8：isReplacedBy 的目标必须是模型元素。
@@ -228,3 +228,14 @@
   7. **不放宽的**：硬规则 1–5、7；批准记录只能由 Albert 本人做出；CI 必需检查；涉及 mergecheck 的 PR 核对 `negatives`（ADR-022）；用合并提交；PR 即锁；跨模型评审先问 Albert。
 - **理由**：Albert 原话「把可追溯，可审计，可复现这三个质量目标先搁置，后期再做，先做 mvp，不然太慢了」。放宽的都是事后可以补做的校验与留痕（批准记录、三步合并的留痕、本地约 48 分钟的全量测试、阶段关口）；IRI、限定关系、vendor 哈希、批准只能由本人做出这些事后补不回来或属于安全约束的不动。根目录文件、`aisep/**`、`aisep-mcp/**`、`tests/**`、`tools/**` 不放宽，因为 ADR-019 的评审实测过在这些位置放文件可以让 `mergecheck` 空跑通过；`modules/**` 与 `vendor/**` 不放宽的原因见第 1 款。分支保护不要求分支与 `main` 同步（`strict:false`），CI 的结论是对开 PR 时的 `main` 算的，所以会改变 gate 结论的 `modules/**`、`vendor/**` 仍走三步。
 - **后果**：评审方面实际省下的只有「新增 IRI 的模型 PR」；`modules/**`、`vendor/**` 的 PR 仍要等合并前评审，直到第 1 款的漏洞修掉。不改模型、模块、vendor 与负例清单的 PR 不再有合并前重算，靠 CI 的 `mergecheck` 必需检查兜底。第 1 款的漏洞在 `main` 上现已存在（不是本条引入），按 ADR-019 第 2 款的漏洞例外另开修复 PR。**恢复条件**（任一出现即逐条恢复，由 Albert 定）：① MVP 走通第一条含 C4 的端到端链路；② 出现第二个批准人或使用者；③ 有外部数据或受监管数据进入模型；④ 合并后评审在同一类路径上连续两次查出阻塞问题。
+
+## ADR-025 · 2026-11-26
+
+- **状态**：已采纳（双模型是规范给定的前提；第 2–4 款的关联方式、数据库映射、层级与上游版本由 Albert 2026-11-25 在关口 A 拍板，见 [`docs/specs/c4-archimate4-verification.md`](specs/c4-archimate4-verification.md) §9.3；本条补记，已由 PR #103、#106、#111 落地；底座版本更新 ADR-007 的 core 0.6.0，ADR-007 原文不改）
+- **决策**：C4 与 ArchiMate 4 走**双模型**，同一知识图谱、显式关联，C4 不做成 ArchiMate 的视图（规范 [`docs/specs/c4-archimate4-dual-model.md`](specs/c4-archimate4-dual-model.md)）。
+  1. **C4 是独立记法模块** `modules/c4`（Language，`aisep:inheritsHubRules false`）：词汇只用上游 `c4/onto` 与 `c4/structurizr`，不写 `align.ttl`，不声明任何 C4 ⊑ am4 公理。这是 ADR-004「其他记法通过子类对齐接入」的例外（元模型规范 §0、§6.8）。
+  2. **跨模型关联用 `arch:refines`**，方向 C4 → am4，C4 的层级是 **design**（`aisep:LevelDesign`，元模型规范 §7.2）；不用上游 DD-11 的 `skos:exactMatch` 加 reconciliation 图，因为它不在 D8 允许的三类连接里，要求的记录形式（RDF 1.2 三元组项）又被 L0 禁止，还会和已在用的 refines 形成两套身份机制。
+  3. **一个数据库对应多个逻辑数据对象时**，先在 am4 侧聚合，数据库再 refines 聚合后的那个 DataObject，以守住 §7.2 的主锚唯一。
+  4. **上游整体升到线上版**（core 0.7.0，PR #103），带来 `arch:DependsOn`，它同样受记法混用规则约束（G5，见 ADR-012）。
+- **理由**：规范要求两套模型放在同一知识图谱里，各管一类事实，通过显式关联连接。`arch:refines` 是上游 core 自己的跨模型追溯谓词，也是 AISEP 对 BPMN、DDD、UML 已在用的机制，已有 L1 的方向与主锚规则，不需要新的身份机制（核实报告 §9.3）。
+- **后果**：AISEP 自有的 C4 规则 R1–R8 写在 `modules/c4/shapes.ttl`；与规范原文的偏离（R1 反向按「至多一个」、R4 由构建保证、R6/R7 以上游关系表为准经 Role 执行等）记在 [`docs/specs/c4-archimate4-step4.md`](specs/c4-archimate4-step4.md) §4，规范原文不改。已知局限：组件归属不检查；独立治理的数据库无法同时 refines 组件和 DataObject（第 3 款的副作用）。

@@ -1,13 +1,13 @@
 # AISEP 第二步：元模型规范（v0.4）
 
 状态：§14 的 D1–D10 已于 2026-11-19 全部按建议拍板（ADR-011）；v0.3 = v0.2 + 三轮审计和第二次 GPT 评审之后补的 R1–R4、G1–G10，全部已在原型里实现并验证。v0.4 = v0.3 + “AI 进行中”的数据来源（ADR-013）：新增 `aisep:AgentActivity`（§6.7）、批准记录的 `aisep:activity`（§6.6）、MCP 的 `model.diff` 与 `governance.record_approval` 改动（§8.3）；AgentActivity 与 `model.diff`、`governance.record_approval` 已在《MCP Server 接口设计》中定稿（ADR-014）。依据：`spike-linked-archi/spike-result.md`（第一步结论）、《方法论总纲（草案1）》§6/§6a、《AISEP 架构原则》、`decisions.md`（ADR-003/004/007/008/009/010）。
-基线：Linked.Archi core 0.6.0 + ArchiMate 4.0（vendored，按 SHA256 锁定）。命名空间先用占位符 `https://aisep.example/`，第三步建正式仓库前统一替换。
+基线：Linked.Archi core 0.7.0 + ArchiMate 4.0（vendored，按 SHA256 锁定）。命名空间先用占位符 `https://aisep.example/`，第三步建正式仓库前统一替换。
 原型：`metamodel-prototype/`（179 项测试全部通过，详见 [`docs/history/metamodel-spec-prototype-and-revisions.md`](history/metamodel-spec-prototype-and-revisions.md) 的「§15」）。修订与辩论记录见同一文件的「附 B」，已知限制见本文附 C。
 
 ## 0. 一页摘要
 
 - **底座照搬 Linked.Archi core**：元素 `arch:Element`、关系 `arch:QualifiedRelationship`、视图 `arch:View`、容器 `arch:Model`、记法清单 `arch:Metamodel`。AISEP 不发明新的原语。
-- **枢纽记法 ArchiMate 4.0**。其他记法用 `rdfs:subClassOf`/`subPropertyOf` 挂到 4.0 上，这层对齐**由 AISEP 自己写**（ADR-010）。
+- **枢纽记法 ArchiMate 4.0**。其他记法用 `rdfs:subClassOf`/`subPropertyOf` 挂到 4.0 上，这层对齐**由 AISEP 自己写**（ADR-010）。例外是 C4：它与 4.0 是双模型，不挂到 4.0 上，两边用 `arch:refines` 关联（§6.8，ADR-025）。
 - **AISEP 自己补的部分**：闭世界规则、写入层（只写限定关系）、记法混用规则、`refines` 层级规则、按模块划定校验范围、影响分析口径（作为数据）、批准记录（ADR-009）、验证扩展、代码追溯扩展、IRI 与版本策略。
 - **对外形态**：以上能力都通过 MCP Server 暴露（ADR-008）；本规范定义它的语义契约（§8.3）。
 - **第一批模块**：ArchiMate 4.0（枢纽）、BPMN、UML（子集）、DDD（新建，基于 Context Mapper CML）；扩展：治理与批准、架构决策（ADR）、质量、验证、代码追溯。

@@ -59,12 +59,10 @@
 2. **R4 不另写 shape**：AISEP 硬规则 2（元模型规范 §8.1）规定，作者只写限定关系资源，直连三元组由 `aisep build` 生成；手写直连三元组本来就是 L1 违规。所以“两种形式都有、端点一致”由构建过程保证。这一条与规范 §4 写法规定第 2 条（“同时写直接谓词和限定资源”）不同，以 AISEP 硬规则为准。
 3. **R6、R7 只针对被 C4 元素（系统或容器）refines 的 am4 组件，以及这些组件所实现的服务**：本模块只负责双模型这一部分，不给纯 am4 模型增加告警。R8 按规范作用于全部数据对象。
 4. **R7 只实现“可追溯”这一半**：服务本身，或实现它的某个行为，realizes 了一个 Capability 或 Requirement。另一半“至少被一个行为实现”没有实现：没有行为实现的服务，找不到通向 C4 元素的路径，因此无法按偏离 3 的范围选中。
-5. **与 AISEP 现行规范文字的出入**：
-   - `docs/metamodel-spec.md` §13 仍把 C4 列为“不在第一批范围”；
-   - §7.2 的层级列表里 design 层只写了 DDD、BPMN；
-   - §7.3 G5 和 `docs/decisions.md` 还没写进 `arch:DependsOn`（PR #103 评审已记录）。
+5. **与 AISEP 现行规范文字的出入（已全部修订）**：
+   - `docs/metamodel-spec.md` 的 §13、§7.2、§7.3 G5 已由 PR #111 修订（加入 §6.8，C4 列为 design 层，G5 写进 `arch:DependsOn`）；
+   - 基线版本、§0 中 C4 是例外，以及 `docs/decisions.md` 的 G5 与 ADR-025（C4 双模型），由 PR #114 补上。
 
-   这几份文件属于排除清单，需要另开 PR 修订，本 PR 没有改。
 6. **规范 §5 与上游冲突，以上游为准**：
    - 规范 §5 写的是 `am4:ApplicationComponent am4:assignedTo am4:Function / am4:Process`。
    - 上游 `archimate4_relationship-tables` 中，组件只对 `am4:Role` 和 `am4:DataObject` 有 `permitsDirectAssignment`；组件 → Function/Process 只有 `permitsAssignment`，也就是只能派生，直接写会得到 L2 的 derived-only 告警。
