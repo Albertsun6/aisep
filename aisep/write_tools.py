@@ -1,4 +1,5 @@
-"""Write tools model_add_element, model_add_relationship, model_set_labels (docs/mcp-interface.md §5.1-5.3, §5.10).
+"""Write tools model_add_element, model_add_relationship, model_set_labels, model_remove, model_set_attributes
+(docs/mcp-interface.md §5.1-5.3, §5.5, §5.10, §5.12).
 Validation is the prototype's L0-L2 on the candidate graph (no second rule set); these functions only decide WHAT to
 write and WHERE, then hand the edit to aisep.writer.transaction."""
 import difflib, os, re
@@ -478,3 +479,119 @@ def model_remove(cfg, iri, cascade=False, dryRun=False, planDigest=None, repo=No
                 "edits": edits, "removed": remove}
 
     return writer.transaction(cfg, repo, build, dryRun)
+
+
+# ---------------------------------------------------------------- §5.12
+
+_USE_LABELS = "名称、英文名、定义请用 model_set_labels"
+_NEW_REL = "关系端点不能改（改端点 = 删掉旧关系、新建一个）"
+NOT_SETTABLE = {RDF_TYPE: "类型不能改（改类型不在本版）", IN_MODEL: "所属模型不能改", SOURCE: _NEW_REL, TARGET: _NEW_REL,
+                PREF: _USE_LABELS, ALT: _USE_LABELS, DEF: _USE_LABELS}
+XSD_STRING = core.NS["xsd"] + "string"
+
+
+def _attr_value(o):
+    """A term in the shape of the `value` argument: {iri} or {value, lang?, datatype?} (a blank node: {bnode})."""
+    if isinstance(o, ox.NamedNode):
+        return {"iri": o.value}
+    if isinstance(o, ox.BlankNode):
+        return {"bnode": o.value}
+    if o.language:
+        return {"value": o.value, "lang": o.language}
+    return {"value": o.value} if o.datatype.value == XSD_STRING else {"value": o.value, "datatype": o.datatype.value}
+
+
+def _attr_values(objects):
+    return sorted((_attr_value(o) for o in objects), key=lambda v: sorted(v.items()))
+
+
+def _settable(ctx, name, field):
+    try:
+        p = core.expand(ctx, name)
+    except AisepError as e:
+        raise _bad(field, f"{field} 里有不合法的 IRI 或前缀名：{e.message}") from None
+    if p in NOT_SETTABLE:
+        raise _bad(field, f"{field} 不能含 {core.short(p)}：{NOT_SETTABLE[p]}")
+    return p
+
+
+def _set_attributes(cfg, iri, new, drop, dryRun, repo):
+    if not new and not drop:
+        raise AisepError("INVALID_ARGUMENT", "set、unset 至少给一个，且不能都为空", details={"rejectedFields": ["set", "unset"]})
+    for field, v in (("set", new), ("unset", drop)):
+        if v is not None and not isinstance(v, list):
+            raise _bad(field, f"{field} 须为数组")
+
+    def build(ws, ctx):
+        want = {}  # predicate IRI -> the complete list of its new values ([] = unset), in argument order
+        for a in new or ():
+            if not isinstance(a, dict) or set(a) != {"predicate", "value"} or not isinstance(a["value"], dict):
+                raise _bad("set", "set 每项须为 {predicate, value}")
+            p, v = _settable(ctx, a["predicate"], "set"), a["value"]
+            try:  # pyoxigraph rejects a bad IRI, language tag or non-string value with ValueError/TypeError
+                if set(v) == {"iri"}:
+                    o = ox.NamedNode(core.expand(ctx, v["iri"]))
+                elif "value" in v and set(v) <= {"value", "datatype", "lang"}:
+                    o = ox.Literal(v["value"], language=v.get("lang")) if v.get("lang") else \
+                        ox.Literal(v["value"], datatype=ox.NamedNode(core.expand(ctx, v["datatype"]))) if v.get("datatype") else \
+                        ox.Literal(v["value"])
+                else:
+                    raise _bad("set", "set 的 value 须为 {iri} 或 {value, datatype?, lang?}")
+            except (ValueError, TypeError) as e:
+                raise _bad("set", f"set 里有不合法的 IRI、语言标签或值：{e}") from None
+            except AisepError as e:  # core.expand refused an IRI or prefix (its own error names no field)
+                if "rejectedFields" in e.details:
+                    raise
+                raise _bad("set", f"set 里有不合法的 IRI 或前缀名：{e.message}") from None
+            if o not in want.setdefault(p, []):
+                want[p].append(o)
+        for name in drop or ():
+            p = _settable(ctx, name, "unset")
+            if want.get(p):
+                raise AisepError("INVALID_ARGUMENT", f"{core.short(p)} 同时出现在 set 和 unset 里",
+                                 details={"rejectedFields": ["set", "unset"]})
+            want[p] = []
+        st = _subject_triples(ctx)
+        try:
+            x = core.expand(ctx, iri)
+        except AisepError:
+            x = iri
+        types = {t.object.value for _, t in st.get(x, ()) if t.predicate.value == core.A}
+        if any(NOT_REMOVABLE & set(ctx.ancestors(c)) for c in types):  # the model resource is not a member of itself
+            raise AisepError("PROTECTED_RESOURCE", f"{core.short(x)} 是模型本身，不经写工具修改")
+        x = _member(ctx, st, iri, "iri")
+        if any(PROTECTED_TYPES & set(ctx.ancestors(c)) for c in types):
+            raise AisepError("PROTECTED_RESOURCE", f"{core.short(x)} 是批准记录或 AI 活动，只追加不修改",
+                             hint="改结论请写一条更晚的批准记录")
+        mslug = next(t.object.value for _, t in st[x] if t.predicate.value == IN_MODEL)[len(core.MODEL_BASE):].strip("/")
+        outside = sorted({f for f, _ in st[x] if not f.startswith(f"models/{mslug}/")})
+        if outside:
+            raise AisepError("PROTECTED_RESOURCE", f"{core.short(x)} 的三元组有一部分在别的模型目录里，不改别人的模型",
+                             details={"files": outside})
+        type_file = _type_file(st, x)
+        before, after, removed, added, adds = {}, {}, {}, {}, {}
+        for p, objs in want.items():
+            old = [(f, t) for f, t in st[x] if t.predicate.value == p]
+            have = {t.object for _, t in old}
+            before[p], after[p] = _attr_values(have), _attr_values(objs)
+            gone = [(f, t) for f, t in old if t.object not in objs]  # values that stay are left where they are
+            for f, t in gone:
+                removed.setdefault(f, set()).add((x, p, t.object))
+            f = gone[0][0] if gone else type_file  # a file where rewrite_blocks finds a statement of x to put them in
+            for o in objs:
+                if o not in have:
+                    nt = ox.Triple(ox.NamedNode(x), ox.NamedNode(p), o)
+                    added.setdefault(f, []).append(nt)
+                    adds.setdefault(f, {}).setdefault(x, []).append((nt.predicate, nt.object))
+        files = sorted(set(removed) | set(added))
+        edits = {f: writer.rewrite_blocks(ws.text(f), removed.get(f, set()), adds.get(f, {})) for f in files}
+        return {"result": {"iri": x, "before": before, "after": after}, "edits": edits, "removed": removed, "added": added}
+
+    return writer.transaction(cfg, repo, build, dryRun)
+
+
+def model_set_attributes(cfg, iri, set=None, unset=None, dryRun=False, repo=None, **extra):
+    """Replace, per predicate, ALL values the subject has on it (`set`) or drop them (`unset`). Which predicates are
+    legal is decided by L1 on the candidate graph (closed world, hand-written approvalState), not by a list here."""
+    _no_extra(extra)
+    return _set_attributes(cfg, iri, set, unset, dryRun, repo)

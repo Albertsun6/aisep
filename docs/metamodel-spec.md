@@ -215,6 +215,7 @@
 | `model.add_relationship` | 只写限定关系；先查记法混用规则和矩阵，不合法就拒绝写入并说明原因 | L1/L2 |
 | `model.remove` | 按 §8.2 级联删除，或者拒绝 | L1 |
 | `model.set_labels` | 只改名称（`skos:prefLabel` @zh）、英文名（`skos:altLabel` @en）、定义（`skos:definition` @zh），IRI、类型、关系不变；§3"改名只改标签"的写入口。批准记录、AI 活动不能改 | 写入前在候选图上跑 L0–L2，只拒绝新增的违规 |
+| `model.set_attributes` | 改已存在元素或关系的其他属性：按谓词整体替换该谓词的全部值，或删除该谓词的全部值；IRI、类型、所属模型、关系端点不变，名称、英文名、定义不经它改（走 `model.set_labels`）。谓词合不合法由 L1 判定，不另设白名单。批准记录、AI 活动、模型本身不能改 | 写入前在候选图上跑 L0–L2，只拒绝新增的违规 |
 | `model.check` / `model.validate` | L0–L2 / L3 | §10 |
 | `model.gate` | 只读，原子执行 L0–L4，一份合并结论；提交、CI 与关口页只认它（G10） | L0–L4 |
 | `model.query` | 只读 SPARQL，跑在构建后的图上 | — |

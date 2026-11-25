@@ -96,6 +96,13 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
                          obj({"iri": S(), "prefLabel": S(), "altLabel": {"type": ["string", "null"]},
                               "definition": {"type": ["string", "null"]}, "dryRun": B, "repo": REPO}, ["iri"]),
                          out("iri", "changed"), ANN_DESTRUCTIVE, {"agent"}),
+    "model_set_attributes": (write_tools.model_set_attributes,
+                             "改已存在元素或关系的属性：set 按谓词整体替换该谓词的全部值，unset 删除该谓词的全部值"
+                             "（类型、所属模型、关系端点不能改；名称、英文名、定义用 model_set_labels）",
+                             obj({"iri": S(), "set": {"type": "array", "items": obj(
+                                 {"predicate": S(), "value": {"type": "object"}}, ["predicate", "value"])},
+                                  "unset": {"type": "array", "items": S()}, "dryRun": B, "repo": REPO}, ["iri"]),
+                             out("iri", "changed"), ANN_DESTRUCTIVE, {"agent"}),
     "model_remove": (write_tools.model_remove, "删除元素/关系/视图；牵连时返回计划，需 cascade + planDigest",
                      obj({"iri": S(), "cascade": B, "dryRun": B, "planDigest": S(), "repo": REPO}, ["iri"]),
                      out("target", "planDigest"), ANN_DESTRUCTIVE, {"agent"}),

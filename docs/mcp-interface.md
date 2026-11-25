@@ -46,6 +46,7 @@
 | 新增元素、关系 | 一期不做 | ✔ | `model_add_element`、`model_add_relationship` | 同名 |
 | 删除 | 一期不做 | ✔（先 `dryRun`） | `model_remove` | `model.remove` |
 | 改名称、英文名、定义（IRI 不变） | 一期不做 | ✔ | `model_set_labels`（§5.10） | **新增**（§3"改名只改标签"的写入口） |
+| 改其他属性（IRI、类型、端点不变） | 一期不做 | ✔ | `model_set_attributes`（§5.12） | **新增** |
 | 写完快速自查 | — | ✔ | `model_check`（L0–L2） | `model.check` |
 | L3、L4 单层诊断 | — | ✔ | `model_validate`、`model_findings` | `model.validate`、`model.findings` |
 | 遗留违规清单（写前判定放过的旧违规） | ✔ "架构全景"违规计数徽标 | ✔ | `model_findings` 的 `openViolations`（§5.4） | `model.findings` |
@@ -171,6 +172,7 @@
 | `model_add_relationship` | `model.add_relationship` | false | false | true（同类型同端点 = 返回已有） | 无 | **新实现**（校验复用 `check`） |
 | `model_remove` | `model.remove` | false | **true** | true（带 `planDigest` 重放、目标已不在 → 成功，`changed:false, alreadyAbsent:true`，同 add 的 `changed:false`） | 无（§8.2 未原型化） | **新实现** |
 | `model_set_labels` | `model.set_labels`（**新增**） | false | **true**（覆盖原值，不是追加；原值留在 Git 历史里） | true（同参数重放 = 无变化） | 无 | **新实现**（校验复用 `check`） |
+| `model_set_attributes` | `model.set_attributes`（**新增**） | false | **true**（按谓词整体替换原值；原值留在 Git 历史里） | true（同参数重放 = 无变化） | 无 | **新实现**（校验复用 `check`，§5.12） |
 | `governance_record_approval` | `governance.record_approval` | false | false | true（完全重复的请求不写；去重键含调用方给的 `headCommit`，重放稳定） | 无 | **新实现**（gate 复用） |
 
 **画像**：启动参数 `--profile agent|workbench|all`，决定 `tools/list` 列出哪些工具。按进程定，不按连接变（满足 2026-07-28"`tools/list` 不得随连接变化"）。
@@ -183,7 +185,7 @@
 
 画像**不是安全边界**：代理可以直接手写 Turtle 伪造批准记录，真正的约束是代码评审和分支保护。画像只防"顺手调用"。
 
-**加了两个规范外的工具**：`model_gate`、`model_set_labels`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。
+**加了两个规范外的工具**：`model_gate`、`model_set_labels`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。之后又加了第三个：`model_set_attributes`（Albert 已定，§5.12），补上非标签属性的修改入口。
 
 ---
 
@@ -217,7 +219,7 @@
 
 `content[0].text` 放同一结果的简短中文摘要，加原型 CLI 格式的发现项行（代理直接读得懂）。文本内容里的控制字符与行分隔符按 `\n`、`\uXXXX` 转义（模型文本不能在摘要里伪造独立的一行），`structuredContent` 保持原文。**有意偏离**规范的 SHOULD（"同时把 structuredContent 序列化成 JSON 放进 TextContent"）：代理读摘要比读 JSON 省 token，客户端都能读 `structuredContent`。体量上限见 §3.5。
 
-### 5.1 写入流程（四个 `model_*` 写工具共用）
+### 5.1 写入流程（五个 `model_*` 写工具共用）
 
 1. 定位 `repo`；不是 worktree（裸仓库）→ `NOT_A_WORKTREE`。加锁（拿不到 → `LOCKED`）。
 2. 按 §3.3 的统一文件集合和安全打开读当前工作区内容，记下每个文件的 sha256。
@@ -789,6 +791,47 @@ CI 设为受保护分支的必需检查，PR 每次更新都跑；合并前由�
 
 **错误**：`NOT_A_GIT_REPO`、`PATH_OUTSIDE_ROOT`、`REF_NOT_FOUND`（找不到主分支）。
 
+### 5.12 `model_set_attributes`（对 §8.3 的扩展）
+
+Albert 已定：新增为独立工具，不改 `model_set_labels` 的契约，多值谓词按整体替换。改已存在元素或关系的非标签属性（如 `aisep:priority`、`aisep:gherkin`、`aisep:path`）的写入口，是 `model_set_labels` 模式的平移。不动 IRI、类型、所属模型和关系端点；改类型仍是"不在本版"（§1）。用法与组合见 `docs/actions.md`。
+
+**输入**
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `iri` | ✔ | 元素或关系的 IRI（完整 IRI 或 `slug:local`，§5.0） |
+| `set` | 条件 | `[{predicate, value: {iri} \| {value, datatype?, lang?}}]`，`value` 的形状与 `model_add_element` 的 `attributes` 相同（§5.2）。**按谓词整体替换**：写入后，该主语在这个谓词上的值恰好是 `set` 里这个谓词的那几项。多值谓词把每个值各写一项、`predicate` 相同；重复的项只算一次 |
+| `unset` | 条件 | `[predicate]`，删除该主语在这个谓词上的全部值 |
+| `dryRun` | — | §5.1 |
+
+- `set`、`unset` 至少给一个且不能都为空，否则 `INVALID_ARGUMENT`。同一个谓词同时出现在 `set` 和 `unset` 里 → `INVALID_ARGUMENT`。没有出现的谓词保持不变。
+- **不接受的谓词**（出现在 `set` 或 `unset` 里 → `INVALID_ARGUMENT`，`details.rejectedFields` 为所在字段）：`rdf:type`、`arch:inModel`、`arch:source`、`arch:target`，以及 `skos:prefLabel`、`skos:altLabel`、`skos:definition`（这三个走 `model_set_labels`，那里有语言与长度约束）。
+- **其余谓词合不合法不另写白名单**，由候选图上的 L1 规则判定，与 `model_add_element` 的 `attributes` 同一口径：闭世界不允许的谓词（G7）、手写的 `arch:approvalState`（§6.6）都表现为新增违规 → `WRITE_REJECTED`。
+- 不合法的 IRI、前缀名、语言标签或值 → `INVALID_ARGUMENT`。
+- 不接受 `file`：值没有变的三元组留在原处；新值写进被替换的三元组所在的文件，这个谓词原来没有被替换的值时，写进该主语 `rdf:type` 三元组所在的文件。
+
+**前置检查**
+- 目标是 `arch:Model` → `PROTECTED_RESOURCE`（模型本身不经写工具修改，同 §5.5）。
+- `iri` 是本仓库某个模型的成员 → 否则 `ELEMENT_NOT_FOUND`（`details.candidates` 同 §5.7）。
+- 目标是 `aisep:ApprovalRecord` 或 `aisep:AgentActivity` → `PROTECTED_RESOURCE`：批准历史只追加不修改（§6.6、R3）。
+- 该主语的三元组有一部分在别的模型目录里 → `PROTECTED_RESOURCE`（写入方不改别人的模型，同 §5.10）。
+
+参数错误先于目标检查报出。
+
+**执行**：走 §5.1 第 1–10 步。文本编辑用 §5.1 的主语块词法器，只重写含被替换三元组的语句，或（新增一个原来没有的谓词时）该主语 `rdf:type` 所在的语句；第 6 步的图等价断言照常生效。被替换的值挂着空白节点、或语句不能安全改写 → `EDIT_UNSAFE`，不写。新写入的谓词、IRI 或数据类型在目标文件里没有对应前缀时写成完整 IRI，不往文件头加 `@prefix`。
+
+**幂等**：每个给出的谓词的现有值集合都与要求的相同（`unset` 的谓词本来就没有值）→ 成功，`changed: false`，文件不变。
+
+**输出**：`{ iri, changed, before, after, filesChanged: [{path, sha256Before, sha256After}], findings, preexistingViolations }`。`before`、`after` 以谓词的完整 IRI 为键，值是该谓词写入前、写入后的全部值，每个值的形状同输入的 `value`（IRI 展开为完整 IRI；`xsd:string` 的字面量不带 `datatype`），按固定顺序排列。只列 `set`、`unset` 里出现的谓词。`findings` 里每条带 `preexisting`（§5.1 第 5 步）。
+
+**错误**：`ELEMENT_NOT_FOUND`、`PROTECTED_RESOURCE`、`INVALID_ARGUMENT`、`WRITE_REJECTED`、`PARSE_FAILED`、`EDIT_UNSAFE`、`NOT_A_WORKTREE`、`LOCKED`、`CONFLICT`。
+
+**校验层**：候选图 L0–L2。
+
+**对已批准元素**：写工具不拦，`gate` 照常 PASS；把关在合并，`mergecheck` 按图差异报 `unapproved-change-to-approved`（§5.9 的合并判据不因本工具改变）。
+
+**对 diff 的影响**：`model_diff` 报该元素 `modified`，`changedPredicates` 只含值有变化的谓词。
+
 ---
 
 ## 6. `aisep:AgentActivity` 定稿与 PROV-O
@@ -880,7 +923,7 @@ C 的附带决定（同在 Q4，已拍板收紧）：`aisep:approvedBy` **只接
 
 `COMMIT_FAILED`：`git commit` 失败且已回滚（记录已移出 index、文件已删除）时，输出含 `index.lock` 为可重试；`git rm --cached` 失败、回滚未完成（`orphanApproval`）为否。`git add --intent-to-add` 失败的出口分三支：记录已被别的提交带走 → 上表 taken 的 `CONFLICT`（不可重试）；文件被改动 → 上表 kept 的 `CONFLICT`；文件已删除 → `COMMIT_FAILED`"已删除新建的记录文件"，含 `index.lock` 时可重试。
 
-四个 `model_*` 写工具（`aisep/writer.py`，§3.4）：rename 前哈希核对不等 → `CONFLICT`，未覆盖，可重试；进程内回滚时发现文件又被改动、保留现场（其余文件回滚完）→ `CONFLICT`，**不可重试**，`details.kept: true`、`details.keptFiles`（PR #34，§3.4 第 3 步）。
+五个 `model_*` 写工具（`aisep/writer.py`，§3.4）：rename 前哈希核对不等 → `CONFLICT`，未覆盖，可重试；进程内回滚时发现文件又被改动、保留现场（其余文件回滚完）→ `CONFLICT`，**不可重试**，`details.kept: true`、`details.keptFiles`（PR #34，§3.4 第 3 步）。
 
 ### 7.3 发现项 Finding
 
@@ -1022,8 +1065,8 @@ export interface ApprovalResult {
 	findings: Finding[];
 }
 
-/** 工作台用到的 6 个工具；写模型的 4 个工具（model_add_element、model_add_relationship、model_remove、
- *  model_set_labels）不进工作台（一期），所以这里没有对应方法。 */
+/** 工作台用到的 6 个工具；写模型的 5 个工具（model_add_element、model_add_relationship、model_remove、
+ *  model_set_labels、model_set_attributes）不进工作台（一期），所以这里没有对应方法。 */
 export interface AisepModelClient {
 	query(sparql: string, target?: Target & { limit?: number }): Promise<QueryResult>;
 	gate(target?: Target & { model?: string }): Promise<GateResult>;

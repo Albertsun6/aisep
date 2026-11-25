@@ -140,7 +140,7 @@ AISEP 是以 AI 辅助贯穿全过程软件研发（SDLC）的工程体系。目
 
 ### 10.2 入口标准
 
-- 编码代理里已启用项目的 `aisep` MCP 服务器，`tools/list` 返回 agent 画像的 11 个工具（启用方法见 `README.md`）。
+- 编码代理里已启用项目的 `aisep` MCP 服务器，`tools/list` 返回 agent 画像的 12 个工具（启用方法见 `README.md`）。
 - 从最新 `origin/main` 开 `claude/<主题>` 分支的 worktree，在 worktree 里起服务；不从落后的主检出起服务。
 - 新模型目录已手写：一个 `arch:Model` 声明和一个人类 `arch:Stakeholder`（带 `arch:inModel` 和中文 `prefLabel`，照 `models/procurement/governance.ttl` 写）。MCP 写工具建不了模型本身：目录不存在时报 `MODEL_NOT_FOUND`；目录在但没有 `arch:Model` 声明时，写入能成功，`gate` 报 L3 违规（`arch:inModel` 须指向 `arch:Model`）。
 - 载体需求已定。
@@ -216,7 +216,7 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
 - **本期**（Albert 2026-11-21 定）：第一条链路、批准进度展示、待批准关口到关口页的入口、一键启动脚本。
 - **由模型生成代码**：未定。第一条链路里代码由人或代理照常写，模型只登记代码位置。
 - **测试结果回写模型**：第二条链路起，回写真实 CI 的测试结果（§10.3）。测试结果指不到 CI 运行或提交的限制已解决：验证扩展 v0.3.0 给测试结果加了 `aisep:testedCommit`、`aisep:ciRun`（Albert 2026-11-21 定）。代码位置批准后补不上 `swhid` 的限制保留，提交信息由测试结果承载。第二、三条链路的回写都已用这两个属性（§10.3、§10.8）。
-- **改已批准元素**：第三条链路实跑过一次（§10.8）。目前只有名称、英文名、定义有写入口（`model_set_labels`），其他属性的修改入口未定。
+- **改已批准元素**：第三条链路实跑过一次（§10.8）。名称、英文名、定义经 `model_set_labels` 改，其他属性经 `model_set_attributes` 改（实跑时还没有后者，见 §10.8）。
 - **DevOps 延伸**（CI/CD、部署发布进追溯链）：未定。元模型已有 `aisep:Deployable`（`aisep:packageUrl`），但不在本期链路里。
 
 ### 10.8 第三条链路：改已批准元素并重批
@@ -225,8 +225,8 @@ SELECT ?code ?repo ?path ?design ?designLabel ?cap ?capLabel WHERE {
 
 **改已批准元素：写入口与把关**
 
-- 已批准元素目前只能经 `model_set_labels` 改名称、英文名和定义（`docs/mcp-interface.md` §5.10）。写工具不拦已批准元素，`gate` 照常 PASS；把关在合并：`mergecheck` 报 `unapproved-change-to-approved`，要求同一 PR 里有一条覆盖该元素、结论为 Approved 的新批准记录（#68 批准前实跑：`problems` 只有这一条，退出码 1）。
-- 其他属性（验收标准的 `aisep:gherkin`、需求的 `aisep:priority`、代码位置的 `aisep:path` 等）没有写入口：`model_add_element` 对已存在的 IRI 报 `IRI_EXISTS`；`model_remove` 遇到 `aisep:approves` 的引用报 `REFERENCED`（§5.5），被批准过的元素只能退役。本 PR 新增、尚未批准的元素可以先 `model_remove`（`cascade: true`，带 dryRun 返回的 `planDigest`）再用同一 IRI 重加，连带的关系也按原 IRI 重加（#68 第二个提交就是这么改的）。
+- 已批准元素经 `model_set_labels` 改名称、英文名和定义（`docs/mcp-interface.md` §5.10），经 `model_set_attributes` 改其他属性（§5.12）。写工具不拦已批准元素，`gate` 照常 PASS；把关在合并：`mergecheck` 报 `unapproved-change-to-approved`，要求同一 PR 里有一条覆盖该元素、结论为 Approved 的新批准记录（#68 批准前实跑：`problems` 只有这一条，退出码 1）。
+- 其他属性（验收标准的 `aisep:gherkin`、需求的 `aisep:priority`、代码位置的 `aisep:path` 等）经 `model_set_attributes` 改（`docs/mcp-interface.md` §5.12，用法见 `docs/actions.md`）。第三条链路实跑时还没有这个工具：`model_add_element` 对已存在的 IRI 报 `IRI_EXISTS`；`model_remove` 遇到 `aisep:approves` 的引用报 `REFERENCED`（§5.5），被批准过的元素只能退役。当时对本 PR 新增、尚未批准的元素，是先 `model_remove`（`cascade: true`，带 dryRun 返回的 `planDigest`）再用同一 IRI 重加，连带的关系也按原 IRI 重加（#68 第二个提交就是这么改的）；现在不必再这样绕。
 - 动手前对被改元素跑 `model_impact`，`depends`、`ripple` 两种模式都跑，结果写进 PR 描述（#68：depends 5 项、ripple 11 项）。
 - 关口页「模型改动」表里，被改元素是「修改」行，`changedPredicates` 只列被改的谓词（#68：新增 7、修改 1，只改了 `skos:definition`）。
 
