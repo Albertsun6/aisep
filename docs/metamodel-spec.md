@@ -277,7 +277,7 @@ spike 里 AI 试验用的 7 元素标准答案，其实是无向的 3 跳邻域�
 
 ## 11. 版本与 vendoring
 - `vendor/MANIFEST.json`：每个上游文件记录 URL、抓取时间、SHA256、许可证、`owl:versionInfo`。
-- 升级上游是一次显式变更：抓取 → 生成差异报告 → 全部模块测试回归 → 人工批准（一条批准记录，关口为"架构决策"）。
+- 升级上游是一次显式变更：抓取 → 生成差异报告 → 全部模块测试回归 → 人工批准（一条批准记录，关口为"架构决策"）。MVP 期间最后一步暂停：差异报告写进 PR，不要求批准记录（ADR-024）。
 - `arch:modelConformsToMetamodel` 指向 AISEP 模块 IRI；AISEP 模块按 semver 发版。
 
 ## 12. 许可证立场
