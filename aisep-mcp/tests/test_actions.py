@@ -1,15 +1,16 @@
 """动作目录（docs/mcp-interface.md §5.13、§5.14，modules/ext-actions/）的独立验收测试。
 
-覆盖《动作机制同类产品调研》第 4 节的断言 B1–B8、C1、C2，以及阶段 C（动作定义改为 RDF）的定义校验、坏定义隔离、
+覆盖《动作机制同类产品调研》第 4 节的断言 B1–B8，以及阶段 C（动作定义改为 RDF）的定义校验、坏定义隔离、
 模块夹具实跑。测试者没有参与实现；期望值只来自三处：设计断言与接口文档、现有写工具（model_add_element /
 model_add_relationship / model_set_labels / model_remove / model_impact）在对照副本上的实际行为、模型文件里本来就有
 的事实。实现的输出不作期望值。
 
 每个用例都在 tmp_path 下的全新 git 仓库里操作（models/ 全部、modules/、vendor/、tools/、aisep/ 的副本），真实检出
 不动。要换动作定义的用例直接改副本里的 modules/ext-actions/catalog.ttl（执行器读所服务工作区里的这个文件）。
-C1、C2 需要 origin/main（拿不到就 skip）。
+C1、C2 是只对本 PR 有意义的分支级验收（相对 origin/main 比较），已在 PR #113 上核对，不放进常驻测试：
+合入后它们在 main 上必然失败，后续改到 models/ 或新增工具的 PR 也会被误判。
 """
-import hashlib, io, json, os, re, shutil, subprocess, sys, tarfile
+import hashlib, json, os, re, shutil, subprocess, sys
 
 import anyio
 import pyoxigraph as ox
@@ -1513,132 +1514,3 @@ def test_B8_action_name_and_params_shape_cannot_be_abused(mk):
         assert is_err and res["error"]["code"] == "INVALID_ARGUMENT", (args, res)
     assert err(r, "model_list_actions", catalog="/tmp/x.ttl")["code"] == "INVALID_ARGUMENT"
     assert snap(r) == before
-
-
-# ================================================================== C1、C2（相对 origin/main）
-
-FROZEN_EXACT = {"aisep/mergecheck.py", "aisep/diff.py", "aisep/approval.py", "aisep/gitio.py", "aisep/tools.py",
-                "aisep/writer.py", "aisep/release.py", "docs/decisions.md", "docs/metamodel-spec.md"}
-WRITE_TOOL_TESTS = ["aisep-mcp/tests/test_write.py", "aisep-mcp/tests/test_write_tools.py", "aisep-mcp/tests/test_remove.py",
-                    "aisep-mcp/tests/test_writer_rollback_conflict.py", "aisep-mcp/tests/test_set_attributes.py"]
-
-
-def _origin_main():
-    p = subprocess.run(["git", "-C", ROOT, "rev-parse", "--verify", "--quiet", "origin/main^{commit}"],
-                       capture_output=True, text=True)
-    if p.returncode != 0:
-        pytest.skip("没有 origin/main（浅检出或没有远端），C1/C2 无从比较")
-    return p.stdout.strip()
-
-
-def _branch_changes():
-    _origin_main()
-    return git(ROOT, "diff", "--name-only", "origin/main...HEAD").splitlines()
-
-
-def frozen(path):
-    if path.startswith(("models/", "vendor/")):
-        return True
-    if path.startswith("modules/") and not path.startswith("modules/ext-actions/"):
-        return True
-    return path in FROZEN_EXACT
-
-
-def test_C1_frozen_paths_untouched():
-    changed = _branch_changes()
-    assert changed, "分支相对 origin/main 没有任何改动，C1 的判据没有意义"
-    assert any(f.startswith("modules/ext-actions/") for f in changed)
-    hit = sorted(f for f in changed if frozen(f))
-    assert hit == [], f"改到了冻结范围：{hit}"
-
-
-def test_C1_core_py_flag():
-    """aisep/core.py 被改不判失败，但要单独标出来（协调者据此补做 negatives 核对）。"""
-    if "aisep/core.py" in _branch_changes():
-        pytest.skip("【标记】本分支改了 aisep/core.py：协调者须补做 negatives 核对")
-    assert "aisep/core.py" not in _branch_changes()
-
-
-def test_C1_frozen_predicate_is_not_vacuous():
-    assert frozen("models/workbench/am4.ttl") and frozen("vendor/x") and frozen("modules/aisep-core/shapes.ttl")
-    assert frozen("aisep/writer.py") and frozen("docs/metamodel-spec.md")
-    assert not frozen("modules/ext-actions/catalog.ttl") and not frozen("aisep/actions.py")
-
-
-def test_C2_write_tool_tests_unchanged():
-    changed = set(_branch_changes())
-    for f in WRITE_TOOL_TESTS:
-        assert os.path.isfile(os.path.join(ROOT, f)), f
-    assert not changed & set(WRITE_TOOL_TESTS), sorted(changed & set(WRITE_TOOL_TESTS))
-    # 工作区也没有未提交的改动
-    assert git(ROOT, "status", "--porcelain", "--", *WRITE_TOOL_TESTS) == ""
-
-
-BASE_LIST_SCRIPT = r"""
-import json, sys
-sys.path.insert(0, sys.argv[1])
-from aisep import server as S
-out = {}
-for prof in ("agent", "workbench"):
-    out[prof] = {n: [S.TOOLS[n][1], S.TOOLS[n][2], S.TOOLS[n][3], S.TOOLS[n][4]] for n in S.listed(prof)}
-print(json.dumps(out, sort_keys=True, ensure_ascii=False))
-"""
-
-
-def _tool_lists(tmp_path):
-    """(origin/main 的, 本检出的) {画像: {工具名: [description, inputSchema, outputSchema, annotations]}}。
-    基线是 origin/main 的 aisep/ 包（git archive 到临时目录，在子进程里导入）。"""
-    base = _origin_main()
-    data = subprocess.run(["git", "-C", ROOT, "archive", "--format=tar", base, "aisep"], capture_output=True, check=True).stdout
-    dst = tmp_path / "base"
-    with tarfile.open(fileobj=io.BytesIO(data)) as t:
-        t.extractall(dst, filter="data")
-    script = tmp_path / "base_list.py"
-    script.write_text(BASE_LIST_SCRIPT, encoding="utf-8")
-
-    def run(src):
-        p = subprocess.run([PY, "-I", str(script), str(src)], capture_output=True, text=True, cwd=str(tmp_path), timeout=120)
-        assert p.returncode == 0, p.stderr[-2000:]
-        return json.loads(p.stdout.strip().splitlines()[-1])
-    return run(dst), run(ROOT)
-
-
-def _error_enums(x, acc):
-    """把 outputSchema 里错误码的 enum（含 INTERNAL 的那个列表）换成占位符，收集各自的取值。"""
-    if isinstance(x, dict):
-        return {k: ("<error-codes>" if k == "enum" and isinstance(v, list) and "INTERNAL" in v and not acc.update(v)
-                    else _error_enums(v, acc)) for k, v in x.items()}
-    if isinstance(x, list):
-        return [_error_enums(v, acc) for v in x]
-    return x
-
-
-def test_C2_tool_lists_against_origin_main(tmp_path):
-    """agent 画像恰好多 model_list_actions、model_apply_action 两个工具；workbench 画像的工具集合不变；已有工具的
-    description、inputSchema、annotations 逐字段相同，outputSchema 除错误码枚举外相同（错误码枚举另见下一条）。"""
-    old, new = _tool_lists(tmp_path)
-    assert set(new["agent"]) - set(old["agent"]) == {"model_list_actions", "model_apply_action"}
-    assert set(old["agent"]) - set(new["agent"]) == set()
-    assert set(new["workbench"]) == set(old["workbench"])
-    codes_old, codes_new = set(), set()
-    for prof in ("agent", "workbench"):
-        for n in old[prof]:
-            d0, i0, o0, a0 = old[prof][n]
-            d1, i1, o1, a1 = new[prof][n]
-            assert (d1, i1, a1) == (d0, i0, a0), (prof, n)
-            assert _error_enums(o1, codes_new) == _error_enums(o0, codes_old), (prof, n)
-    assert codes_old and codes_old <= codes_new
-    assert codes_new - codes_old <= {"PLAN_REQUIRED", "PRECONDITION_FAILED"}, codes_new - codes_old
-
-
-def test_C2_workbench_tools_list_byte_identical(tmp_path):
-    """C2 字面：workbench 画像 tools/list 不变，agent 画像里原有工具的条目也不变。
-    另核：model_apply_action 会抛 PLAN_REQUIRED、PRECONDITION_FAILED，它的 outputSchema 错误码枚举必须含这两个码，
-    否则按 outputSchema 校验的客户端会拒收这两种错误结果。"""
-    old, new = _tool_lists(tmp_path)
-    assert new["workbench"] == old["workbench"]
-    for n in old["agent"]:
-        assert new["agent"][n] == old["agent"][n], n
-    apply_codes = set()
-    _error_enums(new["agent"]["model_apply_action"][2], apply_codes)
-    assert {"PLAN_REQUIRED", "PRECONDITION_FAILED"} <= apply_codes, apply_codes
