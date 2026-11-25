@@ -18,7 +18,7 @@
 #
 # R4 (每条关系同时有直接谓词和限定资源，两者端点一致) has no shape here: in AISEP authors write only the
 # qualified resource and `aisep build` generates the direct triple from it (AGENTS.md hard rule 2, spec §8.1);
-# a hand-written direct triple is an L1 Violation. tests/invalid/direct-uses-triple.ttl pins that.
+# a hand-written direct triple is an L1 Violation. tests/invalid/r4-direct-uses-triple.ttl pins that.
 
 c4ash:prefixes a owl:Ontology ;
     sh:declare [ sh:prefix "rdf" ;  sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^<http://www.w3.org/2001/XMLSchema#anyURI> ] ,
@@ -109,38 +109,43 @@ c4ash:CrossContainerUsingTechnologyShape a sh:NodeShape ;
     ] .
 
 # R6 (level 2): an am4 Application Component that a C4 element refines performs at least one Function or Process.
+# Upstream am4 4.0 relationship tables permit a component's direct Assignment only to a Role (or a Data Object);
+# component -> Function/Process is derivation-only. Upstream wins over spec §5 (step-4 notes §4), so the behaviour
+# may be assigned directly or through one Role: path am4:assignedTo/am4:assignedTo?
 c4ash:ComponentPerformsBehaviourShape a sh:NodeShape ;
     sh:severity sh:Warning ;
     sh:targetClass am4:ApplicationComponent ;
     sh:sparql [
         a sh:SPARQLConstraint ;
         sh:prefixes c4ash:prefixes ;
-        sh:message "C4：被 C4 元素 refines 的 am4:ApplicationComponent 应至少 assignedTo 一个 Function 或 Process，否则无法向业务追溯"@zh ;
+        sh:message "C4：被 C4 元素 refines 的 am4:ApplicationComponent 应至少 assignedTo（可经一个 Role）一个 Function 或 Process，否则无法向业务追溯"@zh ;
         sh:select """
             SELECT $this WHERE {
                 ?x arch:refines $this . ?x rdf:type/rdfs:subClassOf* ?c4c .
                 FILTER (?c4c IN (c4:SoftwareSystem, c4:Container))
                 FILTER NOT EXISTS {
-                    $this am4:assignedTo ?b . ?b rdf:type/rdfs:subClassOf* ?bc .
+                    $this am4:assignedTo/am4:assignedTo? ?b . ?b rdf:type/rdfs:subClassOf* ?bc .
                     FILTER (?bc IN (am4:Function, am4:Process))
                 }
             }""" ;
     ] .
 
-# R7 (level 2): a Service of such a component's behaviour is realized by a behaviour and traces to a
-# Capability or Requirement (the service, or a behaviour realizing it, realizes one).
+# R7 (level 2): a Service realized by such a component's behaviour (directly or through one Role, as R6) traces
+# to a Capability or Requirement (the service, or a behaviour realizing it, realizes one). The other half of spec
+# §7 R7 ("realized by at least one behaviour") cannot be scoped to C4-described systems: a service nothing realizes
+# has no path to a C4 element. It is recorded as not implemented (step-4 notes §4).
 c4ash:ServiceTraceShape a sh:NodeShape ;
     sh:severity sh:Warning ;
     sh:targetClass am4:Service ;
     sh:sparql [
         a sh:SPARQLConstraint ;
         sh:prefixes c4ash:prefixes ;
-        sh:message "C4：C4 所描述系统的 am4:Service 应由行为实现，并能追溯到 Capability 或 Requirement"@zh ;
+        sh:message "C4：C4 所描述系统的行为所实现的 am4:Service 应能追溯到 Capability 或 Requirement"@zh ;
         sh:select """
             SELECT $this WHERE {
                 ?x arch:refines ?comp . ?x rdf:type/rdfs:subClassOf* ?c4c .
                 FILTER (?c4c IN (c4:SoftwareSystem, c4:Container))
-                ?comp am4:assignedTo ?b . ?b am4:realizes $this .
+                ?comp am4:assignedTo/am4:assignedTo? ?b . ?b am4:realizes $this .
                 FILTER NOT EXISTS {
                     { $this am4:realizes ?goal } UNION { ?b2 am4:realizes $this . ?b2 am4:realizes ?goal }
                     ?goal rdf:type/rdfs:subClassOf* ?gc .

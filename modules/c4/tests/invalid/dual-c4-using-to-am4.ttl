@@ -21,7 +21,10 @@
 :orderData a am4:DataObject ; arch:inModel :t ; skos:prefLabel "订单数据"@zh .
 :orderHead a am4:DataObject ; arch:inModel :t ; skos:prefLabel "订单头"@zh .
 :orderLine a am4:DataObject ; arch:inModel :t ; skos:prefLabel "订单行"@zh .
-:rel-orderComp-assigned-orderFn a am4:Assignment ; arch:inModel :t ; arch:source :orderComp ; arch:target :orderFn .
+:orderRole a am4:Role ; arch:inModel :t ; skos:prefLabel "订单处理角色"@zh .
+# upstream am4 4.0 tables: a component is assigned directly only to a Role; the Role performs the Function
+:rel-orderComp-assigned-orderRole a am4:Assignment ; arch:inModel :t ; arch:source :orderComp ; arch:target :orderRole .
+:rel-orderRole-assigned-orderFn a am4:Assignment ; arch:inModel :t ; arch:source :orderRole ; arch:target :orderFn .
 :rel-orderFn-realizes-orderSvc a am4:Realization ; arch:inModel :t ; arch:source :orderFn ; arch:target :orderSvc .
 :rel-orderFn-realizes-orderCap a am4:Realization ; arch:inModel :t ; arch:source :orderFn ; arch:target :orderCap .
 :rel-orderData-aggregates-orderHead a am4:Aggregation ; arch:inModel :t ; arch:source :orderData ; arch:target :orderHead .
