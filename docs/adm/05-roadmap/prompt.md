@@ -15,6 +15,9 @@
 
 先用 `model.query`（或 `$PY tools/aisep.py query`）列出目标态的组件、节点、服务、数据对象、Must 级需求及其批准状态，作为差距分析的底稿；用 `model.impact`（或 `aisep.py impact --mode ripple`）评估每个替换对象的波及范围。
 
+## 先跑 ADM 向导（只读）
+`$PY tools/aisep.py adm 05-roadmap --model <slug>` 列出本阶段在模型里已有的元素、空节和缺口（检查项在 `docs/queries/adm/05-roadmap-*.rq`，设计见 `docs/specs/adm-wizard.md`）。追问从空节和缺口开始，已有的元素只引用、不重建。落完模型后再跑一次，缺口应相应减少。要交付物时加 `--deliverable`，默认只打印，生成结果不提交。向导不是门禁，结论仍以 `gate` 为准。
+
 ## 动手前先问用户（宁可多问，不要猜）
 攒成一次提问，给出候选答案让用户选或改：
 1. 基线是什么：哪些现有系统、数据和节点在模型里，哪些还没建？基线要不要先补模型？

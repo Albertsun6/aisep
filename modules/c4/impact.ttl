@@ -1,0 +1,9 @@
+@prefix c4:          <https://meta.linked.archi/c4/onto#> .
+@prefix structurizr: <https://meta.linked.archi/c4/structurizr#> .
+@prefix aisep:       <https://aisep.example/ont/aisep#> .
+
+# Impact directions of the C4 relationship classes (spec §9). Loaded via this module's manifest (aisep:impactFile).
+c4:Using                 aisep:dependency aisep:Backward .  # the user depends on what it uses (arrow from user to used)
+c4:ContainerContainment  aisep:dependency aisep:Both .      # like am4:Composition: a container exists only in its system,
+c4:ComponentContainment  aisep:dependency aisep:Both .      # and the system's structure depends on its containers
+structurizr:Deployment   aisep:dependency aisep:Backward .  # a container depends on the node it is deployed on

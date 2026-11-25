@@ -1,0 +1,34 @@
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# AISEP module manifest — C4 model (docs/specs/c4-archimate4-dual-model.md; gate A decisions in
+# docs/specs/c4-archimate4-verification.md §9.3).
+# Dual model, not a view of ArchiMate: C4 is a notation of its own, no ⊑ am4 alignment axioms
+# (inheritsHubRules false). A C4 element and the am4 element it describes are two nodes linked by a
+# qualified arch:Refines (C4 = design level -> am4 = hub, spec §7.2), refiner = the C4 node.
+# Vocabulary is upstream only: c4/onto (people, systems, containers, components, Using, containment)
+# and c4/structurizr (deployment nodes, infrastructure nodes, Deployment). The upstream shapes run as
+# they are; AISEP's own rules (spec §7 of the C4 spec) are in modules/c4/shapes.ttl.
+# Not loaded: c4 viewpoints/notation/deliverable templates (not needed by any rule), core-vis/edgy (CC-BY-SA).
+
+<https://aisep.example/module/c4>
+    a                      arch:Metamodel ;
+    skos:prefLabel         "C4 模型"@zh ;
+    skos:altLabel          "C4 model"@en ;
+    aisep:moduleKind       aisep:Language ;
+    owl:versionInfo        "0.1.0" ;
+    aisep:loads            "vendor/meta.linked.archi/ttl/core.ttl" ,
+                           "vendor/meta.linked.archi/ttl/archimate4_onto.ttl" ,
+                           "vendor/meta.linked.archi/ttl/c4_onto.ttl" ,
+                           "vendor/meta.linked.archi/ttl/c4_structurizr.ttl" ;
+    aisep:shapesFile       "vendor/meta.linked.archi/ttl/c4_shapes.ttl" ,
+                           "vendor/meta.linked.archi/ttl/c4_structurizr-shapes.ttl" ,
+                           "modules/c4/shapes.ttl" ;
+    aisep:inheritsHubRules false ;
+    aisep:notationLevel    aisep:LevelDesign ;   # gate A, 2026-11-25
+    aisep:ownsNamespace    "https://meta.linked.archi/c4/onto#" ,
+                           "https://meta.linked.archi/c4/structurizr#" ;
+    aisep:impactFile       "modules/c4/impact.ttl" .   # spec §5/§9: only declared overrides take effect

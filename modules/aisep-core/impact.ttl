@@ -18,3 +18,4 @@ am4:Influence      aisep:dependency aisep:Forward .
 am4:Specialization aisep:dependency aisep:Backward .  # specialisation depends on generalisation
 am4:Association    aisep:dependency aisep:None .
 arch:Refines       aisep:dependency aisep:Backward .  # refiner depends on refined
+arch:DependsOn     aisep:dependency aisep:Backward .  # core 0.7.0: drawn from the dependent concept to the one it depends on

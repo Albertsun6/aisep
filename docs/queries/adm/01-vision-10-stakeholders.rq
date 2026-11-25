@@ -1,0 +1,22 @@
+# adm-phase: 01-vision
+# section: 2. 干系人
+# kind: inventory
+# title: 干系人
+# 用法：经 tools/aisep.py adm 运行；直接交给 model_query 时只改 VALUES ?model 一行。
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+PREFIX prov:  <http://www.w3.org/ns/prov#>
+PREFIX arch:  <https://meta.linked.archi/core#>
+PREFIX am4:   <https://meta.linked.archi/archimate4/onto#>
+PREFIX bpmn:  <https://meta.linked.archi/bpmn/onto#>
+PREFIX ad:    <https://meta.linked.archi/arch-decision#>
+PREFIX ddd:   <https://aisep.example/ont/ddd#>
+PREFIX aisep: <https://aisep.example/ont/aisep#>
+
+SELECT DISTINCT ?element ?label ?type WHERE {
+  VALUES ?model { <https://aisep.example/model/workbench/> }
+  VALUES ?cls { am4:Stakeholder }
+  ?element arch:inModel ?model ; a ?type .
+  ?type rdfs:subClassOf* ?cls .
+  OPTIONAL { ?element skos:prefLabel ?label FILTER(lang(?label) = "zh") }
+} ORDER BY ?type ?element

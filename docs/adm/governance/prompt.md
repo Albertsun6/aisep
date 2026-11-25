@@ -19,6 +19,9 @@
 6. 本关口对应阶段的模板（例如需求确认看 `docs/adm/requirements/template.md`）及其已填写的文档。
 7. 范例：`models/procurement/governance.ttl`。
 
+### 先跑 ADM 向导（只读）
+`$PY tools/aisep.py adm governance --model <slug>` 列出本阶段在模型里已有的元素、空节和缺口（检查项在 `docs/queries/adm/governance-*.rq`，设计见 `docs/specs/adm-wizard.md`）。追问从空节和缺口开始，已有的元素只引用、不重建。落完模型后再跑一次，缺口应相应减少。要交付物时加 `--deliverable`，默认只打印，生成结果不提交。向导不是门禁，结论仍以 `gate` 为准。
+
 ### 第一步：先问人（不猜）
 
 在跑任何检查前，向用户确认：
