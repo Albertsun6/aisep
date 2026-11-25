@@ -114,8 +114,17 @@ def _side(repo, commit, prefixes=("models/",)):
     return diff.Side(parsed)
 
 
-def _has_type(side, iri, cls):
-    return any(cls in side.chain(t) for t in side.types(iri))
+def _has_type(side, iri, cls, classes=None):
+    """classes: cls and its IRI subclasses declared on the merge context (modules/, vendor/, models/; #105); without it
+    only the model-file subclass chain of side is followed."""
+    ks = classes or {cls}
+    return any(c in ks for t in side.types(iri) for c in side.chain(t))
+
+
+def _subclasses(cls, *ctxs):
+    """cls and every IRI subclass of it in the loaded contexts: the same closure the approvalState derivation uses."""
+    return {cls} | {c for ctx in ctxs for (c,) in ctx.rows(
+        f"SELECT DISTINCT ?c WHERE {{ ?c rdfs:subClassOf* <{cls}> FILTER(isIRI(?c)) }}")}
 
 
 def _named(side, iri, pred):
@@ -134,8 +143,8 @@ def _record(side, iri):
             "time": core.parse_xsd_datetime(_literal(side, iri, GENERATED)), "activities": acts}
 
 
-def _new(S_H, S_T, cls):
-    return sorted(k for k in S_H.sig if k not in S_T.sig and _has_type(S_H, k, cls))
+def _new(S_H, S_T, cls, classes=None):
+    return sorted(k for k in S_H.sig if k not in S_T.sig and _has_type(S_H, k, cls, classes))
 
 
 # predicates whose rdfs:domain is aisep:ApprovalRecord or aisep:AgentActivity (aisep-core onto.ttl): the floor;
@@ -349,8 +358,11 @@ class _Analysis:
         self.ctx_T = stack.enter_context(tools.loaded(CFG, repo, ref=t))[0]
         self.ctx_M = stack.enter_context(tools.loaded(CFG, repo, ref=m))[0]
         self._sides = {t: self.S_T, h: self.S_H, m: self.S_M}
-        self.new_records = [_record(self.S_H, r) for r in _new(self.S_H, self.S_T, RECORD)]
-        self.new_activities = _new(self.S_H, self.S_T, ACTIVITY)
+        # records / activities by the class closure of T and M, as the derivation sees them (#105)
+        self.rec_classes = _subclasses(RECORD, self.ctx_T, self.ctx_M)
+        self.act_classes = _subclasses(ACTIVITY, self.ctx_T, self.ctx_M)
+        self.new_records = [_record(self.S_H, r) for r in _new(self.S_H, self.S_T, RECORD, self.rec_classes)]
+        self.new_activities = _new(self.S_H, self.S_T, ACTIVITY, self.act_classes)
         illegal = self.ctx_M.approval_problems()
         legal = [r for r in self.new_records if r["iri"] not in illegal]
         self.selected = [r for r in legal if not any(
@@ -384,7 +396,7 @@ class _Analysis:
     def check1(self):
         out = []
         for x in sorted(self.S_T.sig):
-            if not (_has_type(self.S_T, x, RECORD) or _has_type(self.S_T, x, ACTIVITY)):
+            if not (_has_type(self.S_T, x, RECORD, self.rec_classes) or _has_type(self.S_T, x, ACTIVITY, self.act_classes)):
                 continue
             if x not in self.S_M.sig:
                 out.append(_problem("governance-record-removed", "目标分支上已有的治理记录被删除（批准只能新增）", iri=x))

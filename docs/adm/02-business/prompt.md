@@ -19,6 +19,9 @@
 6. 参考例子：`models/procurement/am4.ttl`（角色、流程、业务对象及 Assignment/Access/Triggering）、
    `models/procurement/bpmn.ttl`（BPMN 流程、顺序流、refines 到 am4 流程）。
 
+### 先跑 ADM 向导（只读）
+`$PY tools/aisep.py adm 02-business --model <slug>` 列出本阶段在模型里已有的元素、空节和缺口（检查项在 `docs/queries/adm/02-business-*.rq`，设计见 `docs/specs/adm-wizard.md`）。追问从空节和缺口开始，已有的元素只引用、不重建。落完模型后再跑一次，缺口应相应减少。要交付物时加 `--deliverable`，默认只打印，生成结果不提交。向导不是门禁，结论仍以 `gate` 为准。
+
 ### 先问，再写（不许猜）
 动笔前攒成一次提问，给出候选答案让用户选或改，回答含糊或矛盾时再追问；答不上的记入模板第 6 节"待决问题"：
 1. 为实现愿景目标，业务必须**具备哪些能力**？哪些是现在已有的、薄弱的、缺失的？

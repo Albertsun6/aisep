@@ -30,4 +30,5 @@
     aisep:inheritsHubRules false ;
     aisep:notationLevel    aisep:LevelDesign ;   # gate A, 2026-11-25
     aisep:ownsNamespace    "https://meta.linked.archi/c4/onto#" ,
-                           "https://meta.linked.archi/c4/structurizr#" .
+                           "https://meta.linked.archi/c4/structurizr#" ;
+    aisep:impactFile       "modules/c4/impact.ttl" .   # spec §5/§9: only declared overrides take effect
