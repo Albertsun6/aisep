@@ -1,0 +1,17 @@
+# expect: EA9:
+# Invalid: a guard that is not an sh:SPARQLAskValidator (here: a literal).
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix aisep:   <https://aisep.example/ont/aisep#> .
+@prefix ap:      <https://aisep.example/ont/ext-actions#> .
+@prefix :        <https://aisep.example/model/ext-actions-test/> .
+
+aisep:ActionTestBad a aisep:ActionType ;
+    dcterms:identifier "bad" ;
+    skos:prefLabel "坏动作"@zh ;
+    owl:versionInfo "1.0.0" ;
+    aisep:guard "ASK { ?s ?p ?o }" .

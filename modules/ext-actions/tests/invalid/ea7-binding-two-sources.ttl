@@ -1,0 +1,16 @@
+# expect: EA7:
+# Invalid: a binding with two value sources (aisep:fromParameter and aisep:constant).
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix aisep:   <https://aisep.example/ont/aisep#> .
+@prefix ap:      <https://aisep.example/ont/ext-actions#> .
+@prefix :        <https://aisep.example/model/ext-actions-test/> .
+
+:step a aisep:ActionStep ;
+    dcterms:identifier "remove" ;
+    aisep:invokes aisep:BasicRemove ;
+    aisep:binding [ aisep:argument "iri" ; aisep:fromParameter ap:iri ; aisep:constant "x" ] .

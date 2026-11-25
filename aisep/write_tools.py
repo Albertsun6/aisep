@@ -171,9 +171,9 @@ def _lit(v, lang):
 
 # ---------------------------------------------------------------- §5.2
 
-def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, definition=None, attributes=None,
-                      file=None, dryRun=False, repo=None, **extra):
-    _no_extra(extra)
+def add_element_build(model, type, prefLabel, altLabel=None, slug=None, definition=None, attributes=None, file=None):
+    """The plan function of model_add_element (argument checks here, the rest in build(ws, ctx)); aisep.actions
+    composes it with other plan functions inside one writer.transaction."""
     if not isinstance(prefLabel, str) or not prefLabel.strip():
         raise _bad("prefLabel", "prefLabel 不能为空")
     _check_text("prefLabel", prefLabel, LABEL_MAX)
@@ -247,13 +247,20 @@ def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, def
                                                    "label": ctx.label(iri)}})
         return {"result": result, "edits": {f: writer.append_block(ws.text(f), block, pfx)}, "added": {f: triples}}
 
-    return writer.transaction(cfg, repo, build, dryRun)
+    return build
+
+
+def model_add_element(cfg, model, type, prefLabel, altLabel=None, slug=None, definition=None, attributes=None,
+                      file=None, dryRun=False, repo=None, **extra):
+    _no_extra(extra)
+    return writer.transaction(cfg, repo, add_element_build(model, type, prefLabel, altLabel, slug, definition,
+                                                           attributes, file), dryRun)
 
 
 # ---------------------------------------------------------------- §5.3
 
-def model_add_relationship(cfg, type, source, target, model=None, file=None, dryRun=False, repo=None, **extra):
-    _no_extra(extra)
+def add_relationship_build(type, source, target, model=None, file=None):
+    """The plan function of model_add_relationship."""
 
     def build(ws, ctx):
         st = _subject_triples(ctx)
@@ -292,13 +299,18 @@ def model_add_relationship(cfg, type, source, target, model=None, file=None, dry
         return {"result": {"iri": iri, "file": f, "turtle": block},
                 "edits": {f: writer.append_block(ws.text(f), block, pfx)}, "added": {f: triples}}
 
-    return writer.transaction(cfg, repo, build, dryRun)
+    return build
+
+
+def model_add_relationship(cfg, type, source, target, model=None, file=None, dryRun=False, repo=None, **extra):
+    _no_extra(extra)
+    return writer.transaction(cfg, repo, add_relationship_build(type, source, target, model, file), dryRun)
 
 
 # ---------------------------------------------------------------- §5.10
 
-def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET, dryRun=False, repo=None, **extra):
-    _no_extra(extra)
+def set_labels_build(iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET):
+    """The plan function of model_set_labels."""
     if prefLabel is UNSET and altLabel is UNSET and definition is UNSET:
         raise AisepError("INVALID_ARGUMENT", "prefLabel、altLabel、definition 至少给一个",
                          details={"rejectedFields": ["prefLabel", "altLabel", "definition"]})
@@ -350,7 +362,12 @@ def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET
         edits = {f: writer.rewrite_blocks(ws.text(f), removed.get(f, set()), adds.get(f, {})) for f in files}
         return {"result": result, "edits": edits, "removed": removed, "added": added}
 
-    return writer.transaction(cfg, repo, build, dryRun)
+    return build
+
+
+def model_set_labels(cfg, iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET, dryRun=False, repo=None, **extra):
+    _no_extra(extra)
+    return writer.transaction(cfg, repo, set_labels_build(iri, prefLabel, altLabel, definition), dryRun)
 
 
 # ---------------------------------------------------------------- §5.5
@@ -436,8 +453,9 @@ def plan_digest(target, plan, files):
                                                  ensure_ascii=False).encode()).hexdigest()
 
 
-def model_remove(cfg, iri, cascade=False, dryRun=False, planDigest=None, repo=None, **extra):
-    _no_extra(extra)
+def remove_build(iri, cascade=False, dryRun=False, planDigest=None, verify_digest=True):
+    """The plan function of model_remove. verify_digest=False (aisep.actions, which binds its own digest over the
+    whole action) skips the PLAN_STALE comparison; planDigest then only marks a replay (alreadyAbsent)."""
 
     def build(ws, ctx):
         st = _subject_triples(ctx)
@@ -460,7 +478,7 @@ def model_remove(cfg, iri, cascade=False, dryRun=False, planDigest=None, repo=No
         plan, remove = remove_plan(ctx, st, target)
         digest = plan_digest(target, plan, {f: writer.sha(ws.data.get(f)) for f in sorted(remove)})
         details = {"plan": plan, "planDigest": digest}
-        if planDigest is not None and planDigest != digest:
+        if verify_digest and planDigest is not None and planDigest != digest:
             raise AisepError("PLAN_STALE", "计划已变化（文件在 dryRun 之后被改过）", hint="先用 dryRun: true 取新计划",
                              details=details)
         if plan["blockers"]:
@@ -478,7 +496,12 @@ def model_remove(cfg, iri, cascade=False, dryRun=False, planDigest=None, repo=No
                            "alreadyAbsent": False},
                 "edits": edits, "removed": remove}
 
-    return writer.transaction(cfg, repo, build, dryRun)
+    return build
+
+
+def model_remove(cfg, iri, cascade=False, dryRun=False, planDigest=None, repo=None, **extra):
+    _no_extra(extra)
+    return writer.transaction(cfg, repo, remove_build(iri, cascade, dryRun, planDigest), dryRun)
 
 
 # ---------------------------------------------------------------- §5.12
@@ -515,7 +538,12 @@ def _settable(ctx, name, field):
     return p
 
 
-def _set_attributes(cfg, iri, new, drop, dryRun, repo):
+def set_attributes_build(iri, set=None, unset=None):
+    """The plan function of model_set_attributes."""
+    return _set_attributes_build(iri, set, unset)
+
+
+def _set_attributes_build(iri, new, drop):  # not set/unset: the body uses the builtin set()
     if not new and not drop:
         raise AisepError("INVALID_ARGUMENT", "set、unset 至少给一个，且不能都为空", details={"rejectedFields": ["set", "unset"]})
     for field, v in (("set", new), ("unset", drop)):
@@ -593,11 +621,11 @@ def _set_attributes(cfg, iri, new, drop, dryRun, repo):
                 edits[f] = edits[f].replace(body, body.replace("\r", "\\r"))  # step 6 (graph equivalence) still judges it
         return {"result": {"iri": x, "before": before, "after": after}, "edits": edits, "removed": removed, "added": added}
 
-    return writer.transaction(cfg, repo, build, dryRun)
+    return build
 
 
 def model_set_attributes(cfg, iri, set=None, unset=None, dryRun=False, repo=None, **extra):
     """Replace, per predicate, ALL values the subject has on it (`set`) or drop them (`unset`). Which predicates are
     legal is decided by L1 on the candidate graph (closed world, hand-written approvalState), not by a list here."""
     _no_extra(extra)
-    return _set_attributes(cfg, iri, set, unset, dryRun, repo)
+    return writer.transaction(cfg, repo, set_attributes_build(iri, set, unset), dryRun)

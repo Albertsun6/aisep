@@ -1,0 +1,15 @@
+# expect: EA10:
+# Invalid: a model element carries aisep:argument, which only belongs on a binding node of an action step.
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/ext-actions-test/> .
+
+:model a arch:Model ;
+    skos:prefLabel "动作扩展测试模型"@zh .
+
+:req a am4:Requirement ;
+    arch:inModel :model ;
+    skos:prefLabel "需求"@zh ;
+    aisep:argument "x" .

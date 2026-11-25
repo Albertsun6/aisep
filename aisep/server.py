@@ -17,8 +17,8 @@ from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import MCPError
 from mcp_types.jsonrpc import INVALID_PARAMS
 
-from aisep import approval, branches, diff, tools, write_tools
-from aisep.errors import CODES, AisepError
+from aisep import actions, approval, branches, diff, tools, write_tools
+from aisep.errors import ACTION_CODES, CODES, AisepError
 
 MAX_TEXT_LINES = 200
 QUERY_TIMEOUT_MAX = 60000  # ms; a query thread that times out is not killed, so the wait is bounded here
@@ -43,13 +43,15 @@ def obj(props, required=()):
 
 
 READ_IN = obj({"repo": REPO, "ref": REF, "model": MODEL})
-ERROR_OUT = obj({"error": obj({"code": S(enum=sorted(CODES)), "message": S(), "hint": S(), "retryable": B,
-                               "details": {"type": "object"}}, ["code", "message", "retryable"])}, ["error"])
+def error_out(codes):
+    return obj({"error": obj({"code": S(enum=sorted(codes)), "message": S(), "hint": S(), "retryable": B,
+                              "details": {"type": "object"}}, ["code", "message", "retryable"])}, ["error"])
 
 
-def out(*required):
-    """outputSchema = success ∪ error (§5.0): a success result has these keys (an error result has only `error`)."""
-    return {"type": "object", "oneOf": [{"type": "object", "required": list(required)}, ERROR_OUT]}
+def out(*required, codes=CODES - ACTION_CODES):
+    """outputSchema = success ∪ error (§5.0): a success result has these keys (an error result has only `error`).
+    The codes only model_apply_action raises (errors.ACTION_CODES) are in its enum alone."""
+    return {"type": "object", "oneOf": [{"type": "object", "required": list(required)}, error_out(codes)]}
 
 
 ANN_READ = dict(read_only_hint=True, idempotent_hint=True, open_world_hint=False)
@@ -106,6 +108,14 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
     "model_remove": (write_tools.model_remove, "删除元素/关系/视图；牵连时返回计划，需 cascade + planDigest",
                      obj({"iri": S(), "cascade": B, "dryRun": B, "planDigest": S(), "repo": REPO}, ["iri"]),
                      out("target", "planDigest"), ANN_DESTRUCTIVE, {"agent"}),
+    # the two tools are fixed; what the catalogue (modules/ext-actions/catalog.ttl) holds never changes tools/list
+    "model_list_actions": (actions.model_list_actions, "动作目录（只读）：每个动作的参数 schema、步骤、前置检查提示",
+                           obj({}), out("actions"), ANN_READ, {"agent"}),
+    "model_apply_action": (actions.model_apply_action,
+                           "执行目录里的一个动作（一次写入，全有或全无，不提交）；含删除步骤的动作须先 dryRun 再带 planDigest",
+                           obj({"action": S(), "params": {"type": "object"}, "dryRun": B, "planDigest": S(),
+                                "repo": REPO}, ["action"]),
+                           out("action", "changed", codes=CODES), ANN_DESTRUCTIVE, {"agent"}),
     "governance_record_approval": (
         approval.governance_record_approval,
         "记录一次关口批准：在 branch 检出的工作区新建一个记录文件并提交一次（evidence=headCommit，时间与 baseCommit 由服务器给）",

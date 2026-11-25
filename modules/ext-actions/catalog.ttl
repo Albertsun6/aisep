@@ -1,0 +1,67 @@
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep:   <https://aisep.example/ont/aisep#> .
+@prefix ap:      <https://aisep.example/ont/ext-actions#> .
+
+# The action catalogue read by aisep/actions.py (model_list_actions / model_apply_action, docs/mcp-interface.md
+# §5.13, §5.14). Checked by shapes.ttl at L3 (EA1-EA10) and, on every call, by the executor (X1-X10).
+# A blank node belongs to the description of exactly one action (X10): definitionDigest covers it.
+# Guards: ASK true = pass; a parameter appears as $name and is pre-bound, never spliced into the query text.
+
+aisep:ActionRegisterAcceptanceCriterion a aisep:ActionType ;
+    dcterms:identifier "register-acceptance-criterion" ;
+    skos:prefLabel  "登记验收标准并挂到需求"@zh ;
+    skos:definition "新增一个 aisep:AcceptanceCriterion 元素，并用一条 am4:Aggregation（源 = 父需求，目标 = 验收标准）把它挂到指定需求。等价于依次调用 model_add_element 与 model_add_relationship，但两步在一次写入里全有或全无。"@zh ;
+    owl:versionInfo "1.0.0" ;
+    sh:parameter
+        [ sh:path ap:requirement ;      sh:nodeKind sh:IRI ;      sh:description "父需求的完整 IRI（https://aisep.example/model/<slug>/<名>）"@zh ] ,
+        [ sh:path ap:prefLabel ;        sh:datatype xsd:string ;  sh:description "验收标准的中文名称"@zh ] ,
+        [ sh:path ap:altLabel ;         sh:datatype xsd:string ;  sh:optional true ; sh:description "英文名称；没给 slug 时用它生成 IRI"@zh ] ,
+        [ sh:path ap:slug ;             sh:datatype xsd:string ;  sh:optional true ; sh:description "IRI 的本地名，^[A-Za-z][A-Za-z0-9]*$"@zh ] ,
+        [ sh:path ap:definition ;       sh:datatype xsd:string ;  sh:optional true ; sh:description "中文定义"@zh ] ,
+        [ sh:path ap:gherkin ;          sh:datatype xsd:string ;  sh:optional true ; sh:description "Given / When / Then 文本，写入 aisep:gherkin"@zh ] ,
+        [ sh:path ap:file ;             sh:datatype xsd:string ;  sh:optional true ; sh:description "验收标准落在哪个文件；缺省按 model_add_element 的规则"@zh ] ,
+        [ sh:path ap:relationshipFile ; sh:datatype xsd:string ;  sh:optional true ; sh:description "聚合关系落在哪个文件；缺省按 model_add_relationship 的规则"@zh ] ;
+    aisep:guard
+        [ a sh:SPARQLAskValidator ; dcterms:identifier "parent-is-not-a-criterion" ;
+          sh:ask "ASK { $requirement a ?type . FILTER NOT EXISTS { $requirement a aisep:AcceptanceCriterion } }" ;
+          sh:message "requirement 指向的是另一条验收标准。验收标准应挂在它所属的需求上，请把 requirement 换成那条需求的 IRI。"@zh ] ,
+        [ a sh:SPARQLAskValidator ; dcterms:identifier "parent-is-not-deprecated" ;
+          sh:ask "ASK { $requirement a ?type . FILTER NOT EXISTS { $requirement owl:deprecated true } }" ;
+          sh:message "requirement 指向的需求已退役（owl:deprecated true）。请挂到替代它的需求上（见它的 dcterms:isReplacedBy）。"@zh ] ;
+    aisep:steps ( _:criterion _:aggregation ) .
+
+_:criterion a aisep:ActionStep ;
+    dcterms:identifier "criterion" ;
+    aisep:invokes aisep:BasicAddElement ;
+    aisep:binding [ aisep:argument "model" ;      aisep:modelOf ap:requirement ] ,
+                  [ aisep:argument "type" ;       aisep:constant aisep:AcceptanceCriterion ] ,
+                  [ aisep:argument "prefLabel" ;  aisep:fromParameter ap:prefLabel ] ,
+                  [ aisep:argument "altLabel" ;   aisep:fromParameter ap:altLabel ] ,
+                  [ aisep:argument "slug" ;       aisep:fromParameter ap:slug ] ,
+                  [ aisep:argument "definition" ; aisep:fromParameter ap:definition ] ,
+                  [ aisep:argument "attributes" ; aisep:attributePredicate aisep:gherkin ; aisep:fromParameter ap:gherkin ] ,
+                  [ aisep:argument "file" ;       aisep:fromParameter ap:file ] .
+
+_:aggregation a aisep:ActionStep ;
+    dcterms:identifier "aggregation" ;
+    aisep:invokes aisep:BasicAddRelationship ;
+    aisep:binding [ aisep:argument "type" ;   aisep:constant am4:Aggregation ] ,
+                  [ aisep:argument "source" ; aisep:fromParameter ap:requirement ] ,
+                  [ aisep:argument "target" ; aisep:fromStep _:criterion ] ,
+                  [ aisep:argument "file" ;   aisep:fromParameter ap:relationshipFile ] .
+
+aisep:ActionRemoveElement a aisep:ActionType ;
+    dcterms:identifier "remove-element" ;
+    skos:prefLabel  "删除元素"@zh ;
+    skos:definition "删除一个元素、关系或视图，连带以它为端点的关系并摘除成员关系（同 model_remove 的 cascade）。破坏性动作：必须先 dryRun 看计划与影响摘要，再带 planDigest 执行。"@zh ;
+    owl:versionInfo "1.0.0" ;
+    sh:parameter [ sh:path ap:iri ; sh:nodeKind sh:IRI ; sh:description "要删除的资源的完整 IRI"@zh ] ;
+    aisep:steps (
+        [ a aisep:ActionStep ; dcterms:identifier "remove" ; aisep:invokes aisep:BasicRemove ;
+          aisep:binding [ aisep:argument "iri" ; aisep:fromParameter ap:iri ] ]
+    ) .
