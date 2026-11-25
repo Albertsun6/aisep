@@ -94,7 +94,7 @@
 另外两点相关：
 
 - 线上 `c4/onto` 新增了 `c4:uses` 的 scopeNote：“Between a C4 element and an element of another language, use the core's relationship types.” 也就是说，C4 元素与其他语言元素之间不能用 `c4:uses`，要用 core 的关系类型。
-- core 0.6.0 自带四个用于跨语言的关系类型（DD-40）：`arch:Association`（`associatedWith`，对称）、`arch:HasPart`、`arch:Refines`（`refines`），以及 0.7.0 新增的 `arch:DependsOn`。其中 `arch:refines` 的定义写明是“traceability property intended to use within a single model or across models”。
+- core 0.6.0 自带三个用于跨语言的关系类型：`arch:Association`（`associatedWith`，对称）、`arch:HasPart`、`arch:Refines`（`refines`）；0.7.0 又新增了第四个 `arch:DependsOn`（DD-40）。其中 `arch:refines` 的定义写明是“traceability property intended to use within a single model or across models”。
 
 出处：
 - <https://meta.linked.archi/docs/guide/authoring-crossmappings/>

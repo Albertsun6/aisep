@@ -26,7 +26,7 @@
 
 **C4 相关（目前没有被加载，留给第 4 步使用）**：`c4_onto`（0.3.0，`c4:uses` 的定义域收窄到 C4 自己的四类元素，并新增 scopeNote，说明 C4 与其他语言之间要用 core 的关系类型）、`c4_shapes`（0.2.0，新增 36 组合法的 `Using` 组合，以及按元素类型划分的直接谓词 shape）、`c4_structurizr`、`c4_structurizr-shapes`。
 
-**其余变化，AISEP 不加载**：`arch-decision` 以外的 archimate3 系列（`archimate3_onto`、`archimate3_onto_3.0`、`archimate3_derivation`）、`archimate4_derivation`、backstage 系列 6 个、basic 系列 3 个、`bpmn-lite_onto`、`catalog`、`core-deliverable-templates`、`core-questions`、`core-vis`、`core-vis-shapes`（CC-BY-SA，仍然不加载）、`examples_*` 3 个、`leanix_onto`、`togaf_onto`、`togaf9_onto`。
+**其余变化，AISEP 不加载**：`arch-decision` 以外的 archimate3 系列（`archimate3_onto`、`archimate3_onto_3.0`、`archimate3_derivation`）、`archimate4_derivation`、backstage 系列 6 个、basic 系列 3 个、`bpmn-lite_onto`、`catalog`、`core-deliverable-templates`、`core-questions`、`core-vis`（CC-BY-SA 3.0，仍然不加载）、`core-vis-shapes`（CC-BY-4.0，也不加载）、`examples_*` 3 个、`leanix_onto`、`togaf_onto`、`togaf9_onto`。
 
 ## 3. 回归结果
 
@@ -35,6 +35,18 @@
 | vendor 清单 | `$PY tools/vendor_manifest.py check` | PASS，problems=0 |
 | gate | `$PY tools/aisep.py gate` | PASS：19 个文件，violations=0，warnings=1，infos=8，与升级前相同（warning 是 procurement 里已有的派生捷径） |
 | 全部模块测试 | `$PY tools/aisep.py test` | PASS：940/940，见第 5 节 |
+
+## 3.1 升级带来的规则缺口及修复（PR #103 评审 B1）
+
+core 0.7.0 新增的 `arch:DependsOn` 不在 `aisep/core.py` 的 `CORE_SAME_NOTATION` 名单里。名单里原来只有 `Association` 和 `HasPart`，所以用限定关系写的跨记法 `DependsOn`（例如 bpmn:Task → uml:Class）能通过 gate，违反 D8（元模型规范 §7.1、§7.3）。
+
+修复：把 `arch:DependsOn` 加进该名单，并新增两个测试样例：
+- 负例 `modules/aisep-core/tests/invalid/notation-mixing-core-dependson.ttl`：跨记法时应报“notation mixing — core relationship”；
+- 正例 `modules/aisep-core/tests/valid/notation-core-dependson-same-notation-ok.ttl`：同一记法内应通过。
+
+修复前，同样内容的探针在 gate 上 PASS；修复后，`test --no-pytest` 结果为 213/213。
+
+后续事项（本 PR 不做）：impact 分析还不会沿 `arch:DependsOn` 遍历。如果要让它像上游 DD-44 那样用于影响查询，需要另行声明 `aisep:dependency` 等口径。
 
 ## 4. C4 环境可用性（用上游自带的示例数据跑一遍）
 
