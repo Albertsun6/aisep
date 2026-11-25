@@ -9,6 +9,7 @@
 
 @prefix arch:     <https://meta.linked.archi/core#> .
 @prefix basicnot: <https://meta.linked.archi/basic/notation#> .
+@prefix basictax: <https://meta.linked.archi/basic/tax#> .
 @prefix :         <https://meta.linked.archi/basic/metamodel#> .
 
 #################################################################
@@ -53,9 +54,9 @@ language definition.'''@en ;
     dcterms:description '''Basic is a minimal Linked.Archi modelling language: three element types
 (Node, SpecialNode, GroupNode) and three qualified relationship types (Association, Aggregation,
 Connection) built directly on the core ontology. It serves examples of restrictions and inference,
-it is the generic language — Connection relates any two elements, of any language — and its
-notation sets give renderers a generic way to draw elements and relationships that have no
-language-specific notation.'''@en ;
+and it is the generic language: Connection relates any two of its elements, and its notation sets
+give renderers a generic way to draw elements and relationships that have no language-specific
+notation.'''@en ;
     skos:scopeNote      '''The language, not a release: the label deliberately carries no version.
 The release is the arch:Metamodel individual below, which declares owl:versionInfo "0.1.0".'''@en ;
 .
@@ -83,6 +84,9 @@ into a single discoverable resource.'''@en ;
     ## Concept classification — SKOS taxonomy (elements, relationships)
     ## File: basic-tax.ttl
     arch:conceptClassification     <https://meta.linked.archi/basic/tax#> ;
+    ## Order of proposal — which relationship a tool proposes first
+    ## File: basic-tax.ttl
+    arch:relationshipProposalOrder basictax:ProposalOrder ;
 
     ## Visual notation set — the default element/relationship appearance.
     ## Exactly one: alternative sets are selected by presentation context.

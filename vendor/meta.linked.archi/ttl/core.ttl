@@ -34,13 +34,25 @@ Trademarked names (UML, BPMN, ArchiMate, TOGAF, etc.) referenced herein are prop
     '''@en ;
     dcterms:created                                         "2019-03-17"^^xsd:date ;
     dcterms:issued                                          "2019-03-17"^^xsd:date ;
-    dcterms:modified                                        "2026-11-16"^^xsd:date ;
+    dcterms:modified                                        "2026-11-22"^^xsd:date ;
     dcterms:publisher                                            "Linked.Archi"@en, <https://linked.archi> ;
     bibo:status                                             "draft" ;
     owl:versionIRI                                          <https://meta.linked.archi/core#> ;
-    owl:versionInfo                                         "0.6.0"@en ;
-    owl:priorVersion                                        <https://meta.linked.archi/core/0.5.0#> ;
-    skos:historyNote                                        '''0.5.0 — names, labels and pictures per presentation context.
+    owl:versionInfo                                         "0.7.0"@en ;
+    owl:priorVersion                                        <https://meta.linked.archi/core/0.6.0#> ;
+    skos:historyNote                                        '''0.7.0 — a dependency type of the core's own.
+arch:DependsOn, with its predicate arch:dependsOn and the inverse arch:dependencyOf: from a model
+concept to one it needs, so that a change to the second may affect the first. Like the core's other
+relationship types, it is offered between two concepts no loaded language relates. It is not
+transitive. See DD-40.
+
+0.6.0 — relationship types of the core's own.
+arch:Association (arch:associatedWith, symmetric), arch:HasPart (arch:hasPart) and arch:Refines
+(arch:refines), each a qualified relationship class with its qualified property, for two concepts no
+loaded language relates: elements of different metamodels, or of one that defines no relationship
+types. See DD-40.
+
+0.5.0 — names, labels and pictures per presentation context.
 arch:inPresentationContext says which presentation context — which audience — something is for: a
 name an element is given for that audience (a SKOS-XL label, skosxl:altLabel, whose plain form is
 also the element's skos:altLabel), a picture of it for that audience (a schema:ImageObject given as
@@ -1088,7 +1100,7 @@ constraints, are SHACL's.'''@en ;
 #################################################################
 # Basic relationships
 #
-# Three relationship types of the core itself, for two elements no
+# The relationship types of the core itself, for two elements no
 # loaded language relates: elements of different metamodels, or of
 # one that defines no relationship types. A language's own
 # relationship types say more, and come first.
@@ -1132,6 +1144,57 @@ ex:rel-1 a arch:Association ;
     rdfs:domain       :ModelConcept ;
     rdfs:range        :Association ;
     :unqualifiedForm  :associatedWith ;
+.
+
+:dependsOn
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "dependsOn"@en ;
+    skos:definition '''Relates a model concept to one it needs — to work, or to be specified or built — so that a
+change to the second may affect the first.'''@en ;
+    skos:scopeNote  '''Not transitive: a chain of dependencies is a path (arch:dependsOn+), so a dependency a model
+states stays apart from one that only follows from others. Use the relationship of the modelling language where it
+has one for the two.'''@en ;
+    rdfs:domain     :ModelConcept ;
+    rdfs:range      :ModelConcept ;
+    owl:inverseOf   :dependencyOf ;
+.
+
+:dependencyOf
+    a               owl:ObjectProperty ;
+    skos:prefLabel  "dependencyOf"@en ;
+    skos:definition '''Relates a model concept to one that depends on it: arch:dependsOn read the other way, as a
+question about the impact of a change reads it.'''@en ;
+    rdfs:domain     :ModelConcept ;
+    rdfs:range      :ModelConcept ;
+    owl:inverseOf   :dependsOn ;
+.
+
+:DependsOn
+    a                 owl:Class ;
+    rdfs:subClassOf   :QualifiedRelationship ;
+    :unqualifiedForm  :dependsOn ;
+    skos:prefLabel    "Depends On"@en ;
+    skos:definition   '''A relationship from a model concept to one it needs — to work, or to be specified or
+built — so that a change to the second may affect the first.'''@en ;
+    skos:scopeNote    '''A modelling tool offers it where the loaded metamodels permit no relationship between
+the two elements, and draws it from the dependent concept to the one it depends on.'''@en ;
+    skos:example      '''
+ex:Billing arch:dependsOn ex:PaymentsApi .
+ex:Billing arch:qualifiedDependsOn ex:rel-2 .
+ex:rel-2 a arch:DependsOn ;
+    arch:source ex:Billing ;
+    arch:target ex:PaymentsApi ;
+    rdf:reifies <<( ex:Billing arch:dependsOn ex:PaymentsApi )>> .
+'''@en ;
+.
+
+:qualifiedDependsOn
+    a                 owl:ObjectProperty ;
+    skos:prefLabel    "qualifiedDependsOn"@en ;
+    skos:definition   "Links the source of a Depends On relationship — the dependent concept — to its relationship resource."@en ;
+    rdfs:domain       :ModelConcept ;
+    rdfs:range        :DependsOn ;
+    :unqualifiedForm  :dependsOn ;
 .
 
 :HasPart

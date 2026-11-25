@@ -43,13 +43,13 @@ and domain/range (arch:domainIncludes). See the skos:scopeNote for the full comp
 This is not an official OMG document. It is a Linked.Archi interpretation of the UML
 specification for semantic architecture modeling.'''@en ;
     dcterms:created               "2025-12-01"^^xsd:date ;
-    dcterms:modified              "2026-08-13"^^xsd:date ;
+    dcterms:modified              "2026-11-22"^^xsd:date ;
     dcterms:publisher                  "Linked.Archi"@en,
                                   <https://linked.archi> ;
     bibo:status                   "draft" ;
-    owl:versionIRI                <https://meta.linked.archi/uml/onto/0.3.0#> ;
-    owl:versionInfo               "0.3.0"@en ;
-    owl:priorVersion              <https://meta.linked.archi/uml/onto/0.2.0#> ;
+    owl:versionIRI                <https://meta.linked.archi/uml/onto/0.4.0#> ;
+    owl:versionInfo               "0.4.0"@en ;
+    owl:priorVersion              <https://meta.linked.archi/uml/onto/0.3.0#> ;
     dcterms:source  <https://www.omg.org/spec/UML/2.5.1/>,
                                   <https://www.omg.org/spec/ODM/1.1/>,
                                   <https://www.omg.org/spec/MOF/2.5.1/> ;
@@ -68,7 +68,11 @@ specification for semantic architecture modeling.'''@en ;
     machine-readable metamodel (242 metaclasses), https://www.omg.org/spec/UML/20161101/
   ODM 1.1 (OMG formal/14-09-02) — informative reference for the MOF↔OWL principles (UML-DD-1),
     https://www.omg.org/spec/ODM/1.1/; its UML profiles and model libraries for OWL and RDF are not used'''@en ;
-    skos:historyNote              '''0.3.0: Placed the qualified relationship classes in the UML
+    skos:historyNote              '''0.4.0: Dependencies aligned with the core's (core 0.7.0, DD-44). :dependsOn is a
+subproperty of arch:dependsOn, and :uses of :dependsOn, as Usage is a Dependency (§7.7): from the client
+to the supplier it needs.
+
+0.3.0: Placed the qualified relationship classes in the UML
 metaclass hierarchy they belong to. Added the abstract roots :Relationship and
 :DirectedRelationship (UML 2.5.1 §7.8), and gave every
 relationship class its specification superclasses alongside arch:QualifiedRelationship:
@@ -1713,6 +1717,7 @@ a BehavioredClassifier fulfills the contract of an Interface.'''@en ;
 
 :dependsOn
     a                    owl:ObjectProperty ;
+    rdfs:subPropertyOf   arch:dependsOn ;
     skos:prefLabel       "Depends On"@en ;
     skos:definition      '''A relationship where a change to the supplier may affect the
 client. Maps to UML 2.5.1 §7.7 Dependency.'''@en ;
@@ -1748,6 +1753,7 @@ superclasses from here.'''@en ;
 
 :uses
     a                    owl:ObjectProperty ;
+    rdfs:subPropertyOf   :dependsOn ;
     skos:prefLabel       "Uses"@en ;
     skos:definition      '''A Dependency where the client requires the supplier for its
 full implementation or operation. Maps to UML 2.5.1 §7.7 Usage.'''@en ;

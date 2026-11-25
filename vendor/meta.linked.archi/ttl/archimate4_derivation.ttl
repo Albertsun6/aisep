@@ -40,9 +40,11 @@ its run: an activity of its own, with its agent and when it ran, of which each d
 produced is part (dcterms:isPartOf). What the modeller stated is told from what a rule derived by the
 graph, in a store (a derivation is kept in .../graph/derived), and by the resource. Before the rules run,
 :QualifyRelationships gives each relationship the model states only as a direct triple a resource of
-its own. The IRIs are in the
-model's namespace, a derivation's and its derivation activity's from its rule and premises; with no model
-loaded, or several, in urn:linked-archi:. The rules are SPARQL 1.2. A rule
+its own. The IRIs are in the model's namespace, in the Linked.Archi IRI layout (DD-41): a derivation is a
+relationship, relationship/{digest} of its rule and premises, with its derivation activity and the
+association as its parts, .../activity and .../activity/association; a qualified direct triple is
+relationship/{digest} of the triple. A digest is the first 20 hex characters of the SHA-256 of what it is
+of, joined by spaces. With no model loaded, or several, in urn:linked-archi:. The rules are SPARQL 1.2. A rule
 derives only from relationships whose triple is asserted, in the model or by a valid derivation
 — one that is only :Potential is for the modeller to confirm, as is any other proposition — so the rules give the closure of valid
 derivations and one layer of potential ones; a valid derivation of a relationship that so far is only
@@ -51,7 +53,7 @@ permit between the two element types, as archimate4-relationship-tables.ttl give
 the model.
 Generated from Appendix B (inline style).'''@en ;
     dcterms:created               "2026-04-19"^^xsd:date ;
-    dcterms:modified              "2026-10-14"^^xsd:date ;
+    dcterms:modified              "2026-11-19"^^xsd:date ;
     dcterms:publisher                  "Linked.Archi"@en, <https://linked.archi> ;
     bibo:status                   "draft" ;
     dcterms:requires              <https://meta.linked.archi/archimate4/relationship-tables#> ;
@@ -148,12 +150,12 @@ Generated from Appendix B (inline style).'''@en ;
             $this ?p ?o .
             # None yet: no qualified relationship for it, the modeller's or a derivation's, but a potential one not confirmed.
             FILTER NOT EXISTS { ?_existing arch:source $this ; arch:target ?o ; rdf:type/arch:unqualifiedForm ?p . FILTER NOT EXISTS { ?_existing :derivationCertainty :Potential . FILTER NOT EXISTS { $this ?_leads ?_existing } } }
-            # Its class, and an IRI in the model's namespace.
+            # Its class, and an IRI in the model's namespace: relationship/{digest} of the triple (DD-41).
             ?_class arch:unqualifiedForm ?p ; rdfs:subClassOf+ arch:QualifiedRelationship .
             FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?p }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(IRI(CONCAT(?_base, "relationship-", SHA1(CONCAT(STR($this), " ", STR(?p), " ", STR(?o))))) AS ?_resource)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT(STR($this), " ", STR(?p), " ", STR(?o))), 1, 20))) AS ?_resource)
         }
     """ ;
 .
@@ -204,15 +206,14 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER NOT EXISTS { $this am4:specializes ?c }
             # Appendix B.4 is not applied to specialization: its restrictions, read literally, would stop one passive structure element specializing another, which the relationship tables permit.
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm am4:specializes ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm am4:specializes } }
             OPTIONAL { ?_qualified arch:unqualifiedForm am4:specializes ; rdfs:range ?_class }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("DR1", " ", STR($this), " ", STR(am4:specializes), " ", STR(?b), " ", STR(?b), " ", STR(am4:specializes), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("DR1", " ", STR($this), " ", STR(am4:specializes), " ", STR(?b), " ", STR(?b), " ", STR(am4:specializes), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -288,15 +289,14 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?u ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?u } }
             OPTIONAL { ?_qualified arch:unqualifiedForm ?u ; rdfs:range ?_class }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("DR2", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("DR2", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -371,15 +371,14 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?t ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?t } }
             OPTIONAL { ?_qualified arch:unqualifiedForm ?t ; rdfs:range ?_class }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("DR3", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("DR3", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -454,15 +453,14 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?t ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?t } }
             OPTIONAL { ?_qualified arch:unqualifiedForm ?t ; rdfs:range ?_class }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("DR4", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?c), " ", STR(?t), " ", STR(?b))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("DR4", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?c), " ", STR(?t), " ", STR(?b))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -537,15 +535,14 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?t ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?t } }
             OPTIONAL { ?_qualified arch:unqualifiedForm ?t ; rdfs:range ?_class }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("DR5", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("DR5", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -619,15 +616,14 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm am4:flowsTo ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm am4:flowsTo } }
             OPTIONAL { ?_qualified arch:unqualifiedForm am4:flowsTo ; rdfs:range ?_class }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("DR6", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?c), " ", STR(am4:flowsTo), " ", STR(?b))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("DR6", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?c), " ", STR(am4:flowsTo), " ", STR(?b))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -701,15 +697,14 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm am4:triggers ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm am4:triggers } }
             OPTIONAL { ?_qualified arch:unqualifiedForm am4:triggers ; rdfs:range ?_class }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("DR7", " ", STR($this), " ", STR(am4:triggers), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("DR7", " ", STR($this), " ", STR(am4:triggers), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -782,15 +777,14 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm am4:triggers ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm am4:triggers } }
             OPTIONAL { ?_qualified arch:unqualifiedForm am4:triggers ; rdfs:range ?_class }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("DR8", " ", STR($this), " ", STR(am4:triggers), " ", STR(?b), " ", STR(?b), " ", STR(am4:triggers), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("DR8", " ", STR($this), " ", STR(am4:triggers), " ", STR(?b), " ", STR(?b), " ", STR(am4:triggers), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -870,14 +864,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?t ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?t } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR1", " ", STR($this), " ", STR(am4:specializes), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR1", " ", STR($this), " ", STR(am4:specializes), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -952,14 +945,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?t ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?t } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR2", " ", STR($this), " ", STR(am4:specializes), " ", STR(?b), " ", STR(?c), " ", STR(?t), " ", STR(?b))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR2", " ", STR($this), " ", STR(am4:specializes), " ", STR(?b), " ", STR(?c), " ", STR(?t), " ", STR(?b))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -1034,14 +1026,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?t ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?t } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR3", " ", STR($this), " ", STR(am4:specializes), " ", STR(?b), " ", STR($this), " ", STR(?t), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR3", " ", STR($this), " ", STR(am4:specializes), " ", STR(?b), " ", STR($this), " ", STR(?t), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -1116,14 +1107,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?t ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?t } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR4", " ", STR($this), " ", STR(am4:specializes), " ", STR(?b), " ", STR(?c), " ", STR(?t), " ", STR($this))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR4", " ", STR($this), " ", STR(am4:specializes), " ", STR(?b), " ", STR(?c), " ", STR(?t), " ", STR($this))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -1199,14 +1189,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?t ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?t } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR5", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?c), " ", STR(?t), " ", STR($this))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR5", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?c), " ", STR(?t), " ", STR($this))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -1282,14 +1271,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?t ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?t } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR6", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR($this), " ", STR(?t), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR6", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR($this), " ", STR(?t), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -1366,14 +1354,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?u ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?u } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR7", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR7", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -1448,14 +1435,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm am4:flowsTo ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm am4:flowsTo } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR8", " ", STR($this), " ", STR(am4:flowsTo), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR8", " ", STR($this), " ", STR(am4:flowsTo), " ", STR(?b), " ", STR(?b), " ", STR(?t), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -1531,14 +1517,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?t ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?t } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR9", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR($this), " ", STR(?t), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR9", " ", STR($this), " ", STR(?s), " ", STR(?b), " ", STR($this), " ", STR(?t), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -1612,14 +1597,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm am4:flowsTo ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm am4:flowsTo } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR10", " ", STR($this), " ", STR(am4:flowsTo), " ", STR(?b), " ", STR(?b), " ", STR(am4:flowsTo), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR10", " ", STR($this), " ", STR(am4:flowsTo), " ", STR(?b), " ", STR(?b), " ", STR(am4:flowsTo), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -1694,14 +1678,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm am4:triggers ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm am4:triggers } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR11", " ", STR($this), " ", STR(am4:triggers), " ", STR(?b), " ", STR(?c), " ", STR(?t), " ", STR(?b))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR11", " ", STR($this), " ", STR(am4:triggers), " ", STR(?b), " ", STR(?c), " ", STR(?t), " ", STR(?b))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .
@@ -1776,14 +1759,13 @@ Generated from Appendix B (inline style).'''@en ;
             FILTER(!(BOUND(?_through) && ?_from != "J" && ?_through != "J" && ?_to != "J" && ?_through != ?_from && ?_through != ?_to && !(?_from = "I" && ?_through = "C" && ?_to IN ("M", "S"))))
             FILTER(!(BOUND(?_viaGroups) && ?_from = "I" && ?_to IN ("M", "S") && ?_viaGroups))
             # The derivation's resource: the relationship's class, and an IRI in the model's namespace;
-            # its derivation activity's, and the association naming the rule as its plan, from the same key.
+            # its derivation activity, and the association naming the rule as its plan, are parts of it.
             OPTIONAL { ?_class arch:unqualifiedForm ?t ; rdfs:subClassOf+ arch:QualifiedRelationship . FILTER NOT EXISTS { ?_class rdfs:subClassOf+ ?_general . ?_general arch:unqualifiedForm ?t } }
             OPTIONAL { SELECT (IF(COUNT(DISTINCT ?_namespace) = 1, SAMPLE(?_namespace), "urn:linked-archi:") AS ?_modelNamespace) WHERE { ?_model a arch:Model ; vann:preferredNamespaceUri ?_namespace } }
             BIND(COALESCE(STR(?_modelNamespace), "urn:linked-archi:") AS ?_base)
-            BIND(SHA1(CONCAT("PDR12", " ", STR($this), " ", STR(am4:aggregates), " ", STR(?a), " ", STR($this), " ", STR(?t), " ", STR(?c))) AS ?_key)
-            BIND(IRI(CONCAT(?_base, "derivation-", ?_key)) AS ?_resource)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key)) AS ?_activity)
-            BIND(IRI(CONCAT(?_base, "derivation-activity-", ?_key, "-association")) AS ?_association)
+            BIND(IRI(CONCAT(?_base, "relationship/", SUBSTR(SHA256(CONCAT("PDR12", " ", STR($this), " ", STR(am4:aggregates), " ", STR(?a), " ", STR($this), " ", STR(?t), " ", STR(?c))), 1, 20))) AS ?_resource)
+            BIND(IRI(CONCAT(STR(?_resource), "/activity")) AS ?_activity)
+            BIND(IRI(CONCAT(STR(?_activity), "/association")) AS ?_association)
         }
     """ ;
 .

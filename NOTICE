@@ -44,6 +44,11 @@ vendor/meta.linked.archi/
   covered by the Creative Commons licenses declared in these files or by the
   Apache License of this repository.
 
+  The C4 ontologies in this directory (ttl/c4_*.ttl) are derived from the C4
+  model by Simon Brown, https://c4model.com/, whose website is licensed under
+  Creative Commons Attribution 4.0 (CC BY 4.0). They are not official
+  c4model.com documents.
+
   ttl/backstage_onto.ttl and ttl/backstage_metamodel.ttl quote Backstage
   documentation, Copyright The Backstage Authors, licensed under the Apache
   License, Version 2.0.

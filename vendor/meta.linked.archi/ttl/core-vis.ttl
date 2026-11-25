@@ -24,13 +24,21 @@ Provides vocabulary for diagram interchange (nodes, links, bounds) and visual st
 (colors, fonts, shapes, icons). Used both at the instance level (diagram elements) and
 at the type level (default notation for model concepts via NotationSet).'''@en ;
     dcterms:issued       "2019-03-17"^^xsd:date ;
-    dcterms:modified     "2026-11-09"^^xsd:date ;
+    dcterms:modified     "2026-11-20"^^xsd:date ;
     dcterms:publisher    <https://linked.archi> ;
     dcterms:publisher    "Linked.Archi"@en ;
     dcterms:title        "Core Linked.Archi Ontology for Diagrams and Visual Notation"@en ;
-    owl:versionInfo "0.8"@en ;
+    owl:versionInfo "0.9"@en ;
     rdfs:seeAlso    <https://meta.linked.archi/core-vis-shapes#> ;
-    skos:historyNote '''0.8: A model element's picture for the presentation context shown (core's
+    skos:historyNote '''0.9: A diagram may hold a reference to another view. arch-vis:ViewReferenceNode is
+the appearance of a view on another diagram, as an ArchNode is an element's: a node that opens the view
+its arch-vis:referencesView names, such as an index view's entry for each view it lists, or the way from
+an element's box to the view that details it. The ArchiMate exchange format writes one as a Label node
+with a viewRef. It is not a LabelNode, which stands for nothing:
+it stands for a view. arch-vis:referencesView pairs with it as arch-vis:archElement does with ArchNode,
+its rdfs:domain the class, and functional. It is not arch-vis:view, the view a diagram element is drawn
+in.
+0.8: A model element's picture for the presentation context shown (core's
 arch:prefVisNotation, arch:altVisNotation) is drawn where its diagram element is drawn as a box too —
 arch-vis:ShapeWithBadge or arch-vis:ShapeOnly — inside it, at the diagram element's
 arch-vis:imagePosition, unless its own style gives it a picture of its own (arch-vis:image) or an icon
@@ -140,7 +148,8 @@ places that element's text apart from it — a relationship's name moved off the
 and the text is the name of what that element draws, unless the LabelNode gives its own as
 skos:prefLabel. Pointed at by none, it is free-standing text: a note, its text its skos:prefLabel,
 language-tagged, its colours its arch-vis:style's. The ArchiMate exchange format's Label node is
-one. Either way it stands for no model element and carries no arch-vis:archElement.'''@en ;
+one. Either way it stands for no model element and carries no arch-vis:archElement. A Label node
+with a viewRef is not one: it stands for the view it opens, an arch-vis:ViewReferenceNode.'''@en ;
 .
 
 arch-vis:ArchNode
@@ -150,6 +159,19 @@ arch-vis:ArchNode
     rdfs:comment    '''The appearance of a model element on a diagram: its arch-vis:archElement names
 the element. An element may be drawn by more than one ArchNode in one view — placed again to keep
 lines short — each a node of its own, moved, nested and removed on its own.'''@en ;
+.
+
+arch-vis:ViewReferenceNode
+    a               owl:Class ;
+    rdfs:subClassOf arch-vis:Node ;
+    rdfs:label      "ViewReferenceNode"@en ;
+    rdfs:comment    '''The appearance of a view on another diagram, as an ArchNode is an element's: a node
+that opens the view its arch-vis:referencesView names, exactly one. An index view holds one for each
+view it lists; an element's box may hold one for the view that details it, drawn inside it
+(arch-vis:inNode). Its text is its skos:prefLabel, language-tagged, its colours its arch-vis:style's.
+It is not a LabelNode: a note stands for nothing, and this stands for a view. It carries no
+arch-vis:archElement, a view being no arch:Element. The ArchiMate exchange format writes one as a Label
+node with a viewRef.'''@en ;
 .
 
 arch-vis:Link
@@ -303,6 +325,19 @@ arch-vis:archRelationship
 Absent, the Link stands for no relationship: a line drawn on the diagram only.'''@en ;
     rdfs:domain  arch-vis:Link ;
     rdfs:range   arch:QualifiedRelationship ;
+.
+
+arch-vis:referencesView
+    a            owl:ObjectProperty,
+                 owl:FunctionalProperty ;
+    rdfs:label   "referencesView"@en ;
+    rdfs:comment '''The view a ViewReferenceNode stands for and opens, as arch-vis:archElement names the
+element an ArchNode stands for. Not the view the node is drawn in, which is its arch-vis:view. The
+ArchiMate exchange format allows a viewRef, a drill-down, on any node or connection; only a Label
+node's makes a ViewReferenceNode, and a drill-down from an element's box or from a line is not this
+property's.'''@en ;
+    rdfs:domain  arch-vis:ViewReferenceNode ;
+    rdfs:range   arch:View ;
 .
 
 arch-vis:source

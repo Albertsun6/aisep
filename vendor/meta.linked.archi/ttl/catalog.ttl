@@ -14,7 +14,7 @@
   dcterms:language <http://id.loc.gov/vocabulary/iso639-1/en>;
   dcterms:license <https://creativecommons.org/licenses/by/4.0/>;
   dcterms:issued "2024-06-01"^^xsd:date;
-  dcterms:modified "2026-11-17"^^xsd:date;
+  dcterms:modified "2026-11-22"^^xsd:date;
   dcterms:publisher <https://linked.archi>;
   foaf:homepage <https://meta.linked.archi/>;
   dcat:themeTaxonomy <https://meta.linked.archi/catalog#themes>;
@@ -74,11 +74,12 @@
     <https://meta.linked.archi/c4/structurizr>, <https://meta.linked.archi/c4/structurizr-shapes>,
     <https://meta.linked.archi/c4/tax>, <https://meta.linked.archi/c4/viewpoints>, <https://meta.linked.archi/cloud-services/onto>,
     <https://meta.linked.archi/cloud-services/tax>, <https://meta.linked.archi/core>,
-    <https://meta.linked.archi/core-deliverable-templates>, <https://meta.linked.archi/core-questions>,
-    <https://meta.linked.archi/core-shapes>, <https://meta.linked.archi/core-viewpoints>,
-    <https://meta.linked.archi/core-vis>, <https://meta.linked.archi/core-vis-shapes>,
-    <https://meta.linked.archi/dodaf/metamodel>, <https://meta.linked.archi/dodaf/onto>,
-    <https://meta.linked.archi/dodaf/shapes>, <https://meta.linked.archi/dodaf/tax>, <https://meta.linked.archi/dodaf/viewpoints>,
+    <https://meta.linked.archi/core-deliverable-templates>, <https://meta.linked.archi/core-notation>,
+    <https://meta.linked.archi/core-questions>, <https://meta.linked.archi/core-shapes>,
+    <https://meta.linked.archi/core-viewpoints>, <https://meta.linked.archi/core-vis>,
+    <https://meta.linked.archi/core-vis-shapes>, <https://meta.linked.archi/dodaf/metamodel>,
+    <https://meta.linked.archi/dodaf/onto>, <https://meta.linked.archi/dodaf/shapes>,
+    <https://meta.linked.archi/dodaf/tax>, <https://meta.linked.archi/dodaf/viewpoints>,
     <https://meta.linked.archi/ea-service/metamodel>, <https://meta.linked.archi/ea-service/onto>,
     <https://meta.linked.archi/ea-service/reference-data>, <https://meta.linked.archi/ea-service/shapes>,
     <https://meta.linked.archi/ea-service/tax>, <https://meta.linked.archi/eaonapage/deliverable-templates>,
@@ -607,8 +608,8 @@ iterative decision processes."""@en;
   dcterms:conformsTo owl:Ontology;
   vann:preferredNamespaceUri "https://meta.linked.archi/arch-decision#";
   vann:preferredNamespacePrefix "ad";
-  owl:versionInfo "0.0.9";
-  dcterms:modified "2026-11-17"^^xsd:date;
+  owl:versionInfo "0.0.10";
+  dcterms:modified "2026-11-22"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -939,9 +940,11 @@ its run: an activity of its own, with its agent and when it ran, of which each d
 produced is part (dcterms:isPartOf). What the modeller stated is told from what a rule derived by the
 graph, in a store (a derivation is kept in .../graph/derived), and by the resource. Before the rules run,
 :QualifyRelationships gives each relationship the model states only as a direct triple a resource of
-its own. The IRIs are in the
-model's namespace, a derivation's and its derivation activity's from its rule and premises; with no model
-loaded, or several, in urn:linked-archi:. The rules are SPARQL 1.2. A rule
+its own. The IRIs are in the model's namespace, in the Linked.Archi IRI layout (DD-41): a derivation is a
+relationship, relationship/{digest} of its rule and premises, with its derivation activity and the
+association as its parts, .../activity and .../activity/association; a qualified direct triple is
+relationship/{digest} of the triple. A digest is the first 20 hex characters of the SHA-256 of what it is
+of, joined by spaces. With no model loaded, or several, in urn:linked-archi:. The rules are SPARQL 1.2. A rule
 derives only from relationships whose triple is asserted, in the model or by a valid derivation
 — one that is only :Potential is for the modeller to confirm, as is any other proposition — so the rules give the closure of valid
 derivations and one layer of potential ones; a valid derivation of a relationship that so far is only
@@ -953,7 +956,7 @@ Generated from Appendix B (inline style)."""@en;
   vann:preferredNamespaceUri "https://meta.linked.archi/archimate3/derivation#";
   vann:preferredNamespacePrefix "amderiv";
   owl:versionInfo "3.2";
-  dcterms:modified "2026-10-16"^^xsd:date;
+  dcterms:modified "2026-11-19"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -1065,7 +1068,7 @@ official Open Group document."""@en;
   vann:preferredNamespaceUri "https://meta.linked.archi/archimate3/onto#";
   vann:preferredNamespacePrefix "am";
   owl:versionInfo "3.2";
-  dcterms:modified "2026-10-10"^^xsd:date;
+  dcterms:modified "2026-11-22"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -1553,9 +1556,11 @@ its run: an activity of its own, with its agent and when it ran, of which each d
 produced is part (dcterms:isPartOf). What the modeller stated is told from what a rule derived by the
 graph, in a store (a derivation is kept in .../graph/derived), and by the resource. Before the rules run,
 :QualifyRelationships gives each relationship the model states only as a direct triple a resource of
-its own. The IRIs are in the
-model's namespace, a derivation's and its derivation activity's from its rule and premises; with no model
-loaded, or several, in urn:linked-archi:. The rules are SPARQL 1.2. A rule
+its own. The IRIs are in the model's namespace, in the Linked.Archi IRI layout (DD-41): a derivation is a
+relationship, relationship/{digest} of its rule and premises, with its derivation activity and the
+association as its parts, .../activity and .../activity/association; a qualified direct triple is
+relationship/{digest} of the triple. A digest is the first 20 hex characters of the SHA-256 of what it is
+of, joined by spaces. With no model loaded, or several, in urn:linked-archi:. The rules are SPARQL 1.2. A rule
 derives only from relationships whose triple is asserted, in the model or by a valid derivation
 — one that is only :Potential is for the modeller to confirm, as is any other proposition — so the rules give the closure of valid
 derivations and one layer of potential ones; a valid derivation of a relationship that so far is only
@@ -1567,7 +1572,7 @@ Generated from Appendix B (inline style)."""@en;
   vann:preferredNamespaceUri "https://meta.linked.archi/archimate4/derivation#";
   vann:preferredNamespacePrefix "am4deriv";
   owl:versionInfo "4.0";
-  dcterms:modified "2026-10-14"^^xsd:date;
+  dcterms:modified "2026-11-19"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -1682,7 +1687,7 @@ document."""@en;
   vann:preferredNamespaceUri "https://meta.linked.archi/archimate4/onto#";
   vann:preferredNamespacePrefix "am4";
   owl:versionInfo "4.0";
-  dcterms:modified "2026-10-10"^^xsd:date;
+  dcterms:modified "2026-11-22"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -2155,8 +2160,8 @@ correspondence is asserted in the catalog itself, through the Linked.Archi
 catalog index (skos:exactMatch and friends against a shared id namespace).
 
 Not mapped, deliberately: bs:Template and bs:Scaffolding (they describe how
-entities are created, not the architecture), bs:TechDocsDelegation (documentation
-ownership), and the enumerations for lifecycle, component type and API type,
+entities are created, not the architecture), bs:Location (where the catalog reads
+descriptors from), bs:TechDocsDelegation (documentation ownership), and the enumerations for lifecycle, component type and API type,
 which are reference data rather than concepts."""@en;
   dcterms:conformsTo owl:Ontology;
   vann:preferredNamespaceUri "https://meta.linked.archi/backstage/crossmappings#";
@@ -2273,8 +2278,8 @@ This is not an official Spotify document."""@en;
   dcterms:conformsTo owl:Ontology;
   vann:preferredNamespaceUri "https://meta.linked.archi/backstage/onto#";
   vann:preferredNamespacePrefix "bs";
-  owl:versionInfo "0.5.0";
-  dcterms:modified "2026-08-24"^^xsd:date;
+  owl:versionInfo "0.6.0";
+  dcterms:modified "2026-11-22"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -2344,9 +2349,10 @@ This is not an official Spotify document."""@en;
 <https://meta.linked.archi/backstage/shapes> a dcat:Dataset;
   dcterms:title "Linked.Archi Backstage SHACL Shapes"@en;
   dcterms:description """SHACL shapes for validating Backstage catalog data. Imports
-core-shapes for base QualifiedRelationship validation. Adds Backstage-specific domain/range
-constraints per relationship type, the Backstage naming rule, and the value-set constraints for the
-lifecycle, API visibility and status level vocabularies.
+core-shapes for base QualifiedRelationship validation. Adds, per relationship type, the pairs of kinds
+it relates, listed as ArchiMate's relationship shapes list theirs, and per kind the targets its direct
+triples may reach; the Backstage naming rule; and the value-set constraints for the lifecycle, API
+visibility, status level and location presence vocabularies.
 
 The value-set shapes are load-bearing rather than belt-and-braces: the ontology declares those
 vocabularies as DD-23 named individuals with no owl:oneOf, so nothing constrains membership if these
@@ -2421,8 +2427,8 @@ lifecycle portfolio. Each viewpoint maps to a common Backstage use case."""@en;
 types (Node, SpecialNode, GroupNode) and three qualified relationship types (Association,
 Aggregation, Connection), built directly on the core ontology. It is deliberately small, yet
 enough for examples of meaningful restrictions and inference rules. Connection is the generic
-relationship: it relates any two elements, of any language, so Basic added beside another
-language lets a modeller relate what that language has no relationship for. The manifest
+relationship among Basic's elements: it relates any two of them. Between a Basic element and an
+element of another language, the core's relationship types are used. The manifest
 https://meta.linked.archi/basic/metamodel#Basic ties it to its taxonomy, its presentation
 contexts and its two notation sets. Version 0.1.0 is the initial release of these element and
 relationship patterns."""@en;
@@ -3472,8 +3478,10 @@ generation and diagram rendering."""@en;
 <https://meta.linked.archi/c4/shapes> a dcat:Dataset;
   dcterms:title "Linked.Archi C4 Model SHACL Shapes"@en;
   dcterms:description """SHACL shapes for validating C4 model data. Covers the abstract C4 model
-relationships (Using, ContainerContainment, ComponentContainment). For Structurizr deployment
-shapes, see structurizr-shapes.ttl."""@en;
+relationships (Using, ContainerContainment, ComponentContainment) as ArchiMate's relationship shapes do:
+for each relationship type the pairs of element types it relates, and for each element type the targets
+its direct triples may reach. Using also relates the Structurizr extension's deployment and
+infrastructure nodes. For Structurizr deployment shapes, see structurizr-shapes.ttl."""@en;
   dcterms:conformsTo <http://www.w3.org/ns/shacl#>;
   vann:preferredNamespaceUri "https://meta.linked.archi/c4/shapes#";
   vann:preferredNamespacePrefix "c4sh";
@@ -3535,8 +3543,10 @@ via the c4: namespace."""@en;
 
 <https://meta.linked.archi/c4/structurizr-shapes> a dcat:Dataset;
   dcterms:title "Linked.Archi Structurizr SHACL Shapes"@en;
-  dcterms:description """SHACL shapes for validating Structurizr deployment model data.
-Imports c4-shapes for base C4 model validation."""@en;
+  dcterms:description """SHACL shapes for validating Structurizr deployment model data, as
+ArchiMate's relationship shapes do: the pairs the Deployment relationship relates, and the targets each
+element type's direct triples may reach. Imports c4-shapes for base C4 model validation, whose Using shape
+covers the deployment and infrastructure nodes too."""@en;
   dcterms:conformsTo <http://www.w3.org/ns/shacl#>;
   vann:preferredNamespaceUri "https://meta.linked.archi/c4/structurizr-shapes#";
   vann:preferredNamespacePrefix "structsh";
@@ -3672,8 +3682,8 @@ Trademarked names (UML, BPMN, ArchiMate, TOGAF, etc.) referenced herein are prop
   dcterms:conformsTo owl:Ontology;
   vann:preferredNamespaceUri "https://meta.linked.archi/core#";
   vann:preferredNamespacePrefix "arch";
-  owl:versionInfo "0.6.0";
-  dcterms:modified "2026-11-16"^^xsd:date;
+  owl:versionInfo "0.7.0";
+  dcterms:modified "2026-11-22"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -3720,6 +3730,40 @@ are defined with their language or framework."""@en;
       dcat:mediaType <http://www.iana.org/assignments/media-types/text/turtle>
     ] .
 
+<https://meta.linked.archi/core-notation> a dcat:Dataset;
+  dcterms:title "Linked.Archi Core Visual Notation"@en;
+  dcterms:description """The visual notation of the core's own relationship types, which relate any
+two model concepts that no loaded language relates (DD-40). No metamodel manifest names it: it applies
+whatever the language, so a tool loads it with the core, as it loads core-shapes, and consults its notation
+set after the default sets of every loaded metamodel — the last fallback layer of the lookup in the Visual
+Notation Guide. A language's own descriptor for a core class therefore wins over this one.
+
+It describes each of them, so that every tool draws them alike whatever its own defaults:
+arch:Association as a solid line with nothing at either end, as it has no direction; arch:HasPart and
+arch:Refines as a solid line with an open arrowhead at the target — the part, the concept refined; and
+arch:DependsOn as a dashed line with an open arrowhead at the concept depended on, so that it is not taken
+for either (DD-40). Nesting may draw arch:HasPart and arch:Refines instead of a line: the part inside the
+whole (arch-vis:nestedEnd arch-vis:TargetEnd), and the refining concept inside the refined one
+(arch-vis:SourceEnd) — a view nested in the box of the element it details. An editor that nests one concept
+in another can then offer to record either."""@en;
+  dcterms:conformsTo <https://meta.linked.archi/core-vis#NotationSet>;
+  vann:preferredNamespaceUri "https://meta.linked.archi/core-notation#";
+  vann:preferredNamespacePrefix "archnot";
+  owl:versionInfo "0.1.0";
+  dcterms:modified "2026-11-22"^^xsd:date;
+  adms:status <http://purl.org/adms/status/UnderDevelopment>;
+  dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
+  dcterms:creator [ a foaf:Person;
+      foaf:name "Kalin Maldzhanski"
+    ];
+  dcat:theme <https://meta.linked.archi/catalog#core>;
+  dcat:landingPage <https://meta.linked.archi/core-notation/>;
+  dcat:distribution [ a dcat:Distribution;
+      dcat:accessURL <https://meta.linked.archi/core-notation/core-notation.ttl>;
+      dcat:downloadURL <https://meta.linked.archi/core-notation/core-notation.ttl>;
+      dcat:mediaType <http://www.iana.org/assignments/media-types/text/turtle>
+    ] .
+
 <https://meta.linked.archi/core-questions> a dcat:Dataset;
   dcterms:title "Linked.Archi Core Questions"@en;
   dcterms:description """The questions any Linked.Archi model answers, whatever its modelling language:
@@ -3729,7 +3773,7 @@ is. Each is executable SPARQL bound to the concerns it informs (see arch:ModelQu
   vann:preferredNamespaceUri "https://meta.linked.archi/core-questions#";
   vann:preferredNamespacePrefix "archq";
   owl:versionInfo "0.1.0";
-  dcterms:modified "2026-10-27"^^xsd:date;
+  dcterms:modified "2026-11-22"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -3809,8 +3853,8 @@ at the type level (default notation for model concepts via NotationSet)."""@en;
   dcterms:conformsTo owl:Ontology;
   vann:preferredNamespaceUri "https://meta.linked.archi/core-vis#";
   vann:preferredNamespacePrefix "arch-vis";
-  owl:versionInfo "0.8";
-  dcterms:modified "2026-11-09"^^xsd:date;
+  owl:versionInfo "0.9";
+  dcterms:modified "2026-11-20"^^xsd:date;
   dcterms:license <http://creativecommons.org/licenses/by-sa/3.0/>;
   dcterms:creator [ a foaf:Person;
       foaf:name "Kalin Maldzhanski"
@@ -3839,7 +3883,7 @@ at the type level (default notation for model concepts via NotationSet)."""@en;
   dcterms:title "Linked.Archi Core Visual Notation SHACL Shapes"@en;
   dcterms:description """SHACL shapes for the Linked.Archi diagram and visual notation
 layer (core-vis). Constrains the diagram interchange classes — ArchNode, LabelNode,
-ContainerNode, Link, Point, PointList — and the type-level notation classes NotationSet,
+ViewReferenceNode, ContainerNode, Link, Point, PointList — and the type-level notation classes NotationSet,
 VisualNotation and Style.
 
 Until 0.1.0 the diagram layer had no shapes at all: a validate run loaded the notation's
@@ -3852,8 +3896,8 @@ must belong to exactly one view); the remainder is cardinality and datatype hygi
   dcterms:conformsTo <http://www.w3.org/ns/shacl#>;
   vann:preferredNamespaceUri "https://meta.linked.archi/core-vis-shapes#";
   vann:preferredNamespacePrefix "archvissh";
-  owl:versionInfo "0.4.0";
-  dcterms:modified "2026-11-09"^^xsd:date;
+  owl:versionInfo "0.5.0";
+  dcterms:modified "2026-11-20"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -5545,8 +5589,8 @@ official SAP document."""@en;
   dcterms:conformsTo owl:Ontology;
   vann:preferredNamespaceUri "https://meta.linked.archi/leanix/onto#";
   vann:preferredNamespacePrefix "lmm";
-  owl:versionInfo "4.2.0";
-  dcterms:modified "2026-11-16"^^xsd:date;
+  owl:versionInfo "4.3.0";
+  dcterms:modified "2026-11-22"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -6567,7 +6611,7 @@ core ontology conventions. This is not an official Open Group document."""@en;
   vann:preferredNamespaceUri "https://meta.linked.archi/togaf/onto#";
   vann:preferredNamespacePrefix "togaf";
   owl:versionInfo "10.0";
-  dcterms:modified "2026-05-11"^^xsd:date;
+  dcterms:modified "2026-11-22"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -6677,7 +6721,7 @@ conventions. This is not an official Open Group document."""@en;
   vann:preferredNamespaceUri "https://meta.linked.archi/togaf9/onto#";
   vann:preferredNamespacePrefix "togaf9";
   owl:versionInfo "9.2";
-  dcterms:modified "2026-04-29"^^xsd:date;
+  dcterms:modified "2026-11-22"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;
@@ -6997,8 +7041,8 @@ specification for semantic architecture modeling."""@en;
   dcterms:conformsTo owl:Ontology;
   vann:preferredNamespaceUri "https://meta.linked.archi/uml/onto#";
   vann:preferredNamespacePrefix "uml";
-  owl:versionInfo "0.3.0";
-  dcterms:modified "2026-08-13"^^xsd:date;
+  owl:versionInfo "0.4.0";
+  dcterms:modified "2026-11-22"^^xsd:date;
   adms:status <http://purl.org/adms/status/UnderDevelopment>;
   dcterms:license <http://creativecommons.org/licenses/by/4.0/>;
   dcterms:creator [ a foaf:Person;

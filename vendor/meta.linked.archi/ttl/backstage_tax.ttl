@@ -134,6 +134,32 @@ this sentence.'''@en ;
 
 
 #################################################################
+# Elements — Catalog Configuration Entities
+#################################################################
+
+:CatalogConfigurationEntity
+    dcterms:source <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    rdfs:seeAlso <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-location> ;
+    a skos:Concept ; skos:broader :BackstageElement ;
+    skos:prefLabel "Catalog Configuration Entity"@en ;
+    skos:definition "Entities that configure the catalog itself rather than describe software or the organization."@en ;
+    skos:scopeNote  '''A group of its own because bs:Location belongs with neither of the others: it is neither a
+software artifact nor a part of the organization, but where the catalog reads descriptors from. Keeping it apart
+lets a palette or a view leave the catalog's configuration out of an architecture drawing by one concept.'''@en ;
+    skos:inScheme <https://meta.linked.archi/backstage/tax#> ;
+    skos:narrower bs:Location ;
+.
+
+:LocationConcept
+    dcterms:source <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    a skos:Concept ; skos:prefLabel "Location"@en ;
+    skos:definition "A marker that references other places to look for catalog data."@en ;
+    skos:scopeNote "Sourced to the descriptor format rather than the system model, which does not cover this kind."@en ;
+    skos:broader :CatalogConfigurationEntity ; skos:inScheme <https://meta.linked.archi/backstage/tax#> ;
+    rdfs:seeAlso <https://backstage.io/docs/next/features/software-catalog/descriptor-format#kind-location> , <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Location.v1alpha1.schema.json> , bs:Location .
+
+
+#################################################################
 # Relationships
 #################################################################
 

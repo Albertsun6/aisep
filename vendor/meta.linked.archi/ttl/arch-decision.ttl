@@ -39,13 +39,16 @@ iterative decision processes.'''@en ;
                                   <https://github.com/adr/madr> ;
     dcterms:created               "2020-07-27"^^xsd:date ;
     dcterms:issued                "2020-07-27"^^xsd:date ;
-    dcterms:modified              "2026-11-17"^^xsd:date ;
+    dcterms:modified              "2026-11-22"^^xsd:date ;
     dcterms:publisher                  <https://linked.archi>,
                                   "Linked.Archi"@en ;
     bibo:status                   "draft" ;
-    owl:versionIRI                <https://meta.linked.archi/arch-decision/0.0.9#> ;
-    owl:priorVersion              <https://meta.linked.archi/arch-decision/0.0.8#> ;
-    owl:versionInfo               "0.0.9"@en ;
+    owl:versionIRI                <https://meta.linked.archi/arch-decision/0.0.10#> ;
+    owl:priorVersion              <https://meta.linked.archi/arch-decision/0.0.9#> ;
+    owl:versionInfo               "0.0.10"@en ;
+    skos:changeNote               '''0.0.10 (2026-11-22): :dependsOn is a subproperty of the core's arch:dependsOn
+(core 0.7.0) as well as of :relatedDecision, so a question about dependencies follows a decision's
+prerequisites with the core's and every language's (DD-44).'''@en ;
     schema:citation               "Linked.Archi Architecture Decision Ontology" ;
     rdfs:seeAlso                  <http://dx.doi.org/10.1109/WICSA.2014.32>,
                                   <http://dx.doi.org/10.1007/978-3-540-87879-7_14>,
@@ -908,7 +911,7 @@ response satisfies the Quality Attribute Scenario.'''@en ;
 
 :dependsOn
     a                  owl:ObjectProperty ;
-    rdfs:subPropertyOf :relatedDecision ;
+    rdfs:subPropertyOf :relatedDecision, arch:dependsOn ;
     skos:prefLabel     "depends on"@en ;
     skos:definition    "Links a Decision to another Decision that it depends on or requires as a prerequisite."@en ;
     rdfs:domain        :Decision ;

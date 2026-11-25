@@ -286,8 +286,8 @@ Analogous to ArchiMate BusinessActor or ApplicationComponent depending on contex
     a                    owl:ObjectProperty ;
     skos:prefLabel       "Sequence Flow"@en ;
     skos:definition      "Shows the order of flow elements in a process."@en ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :Task, :SubProcess, :CallActivity, :Event, :Gateway ;
+    arch:rangeIncludes   :Task, :SubProcess, :CallActivity, :Event, :Gateway ;
 .
 
 :SequenceFlow
@@ -336,8 +336,9 @@ Analogous to ArchiMate BusinessActor or ApplicationComponent depending on contex
     a                    owl:ObjectProperty ;
     skos:prefLabel       "Data Association"@en ;
     skos:definition      "Moves data between data objects and activities."@en ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    skos:scopeNote       "Either way: into an activity from the data it reads, or out of it to the data it writes."@en ;
+    arch:domainIncludes  :Task, :SubProcess, :CallActivity, :DataObject, :DataStore ;
+    arch:rangeIncludes   :Task, :SubProcess, :CallActivity, :DataObject, :DataStore ;
 .
 
 :DataAssociation

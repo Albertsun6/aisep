@@ -110,6 +110,20 @@ service mesh proxy.'''@en ;
 
 
 #################################################################
+# Relationship Types — C4's Uses Between Deployment Elements
+#
+# A Structurizr deployment model relates its nodes as the C4 model relates its
+# elements: a load balancer uses a web server. C4's Uses names C4's elements;
+# these add the deployment and infrastructure nodes to both of its ends.
+#################################################################
+
+c4:uses
+    arch:domainIncludes  :DeploymentNode, :InfrastructureNode ;
+    arch:rangeIncludes   :DeploymentNode, :InfrastructureNode ;
+.
+
+
+#################################################################
 # Attribute Properties
 #################################################################
 

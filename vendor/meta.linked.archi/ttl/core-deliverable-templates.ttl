@@ -60,7 +60,7 @@ Language- and framework-specific templates (e.g., the ArchiMate Architecture Def
 are defined with their language or framework.'''@en ;
     dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
     dcterms:created               "2019-03-17"^^xsd:date ;
-    dcterms:modified              "2026-04-15"^^xsd:date ;
+    dcterms:modified              "2026-11-22"^^xsd:date ;
     dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
     bibo:status                   "draft" ;
     owl:versionInfo               "0.1.0"@en ;
@@ -207,10 +207,10 @@ decision-making.'''@en ;
 
 :CIA-S1 a arch:TemplateSection ; arch:sectionOrder 1 ;
     skos:prefLabel "1. Impact Analysis"@en ;
-    skos:definition "What is the element related to, and what reaches it within two steps — what is affected if it changes?"@en ;
+    skos:definition "What is the element related to, what depends on it, and what reaches it within two steps — what is affected if it changes?"@en ;
     arch:sectionViewpoint archvp:ImpactAnalysis ;
     arch:sectionAddressesConcern archvp:DependencyConcern, archvp:EvolutionConcern ;
-    arch:sectionAsks ( archq:neighbours archq:reaches-in-two-hops ) ;
+    arch:sectionAsks ( archq:neighbours archq:what-depends-on-it archq:reaches-in-two-hops ) ;
     arch:sectionResultKey "impact" .
 
 :CIA-S2 a arch:TemplateSection ; arch:sectionOrder 2 ;

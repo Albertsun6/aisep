@@ -17,7 +17,8 @@
 # ContainerNode that names nothing and holds the two ArchNodes
 # (arch-vis:inNode), a labelled edge (the case the arch-vis:label domain
 # used to forbid), a routed edge with waypoints, a note with a line to
-# what it is about (drawing only: no element, no relationship), and
+# what it is about (drawing only: no element, no relationship), a
+# reference to a second view drawn inside an element's box, and
 # type-level VisualNotations — one for a relationship nesting may draw.
 #
 # Used as the data graph of the `core-vis` validation profile in
@@ -211,6 +212,37 @@ arch-vis:Node.'''@en ;
         # Its text near the note, not at the middle of the line.
         arch-vis:labelAnchor arch-vis:AnchorSource ;
     ] ;
+.
+
+
+#################################################################
+# Diagram layer — a reference to another view
+#
+# The appearance of another view on this one, as an ArchNode is an
+# element's: here the view detailing the Payment Service, drawn inside
+# the service's box. A ViewReferenceNode, not a LabelNode: unlike the
+# note it stands for a model concept, the view it opens, and that view
+# is presented in this one. The detail view's arch:inView says so in
+# the model, where it survives without the diagram layer.
+#################################################################
+
+:PaymentDetailView
+    a                            arch:View ;
+    skos:prefLabel               "Payment Service in detail"@en ;
+    arch:viewConformsToViewpoint <https://meta.linked.archi/archimate3/viewpoints#ApplicationCooperationViewpoint> ;
+    arch:inView                  :PaymentFlowView ;
+.
+
+:PaymentDetailReference
+    a                       arch-vis:ViewReferenceNode ;
+    arch-vis:view           :PaymentFlowView ;
+    arch-vis:referencesView :PaymentDetailView ;
+    arch-vis:inNode         :PaymentServiceShape ;
+    skos:prefLabel          "Payment Service in detail"@en ;
+    arch-vis:bounds-x       "302.0"^^xsd:double ;
+    arch-vis:bounds-y       "100.0"^^xsd:double ;
+    arch-vis:bounds-w       "120.0"^^xsd:double ;
+    arch-vis:bounds-h       "24.0"^^xsd:double ;
 .
 
 

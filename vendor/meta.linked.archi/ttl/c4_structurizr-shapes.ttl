@@ -27,8 +27,10 @@
     vann:preferredNamespacePrefix "structsh" ;
     dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
     dcterms:title                      "Linked.Archi Structurizr SHACL Shapes"@en ;
-    dcterms:description                '''SHACL shapes for validating Structurizr deployment model data.
-Imports c4-shapes for base C4 model validation.'''@en ;
+    dcterms:description                '''SHACL shapes for validating Structurizr deployment model data, as
+ArchiMate's relationship shapes do: the pairs the Deployment relationship relates, and the targets each
+element type's direct triples may reach. Imports c4-shapes for base C4 model validation, whose Using shape
+covers the deployment and infrastructure nodes too.'''@en ;
     dcterms:created               "2019-03-17"^^xsd:date ;
     dcterms:modified              "2026-10-10"^^xsd:date ;
     dcterms:publisher                  "Linked.Archi"@en,
@@ -42,18 +44,130 @@ Imports c4-shapes for base C4 model validation.'''@en ;
 # Structurizr Deployment Shapes
 #################################################################
 
+# ── Deployment (qualified) — 1 valid pair ──
 :DeploymentShape
     a              sh:NodeShape ;
     sh:targetClass structurizr:Deployment ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class c4:Container ] ]
+            [ sh:property [ sh:path arch:target ; sh:class structurizr:DeploymentNode ] ]
+        ) ]
+    ) ;
+    sh:message "Deployment relationship has an invalid source/target combination: it runs from a C4 Container to a Structurizr DeploymentNode."@en ;
+.
+
+# ════════════════════════════════════════════════════════════════════
+# Unqualified shapes — one per source element class
+# Validates direct triples (e.g., ex:A structurizr:deployedOn ex:B)
+# against the same pairs as the qualified shapes: the deployment and
+# infrastructure nodes' c4:uses, and every element's deployedOn. The C4
+# elements' own c4:uses is c4-shapes'.
+# ════════════════════════════════════════════════════════════════════
+
+:DeploymentNodeUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass structurizr:DeploymentNode ;
     sh:property [
-        sh:path     arch:source ;
-        sh:class    c4:Container ;
-        sh:message  "Deployment source must be a C4 Container."@en ;
+        sh:path c4:uses ;
+        sh:message "DeploymentNode cannot use {$value} — permitted targets: Person, SoftwareSystem, Container, Component, DeploymentNode, InfrastructureNode."@en ;
+        sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+        ) ;
     ] ;
     sh:property [
-        sh:path     arch:target ;
-        sh:class    structurizr:DeploymentNode ;
-        sh:message  "Deployment target must be a Structurizr DeploymentNode."@en ;
+        sh:path c4:hasContainer ;
+        sh:maxCount 0 ;
+        sh:message "DeploymentNode cannot have container containment to anything — the C4 model permits it from a SoftwareSystem only."@en ;
+    ] ;
+    sh:property [
+        sh:path c4:hasComponent ;
+        sh:maxCount 0 ;
+        sh:message "DeploymentNode cannot have component containment to anything — the C4 model permits it from a Container only."@en ;
+    ] ;
+    sh:property [
+        sh:path structurizr:deployedOn ;
+        sh:maxCount 0 ;
+        sh:message "DeploymentNode cannot have deployment to anything — Structurizr permits it from a Container only."@en ;
+    ] ;
+.
+
+:InfrastructureNodeUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass structurizr:InfrastructureNode ;
+    sh:property [
+        sh:path c4:uses ;
+        sh:message "InfrastructureNode cannot use {$value} — permitted targets: Person, SoftwareSystem, Container, Component, DeploymentNode, InfrastructureNode."@en ;
+        sh:or (
+                [ sh:class c4:Person ]
+                [ sh:class c4:SoftwareSystem ]
+                [ sh:class c4:Container ]
+                [ sh:class c4:Component ]
+                [ sh:class structurizr:DeploymentNode ]
+                [ sh:class structurizr:InfrastructureNode ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path c4:hasContainer ;
+        sh:maxCount 0 ;
+        sh:message "InfrastructureNode cannot have container containment to anything — the C4 model permits it from a SoftwareSystem only."@en ;
+    ] ;
+    sh:property [
+        sh:path c4:hasComponent ;
+        sh:maxCount 0 ;
+        sh:message "InfrastructureNode cannot have component containment to anything — the C4 model permits it from a Container only."@en ;
+    ] ;
+    sh:property [
+        sh:path structurizr:deployedOn ;
+        sh:maxCount 0 ;
+        sh:message "InfrastructureNode cannot have deployment to anything — Structurizr permits it from a Container only."@en ;
+    ] ;
+.
+
+:PersonUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass c4:Person ;
+    sh:property [
+        sh:path structurizr:deployedOn ;
+        sh:maxCount 0 ;
+        sh:message "Person cannot have deployment to anything — Structurizr permits it from a Container only."@en ;
+    ] ;
+.
+
+:SoftwareSystemUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass c4:SoftwareSystem ;
+    sh:property [
+        sh:path structurizr:deployedOn ;
+        sh:maxCount 0 ;
+        sh:message "SoftwareSystem cannot have deployment to anything — Structurizr permits it from a Container only."@en ;
+    ] ;
+.
+
+:ContainerUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass c4:Container ;
+    sh:property [
+        sh:path structurizr:deployedOn ;
+        sh:message "Container cannot have deployment to {$value} — permitted targets: DeploymentNode."@en ;
+        sh:or (
+                [ sh:class structurizr:DeploymentNode ]
+        ) ;
+    ] ;
+.
+
+:ComponentUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass c4:Component ;
+    sh:property [
+        sh:path structurizr:deployedOn ;
+        sh:maxCount 0 ;
+        sh:message "Component cannot have deployment to anything — Structurizr permits it from a Container only."@en ;
     ] ;
 .
 

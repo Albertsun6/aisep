@@ -37,7 +37,7 @@ relationship pattern), and composite/connector concepts as RDF/OWL. Version 3.2 
 the ontology to current Linked.Archi conventions and RDF 1.2 rdf:reifies.'''@en ;
     dcterms:created               "2019-03-17"^^xsd:date ;
     dcterms:issued                "2019-03-17"^^xsd:date ;
-    dcterms:modified              "2026-10-10"^^xsd:date ;
+    dcterms:modified              "2026-11-22"^^xsd:date ;
     dcterms:publisher                  "Linked.Archi"@en,
                                   <https://linked.archi> ;
     bibo:status                   "draft" ;
@@ -56,7 +56,10 @@ qualified relationship classes (: namespace) and qualified properties. Replaced 
 with skos:prefLabel, arch:specURL with dcterms:source. Added RDF 1.2 rdf:reifies bridge in
 relationship examples. Updated license to CC-BY 4.0. Aligned all elements with
 archimate-tax ontology (:).'''@en ;
-    skos:changeNote               '''2026-10-10: the kinds of access are subclasses of Access — ReadAccess, WriteAccess and
+    skos:changeNote               '''2026-11-22: serves is a subproperty of the core's arch:dependencyOf (core 0.7.0):
+what an element serves depends on it (DD-44).
+
+2026-10-10: the kinds of access are subclasses of Access — ReadAccess, WriteAccess and
 ReadWriteAccess, an Access that is none of them being unspecified — and a directed association is a
 DirectedAssociation, so each has a notation of its own (DD-31). accessType is deprecated.'''@en ;
     rdfs:seeAlso                  <https://www.w3.org/TR/rdf12-concepts/> ;
@@ -1079,8 +1082,8 @@ be satisfied.'''@en ;
     skos:prefLabel       "Composed Of"@en ;
     skos:definition      '''Indicates that an element consists of one or more other elements.'''@en ;
     dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Relationships-and-Relationship-Connectors.html#sec-Composition-Relationship> ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
+    arch:rangeIncludes   :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
 .
 
 :Composition
@@ -1099,7 +1102,7 @@ elements. The contained element exists only within the context of the container.
     a                    owl:ObjectProperty ;
     rdfs:range           :Composition ;
     arch:unqualifiedForm :composedOf ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
     skos:prefLabel       "qualified Composition"@en ;
     skos:definition      '''Navigates from a source element to a Composition qualified relationship
 resource. Use this to reach the full relationship object with metadata, provenance, and
@@ -1117,8 +1120,8 @@ ex:qr-001 a am:Composition ;
     skos:prefLabel       "Aggregates"@en ;
     skos:definition      '''Indicates that an element combines one or more other elements.'''@en ;
     dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Relationships-and-Relationship-Connectors.html#sec-Aggregation-Relationship> ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
+    arch:rangeIncludes   :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
 .
 
 :Aggregation
@@ -1137,7 +1140,7 @@ Unlike composition, the aggregated element can exist independently.'''@en ;
     a                    owl:ObjectProperty ;
     rdfs:range           :Aggregation ;
     arch:unqualifiedForm :aggregates ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
     skos:prefLabel       "qualified Aggregation"@en ;
     skos:definition      '''Navigates from a source element to an Aggregation qualified relationship
 resource.'''@en ;
@@ -1156,8 +1159,8 @@ ex:qr-002 a am:Aggregation ;
 execution.'''@en ;
     skos:changeNote      "3.0: Directional notation introduced (arrow replaces black circle at 'to' end)."@en ;
     dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Relationships-and-Relationship-Connectors.html#sec-Assignment-Relationship> ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :ActiveStructureElement, :Resource ;
+    arch:rangeIncludes   :ActiveStructureElement, :BehaviorElement, :PassiveStructureElement, :Stakeholder ;
 .
 
 :Assignment
@@ -1176,7 +1179,7 @@ behavior, storage, or execution.'''@en ;
     a                    owl:ObjectProperty ;
     rdfs:range           :Assignment ;
     arch:unqualifiedForm :assignedTo ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :ActiveStructureElement, :Resource ;
     skos:prefLabel       "qualified Assignment"@en ;
     skos:definition      '''Navigates from a source element to an Assignment qualified relationship
 resource. Assignment links active structure elements with behavior they perform, or actors
@@ -1195,8 +1198,8 @@ ex:qr-003 a am:Assignment ;
     skos:definition      '''Indicates that an entity plays a critical role in the creation, achievement, sustenance,
 or operation of a more abstract entity.'''@en ;
     dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Relationships-and-Relationship-Connectors.html#sec-Realization-Relationship> ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :ActiveStructureElement, :BehaviorElement, :ImplementationAndMigrationLayerElement, :PassiveStructureElement, :StrategyLayerElement ;
+    arch:rangeIncludes   :ActiveStructureElement, :BehaviorElement, :MotivationElement, :PassiveStructureElement, :StrategyLayerElement ;
 .
 
 :Realization
@@ -1215,7 +1218,7 @@ achievement, sustenance, or operation of a more abstract entity.'''@en ;
     a                    owl:ObjectProperty ;
     rdfs:range           :Realization ;
     arch:unqualifiedForm :realizes ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :ActiveStructureElement, :BehaviorElement, :ImplementationAndMigrationLayerElement, :PassiveStructureElement, :StrategyLayerElement ;
     skos:prefLabel       "qualified Realization"@en ;
     skos:definition      '''Navigates from a source element to a Realization qualified relationship
 resource. Realization links a concrete element with a more abstract element it realizes.'''@en ;
@@ -1234,12 +1237,16 @@ ex:qr-004 a am:Realization ;
 
 :serves
     a                    owl:ObjectProperty ;
+    rdfs:subPropertyOf   arch:dependencyOf ;
     skos:prefLabel       "Serves"@en ;
     skos:definition      '''Indicates that an element provides its functionality to another element.'''@en ;
+    skos:scopeNote       '''A serving element is a dependency of the one it serves: A serves B says that B depends
+on A (arch:dependencyOf, core 0.7.0), so a question about what depends on an element follows serving with the
+core's dependencies (DD-44).'''@en ;
     skos:changeNote      "3.0: Renamed from 'Used By' to 'Serves', in line with the other active names of relationships."@en ;
     dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Relationships-and-Relationship-Connectors.html#sec-Serving-Relationship> ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :ActiveStructureElement, :BehaviorElement ;
+    arch:rangeIncludes   :ActiveStructureElement, :BehaviorElement ;
 .
 
 :Serving
@@ -1259,7 +1266,7 @@ element.'''@en ;
     a                    owl:ObjectProperty ;
     rdfs:range           :Serving ;
     arch:unqualifiedForm :serves ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :ActiveStructureElement, :BehaviorElement ;
     skos:prefLabel       "qualified Serving"@en ;
     skos:definition      '''Navigates from a source element to a Serving qualified relationship
 resource. Serving indicates that an element provides its functionality to another.'''@en ;
@@ -1278,8 +1285,8 @@ ex:qr-005 a am:Serving ;
     skos:prefLabel       "Accesses"@en ;
     skos:definition      '''Indicates that a behavior element may access a business or data object.'''@en ;
     dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Relationships-and-Relationship-Connectors.html#sec-Access-Relationship> ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :ActiveStructureElement, :BehaviorElement ;
+    arch:rangeIncludes   :PassiveStructureElement ;
 .
 
 :Access
@@ -1332,7 +1339,7 @@ am:Access that is none of them is unspecified.'''@en ;
     a                    owl:ObjectProperty ;
     rdfs:range           :Access ;
     arch:unqualifiedForm :accesses ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :ActiveStructureElement, :BehaviorElement ;
     skos:prefLabel       "qualified Access"@en ;
     skos:definition      '''Navigates from a source element to an Access qualified relationship
 resource. The resource's class says the kind of access: am:ReadAccess, am:WriteAccess or
@@ -1352,8 +1359,8 @@ ex:qr-006 a am:ReadWriteAccess ;
 element.'''@en ;
     skos:changeNote      "3.0: Notation changed for consistency with other dependency relationships (access and serving)."@en ;
     dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Relationships-and-Relationship-Connectors.html#sec-Influence-Relationship> ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :ActiveStructureElement, :BehaviorElement, :MotivationElement, :PassiveStructureElement, :StrategyLayerElement ;
+    arch:rangeIncludes   :MotivationElement ;
 .
 
 :Influence
@@ -1372,7 +1379,7 @@ achievement of some motivation element. The influenceStrength property specifies
     a                    owl:ObjectProperty ;
     rdfs:range           :Influence ;
     arch:unqualifiedForm :influences ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :ActiveStructureElement, :BehaviorElement, :MotivationElement, :PassiveStructureElement, :StrategyLayerElement ;
     skos:prefLabel       "qualified Influence"@en ;
     skos:definition      '''Navigates from a source element to an Influence qualified relationship
 resource. The Influence resource carries the influenceStrength (+, ++, -, --).'''@en ;
@@ -1395,8 +1402,8 @@ ex:qr-007 a am:Influence ;
     skos:prefLabel       "Triggers"@en ;
     skos:definition      '''Indicates a temporal or causal relationship between elements.'''@en ;
     dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Relationships-and-Relationship-Connectors.html#sec-Triggering-Relationship> ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :StrategyLayerElement ;
+    arch:rangeIncludes   :BehaviorElement, :StrategyLayerElement ;
 .
 
 :Triggering
@@ -1415,7 +1422,7 @@ elements.'''@en ;
     a                    owl:ObjectProperty ;
     rdfs:range           :Triggering ;
     arch:unqualifiedForm :triggers ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :StrategyLayerElement ;
     skos:prefLabel       "qualified Triggering"@en ;
     skos:definition      '''Navigates from a source element to a Triggering qualified relationship
 resource. Triggering indicates a temporal or causal dependency.'''@en ;
@@ -1432,8 +1439,8 @@ ex:qr-008 a am:Triggering ;
     skos:prefLabel       "Flows To"@en ;
     skos:definition      '''Indicates transfer from one element to another.'''@en ;
     dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Relationships-and-Relationship-Connectors.html#sec-Flow-Relationship> ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :StrategyLayerElement ;
+    arch:rangeIncludes   :BehaviorElement, :StrategyLayerElement ;
 .
 
 :Flow
@@ -1451,7 +1458,7 @@ ex:qr-008 a am:Triggering ;
     a                    owl:ObjectProperty ;
     rdfs:range           :Flow ;
     arch:unqualifiedForm :flowsTo ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :StrategyLayerElement ;
     skos:prefLabel       "qualified Flow"@en ;
     skos:definition      '''Navigates from a source element to a Flow qualified relationship
 resource. Flow indicates transfer of information, goods, or money.'''@en ;
@@ -1473,8 +1480,8 @@ ex:qr-009 a am:Flow ;
     skos:prefLabel       "Specializes"@en ;
     skos:definition      '''Indicates that an element is a particular kind of another element.'''@en ;
     dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Relationships-and-Relationship-Connectors.html#sec-Specialization-Relationship> ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
+    arch:rangeIncludes   :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
 .
 
 :Specialization
@@ -1493,7 +1500,7 @@ element.'''@en ;
     a                    owl:ObjectProperty ;
     rdfs:range           :Specialization ;
     arch:unqualifiedForm :specializes ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
     skos:prefLabel       "qualified Specialization"@en ;
     skos:definition      '''Navigates from a source element to a Specialization qualified relationship
 resource. Specialization indicates that an element is a particular kind of another.'''@en ;
@@ -1511,8 +1518,8 @@ ex:qr-010 a am:Specialization ;
     skos:definition      '''Indicates an unspecified relationship, or one that is not represented by another
 ArchiMate relationship.'''@en ;
     dcterms:source  <https://pubs.opengroup.org/architecture/archimate3-doc/ch-Relationships-and-Relationship-Connectors.html#sec-Association-Relationship> ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
+    arch:rangeIncludes   :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
 .
 
 :Association
@@ -1544,7 +1551,7 @@ isDirected="true".'''@en ;
     a                    owl:ObjectProperty ;
     rdfs:range           :Association ;
     arch:unqualifiedForm :associatedWith ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
     skos:prefLabel       "qualified Association"@en ;
     skos:definition      '''Navigates from a source element to an Association qualified relationship
 resource. Association is the most generic relationship — used when no more specific type

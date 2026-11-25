@@ -39,7 +39,7 @@ the 4.0 tables write as g too, keeps the c of the 3.2 tables. This is not an off
 document.'''@en ;
     dcterms:created               "2026-04-19"^^xsd:date ;
     dcterms:issued                "2026-04-29"^^xsd:date ;
-    dcterms:modified              "2026-10-10"^^xsd:date ;
+    dcterms:modified              "2026-11-22"^^xsd:date ;
     dcterms:publisher             "Linked.Archi"@en, <https://linked.archi> ;
     bibo:status                   "draft" ;
     dcterms:source                <https://pubs.opengroup.org/architecture/archimate4-doc/> ;
@@ -56,7 +56,10 @@ Event, Service). Per-layer collaborations and roles merged into Common Domain. R
 elements: Interaction, Contract, Representation, Gap, ImplementationEvent, Constraint.
 New namespace archimate4/onto# introduced for breaking metamodel changes. Aligned to
 Linked.Archi core ontology conventions and the qualified relationship pattern.'''@en ;
-    skos:changeNote               '''2026-10-10: the kinds of access are subclasses of Access — ReadAccess, WriteAccess and
+    skos:changeNote               '''2026-11-22: serves is a subproperty of the core's arch:dependencyOf (core 0.7.0):
+what an element serves depends on it (DD-44).
+
+2026-10-10: the kinds of access are subclasses of Access — ReadAccess, WriteAccess and
 ReadWriteAccess, an Access that is none of them being unspecified — and a directed association is a
 DirectedAssociation, so each has a notation of its own (DD-31). accessType is deprecated.'''@en ;
     skos:scopeNote                '''This namespace (archimate4/onto#) covers ArchiMate 4.x. It is separate
@@ -1011,8 +1014,8 @@ Junctions may be used on triggering relationships. This is a technique used by o
     rdfs:subPropertyOf  :aggregates ;
     skos:prefLabel      "Composed Of"@en ;
     skos:definition     '''Indicates that an element combines one or more other concepts, where the existence of those concepts depends on that of the element.'''@en ;
-    arch:domainIncludes arch:Element ;
-    arch:rangeIncludes  arch:Element ;
+    arch:domainIncludes :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
+    arch:rangeIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
 .
 
 :Composition
@@ -1037,7 +1040,7 @@ A composition relationship is allowed in exactly the same cases where an aggrega
     a                    owl:ObjectProperty ;
     rdfs:range           :Composition ;
     arch:unqualifiedForm :composedOf ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
     skos:prefLabel       "qualified Composition"@en ;
     skos:definition      '''Navigates from a source element to a Composition qualified relationship
 resource.'''@en ;
@@ -1049,8 +1052,8 @@ resource.'''@en ;
     a                   owl:ObjectProperty ;
     skos:prefLabel      "Aggregates"@en ;
     skos:definition     '''Indicates that an element combines one or more other concepts.'''@en ;
-    arch:domainIncludes arch:Element ;
-    arch:rangeIncludes  arch:Element ;
+    arch:domainIncludes :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
+    arch:rangeIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
 .
 
 :Aggregation
@@ -1074,7 +1077,7 @@ The interpretation of an aggregation relationship is that the whole or part of t
     a                    owl:ObjectProperty ;
     rdfs:range           :Aggregation ;
     arch:unqualifiedForm :aggregates ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
     skos:prefLabel       "qualified Aggregation"@en ;
     skos:definition      '''Navigates from a source element to an Aggregation qualified relationship
 resource.'''@en ;
@@ -1168,8 +1171,12 @@ resource.'''@en ;
 
 :serves
     a                   owl:ObjectProperty ;
+    rdfs:subPropertyOf  arch:dependencyOf ;
     skos:prefLabel      "Serves"@en ;
     skos:definition     '''Indicates that an element provides its functionality to another element.'''@en ;
+    skos:scopeNote      '''A serving element is a dependency of the one it serves: A serves B says that B depends
+on A (arch:dependencyOf, core 0.7.0), so a question about what depends on an element follows serving with the
+core's dependencies (DD-44).'''@en ;
     arch:domainIncludes :ActiveStructureElement, :BehaviorElement ;
     arch:rangeIncludes  :ActiveStructureElement, :BehaviorElement ;
 .
@@ -1402,8 +1409,8 @@ resource.'''@en ;
     a                   owl:ObjectProperty ;
     skos:prefLabel      "Specializes"@en ;
     skos:definition     '''Indicates that an element is a particular kind of another element.'''@en ;
-    arch:domainIncludes arch:Element ;
-    arch:rangeIncludes  arch:Element ;
+    arch:domainIncludes :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
+    arch:rangeIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
 .
 
 :Specialization
@@ -1426,7 +1433,7 @@ Alternatively, a specialization relationship can be expressed by nesting the spe
     a                    owl:ObjectProperty ;
     rdfs:range           :Specialization ;
     arch:unqualifiedForm :specializes ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
     skos:prefLabel       "qualified Specialization"@en ;
     skos:definition      '''Navigates from a source element to a Specialization qualified relationship
 resource.'''@en ;
@@ -1439,8 +1446,8 @@ resource.'''@en ;
     skos:prefLabel      "Associated With"@en ;
     skos:definition     '''Indicates an unspecified relationship, or one that is not represented by another
 ArchiMate relationship.'''@en ;
-    arch:domainIncludes arch:Element ;
-    arch:rangeIncludes  arch:Element ;
+    arch:domainIncludes :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
+    arch:rangeIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
 .
 
 :Association
@@ -1476,7 +1483,7 @@ isDirected="true".'''@en ;
     a                    owl:ObjectProperty ;
     rdfs:range           :Association ;
     arch:unqualifiedForm :associatedWith ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :BehaviorElement, :CompositeElement, :MotivationElement, :StructureElement ;
     skos:prefLabel       "qualified Association"@en ;
     skos:definition      '''Navigates from a source element to an Association qualified relationship
 resource.'''@en ;

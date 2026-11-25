@@ -53,6 +53,7 @@ relationship pattern. Use archimate3.2-onto.ttl for all new work.'''@en ;
 :ArchimateRelationship
     a               owl:Class ;
     rdfs:subClassOf arch:QualifiedRelationship ;
+    arch:isAbstractClass true ;
     rdfs:label      "ArchimateRelationship" ;
     owl:deprecated  true ;
     skos:historyNote "Migrated from arch:Relationship to arch:QualifiedRelationship. This file is deprecated; use archimate3.2-onto.ttl."@en ;
