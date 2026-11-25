@@ -12,6 +12,9 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
   aisep.py query  FILE.rq|'SPARQL' [model files...]   -> over build graph + all ontologies + all alignments
   aisep.py impact <element IRI or prefixed name> [--mode depends|ripple] [--depth N] [--allow-invalid] [model files...]
                                           (spec §9; runs L1+L2 first and refuses an invalid model unless --allow-invalid)
+  aisep.py adm [<阶段> --model <slug> [--deliverable] [--out FILE]]
+                                       -> ADM 向导（docs/specs/adm-wizard.md）：按阶段列出模型里已有的元素和缺口，
+                                          --deliverable 生成交付物 Markdown；默认打印，--out 只写这一个文件；有缺口也返回 0
   aisep.py test [--no-pytest]          -> every modules/*/tests fixture + tests/acceptance/*.py + aisep-mcp/tests (pytest);
                                           exit 1 on failure. --no-pytest skips aisep-mcp/tests (CI runs it in its own job)
 Default model files = models/**/*.ttl. Problem lines start with [Violation], [Warning] or [Info].
@@ -31,14 +34,14 @@ with open(pyrun.__file__, encoding="utf-8") as _f:
 
 ROOT = pyrun.ROOT
 
-import glob, subprocess, tempfile, time  # noqa: E402
+import glob, re, subprocess, tempfile, time  # noqa: E402
 from xml.etree import ElementTree  # noqa: E402
 
 import pyoxigraph as ox  # noqa: E402
 
 from aisep.core import (AISEP, ARCH, Ctx, dependencies, discover, expand, impact, l3, l4, rel,  # noqa: E402
                         run_check, short, shown)
-from aisep import gitio  # noqa: E402
+from aisep import adm, gitio  # noqa: E402
 from aisep.errors import AisepError  # noqa: E402
 
 
@@ -289,8 +292,41 @@ def cmd_test(no_pytest=False):
     return 1 if failed else 0
 
 
+def cmd_adm(args):
+    if not args:
+        print(adm.overview(), end=""); return 0
+    phase, rest = args[0], args[1:]
+    opts, i = {}, 0
+    while i < len(rest):
+        a = rest[i]
+        if a == "--deliverable":
+            opts[a] = True; i += 1
+        elif a in ("--model", "--out") and i + 1 < len(rest):
+            opts[a] = rest[i + 1]; i += 2
+        else:
+            print(__doc__); return 2
+    if phase not in adm.PHASES or not re.fullmatch(r"[a-z0-9][a-z0-9-]*", opts.get("--model", "")):
+        print(adm.overview(), end=""); return 2
+    result = adm.run(phase, opts["--model"], *model_files([]))
+    if result["problems"]:
+        report_rows(result["problems"]); return 1
+    text = adm.render(phase, opts["--model"], result, deliverable=opts.get("--deliverable", False))
+    if "--out" in opts:
+        with open(opts["--out"], "w", encoding="utf-8") as f:
+            f.write(text)
+        print(f"已写 {opts['--out']}")
+    else:
+        print(text, end="")
+    return 0
+
+
+def report_rows(rows):
+    for sev, layer, text in rows:
+        print(f"[{sev}] {layer} {text}")
+
+
 def main(argv):
-    if not argv or argv[0] not in ("build", "check", "validate", "findings", "gate", "query", "impact", "test"):
+    if not argv or argv[0] not in ("build", "check", "validate", "findings", "gate", "query", "impact", "test", "adm"):
         print(__doc__); return 2
     cmd, args = argv[0], argv[1:]
     if cmd == "test":
@@ -299,6 +335,8 @@ def main(argv):
         return cmd_test(no_pytest=bool(args))
     if cmd == "impact":
         return cmd_impact(args)
+    if cmd == "adm":
+        return cmd_adm(args)
     if cmd == "query":
         if not args:
             print(__doc__); return 2

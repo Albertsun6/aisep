@@ -1,0 +1,26 @@
+# adm-phase: governance
+# section: 测试结果
+# kind: gap
+# title: Must 验收标准的测试用例没有结果，或最近一条结果不是 Passed
+# source: governance/template.md 第 3 节 发布上线专项
+# 用法：经 tools/aisep.py adm 运行；直接交给 model_query 时只改 VALUES ?model 一行。
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+PREFIX prov:  <http://www.w3.org/ns/prov#>
+PREFIX arch:  <https://meta.linked.archi/core#>
+PREFIX am4:   <https://meta.linked.archi/archimate4/onto#>
+PREFIX bpmn:  <https://meta.linked.archi/bpmn/onto#>
+PREFIX ad:    <https://meta.linked.archi/arch-decision#>
+PREFIX ddd:   <https://aisep.example/ont/ddd#>
+PREFIX aisep: <https://aisep.example/ont/aisep#>
+SELECT ?element ?label ?detail WHERE {
+  VALUES ?model { <https://aisep.example/model/workbench/> }
+  ?element arch:inModel ?model ; a/rdfs:subClassOf* aisep:AcceptanceCriterion ; aisep:priority aisep:Must .
+  ?v a/rdfs:subClassOf* aisep:Verification ; arch:source ?tc ; arch:target ?element .
+  OPTIONAL {
+    ?res aisep:resultOf ?tc ; prov:generatedAtTime ?at ; aisep:verdict ?verdict .
+    FILTER NOT EXISTS { ?res2 aisep:resultOf ?tc ; prov:generatedAtTime ?at2 . FILTER(?at2 > ?at) } }
+  FILTER(!BOUND(?verdict) || ?verdict != aisep:VerdictPassed)
+  BIND(CONCAT(STRAFTER(STR(?tc), STR(?model)), IF(BOUND(?verdict), CONCAT(" 最近结果 ", STRAFTER(STR(?verdict), "#")), " 没有结果")) AS ?detail)
+  OPTIONAL { ?element skos:prefLabel ?label FILTER(lang(?label) = "zh") }
+} ORDER BY ?element ?detail
