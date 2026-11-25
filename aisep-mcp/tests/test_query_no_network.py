@@ -247,8 +247,9 @@ def _is_child(args):
 def test_parent_does_not_misread_a_crash_as_a_result(repo, monkeypatch, child):
     """子进程异常退出、没有输出时报错，不当成空结果。"""
     real = subprocess.run
-    monkeypatch.setattr(querybox.subprocess, "run",  # 同一个 subprocess 模块也给 git 用：只换查询子进程
-                        lambda args, **kw: real(args[:2] + ["-c", child] if _is_child(args) else args, **kw))
+    # 同一个 subprocess 模块也给 git 用：只换查询子进程；加载时 shape_hits 的批量子进程（#66）照常跑
+    monkeypatch.setattr(querybox.subprocess, "run", lambda args, **kw: real(
+        args[:2] + ["-c", child] if _is_child(args) and not kw["input"].startswith(b'{"batch"') else args, **kw))
     with pytest.raises(AisepError) as ei:
         T.model_query(cfg(repo), "ASK {}")
     assert ei.value.code == "QUERY_FAILED"
