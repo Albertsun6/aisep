@@ -168,8 +168,11 @@ which depends on it, typically owned by another team or organisation. Drawn in g
     a                    owl:ObjectProperty ;
     skos:prefLabel       "Uses"@en ;
     skos:definition      "Indicates that one element uses or interacts with another."@en ;
-    arch:domainIncludes  arch:Element ;
-    arch:rangeIncludes   arch:Element ;
+    skos:scopeNote       '''Between C4's elements: people, software systems, containers and components, and
+their kinds. The Structurizr extension adds its deployment and infrastructure nodes to both ends. Between a C4
+element and an element of another language, use the core's relationship types.'''@en ;
+    arch:domainIncludes  :Person, :SoftwareSystem, :Container, :Component ;
+    arch:rangeIncludes   :Person, :SoftwareSystem, :Container, :Component ;
     rdfs:seeAlso         <https://c4model.com/diagrams/notation> ,
                          <https://docs.structurizr.com/dsl/language#relationship> ;
 .

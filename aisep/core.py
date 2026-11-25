@@ -54,7 +54,7 @@ SCHEMA_NS = (NS["rdfs"], NS["owl"], NS["sh"], NS["rdf"])
 # R1/G6: a model class may not specialise these notation-neutral abstract roots (nor any arch:isAbstractClass class)
 ABSTRACT_ROOTS = {ARCH + "Element", ARCH + "QualifiedRelationship", ARCH + "ModelConcept"}
 # G5: core relationship classes judged like a notation's own relationships (same notation at both ends)
-CORE_SAME_NOTATION = {ARCH + "Association", ARCH + "HasPart"}
+CORE_SAME_NOTATION = {ARCH + "Association", ARCH + "HasPart", ARCH + "DependsOn"}  # DependsOn: core 0.7.0
 # xsd:dateTime lexical form (spec §6.6). The SAME regex is the sh:pattern of EG15 (ext-governance) so L3 agrees.
 # G7 closed-world predicates: besides properties declared in a loaded module/vendored ontology graph, the only predicates
 # a model file may use. rdfs:label/rdfs:comment are additions required by modules/aisep-core/tests/valid/
@@ -782,14 +782,14 @@ class Ctx:
             own = next((owner(self.mods, d) for d in self.ancestors(c) if owner(self.mods, d)), None)
             ends = [(x, self.module_of(x)) for x in (s, t) if self.asserted.get(x)]  # untyped/dangling: other L1 rules
             if (not own or own.kind != "Language") and CORE_SAME_NOTATION & set(self.ancestors(c)) and len(ends) == 2:
-                # G5: arch:Association / arch:HasPart (and model subclasses) connect nodes of one notation, or two
+                # G5: arch:Association / arch:HasPart / arch:DependsOn (and model subclasses) connect nodes of one notation, or two
                 # notation-neutral nodes; cross-notation only via hub classes, arch:Refines and trace relationships
                 lang = [mx if mx is not None and mx.kind == "Language" else None for _, mx in ends]
                 if lang[0] is not lang[1]:
                     self.add("Violation", "L1", f"{short(r)}: notation mixing — core relationship {short(c)} connects "
                              + " and ".join(f"{short(x)} ({'+'.join(map(short, self.specific(x)))}, notation "
                                             f"{lx.name if lx else 'neutral'})" for (x, _), lx in zip(ends, lang))
-                             + "; arch:Association/arch:HasPart need both endpoints in the same notation. Cross-notation "
+                             + "; arch:Association/arch:HasPart/arch:DependsOn need both endpoints in the same notation. Cross-notation "
                              "links only via hub relationships, arch:Refines or trace relationships (spec §7.1/§7.3)")
                 continue
             if not own or own.kind != "Language" or ARCH + "Refines" in self.ancestors(c) \

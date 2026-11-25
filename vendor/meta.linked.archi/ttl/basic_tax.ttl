@@ -111,3 +111,20 @@ basic:Connection
     skos:inScheme  <https://meta.linked.archi/basic/tax#> ;
     skos:broader   :Relationships ;
 .
+
+
+#################################################################
+# Order of proposal
+#
+# The order in which a modelling tool proposes Basic's relationships
+# between two of its elements. The manifest names it
+# (arch:relationshipProposalOrder); core's definition of that property
+# gives the rule.
+#################################################################
+
+:ProposalOrder
+    a               skos:OrderedCollection ;
+    skos:prefLabel  "Relationships in Order of Proposal"@en ;
+    skos:definition "The order in which a modelling tool proposes Basic's relationships between two of its elements: aggregation, then connection, and association, the one to use where no other fits, last."@en ;
+    skos:memberList ( basic:Aggregation basic:Connection basic:Association ) ;
+.

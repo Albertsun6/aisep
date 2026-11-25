@@ -36,7 +36,7 @@ Data Architecture, Application Architecture, Technology Architecture, and
 Implementation & Migration.'''@en ;
     dcterms:created               "2026-05-11"^^xsd:date ;
     dcterms:issued                "2026-05-11"^^xsd:date ;
-    dcterms:modified              "2026-05-11"^^xsd:date ;
+    dcterms:modified              "2026-11-22"^^xsd:date ;
     dcterms:publisher                  "Linked.Archi"@en,
                                   <https://linked.archi> ;
     bibo:status                   "draft" ;
@@ -46,6 +46,8 @@ Implementation & Migration.'''@en ;
     owl:versionInfo               "10.0"@en ;
     owl:priorVersion              <https://meta.linked.archi/togaf9/onto#> ;
     schema:citation               "Linked.Archi TOGAF 10 Enterprise Metamodel" ;
+    skos:changeNote               '''2026-11-22: usedBy is a subproperty of the core's arch:dependencyOf and dependsOn
+of arch:dependsOn (core 0.7.0), so a question about dependencies follows them with the core's (DD-44).'''@en ;
 .
 
 
@@ -468,8 +470,11 @@ architecture element.'''@en ;
 
 :usedBy
     a                   owl:ObjectProperty ;
+    rdfs:subPropertyOf  arch:dependencyOf ;
     skos:prefLabel      "used by"@en ;
     skos:definition     '''Indicates that an element is used by another element.'''@en ;
+    skos:scopeNote      '''What an element is used by depends on it: a subproperty of the core's arch:dependencyOf
+(core 0.7.0, DD-44).'''@en ;
     arch:domainIncludes arch:Element ;
     arch:rangeIncludes  arch:Element ;
 .
@@ -503,6 +508,7 @@ of the same or related type.'''@en ;
 
 :dependsOn
     a                   owl:ObjectProperty ;
+    rdfs:subPropertyOf  arch:dependsOn ;
     skos:prefLabel      "depends on"@en ;
     skos:definition     '''Indicates that one element depends on another for its correct
 functioning or delivery.'''@en ;

@@ -28,9 +28,10 @@
     dcterms:creator               "Kalin Maldzhanski"^^xsd:string ;
     dcterms:title                      "Linked.Archi Backstage SHACL Shapes"@en ;
     dcterms:description                '''SHACL shapes for validating Backstage catalog data. Imports
-core-shapes for base QualifiedRelationship validation. Adds Backstage-specific domain/range
-constraints per relationship type, the Backstage naming rule, and the value-set constraints for the
-lifecycle, API visibility and status level vocabularies.
+core-shapes for base QualifiedRelationship validation. Adds, per relationship type, the pairs of kinds
+it relates, listed as ArchiMate's relationship shapes list theirs, and per kind the targets its direct
+triples may reach; the Backstage naming rule; and the value-set constraints for the lifecycle, API
+visibility, status level and location presence vocabularies.
 
 The value-set shapes are load-bearing rather than belt-and-braces: the ontology declares those
 vocabularies as DD-23 named individuals with no owl:oneOf, so nothing constrains membership if these
@@ -96,19 +97,72 @@ would have reported every typed template as an error.'''@en ;
 Group" and User owners are ordinary Backstage in smaller organisations, so both are admitted.'''@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-relations#ownedby-and-ownerof> ;
     sh:targetClass bs:Ownership ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:class    arch:Element ;
-        sh:message  "Ownership source must be an Element."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:or       (
-                        [ sh:class bs:Group ]
-                        [ sh:class bs:User ]
-                    ) ;
-        sh:message  "Ownership target must be a Group or a User."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Component ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:System ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:API ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Resource ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Domain ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:User ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Group ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Template ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Location ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+            ) ] ]
+        ) ]
+    ) ;
+    sh:message "Ownership has an invalid source/target combination per the well-known relations: it runs from an entity of any kind (Component, System, API, Resource, Domain, User, Group, Template or Location) to the Group or User that owns it."@en ;
 .
 
 :SystemMembershipShape
@@ -118,20 +172,21 @@ API and Resource, and each generates the same partOf relation, so a shape that a
 Component reported ordinary catalogues as invalid.'''@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
     sh:targetClass bs:SystemMembership ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:or       (
-                        [ sh:class bs:Component ]
-                        [ sh:class bs:API ]
-                        [ sh:class bs:Resource ]
-                    ) ;
-        sh:message  "SystemMembership source must be a Component, an API, or a Resource."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    bs:System ;
-        sh:message  "SystemMembership target must be a System."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Component ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:System ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:API ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:System ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Resource ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:System ] ]
+        ) ]
+    ) ;
+    sh:message "SystemMembership has an invalid source/target combination per the well-known relations: it runs from a Component, an API or a Resource to a System."@en ;
 .
 
 :APIProvisionShape
@@ -141,19 +196,17 @@ question", and the system model defines a System as exposing one or several publ
 source is ordinary Backstage rather than an error.'''@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-relations#providesapi-and-apiprovidedby> ;
     sh:targetClass bs:APIProvision ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:or       (
-                        [ sh:class bs:Component ]
-                        [ sh:class bs:System ]
-                    ) ;
-        sh:message  "APIProvision source must be a Component or a System."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    bs:API ;
-        sh:message  "APIProvision target must be an API."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Component ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:API ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:System ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:API ] ]
+        ) ]
+    ) ;
+    sh:message "APIProvision has an invalid source/target combination per the well-known relations: it runs from a Component or a System to an API."@en ;
 .
 
 :APIConsumptionShape
@@ -161,19 +214,17 @@ source is ordinary Backstage rather than an error.'''@en ;
     rdfs:comment   "Mirrors APIProvisionShape: spec.consumesApis is declared on Component and System alike."@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-relations#consumesapi-and-apiconsumedby> ;
     sh:targetClass bs:APIConsumption ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:or       (
-                        [ sh:class bs:Component ]
-                        [ sh:class bs:System ]
-                    ) ;
-        sh:message  "APIConsumption source must be a Component or a System."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    bs:API ;
-        sh:message  "APIConsumption target must be an API."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Component ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:API ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:System ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:API ] ]
+        ) ]
+    ) ;
+    sh:message "APIConsumption has an invalid source/target combination per the well-known relations: it runs from a Component or a System to an API."@en ;
 .
 
 :ResourceUsageShape
@@ -187,78 +238,88 @@ and is checked by DependencyShape. A lift that emits component-to-component depe
 than there is the error this shape's target constraint catches.'''@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
     sh:targetClass bs:ResourceUsage ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:or       (
-                        [ sh:class bs:Component ]
-                        [ sh:class bs:Resource ]
-                    ) ;
-        sh:message  "ResourceUsage source must be a Component or a Resource."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    bs:Resource ;
-        sh:message  "ResourceUsage target must be a Resource."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Component ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Resource ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Resource ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Resource ] ]
+        ) ]
+    ) ;
+    sh:message "ResourceUsage has an invalid source/target combination per the well-known relations: it runs from a Component or a Resource to a Resource."@en ;
 .
 
 :DomainMembershipShape
     a              sh:NodeShape ;
     rdfs:comment   '''The descriptor format declares spec.domain on System only — a Component, API or
-Resource reaches a domain transitively through its system, not directly.
-
-The source constraint is sh:Warning rather than sh:Violation because pre-0.3.0 data was authored
-against a shape that admitted any Element, so promoting it straight to Violation would fail existing
-catalogues on a modelling preference they were never told about. Findings identify edges to re-home
-onto :partOfSystem; promote to Violation once the backlog is clear.'''@en ;
+Resource reaches a domain transitively through its system, not directly. The direct triple is held to the
+same rule by :SystemOnlyPropertiesShape.'''@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
     sh:targetClass bs:DomainMembership ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:class    bs:System ;
-        sh:severity sh:Warning ;
-        sh:message  '''DomainMembership source should be a System — spec.domain is declared on System
-only. Components, APIs and Resources belong to a domain through their system.'''@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    bs:Domain ;
-        sh:message  "DomainMembership target must be a Domain."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:System ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Domain ] ]
+        ) ]
+    ) ;
+    sh:message "DomainMembership has an invalid source/target combination per the descriptor format: it runs from a System to a Domain. spec.domain is declared on System only; Components, APIs and Resources belong to a domain through their system."@en ;
 .
 
 :GroupMembershipShape
     a              sh:NodeShape ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-relations#memberof-and-hasmember> ;
     sh:targetClass bs:GroupMembership ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:class    bs:User ;
-        sh:message  "GroupMembership source must be a User."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    bs:Group ;
-        sh:message  "GroupMembership target must be a Group."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:User ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Group ] ]
+        ) ]
+    ) ;
+    sh:message "GroupMembership has an invalid source/target combination per the well-known relations: it runs from a User to a Group."@en ;
 .
 
 :DependencyShape
     a              sh:NodeShape ;
-    rdfs:comment   '''The general dependency relation, from spec.dependsOn. The source constraint is a
-Violation because the descriptor format declares the field on exactly two kinds; the target
-constraint is only a Warning because the spec describes the relation as "a general expression of
-being in need of that other entity" and does not restrict what may be depended upon.'''@en ;
+    rdfs:comment   '''The general dependency relation, from spec.dependsOn. The pairs are a Violation where
+the descriptor format fixes them: the source is one of the two kinds that declare the field, and the target
+an entity of any kind. That the target is normally a Component or a Resource is only a Warning, because the
+spec describes the relation as "a general expression of being in need of that other entity" and does not
+restrict what may be depended upon.'''@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-relations#dependson-and-dependencyof> ;
     sh:targetClass bs:Dependency ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:or       (
-                        [ sh:class bs:Component ]
-                        [ sh:class bs:Resource ]
-                    ) ;
-        sh:message  "Dependency source must be a Component or a Resource — spec.dependsOn is declared on those two kinds."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Component ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Resource ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+            ) ] ]
+        ) ]
+    ) ;
+    sh:message "Dependency has an invalid source/target combination per the descriptor format: it runs from a Component or a Resource, the two kinds that declare spec.dependsOn, to an entity of any kind."@en ;
     sh:property [
         sh:path     arch:target ;
         sh:or       (
@@ -280,16 +341,13 @@ The sh:sparql rule catches only self-parenthood. Detecting longer cycles needs a
 belongs in a governance shape set, not in the metamodel conformance shapes.'''@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-relations#parentof-and-childof> ;
     sh:targetClass bs:GroupParentage ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:class    bs:Group ;
-        sh:message  "GroupParentage source must be a Group."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    bs:Group ;
-        sh:message  "GroupParentage target must be a Group."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Group ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Group ] ]
+        ) ]
+    ) ;
+    sh:message "GroupParentage has an invalid source/target combination per the well-known relations: it runs from a Group to its parent Group."@en ;
     sh:sparql [
         sh:message "A Group cannot be its own parent."@en ;
         sh:prefixes <https://meta.linked.archi/backstage/shapes#> ;
@@ -309,16 +367,13 @@ four kind-pair readings that Backstage collapses into a single partOf relation; 
 SystemMembership, DomainMembership and DomainHierarchy.'''@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
     sh:targetClass bs:ComponentComposition ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:class    bs:Component ;
-        sh:message  "ComponentComposition source must be a Component."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    bs:Component ;
-        sh:message  "ComponentComposition target must be a Component."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Component ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Component ] ]
+        ) ]
+    ) ;
+    sh:message "ComponentComposition has an invalid source/target combination per the descriptor format: it runs from a Component to the Component it is part of."@en ;
 .
 
 :DomainHierarchyShape
@@ -327,16 +382,13 @@ SystemMembership, DomainMembership and DomainHierarchy.'''@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-relations#partof-and-haspart> ;
     rdfs:seeAlso   <https://backstage.io/docs/features/software-catalog/system-model#domain> ;
     sh:targetClass bs:DomainHierarchy ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:class    bs:Domain ;
-        sh:message  "DomainHierarchy source must be a Domain."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    bs:Domain ;
-        sh:message  "DomainHierarchy target must be a Domain."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Domain ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Domain ] ]
+        ) ]
+    ) ;
+    sh:message "DomainHierarchy has an invalid source/target combination per the descriptor format: it runs from a Domain to the Domain it is part of."@en ;
 .
 
 :TechDocsDelegationShape
@@ -345,22 +397,141 @@ SystemMembership, DomainMembership and DomainHierarchy.'''@en ;
 annotation whose value is an entity reference rather than a literal, which is why it is a
 relationship at all.
 
-Endpoints are left at arch:Element because the annotation is not restricted to any kind. The
-constraint worth having is on the path: backstage.io/techdocs-entity-path is meaningful only
+Either end may be an entity of any kind, because the annotation is not restricted to one. The
+constraint worth having besides is on the path: backstage.io/techdocs-entity-path is meaningful only
 relative to one delegation edge, so it is checked here rather than on either entity.'''@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiotechdocs-entity> ;
     rdfs:seeAlso   <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiotechdocs-entity-path> ;
     sh:targetClass bs:TechDocsDelegation ;
-    sh:property [
-        sh:path     arch:source ;
-        sh:class    arch:Element ;
-        sh:message  "TechDocsDelegation source must be an Element."@en ;
-    ] ;
-    sh:property [
-        sh:path     arch:target ;
-        sh:class    arch:Element ;
-        sh:message  "TechDocsDelegation target must be an Element."@en ;
-    ] ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Component ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:System ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:API ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Resource ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Domain ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:User ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Group ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Template ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+            ) ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Location ] ]
+            [ sh:property [ sh:path arch:target ; sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+            ) ] ]
+        ) ]
+    ) ;
+    sh:message "TechDocsDelegation has an invalid source/target combination per the well-known annotations: it runs between two entities, each of any kind (Component, System, API, Resource, Domain, User, Group, Template or Location)."@en ;
     sh:property [
         sh:path     bs:techdocsEntityPath ;
         sh:maxCount 1 ;
@@ -374,22 +545,677 @@ relative to one delegation edge, so it is checked here rather than on either ent
     rdfs:comment   '''Creation provenance from backstage.io/source-template, the second annotation whose
 value is an entity reference rather than a literal.
 
-The source stays arch:Element: the Scaffolder is not restricted to producing Components, even though a
-Component is the ordinary case. The target is the constraint worth having — an edge pointing anywhere but a
+The source may be an entity of any kind: the Scaffolder is not restricted to producing Components, even
+though a Component is the ordinary case. The target is the constraint worth having — an edge pointing anywhere but a
 Template means the lift resolved the annotation to the wrong entity, which is exactly the mistake that
 otherwise validates clean.'''@en ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/well-known-annotations#backstageiosource-template> ;
     rdfs:seeAlso   <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-template> ;
     sh:targetClass bs:Scaffolding ;
+    sh:or (
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Component ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Template ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:System ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Template ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:API ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Template ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Resource ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Template ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Domain ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Template ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:User ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Template ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Group ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Template ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Template ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Template ] ]
+        ) ]
+        [ sh:and (
+            [ sh:property [ sh:path arch:source ; sh:class bs:Location ] ]
+            [ sh:property [ sh:path arch:target ; sh:class bs:Template ] ]
+        ) ]
+    ) ;
+    sh:message "Scaffolding has an invalid source/target combination per the well-known annotations: it runs from an entity of any kind to the Template it was created from. An edge to any other kind means the source-template annotation was resolved to the wrong entity."@en ;
+.
+
+#################################################################
+# Unqualified shapes — one per kind
+#
+# Validates the direct triples (ex:billing bs:ownedBy ex:payments-team)
+# against the same pairs as the relationship shapes above, as
+# ArchiMate's shapes do: for each kind, the kinds each relationship
+# predicate may reach from it, and sh:maxCount 0 for one it may not
+# have. A predicate a kind-specific shape below confines to its
+# subject's kind (spec.subcomponentOf, spec.domain, spec.subdomainOf,
+# spec.parent, spec.memberOf) gets no sh:maxCount 0 here, so that a
+# misplaced one is reported once.
+#################################################################
+
+:ComponentUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass bs:Component ;
     sh:property [
-        sh:path     arch:source ;
-        sh:class    arch:Element ;
-        sh:message  "Scaffolding source must be an Element — the entity the template created."@en ;
+        sh:path bs:ownedBy ;
+        sh:message "Component cannot have ownership to {$value} — permitted targets: Group, User."@en ;
+        sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+        ) ;
     ] ;
     sh:property [
-        sh:path     arch:target ;
-        sh:class    bs:Template ;
-        sh:message  "Scaffolding target must be a Template. An edge to any other kind means the source-template annotation was resolved to the wrong entity."@en ;
+        sh:path bs:partOfSystem ;
+        sh:message "Component cannot have system membership to {$value} — permitted targets: System."@en ;
+        sh:or (
+                [ sh:class bs:System ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:providesAPI ;
+        sh:message "Component cannot have API provision to {$value} — permitted targets: API."@en ;
+        sh:or (
+                [ sh:class bs:API ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:consumesAPI ;
+        sh:message "Component cannot have API consumption to {$value} — permitted targets: API."@en ;
+        sh:or (
+                [ sh:class bs:API ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:dependsOn ;
+        sh:message "Component cannot have dependency to {$value} — permitted targets: Component, System, API, Resource, Domain, User, Group, Template, Location."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:usesResource ;
+        sh:message "Component cannot have resource usage to {$value} — permitted targets: Resource."@en ;
+        sh:or (
+                [ sh:class bs:Resource ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:subcomponentOf ;
+        sh:message "Component cannot have component composition to {$value} — permitted targets: Component."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:techdocsDelegatedTo ;
+        sh:message "Component cannot have TechDocs delegation to {$value} — permitted targets: Component, System, API, Resource, Domain, User, Group, Template, Location."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:scaffoldedFrom ;
+        sh:message "Component cannot have scaffolding to {$value} — permitted targets: Template."@en ;
+        sh:or (
+                [ sh:class bs:Template ]
+        ) ;
+    ] ;
+.
+
+:SystemUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass bs:System ;
+    sh:property [
+        sh:path bs:ownedBy ;
+        sh:message "System cannot have ownership to {$value} — permitted targets: Group, User."@en ;
+        sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:partOfSystem ;
+        sh:maxCount 0 ;
+        sh:message "System cannot have system membership to anything — Backstage permits it from a Component, an API or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:providesAPI ;
+        sh:message "System cannot have API provision to {$value} — permitted targets: API."@en ;
+        sh:or (
+                [ sh:class bs:API ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:consumesAPI ;
+        sh:message "System cannot have API consumption to {$value} — permitted targets: API."@en ;
+        sh:or (
+                [ sh:class bs:API ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:dependsOn ;
+        sh:maxCount 0 ;
+        sh:message "System cannot have dependency to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:usesResource ;
+        sh:maxCount 0 ;
+        sh:message "System cannot have resource usage to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:belongsToDomain ;
+        sh:message "System cannot have domain membership to {$value} — permitted targets: Domain."@en ;
+        sh:or (
+                [ sh:class bs:Domain ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:techdocsDelegatedTo ;
+        sh:message "System cannot have TechDocs delegation to {$value} — permitted targets: Component, System, API, Resource, Domain, User, Group, Template, Location."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:scaffoldedFrom ;
+        sh:message "System cannot have scaffolding to {$value} — permitted targets: Template."@en ;
+        sh:or (
+                [ sh:class bs:Template ]
+        ) ;
+    ] ;
+.
+
+:APIUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass bs:API ;
+    sh:property [
+        sh:path bs:ownedBy ;
+        sh:message "API cannot have ownership to {$value} — permitted targets: Group, User."@en ;
+        sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:partOfSystem ;
+        sh:message "API cannot have system membership to {$value} — permitted targets: System."@en ;
+        sh:or (
+                [ sh:class bs:System ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:providesAPI ;
+        sh:maxCount 0 ;
+        sh:message "API cannot have API provision to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:consumesAPI ;
+        sh:maxCount 0 ;
+        sh:message "API cannot have API consumption to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:dependsOn ;
+        sh:maxCount 0 ;
+        sh:message "API cannot have dependency to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:usesResource ;
+        sh:maxCount 0 ;
+        sh:message "API cannot have resource usage to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:techdocsDelegatedTo ;
+        sh:message "API cannot have TechDocs delegation to {$value} — permitted targets: Component, System, API, Resource, Domain, User, Group, Template, Location."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:scaffoldedFrom ;
+        sh:message "API cannot have scaffolding to {$value} — permitted targets: Template."@en ;
+        sh:or (
+                [ sh:class bs:Template ]
+        ) ;
+    ] ;
+.
+
+:ResourceUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass bs:Resource ;
+    sh:property [
+        sh:path bs:ownedBy ;
+        sh:message "Resource cannot have ownership to {$value} — permitted targets: Group, User."@en ;
+        sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:partOfSystem ;
+        sh:message "Resource cannot have system membership to {$value} — permitted targets: System."@en ;
+        sh:or (
+                [ sh:class bs:System ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:providesAPI ;
+        sh:maxCount 0 ;
+        sh:message "Resource cannot have API provision to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:consumesAPI ;
+        sh:maxCount 0 ;
+        sh:message "Resource cannot have API consumption to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:dependsOn ;
+        sh:message "Resource cannot have dependency to {$value} — permitted targets: Component, System, API, Resource, Domain, User, Group, Template, Location."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:usesResource ;
+        sh:message "Resource cannot have resource usage to {$value} — permitted targets: Resource."@en ;
+        sh:or (
+                [ sh:class bs:Resource ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:techdocsDelegatedTo ;
+        sh:message "Resource cannot have TechDocs delegation to {$value} — permitted targets: Component, System, API, Resource, Domain, User, Group, Template, Location."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:scaffoldedFrom ;
+        sh:message "Resource cannot have scaffolding to {$value} — permitted targets: Template."@en ;
+        sh:or (
+                [ sh:class bs:Template ]
+        ) ;
+    ] ;
+.
+
+:DomainUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass bs:Domain ;
+    sh:property [
+        sh:path bs:ownedBy ;
+        sh:message "Domain cannot have ownership to {$value} — permitted targets: Group, User."@en ;
+        sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:partOfSystem ;
+        sh:maxCount 0 ;
+        sh:message "Domain cannot have system membership to anything — Backstage permits it from a Component, an API or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:providesAPI ;
+        sh:maxCount 0 ;
+        sh:message "Domain cannot have API provision to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:consumesAPI ;
+        sh:maxCount 0 ;
+        sh:message "Domain cannot have API consumption to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:dependsOn ;
+        sh:maxCount 0 ;
+        sh:message "Domain cannot have dependency to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:usesResource ;
+        sh:maxCount 0 ;
+        sh:message "Domain cannot have resource usage to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:subdomainOf ;
+        sh:message "Domain cannot have domain hierarchy to {$value} — permitted targets: Domain."@en ;
+        sh:or (
+                [ sh:class bs:Domain ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:techdocsDelegatedTo ;
+        sh:message "Domain cannot have TechDocs delegation to {$value} — permitted targets: Component, System, API, Resource, Domain, User, Group, Template, Location."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:scaffoldedFrom ;
+        sh:message "Domain cannot have scaffolding to {$value} — permitted targets: Template."@en ;
+        sh:or (
+                [ sh:class bs:Template ]
+        ) ;
+    ] ;
+.
+
+:UserUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass bs:User ;
+    sh:property [
+        sh:path bs:ownedBy ;
+        sh:message "User cannot have ownership to {$value} — permitted targets: Group, User."@en ;
+        sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:partOfSystem ;
+        sh:maxCount 0 ;
+        sh:message "User cannot have system membership to anything — Backstage permits it from a Component, an API or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:providesAPI ;
+        sh:maxCount 0 ;
+        sh:message "User cannot have API provision to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:consumesAPI ;
+        sh:maxCount 0 ;
+        sh:message "User cannot have API consumption to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:dependsOn ;
+        sh:maxCount 0 ;
+        sh:message "User cannot have dependency to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:usesResource ;
+        sh:maxCount 0 ;
+        sh:message "User cannot have resource usage to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:memberOf ;
+        sh:message "User cannot have group membership to {$value} — permitted targets: Group."@en ;
+        sh:or (
+                [ sh:class bs:Group ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:techdocsDelegatedTo ;
+        sh:message "User cannot have TechDocs delegation to {$value} — permitted targets: Component, System, API, Resource, Domain, User, Group, Template, Location."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:scaffoldedFrom ;
+        sh:message "User cannot have scaffolding to {$value} — permitted targets: Template."@en ;
+        sh:or (
+                [ sh:class bs:Template ]
+        ) ;
+    ] ;
+.
+
+:GroupUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass bs:Group ;
+    sh:property [
+        sh:path bs:ownedBy ;
+        sh:message "Group cannot have ownership to {$value} — permitted targets: Group, User."@en ;
+        sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:partOfSystem ;
+        sh:maxCount 0 ;
+        sh:message "Group cannot have system membership to anything — Backstage permits it from a Component, an API or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:providesAPI ;
+        sh:maxCount 0 ;
+        sh:message "Group cannot have API provision to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:consumesAPI ;
+        sh:maxCount 0 ;
+        sh:message "Group cannot have API consumption to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:dependsOn ;
+        sh:maxCount 0 ;
+        sh:message "Group cannot have dependency to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:usesResource ;
+        sh:maxCount 0 ;
+        sh:message "Group cannot have resource usage to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:childOf ;
+        sh:message "Group cannot have group parentage to {$value} — permitted targets: Group."@en ;
+        sh:or (
+                [ sh:class bs:Group ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:techdocsDelegatedTo ;
+        sh:message "Group cannot have TechDocs delegation to {$value} — permitted targets: Component, System, API, Resource, Domain, User, Group, Template, Location."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:scaffoldedFrom ;
+        sh:message "Group cannot have scaffolding to {$value} — permitted targets: Template."@en ;
+        sh:or (
+                [ sh:class bs:Template ]
+        ) ;
+    ] ;
+.
+
+:TemplateUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass bs:Template ;
+    sh:property [
+        sh:path bs:ownedBy ;
+        sh:message "Template cannot have ownership to {$value} — permitted targets: Group, User."@en ;
+        sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:partOfSystem ;
+        sh:maxCount 0 ;
+        sh:message "Template cannot have system membership to anything — Backstage permits it from a Component, an API or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:providesAPI ;
+        sh:maxCount 0 ;
+        sh:message "Template cannot have API provision to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:consumesAPI ;
+        sh:maxCount 0 ;
+        sh:message "Template cannot have API consumption to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:dependsOn ;
+        sh:maxCount 0 ;
+        sh:message "Template cannot have dependency to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:usesResource ;
+        sh:maxCount 0 ;
+        sh:message "Template cannot have resource usage to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:techdocsDelegatedTo ;
+        sh:message "Template cannot have TechDocs delegation to {$value} — permitted targets: Component, System, API, Resource, Domain, User, Group, Template, Location."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:scaffoldedFrom ;
+        sh:message "Template cannot have scaffolding to {$value} — permitted targets: Template."@en ;
+        sh:or (
+                [ sh:class bs:Template ]
+        ) ;
+    ] ;
+.
+
+:LocationUnqualifiedShape
+    a              sh:NodeShape ;
+    sh:targetClass bs:Location ;
+    sh:property [
+        sh:path bs:ownedBy ;
+        sh:message "Location cannot have ownership to {$value} — permitted targets: Group, User."@en ;
+        sh:or (
+                [ sh:class bs:Group ]
+                [ sh:class bs:User ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:partOfSystem ;
+        sh:maxCount 0 ;
+        sh:message "Location cannot have system membership to anything — Backstage permits it from a Component, an API or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:providesAPI ;
+        sh:maxCount 0 ;
+        sh:message "Location cannot have API provision to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:consumesAPI ;
+        sh:maxCount 0 ;
+        sh:message "Location cannot have API consumption to anything — Backstage permits it from a Component or a System only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:dependsOn ;
+        sh:maxCount 0 ;
+        sh:message "Location cannot have dependency to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:usesResource ;
+        sh:maxCount 0 ;
+        sh:message "Location cannot have resource usage to anything — Backstage permits it from a Component or a Resource only."@en ;
+    ] ;
+    sh:property [
+        sh:path bs:techdocsDelegatedTo ;
+        sh:message "Location cannot have TechDocs delegation to {$value} — permitted targets: Component, System, API, Resource, Domain, User, Group, Template, Location."@en ;
+        sh:or (
+                [ sh:class bs:Component ]
+                [ sh:class bs:System ]
+                [ sh:class bs:API ]
+                [ sh:class bs:Resource ]
+                [ sh:class bs:Domain ]
+                [ sh:class bs:User ]
+                [ sh:class bs:Group ]
+                [ sh:class bs:Template ]
+                [ sh:class bs:Location ]
+        ) ;
+    ] ;
+    sh:property [
+        sh:path bs:scaffoldedFrom ;
+        sh:message "Location cannot have scaffolding to {$value} — permitted targets: Template."@en ;
+        sh:or (
+                [ sh:class bs:Template ]
+        ) ;
     ] ;
 .
 
@@ -402,7 +1228,7 @@ otherwise validates clean.'''@en ;
 # doc/guide/design-decisions.md.
 #
 # Every Backstage catalogue entity is addressed by name in the portal, so all
-# eight element classes are required to carry one.
+# nine element classes are required to carry one.
 #
 # Targets Backstage classes, never arch:Element. In a merged multi-notation graph,
 # targeting arch:Element would impose Backstage's naming policy on every other
@@ -425,7 +1251,8 @@ entity.'''@en ;
                    bs:Domain ,
                    bs:User ,
                    bs:Group ,
-                   bs:Template ;
+                   bs:Template ,
+                   bs:Location ;
     sh:property [
         sh:path     skos:prefLabel ;
         sh:minCount 1 ;
@@ -449,6 +1276,8 @@ be language-tagged (rdf:langString), e.g. "payments-api"@en.'''@en ;
 # values, so a fourth is an error. Lifecycle is a documented
 # convention that the descriptor format explicitly says the
 # catalog will accept any value for, so a fourth is a finding.
+# A location's presence is closed as API visibility is: the schema
+# fixes it at two values.
 #################################################################
 
 :LifecycleStateShape
@@ -489,6 +1318,21 @@ instead of forking a published axiom.'''@en ;
         sh:maxCount 1 ;
         sh:in       ( bs:Public bs:Restricted bs:Private ) ;
         sh:message  "API visibility must be exactly one of bs:Public, bs:Restricted or bs:Private."@en ;
+    ] ;
+.
+
+:LocationPresenceShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''The schema fixes spec.presence at required and optional, so a third value is an error,
+as for API visibility. An absent value means required, the schema's default, and is not reported.'''@en ;
+    dcterms:source <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    rdfs:seeAlso   <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Location.v1alpha1.schema.json> ;
+    sh:targetClass bs:Location ;
+    sh:property [
+        sh:path     bs:locationPresence ;
+        sh:maxCount 1 ;
+        sh:in       ( bs:RequiredPresence bs:OptionalPresence ) ;
+        sh:message  "A location's presence must be exactly one of bs:RequiredPresence or bs:OptionalPresence."@en ;
     ] ;
 .
 
@@ -649,7 +1493,7 @@ API definitions to be in a known machine-readable format, and spec.type is what 
     a              sh:NodeShape ;
     dcterms:source <https://backstage.io/docs/features/software-catalog/descriptor-format#name-required> ;
     sh:targetClass bs:Component , bs:System , bs:API , bs:Resource ,
-                   bs:Domain , bs:User , bs:Group , bs:Template ;
+                   bs:Domain , bs:User , bs:Group , bs:Template , bs:Location ;
     sh:property [
         sh:path     bs:name ;
         sh:minCount 1 ;
@@ -962,6 +1806,36 @@ items produce two levels and two messages with nothing saying which belongs to w
     ] ;
 .
 
+:LocationTypeShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''No minCount: spec.type is optional on a Location, whose type is otherwise inherited
+from the location that read it.'''@en ;
+    dcterms:source <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    rdfs:seeAlso   <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Location.v1alpha1.schema.json> ;
+    sh:targetClass bs:Location ;
+    sh:property [
+        sh:path     bs:locationType ;
+        sh:maxCount 1 ;
+        sh:class    bs:LocationType ;
+        sh:message  "A Location has at most one spec.type, and it must be a bs:LocationType individual — bs:UrlLocationType, bs:FileLocationType, or one your organisation minted."@en ;
+    ] ;
+.
+
+:LocationTargetShape
+    a              sh:NodeShape ;
+    rdfs:comment   '''Datatype hygiene. A target may be a relative path, so it stays xsd:string; the schema
+requires a target to be non-empty.'''@en ;
+    dcterms:source <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    rdfs:seeAlso   <https://github.com/backstage/backstage/blob/master/packages/catalog-model/src/schema/kinds/Location.v1alpha1.schema.json> ;
+    sh:targetClass bs:Location ;
+    sh:property [
+        sh:path      bs:locationTarget ;
+        sh:datatype  xsd:string ;
+        sh:minLength 1 ;
+        sh:message   "Each location target is a non-empty string: an absolute path or URL, or a path relative to the location."@en ;
+    ] ;
+.
+
 #################################################################
 # Kind-specific properties — subject-side enforcement
 #
@@ -1053,6 +1927,14 @@ value as a typed literal rather than as a string.'''@en ;
     sh:targetSubjectsOf bs:resourceType ;
     sh:class            bs:Resource ;
     sh:message          "Resource type is declared on a Resource."@en ;
+.
+
+:LocationOnlyPropertiesShape
+    a                   sh:NodeShape ;
+    dcterms:source      <https://backstage.io/docs/features/software-catalog/descriptor-format#kind-location> ;
+    sh:targetSubjectsOf bs:locationType , bs:locationTarget , bs:locationPresence ;
+    sh:class            bs:Location ;
+    sh:message          "Location type, targets and presence are declared on a Location."@en ;
 .
 
 :SystemOnlyPropertiesShape

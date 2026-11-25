@@ -176,6 +176,22 @@
   - **不存"作用于哪些元素"**：由 `model.diff(baseCommit, headCommit)` 实时算出（§8.3）。
 - 提交、构建、部署的溯源只定义词汇（PROV-O），不做接入。
 
+### 6.8 C4（Language，`inheritsHubRules=false`，level=design；第一批之后由 PR #106 加入）
+- 模块 `modules/c4`（`https://aisep.example/module/c4`）。需求与关口 A 的决定见 `docs/specs/c4-archimate4-dual-model.md` 和 `docs/specs/c4-archimate4-verification.md` §9.3，实施说明见 `docs/specs/c4-archimate4-step4.md`。
+- **双模型**：ArchiMate 记录系统对企业意味着什么，C4 记录系统在技术上长什么样。同一事实只在一边记录，两边通过 `arch:refines` 关联（§7）。C4 不是 ArchiMate 的视图，模块**不声明任何对齐公理**（没有 C4 ⊑ am4）。
+- 词汇只用上游原样文件：`c4/onto`（人、软件系统、容器及其子类 Database/MobileApp/ClientSideWebApp、组件、外部人、外部系统；`c4:Using`、`c4:ContainerContainment`、`c4:ComponentContainment`；`c4:technology`），以及 `c4/structurizr`（部署节点、基础设施节点，`structurizr:Deployment`）。模块拥有这两个命名空间。上游 `c4/shapes`、`c4/structurizr-shapes` 原样运行。
+- 跨模型关联：C4 元素 refines am4 元素（design → hub）。规则 R1–R8（`modules/c4/shapes.ttl`）：
+  - R1：本方软件系统恰好 refines 一个 `am4:ApplicationComponent`，外部系统除外；一个组件至多被一个 C4 软件系统 refines。
+  - R2：容器恰好属于一个软件系统。
+  - R3：`c4:Database` 必须 refines 一个 `am4:DataObject`。按主锚唯一（§7.2），多个逻辑数据对象要先在 am4 侧聚合，数据库再 refines 聚合后的那个。
+  - R4：不另写规则，由 §8.1 只写限定关系覆盖。
+  - R5：跨容器的 `c4:Using` 必须写 `c4:technology`。
+  - R6–R8 是 Warning：
+    - R6：被 C4 软件系统或容器 refines 的 am4 组件，应直接或经一个 Role 执行 Function/Process。上游 am4 4.0 关系表中，组件只能直接分派到 Role 和 DataObject；分派到 Function/Process 必须经过 Role，直接画属于派生，见核实报告 §8 S10。
+    - R7：这类组件（直接或经 Role）执行的行为所实现的服务，应能追溯到 Capability 或 Requirement。只检查追溯这一半。
+    - R8：一个 DataObject 至多有一个权威来源（被 ApplicationComponent 分派）。作用于全部 DataObject，不限于 C4 所描述的系统。
+- 不加载 c4 的 viewpoints、notation、deliverable-templates；不加载 core-vis、edgy（§12）。
+
 ## 7. 跨记法追溯
 
 ### 7.1 跨记法连接只有三类
@@ -186,14 +202,15 @@
 通用遍历：`?r a/rdfs:subClassOf* arch:QualifiedRelationship ; arch:source ?s ; arch:target ?t`，类型判断走 `rdf:type/rdfs:subClassOf*`。这条查询在构建后的图上运行（直连三元组已经归一化），所以不存在"漏掉作者手写的直连边"的问题。原型用一条完全不含记法专有谓词的查询，从 TestCase 出发走通了 21 条边、18 个节点：经过 am4、DDD 到达代码和可部署包；BPMN 和 UML 节点作为 refines 的叶子挂在路径旁边（它们是细化分支，不在主链上）。
 
 ### 7.2 `arch:refines` 的层级规则（同一性治理）
-- **方向**：从细到粗，按 `aisep:notationLevel`：code（UML）→ design（DDD、BPMN）→ hub（am4）。refines 必须指向**更高层级**的记法（可以跨级，例如 UML 直接指向 am4）；同级或同一记法内**禁止**使用（同记法内的细化用它自己的 Specialization/Composition）。refines 指向已废弃或已被替换的节点时，L4 报 Warning，提示把追溯链迁移到替换它的节点。同一节点在不同层级的锚点之间是否互相一致（例如 UML 类的 am4 锚点是否等于它 DDD 锚点的 am4 锚点），第一批不检查。
+- **方向**：从细到粗，按 `aisep:notationLevel`：code（UML）→ design（DDD、BPMN、C4）→ hub（am4）。refines 必须指向**更高层级**的记法（可以跨级，例如 UML 直接指向 am4）；同级或同一记法内**禁止**使用（同记法内的细化用它自己的 Specialization/Composition）。refines 指向已废弃或已被替换的节点时，L4 报 Warning，提示把追溯链迁移到替换它的节点。同一节点在不同层级的锚点之间是否互相一致（例如 UML 类的 am4 锚点是否等于它 DDD 锚点的 am4 锚点），第一批不检查。
 - **无环**：由层级方向保证。
 - **主锚唯一**：一个节点对每种更高级别的记法**最多 refines 一个节点**。被 refines 的那个节点就是它在该层级的主锚。
 - **合并与拆分**：两个节点要合并时，保留一个，另一个标 `owl:deprecated true` 并加 `dcterms:isReplacedBy`，追溯链迁移到保留的节点上；拆分时，原节点也标 deprecated。不使用 `owl:sameAs`，不使用多类型。
 
 ### 7.3 记法混用规则（修复原型审计的漏洞 H）
 - 记法 N 的关系类（例如 `bpmn:SequenceFlow`），两端都必须是记法 N 的节点。
-- 核心的通用关系 `arch:Association`、`arch:HasPart`（以及模型里对它们的特化）也一样：只能连接同一记法的节点。
+- 核心的通用关系 `arch:Association`、`arch:HasPart`、`arch:DependsOn`（core 0.7.0 新增，PR #103 补入）以及模型里对它们的特化也一样：只能连接同一记法的节点，或两个不属于任何记法的节点。
+- C4 的关系类（`c4:Using`、`c4:ContainerContainment`、`c4:ComponentContainment`、`structurizr:Deployment`）同样只连 C4 节点。C4 与 am4 之间只能用 `arch:refines`（§6.8）。
 - 不同记法之间只能通过 §7.1 的三类连接。
 - am4 关系类的两端由 am4 矩阵判定；端点类型若属于 `inheritsHubRules=false` 的模块（例如 BPMN 任务），在矩阵里视为未知类型，直接报错，并提示改用 refines。
 
@@ -277,7 +294,7 @@ spike 里 AI 试验用的 7 元素标准答案，其实是无向的 3 跳邻域�
 
 ## 11. 版本与 vendoring
 - `vendor/MANIFEST.json`：每个上游文件记录 URL、抓取时间、SHA256、许可证、`owl:versionInfo`。
-- 升级上游是一次显式变更：抓取 → 生成差异报告 → 全部模块测试回归 → 人工批准（一条批准记录，关口为"架构决策"）。
+- 升级上游是一次显式变更：抓取 → 生成差异报告 → 全部模块测试回归 → 人工批准（一条批准记录，关口为"架构决策"）。MVP 期间最后一步暂停：差异报告写进 PR，不要求批准记录（ADR-024）。
 - `arch:modelConformsToMetamodel` 指向 AISEP 模块 IRI；AISEP 模块按 semver 发版。
 
 ## 12. 许可证立场
@@ -286,7 +303,7 @@ spike 里 AI 试验用的 7 元素标准答案，其实是无向的 3 跳邻域�
 - 不引入：core-vis、edgy（CC-BY-SA）、ddd-crew 的文字（CC-BY-SA）。SPDX、OSLC 只用 `skos:exactMatch` 引用。
 
 ## 13. 不在第一批范围
-C4、Backstage 接入、TOGAF 内容元模型、ArchiMate 派生规则引擎、图形布局、成本扩展、ADM 框架实例化（第三步）、CI/CD 实际接入。
+Backstage 接入、TOGAF 内容元模型、ArchiMate 派生规则引擎、图形布局、成本扩展、ADM 框架实例化（第三步）、CI/CD 实际接入。（C4 已于 PR #106 作为模块加入，见 §6.8；从 C4 模型生成视图和 arc42 文档骨架尚未实现。）
 
 ## 14. 决策（2026-11-19 已拍板，全部按建议采纳，见 ADR-011）
 

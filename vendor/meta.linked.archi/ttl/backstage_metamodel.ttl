@@ -47,15 +47,14 @@ arch:modelConcepts, not this property.'''@en ;
     skos:editorialNote            '''Kind coverage, stated here as well as in the ontology because this
 manifest is where a tool asks what the metamodel contains.
 
-The metamodel covers eight of the nine kinds the descriptor format defines: Component, System, API,
-Resource, Domain, Group, User and Template. The ninth, Location, is deliberately not modelled — it is
-catalog ingestion configuration rather than a node in an architecture, and what it carries is already
-retained on the entities it produced, as bs:managedByLocation and bs:managedByOriginLocation. A lift should
-drop Location entities and report the count rather than emit untyped nodes.
+The metamodel covers the nine kinds the descriptor format defines: Component, System, API, Resource,
+Domain, Group, User, Template and Location. Location is catalog ingestion configuration rather than a part
+of the architecture; it has a class so that a lift types it like any other kind, and a question about the
+architecture leaves it out by that class.
 
-The authoritative version of this decision, with the reasoning and with the other deliberate omissions
-(a Template's spec.parameters and spec.steps, a status item's serialised error, per-key label predicates),
-is the SCOPE STATEMENT on the ontology header. Read that; this is a pointer to it.'''@en ;
+The authoritative version of this, with the reasoning and with the deliberate omissions (a Template's
+spec.parameters and spec.steps, a status item's serialised error, per-key label predicates), is the SCOPE
+STATEMENT on the ontology header. Read that; this is a pointer to it.'''@en ;
     dcterms:source        <https://backstage.io/docs/features/software-catalog/> ,
                           <https://backstage.io/docs/features/software-catalog/system-model> ,
                           <https://backstage.io/docs/features/software-catalog/descriptor-format> ,

@@ -23,8 +23,8 @@
 types (Node, SpecialNode, GroupNode) and three qualified relationship types (Association,
 Aggregation, Connection), built directly on the core ontology. It is deliberately small, yet
 enough for examples of meaningful restrictions and inference rules. Connection is the generic
-relationship: it relates any two elements, of any language, so Basic added beside another
-language lets a modeller relate what that language has no relationship for. The manifest
+relationship among Basic's elements: it relates any two of them. Between a Basic element and an
+element of another language, the core's relationship types are used. The manifest
 https://meta.linked.archi/basic/metamodel#Basic ties it to its taxonomy, its presentation
 contexts and its two notation sets. Version 0.1.0 is the initial release of these element and
 relationship patterns.'''@en ;
@@ -136,11 +136,16 @@ relationship patterns.'''@en ;
     skos:prefLabel      "Connection"@en ;
     skos:definition     '''Relates an element to another element, saying no more than that the two are
         related.'''@en ;
-    arch:domainIncludes arch:Element ;
-    arch:rangeIncludes  arch:Element ;
-    skos:scopeNote      '''The generic relationship: between elements of any type and any language, where
-    no more specific relationship says what the relation is. Unlike Association, it is not limited
-    to Basic's element types.'''@en ;
+    arch:domainIncludes :Node,
+                        :SpecialNode,
+                        :GroupNode ;
+    arch:rangeIncludes  :Node,
+                        :SpecialNode,
+                        :GroupNode ;
+    skos:scopeNote      '''The generic relationship among Basic's elements: between any two of them, where
+    no more specific relationship says what the relation is. Unlike Association, it relates each of
+    Basic's element types, the group node included. Between a Basic element and an element of another
+    language, use the core's relationship types.'''@en ;
 .
 
 :Connection
@@ -156,7 +161,9 @@ relationship patterns.'''@en ;
     a                    owl:ObjectProperty ;
     rdfs:range           :Connection ;
     arch:unqualifiedForm :connection ;
-    arch:domainIncludes  arch:Element ;
+    arch:domainIncludes  :Node,
+                         :SpecialNode,
+                         :GroupNode ;
     skos:prefLabel       "qualified Connection"@en ;
     skos:definition      '''Navigates from a source element to a Connection qualified relationship
     resource.'''@en ;
