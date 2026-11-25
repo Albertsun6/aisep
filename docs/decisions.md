@@ -228,3 +228,29 @@
   7. **不放宽的**：硬规则 1–5、7；批准记录只能由 Albert 本人做出；CI 必需检查；涉及 mergecheck 的 PR 核对 `negatives`（ADR-022）；用合并提交；PR 即锁；跨模型评审先问 Albert。
 - **理由**：Albert 原话「把可追溯，可审计，可复现这三个质量目标先搁置，后期再做，先做 mvp，不然太慢了」。放宽的都是事后可以补做的校验与留痕（批准记录、三步合并的留痕、本地约 48 分钟的全量测试、阶段关口）；IRI、限定关系、vendor 哈希、批准只能由本人做出这些事后补不回来或属于安全约束的不动。根目录文件、`aisep/**`、`aisep-mcp/**`、`tests/**`、`tools/**` 不放宽，因为 ADR-019 的评审实测过在这些位置放文件可以让 `mergecheck` 空跑通过；`modules/**` 与 `vendor/**` 不放宽的原因见第 1 款。分支保护不要求分支与 `main` 同步（`strict:false`），CI 的结论是对开 PR 时的 `main` 算的，所以会改变 gate 结论的 `modules/**`、`vendor/**` 仍走三步。
 - **后果**：评审方面实际省下的只有「新增 IRI 的模型 PR」；`modules/**`、`vendor/**` 的 PR 仍要等合并前评审，直到第 1 款的漏洞修掉。不改模型、模块、vendor 与负例清单的 PR 不再有合并前重算，靠 CI 的 `mergecheck` 必需检查兜底。第 1 款的漏洞在 `main` 上现已存在（不是本条引入），按 ADR-019 第 2 款的漏洞例外另开修复 PR。**恢复条件**（任一出现即逐条恢复，由 Albert 定）：① MVP 走通第一条含 C4 的端到端链路；② 出现第二个批准人或使用者；③ 有外部数据或受监管数据进入模型；④ 合并后评审在同一类路径上连续两次查出阻塞问题。
+
+## ADR-025 · 2026-11-26
+
+- **状态**：已采纳（Albert 2026-11-26 拍板，经协调会话转达；改选 2026-11-25 动作机制决定 2「动作目录写成 JSON、不进元模型」）
+- **决策**：
+  1. **动作定义建进元模型，只建定义、不建执行记录。** 新扩展模块 `modules/ext-actions/`（Extension，与 ext-code、ext-verification、ext-governance 一样共用 `https://aisep.example/ont/aisep#`，不声明 `aisep:ownsNamespace`；模块 IRI `https://aisep.example/module/ext-actions`）。参照 Palantir Foundry 的 Action type 建 `aisep:ActionType`（参数、有序步骤、提示级前置检查）、`aisep:ActionStep`、`aisep:BasicAction`（封闭集合，五个个体对应五个写工具）。不建执行记录（Foundry 的 Action log），保持 ADR-013；不跟 Foundry「默认只能经动作编辑」，动作仍是推荐通道，直接编辑照旧允许。
+  2. **复用现成词汇，不另造。** 参数用 SHACL 的 `sh:parameter` / `sh:Parameter`（参数名 = `sh:path` 的本地名）；前置检查用 `sh:SPARQLAskValidator`（`sh:ask` 为 true 即通过，`sh:message` 是修法提示，参数以 `$名` 预绑定）；标识用 `dcterms:identifier`，版本用 `owl:versionInfo`（历史靠 Git），名称与说明用 `skos:prefLabel`、`skos:definition`。步骤用 `rdf:List` 排序（`aisep:steps`）。参数键放在 `https://aisep.example/ont/ext-actions#`（规范 §3 现有的「AISEP 模块本体 `{base}ont/{module}#`」形状，Albert 2026-11-26 选 A），不声明为属性。
+  3. **目录改读 RDF。** 执行器 `aisep/actions.py` 与两个固定工具 `model_list_actions`、`model_apply_action` 保留，目录从 `modules/ext-actions/catalog.ttl` 读；删除 `aisep/action_catalog.json`。`catalog.ttl` 列进模块清单的 `aisep:loads`：`gate` 的 L3 用 `shapes.ttl`（EA1–EA10）校验它，`model_query` 能查到有哪些动作。执行器每次调用重读目录，自己再判一遍同样的结构（X1），另判 SHACL Core 说不了的规则（X2–X10，含「两步作用于同一目标判无效」）；单条定义有错只让该条无效，两个工具不因此返回 `INTERNAL`。
+  4. **不采纳 Foundry 的 Function rule。** 动作只组合现成写工具的计划函数：受保护类型、IRI 生成、文件落点三道防线不重写；也避开 Foundry 自己承认的问题（没有动作编辑权限的人可以通过改函数来改变动作行为）。
+  5. **不做跨模型评审，只做独立评审。** 本次改动属于 ADR-021 第 2 款所说的「元模型语义、IRI 方案」，依该款问过 Albert，他选不做跨模型评审（2026-11-26）。新铸 IRI 合并前报 Albert 过目。
+- **理由**：动作机制同类产品调研报告第 3.4 节第 2 条指出 JSON 目录的弱点：动作定义游离在元模型之外，`gate` 校验不到、`model_query` 查不到，也不符合原则四「自定义的标准本身也是仓库里的元素」。建成元模型里的定义后，目录写坏会让 `gate` 失败，从而进不了主线；查询和工作台能按 RDF 读到动作及其中文标签。与 Foundry 的对照：保留 Action type（参数、规则、提交条件）的形状；规则限定为五个基本动作，并禁止两步作用于同一目标以换取重放幂等（Foundry 允许后一条规则覆盖前一条）；提交条件降为提示级前置检查（Foundry 的条件是硬门槛，因为在 OSv2 里动作是用户编辑的唯一入口，这里不是；Foundry 的数据源管道另有一条不经动作的写入路径）；不建 action log、side effects、Function rule。副本实跑：不改 `aisep/core.py`，新模块就能被发现、加载，并参与 L3 和 `gate`；模型上 `gate` 的结论、计数与耗时不变。
+- **与已有 ADR 的关系**：
+  - ADR-013：不建执行记录，不写日志，不产生审批项，所有状态仍在 Git 文件里；动作定义是模块文件，不是「进行中状态」。
+  - ADR-016：动作个体与基本动作个体都在共享的 `aisep#` 里，用 `Action` / `Basic` 前缀区分，不另开模块命名空间；参数键放在 `ont/ext-actions#`，符合规范 §3 现有表行，不新增表行。
+  - ADR-019：`modules/**`、`aisep/**` 都是合并前评审；`catalog.ttl` 新增或修改动作同样走合并前评审，并按元模型改动来评审（`catalog.ttl` 在 `aisep:loads` 里，作为元模型加载；执行器只校验 `aisep:ActionType` 闭包内的三元组，不限制其中出现其他 TBox 三元组）。新增动作会铸 IRI，不属于白名单。
+  - ADR-021：第 2 款（跨模型评审先问 Albert）见决策第 5 条。
+  - ADR-024（MVP 期间放宽评审分级）：第 1 款明确 `modules/**` 暂不放宽，本条不受其影响；按第 2 款，改到 `catalog.ttl`（属 `modules/**`）的 PR 仍走三步合并；按第 5 款，合并前由协调会话核对 H 上 `negatives` 为 `["success"]`。
+  - 动作机制调研报告阶段 D：报告把阶段 D（建进元模型）的入口标准定为「至少 3 个动作在真实链路上被调用过」等；这次 Albert 改选决定 2，直接跳过了这些入口标准。
+- **后果**：
+  - 两个工具的入参与返回基本不变：动作仍用短 id 调用；列表与执行结果多了动作 IRI（`iri`、`actionIri`）和动作版本；`operations` 改为五个写工具名（新增 `model_set_attributes`）；guard 语义从 `expect` 改为 SHACL 原义「true = 通过」，`bind` 改为 `$参数名` 隐式预绑定。
+  - `catalog.ttl` 写成非法 Turtle 时，所有模型工具与 `gate` 都报 `PARSE_FAILED`，与任何模块文件写坏时相同。
+  - X6（两步作用于同一目标）只由执行器判，`gate` 不知道它；靠 CI 的 pytest「仓库目录每条定义都有效」挡在合并前。由调用时取值造成的重叠（两个不同参数填成同一个 IRI、`slug` 恰好等于被删的 IRI）判不出。重放判定按合并后的文件逐字节比较：各步改动相互抵消（例如两个参数填成同一 IRI、先后改它的名称）时重放返回 `changed: false`、不重写文件；涉及新增元素或删除步骤的重叠，重放可能被拒。接口文档 §5.14 写明了这条重放边界。
+  - 只判最终候选图：中间步骤只查能否解析（L0），不判 L1/L2，所以动作能写出「依次调写工具写不出」的组合（例如一个元素要求的必有关系必须和元素同时出现）。这不算放宽 L0–L2：最终图用的是同一套规则。
+  - 撤销：报告阶段 D 的「反向出口：撤回只是一次代码 revert」在铸了 IRI 之后不再成立。将来撤销动作机制时，代码可以 revert，已铸的 IRI 按硬规则 5 不删不改，按 `owl:deprecated true` 退役（模块清单从 `aisep:loads` 移除 `catalog.ttl` 前先标退役）。
+  - 新铸 IRI 39 个（模块与本体 2、类 3、属性 10、基本动作 5、动作 2、参数键 9、shape 节点 8；设计稿写的「40」是加法错误），新开命名空间 `ont/ext-actions#`（参数键）、`shapes/ext-actions#`。Albert 2026-11-26 已过目并同意。
+  - 已知限制：模块测试的负例是模型文件，L1 的 G7 会拒绝空白节点上的 `sh:`、`dcterms:`、`rdf:first` 谓词且没有 focus，因此 EA8、EA9 的负例把参数和 guard 写成 IRI 节点，EA5–EA7 的负例不用 `( … )` 表。后果：`ea8-parameter-two-types`、`ea8-parameter-unsupported-key`、`ea9-guard-without-message`、`ea9-guard-not-a-validator`、`ea5-member-not-a-step` 这几个负例实际命中的是 `sh:nodeKind sh:BlankNode` 那一条或第一条 EA5 形状，去掉文件名所说的缺陷后仍然命中，**只证伪 nodeKind**，证伪不了它们声称的缺陷。ParameterShape、GuardShape、EA5 成员形状本身有效（独立评审直接改 `catalog.ttl` 后 `gate` 都 FAIL），但目前只有 EA6 有 pytest 覆盖（`test_gate_checks_the_catalogue_with_the_module_shapes`）；补「改副本 `catalog.ttl` 跑 `gate`、断言 EA5/EA8/EA9 被点名」的用例留作后续。这几条规则在执行器一侧另由 pytest 覆盖。

@@ -1,6 +1,6 @@
 # AISEP 第二步：元模型规范（v0.4）
 
-状态：§14 的 D1–D10 已于 2026-11-19 全部按建议拍板（ADR-011）；v0.3 = v0.2 + 三轮审计和第二次 GPT 评审之后补的 R1–R4、G1–G10，全部已在原型里实现并验证。v0.4 = v0.3 + “AI 进行中”的数据来源（ADR-013）：新增 `aisep:AgentActivity`（§6.7）、批准记录的 `aisep:activity`（§6.6）、MCP 的 `model.diff` 与 `governance.record_approval` 改动（§8.3）；AgentActivity 与 `model.diff`、`governance.record_approval` 已在《MCP Server 接口设计》中定稿（ADR-014）。依据：`spike-linked-archi/spike-result.md`（第一步结论）、《方法论总纲（草案1）》§6/§6a、《AISEP 架构原则》、`decisions.md`（ADR-003/004/007/008/009/010）。
+状态：§14 的 D1–D10 已于 2026-11-19 全部按建议拍板（ADR-011）；v0.3 = v0.2 + 三轮审计和第二次 GPT 评审之后补的 R1–R4、G1–G10，全部已在原型里实现并验证。v0.4 = v0.3 + “AI 进行中”的数据来源（ADR-013）：新增 `aisep:AgentActivity`（§6.7）、批准记录的 `aisep:activity`（§6.6）、MCP 的 `model.diff` 与 `governance.record_approval` 改动（§8.3）；AgentActivity 与 `model.diff`、`governance.record_approval` 已在《MCP Server 接口设计》中定稿（ADR-014）。v0.4 之后补入动作扩展（ADR-025）：新增扩展模块 ext-actions（§6.9），动作定义建进元模型，MCP 增加 `model.list_actions`、`model.apply_action`（§8.3）。依据：`spike-linked-archi/spike-result.md`（第一步结论）、《方法论总纲（草案1）》§6/§6a、《AISEP 架构原则》、`decisions.md`（ADR-003/004/007/008/009/010）。
 基线：Linked.Archi core 0.6.0 + ArchiMate 4.0（vendored，按 SHA256 锁定）。命名空间先用占位符 `https://aisep.example/`，第三步建正式仓库前统一替换。
 原型：`metamodel-prototype/`（179 项测试全部通过，详见 [`docs/history/metamodel-spec-prototype-and-revisions.md`](history/metamodel-spec-prototype-and-revisions.md) 的「§15」）。修订与辩论记录见同一文件的「附 B」，已知限制见本文附 C。
 
@@ -8,9 +8,9 @@
 
 - **底座照搬 Linked.Archi core**：元素 `arch:Element`、关系 `arch:QualifiedRelationship`、视图 `arch:View`、容器 `arch:Model`、记法清单 `arch:Metamodel`。AISEP 不发明新的原语。
 - **枢纽记法 ArchiMate 4.0**。其他记法用 `rdfs:subClassOf`/`subPropertyOf` 挂到 4.0 上，这层对齐**由 AISEP 自己写**（ADR-010）。
-- **AISEP 自己补的部分**：闭世界规则、写入层（只写限定关系）、记法混用规则、`refines` 层级规则、按模块划定校验范围、影响分析口径（作为数据）、批准记录（ADR-009）、验证扩展、代码追溯扩展、IRI 与版本策略。
+- **AISEP 自己补的部分**：闭世界规则、写入层（只写限定关系）、记法混用规则、`refines` 层级规则、按模块划定校验范围、影响分析口径（作为数据）、批准记录（ADR-009）、验证扩展、代码追溯扩展、动作定义（ADR-025）、IRI 与版本策略。
 - **对外形态**：以上能力都通过 MCP Server 暴露（ADR-008）；本规范定义它的语义契约（§8.3）。
-- **第一批模块**：ArchiMate 4.0（枢纽）、BPMN、UML（子集）、DDD（新建，基于 Context Mapper CML）；扩展：治理与批准、架构决策（ADR）、质量、验证、代码追溯。
+- **第一批模块**：ArchiMate 4.0（枢纽）、BPMN、UML（子集）、DDD（新建，基于 Context Mapper CML）；扩展：治理与批准、架构决策（ADR）、质量、验证、代码追溯、动作（ext-actions，ADR-025）。
 
 ## 1. 架构原则如何落到元模型
 
@@ -45,6 +45,7 @@
 - 跨模型引用直接写对方的 IRI；被引用元素被删除时 L1 报错（原型已验证）。
 - 修订历史交给 Git。
 - 现有手写 IRI 不按本表重命名（slug 一经创建不改）；本表只约束写入层新生成的 IRI。
+- 动作（ADR-025）：动作类型个体是 `{base}ont/aisep#Action{驼峰名}`（只在 `modules/ext-actions/catalog.ttl` 里声明，L3 EA1）；参数键是 `{base}ont/ext-actions#{参数名}`（即上表「AISEP 模块本体」一行，参数名 = `sh:path` 的本地名，不声明为属性）；动作的短 id 是 `dcterms:identifier`（`^[a-z][a-z0-9-]{0,63}\Z`），由 `model.apply_action` 用来调用。动作 IRI 与参数键同样一经创建不改。
 
 ## 4. 三原语骨架（AISEP 最小必填）
 
@@ -84,7 +85,7 @@
   - `aisep:ownsNamespace`。
   - `owl:versionInfo`（semver）。
 - 对齐公理**只放在 AISEP 自己的图里**，不往第三方词汇文件里写。上游的 SKOS 映射文件原样保留，只当文档用。
-- 每个模块都带 `tests/valid` 和 `tests/invalid`。原型的 8 个模块共 83 个用例，每条规则至少各有一个正例和一个负例。
+- 每个模块都带 `tests/valid` 和 `tests/invalid`。原型的 8 个模块共 83 个用例，每条规则至少各有一个正例和一个负例。ext-actions 的正例只有一个（`tests/valid/catalog-loads.ttl`：随清单加载的 `catalog.ttl` 必须满足 EA1–EA10），每条 EA 规则各有负例。
 
 ## 6. 第一批模块
 
@@ -192,6 +193,15 @@
     - R8：一个 DataObject 至多有一个权威来源（被 ApplicationComponent 分派）。作用于全部 DataObject，不限于 C4 所描述的系统。
 - 不加载 c4 的 viewpoints、notation、deliverable-templates；不加载 core-vis、edgy（§12）。
 
+### 6.9 动作（Extension，ADR-025）
+- 动作是现有写工具的具名组合，参照 Palantir Foundry 的 Action type；只建定义，不建执行记录（ADR-013）。动作是推荐通道，直接编辑照旧允许；`gate` 与合并核对不知道改动是否经动作做的。
+- `aisep:ActionType` ⊑ `sh:Parameterizable`（只作文档，不加载 SHACL 词汇，不参与推理），**不在 `arch:Element` 之下**：没有 `arch:inModel`，也没有批准状态。个体只在 `modules/ext-actions/catalog.ttl` 里声明才生效，IRI 形如 `aisep:Action<名>`（§3）。字段：`dcterms:identifier`（短 id，恰好一个）、`skos:prefLabel`@zh 恰好一个、`skos:definition`@zh 至多一个、`owl:versionInfo`（semver，恰好一个）、`sh:parameter`（参数）、`aisep:guard`（前置检查）、`aisep:steps`（步骤表，恰好一个、非空）。
+- 参数：`sh:parameter [ sh:path <参数键> ; sh:datatype xsd:string 或 sh:nodeKind sh:IRI ; sh:optional true? ; sh:description @zh? ]`，只认这几个键。参数键在 `ont/ext-actions#`，不声明为属性，G7 照样拒绝模型文件把它们当谓词用。
+- 前置检查：`sh:SPARQLAskValidator`（`sh:ask`、`sh:message`@zh、`dcterms:identifier`），ASK 为 true 即通过，参数以 `$名` 预绑定；只是提示（`PRECONDITION_FAILED`），不是合法性定义，`gate` 不知道它。
+- 步骤：`aisep:ActionStep`，`aisep:invokes` 五个基本动作之一（`aisep:BasicAddElement`、`aisep:BasicAddRelationship`、`aisep:BasicSetLabels`、`aisep:BasicSetAttributes`、`aisep:BasicRemove`，封闭集合，`skos:notation` 是对应 MCP 写工具名），每个入参一个 `aisep:binding` 空白节点：`aisep:argument` 加取值来源四选一（`aisep:constant`、`aisep:fromParameter`、`aisep:fromStep`、`aisep:modelOf`），列表型入参的一项另带 `aisep:attributePredicate`。
+- 校验：L3 `shapes.ttl` 的 EA1–EA10（结构；EA10 防止动作词汇被写到模型元素上）；执行器每次读目录再判同样的结构，另判 SHACL Core 说不了的 X2–X10（表良构、入参名、引用、guard 能执行、id 唯一、空白节点不共享、两步作用于同一目标）。
+- 不采纳：Foundry 的 Function rule、side effects、action log、「默认只能经动作编辑」。
+
 ## 7. 跨记法追溯
 
 ### 7.1 跨记法连接只有三类
@@ -233,6 +243,8 @@
 | `model.remove` | 按 §8.2 级联删除，或者拒绝 | L1 |
 | `model.set_labels` | 只改名称（`skos:prefLabel` @zh）、英文名（`skos:altLabel` @en）、定义（`skos:definition` @zh），IRI、类型、关系不变；§3"改名只改标签"的写入口。批准记录、AI 活动不能改 | 写入前在候选图上跑 L0–L2，只拒绝新增的违规 |
 | `model.set_attributes` | 改已存在元素或关系的其他属性：按谓词整体替换该谓词的全部值，或删除该谓词的全部值；IRI、类型、所属模型、关系端点不变，名称、英文名、定义不经它改（走 `model.set_labels`）。谓词合不合法由 L1 判定，不另设白名单。批准记录、AI 活动、模型本身不能改 | 写入前在候选图上跑 L0–L2，只拒绝新增的违规 |
+| `model.list_actions` | 只读：列出 `modules/ext-actions/catalog.ttl` 里的动作（id、IRI、参数 schema、步骤、前置检查提示、definitionDigest）；坏定义只标无效，不影响其他动作 | —（执行器加载校验 X1–X10） |
+| `model.apply_action` | 按动作 id 执行一个动作：各步写工具的计划函数依次规划，合并成一次写入，全有或全无；含删除步骤的动作须先 dryRun 再带 planDigest；前置检查只做提示；不留执行记录 | 写入前在候选图上跑 L0–L2（只判最终候选图），只拒绝新增的违规 |
 | `model.check` / `model.validate` | L0–L2 / L3 | §10 |
 | `model.gate` | 只读，原子执行 L0–L4，一份合并结论；提交、CI 与关口页只认它（G10） | L0–L4 |
 | `model.query` | 只读 SPARQL，跑在构建后的图上 | — |
@@ -241,7 +253,7 @@
 | `governance.record_approval` | 新增一条批准记录（不改状态字段）。顶层必填 branch、headCommit（有无活动都必填）；可选 expectedBaseCommit，只用于核对、不写入（不等于被拒收的 baseCommit）。写入层核对 headCommit 与分支头之间只有批准提交（无合并提交；每个提交恰好带一个值等于记录 evidence 的 `AISEP-Evidence` trailer、恰好新增一个 governance 目录下的 `.ttl` 普通文件、源图只新增一条批准记录（可另带一条它引用的 AI 活动）），提交前持锁复核。branch 不能是主分支；headCommit 已在主分支上（按有效内容提交判定，§6.6）时只接受发布关口、不接受活动信息；发布关口的 headCommit 必须在主分支上。可选活动信息只含代理、sessionRef、起止时间和标签：写入层算出 baseCommit，在同一次提交里写入 `aisep:AgentActivity`（分支、headCommit 取顶层值）并用 `aisep:activity` 关联；evidence 取调用方给出的 headCommit，generatedAtTime、baseCommit 由写入层填，不接受调用方传入 evidence、generatedAtTime、baseCommit。Approved 要求 evidence 处 gate 通过。每条记录新建一个 `governance/<记录本地名>.ttl`，只提交这一个路径，不跳过 pre-commit | L0–L2 + gate |
 | `model.diff` | 只读。base 是 Git 引用（不给时取 head 侧 commit 与模型主分支的 merge-base）；head 有两种：Git 引用，或某分支检出的工作区（按分支名经 `git worktree list` 定位，只接受分支名，不接受路径）。工作区内容 = 该工作区模型目录下已跟踪 Turtle 文件的当前内容 + 未跟踪且未被忽略的新 Turtle 文件 − 已在工作区删除的文件。返回新增、修改、删除的元素和关系清单（按 IRI；同一 IRI 的三元组有变化算修改；改关系类型按 §8.2 表现为删除加新增）。比较的是两边模型源文件的并集图（构建前）；三元组在文件间移动、排版和注释变化不算修改。多个 merge-base 时报错，要求显式给 base。结果按 kind（element / relationship / view / governance / schema / other）分组计数；detail 取 summary / items / triples；标明 head 的种类、对应 commit 和工作区是否有未提交改动。工作区里某个文件解析失败时，结果标为不完整并列出失败文件，其余照常比较，失败文件里的主语不判为删除。无状态，不写任何东西，可从任意 worktree 调用 | L0 |
 
-所有写操作都是 Turtle 文件的修改，进 Git；MCP 不保存任何不在文件里的状态。接口的具体设计见《MCP Server 接口设计》（`docs/mcp-interface.md`）。线上工具名把点换成下划线（`model.diff` → `model_diff`）。写工具只改工作区、不提交；`governance.record_approval` 例外，自己做一次只含 governance 文件的提交。
+所有写操作都是 Turtle 文件的修改，进 Git；MCP 不保存任何不在文件里的状态。接口的具体设计见《MCP Server 接口设计》（`docs/mcp-interface.md`）。线上工具名把点换成下划线（`model.diff` → `model_diff`）。写工具只改工作区、不提交；`governance.record_approval` 例外，自己做一次只含 governance 文件的提交。`model.apply_action` 也一样只改工作区：一次动作是一次普通写入，不记录「执行过哪个动作」。
 
 `model.diff` 同时服务两处：工作台"AI 进行中"区域（每个编排器会话按分支名算改动元素）和关口页的模型差异图，接口按这两个用途一起设计。"AI 进行中"缺省比较会话分支的工作区（含未提交改动），关口页差异图和批准只认已提交的 commit；前提是模型文件和会话改动的代码在同一个仓库、同一条分支上（见附录 C）。**不提供任何"上报进行中状态"的写工具**（ADR-013）。
 
@@ -294,6 +306,7 @@ spike 里 AI 试验用的 7 元素标准答案，其实是无向的 3 跳邻域�
 ### 10.2 对齐公理和校验范围
 - **L3 跑 am4 shapes 时**，数据图里放入：枢纽和核心模块、`inheritsHubRules=true` 的 Language 模块、**所有 Extension 模块**（例如 `Deployable ⊑ Artifact` 必须常驻，否则 Deployable 会逃过矩阵）的对齐公理。不放入 `inheritsHubRules=false` 的 Language 对齐。
 - 其他每个模块的 shapes，在"源文件 + 构建出的直连三元组 + 本模块依赖"上单独运行。
+- ext-actions 的 shapes 另外还校验本模块 `aisep:loads` 的 `catalog.ttl`（动作目录），所以 `catalog.ttl` 写坏会让 L3 报 EA1–EA10（ADR-025）。
 - 查询和影响分析加载全部对齐公理。
 
 ## 11. 版本与 vendoring
