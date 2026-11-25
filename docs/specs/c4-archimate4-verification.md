@@ -208,14 +208,18 @@
 ### 9.3 请 Albert 拍板的问题
 
 1. **身份谓词**：采用 `arch:refines`（推荐，贴合 AISEP D8）还是上游 DD-11 的 `skos:exactMatch`（需要先修订 metamodel-spec）？
+   - **已决（Albert，2026-11-25）**：采用 `arch:refines`。
 2. **数据库对多个数据对象**，可选做法：
    - (a) 一个 `c4:Database` 只 refines 一个 `am4:DataObject`；多个逻辑数据对象先在 am4 侧用 `am4:aggregates` 归到一个汇总数据对象下（推荐，不改 AISEP 规则）；
    - (b) 放宽 §7.2 的主锚唯一规则，对 Database → DataObject 开例外（要改 metamodel-spec）；
    - (c) 在 §7.1 第三类里加一个 AISEP 追溯谓词，例如 `aisep:stores`（要改 metamodel-spec）。
+   - **已决（Albert，2026-11-25）**：选 (a)，先在 am4 侧聚合，再让数据库 refines 汇总数据对象。
 3. **c4 模块层级**定为 design（推荐）还是另设一级？
+   - **已决（Albert，2026-11-25）**：design。
 4. **第 3 步引入哪一版上游**：
    - (a) 继续用 11-19 快照（推荐，与已批准的 core 0.6.0 一致；c4 文件用快照版，包括较宽的 `c4:uses` 定义域）；
    - (b) 整体升级到线上版（core 0.7.0、am4 11-22 版、c4 线上版），这意味着改变已批准的底座。
+   - **已决（Albert，2026-11-25）**：选 (b)，整体升级到线上版。第 3 步因此要连同 am4 模块已加载的 core、archimate4 文件一起升级：按 AGENTS.md 硬规则 6 和元模型规范 §11 走一次显式变更，重新抓取并重算 SHA256SUMS，跑全量测试；改动涉及 `vendor/**`、`modules/**`，需要合并前评审。
 
 ## 10. 后续事项（不在本次范围）
 
