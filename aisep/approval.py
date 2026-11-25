@@ -366,6 +366,11 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
         if ctx.is_a(boss, AISEP + "AIAgent") or not ctx.is_a(boss, ARCH + "Stakeholder"):
             raise AisepError("APPROVER_NOT_ALLOWED", f"{core.short(boss)} 不能批准：批准人须是 arch:Stakeholder，且不能是 AI 代理",
                              details={"rejectedFields": ["approvedBy"]})
+        # #73 (MVP): the approver is a Stakeholder of the approved model; a cross-model approver counts in the
+        # whole-repository view but not in that model's own view (EG13). Records already on main stay as they are.
+        if model_iri not in {m for (m,) in ctx.rows(f"SELECT ?m WHERE {{ <{boss}> arch:inModel ?m }}")}:
+            raise AisepError("APPROVER_NOT_ALLOWED", f"{core.short(boss)} 不能批准：批准人须是被批模型 {mslug} 的干系人",
+                             details={"rejectedFields": ["approvedBy"], "reason": "approver-not-in-model"})
         objs = [_iri(ctx, a, "approves") for a in approves]
         missing = [a for a in objs if not ctx.types(a)]
         if missing:

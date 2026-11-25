@@ -528,3 +528,29 @@ def test_approver_not_a_stakeholder(t, who):
     assert e.code == "APPROVER_NOT_ALLOWED", e.code
     assert e.details["rejectedFields"] == ["approvedBy"]
     assert refs(t) == before and new_records(t) == [] and t.git("status", "--porcelain") == ""
+
+
+# ================================================================== #73: the approver belongs to the approved model
+
+SALES = "https://aisep.example/model/sales/"
+
+
+def test_approver_from_another_model_is_rejected(t):
+    """#73 (MVP): a Stakeholder of another model may not approve this model's elements: the whole-repository view would
+    count the record, the approved model's own view would not (EG13). 变红: drop the arch:inModel check in approval.py."""
+    t.write("models/sales/am4.ttl", PREFIXES + f"""
+<{SALES}> a arch:Model ;
+    skos:prefLabel "销售"@zh .
+
+<{SALES}salesLead> a arch:Stakeholder ;
+    arch:inModel <{SALES}> ;
+    skos:prefLabel "销售负责人"@zh .
+""")
+    t.head = t.commit_all("add the sales model and its Stakeholder")
+    before = refs(t)
+    e = err(t, approvedBy=SALES + "salesLead")
+    assert e.code == "APPROVER_NOT_ALLOWED", e.code
+    assert e.details == {"rejectedFields": ["approvedBy"], "reason": "approver-not-in-model"}
+    assert refs(t) == before and new_records(t) == [] and t.git("status", "--porcelain") == ""
+    # the same commit, approved by the approved model's own Stakeholder, is recorded
+    assert call(t)["evidence"] == t.head
