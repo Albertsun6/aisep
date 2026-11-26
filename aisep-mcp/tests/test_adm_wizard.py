@@ -146,3 +146,17 @@ def test_unknown_model_and_malformed_check_are_errors(tmp_path):
                                              "SELECT ?element WHERE { VALUES ?model { <urn:x> } }\n", encoding="utf-8")
     with pytest.raises(AisepError):  # gap 缺 source
         adm.load_checks(str(tmp_path / "root"))
+
+
+def test_out_refuses_models_via_symlink_or_case(tmp_path):
+    """--out 不能经符号链接或改大小写写进 models/（PR #108 评审遗留）。"""
+    link = tmp_path / "link"
+    link.symlink_to(os.path.join(ROOT, "models"))
+    base = [PY, os.path.join(ROOT, "tools", "aisep.py"), "adm", "05-roadmap", "--model", "workbench", "--out"]
+    for target in (str(link / "probe.md"), os.path.join(ROOT, "Models", "probe.md")):
+        p = subprocess.run(base + [target], cwd=ROOT, capture_output=True, text=True)
+        assert p.returncode == 2, target + p.stdout + p.stderr
+        assert not os.path.exists(os.path.join(ROOT, "models", "probe.md"))
+    ok = tmp_path / "out.md"
+    p = subprocess.run(base + [str(ok)], cwd=ROOT, capture_output=True, text=True)
+    assert p.returncode == 0 and ok.read_text(encoding="utf-8").startswith("# 路线图"), p.stdout + p.stderr
