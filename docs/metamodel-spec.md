@@ -156,6 +156,7 @@
     已在主分支上的提交只能批准发布关口，其他关口拒绝；判断时从被批准的提交沿第一父提交回溯、跳过批准提交，取得到的第一个提交（有效内容提交）。这类批准不直接提交到主分支：从被批准的那个提交拉短命分支，只提交这一条批准记录，经合并请求合入后删分支；这类记录只能经只含批准提交的合并请求合入，夹带其他提交的合并请求中出现即拒绝。这类批准不带 AI 活动；evidence 是被发布的主分支提交，必须是目标分支头的祖先，被批准对象在 evidence 到目标分支当前头之间不得被修改或删除（内容已变须重新选被发布的提交）。只有结论为 Approved 时被发布的提交才打 `release/{yyyymmdd}-{前 7 位}` 标签（或版本号标签 `release/v…`），Rejected 不打；标签是对外的发布指针，被发布提交的可达性由主线保证。
 
   - `aisep:activity`（可选，最多一个）→ 一条 `aisep:AgentActivity`（§6.7），表示这次批准针对的是哪次 AI 活动；必须是模型元素（IRI，带 `arch:inModel`），不能是空白节点。evidence 是 40 位 commit 时，必须等于该活动的 `aisep:headCommit`，否则 L1 报错。
+  - 类型：approvalState 推导认 `aisep:ApprovalRecord` 的任何子类（不论声明在模块、vendor 还是模型文件里）。批准提交判据（下文）识别新增的记录与活动时，只认 `aisep:ApprovalRecord` / `aisep:AgentActivity`（§6.7）本类，以及同一模型目录 `models/<slug>/` 下模型文件声明的子类链；经 MCP 写入的记录一律用本类。用模块、vendor 或别的模型目录声明的子类做类型的记录，推导会认，但新增它的提交不是批准提交：合并检查按「不是批准提交」拒绝，只含它的合并请求按普通合并请求处理，发布批准也不认。
   - 文件：每条批准记录单独一个文件 `models/<slug>/governance/<记录本地名>.ttl`（同次写入的 AI 活动在同一文件）；批准只新增文件，不改已有文件。早先写在 `governance.ttl` 里的记录与人员不搬迁，`governance.ttl` 仍放 `arch:Stakeholder` 等治理类元素。
 - **`arch:approvalState` 由构建推导**，只推导给可被批准的元素（元素部分与 `aisep:approves` 的允许集合一致；模型、ADR 只在有记录时有状态。第四轮 R4-5、ADR-016、ADR-017）：带 `arch:inModel` 的 `arch:Element`，不含限定关系、`aisep:ApprovalRecord`、`aisep:AgentActivity`、`arch:Stakeholder`，这几类没有 approvalState。取值：取（按时区归一化，不带时区的按 UTC）最近一条**合法**批准记录的结论（不合法的记录不参与推导，构建时报 Warning）；没有记录则为 Proposed；元素本身被合并、替换（带 `dcterms:isReplacedBy`，且目标必须是某个模型里的元素，否则 L1 报错，也不触发）则为 Superseded。`aisep:Rejected`、`aisep:Superseded` 是 AISEP 补的取值，上游只有 Proposed/Approved。同一元素有两条时间相同（按时区归一化后）但结论不同的记录时，L1 报"批准有歧义"。手填 approvalState，包括通过子属性间接写入，都在 L1 报错。
 - 工作台只展示批准记录、触发新增批准记录，不保存状态（ADR-009）。
@@ -279,6 +280,13 @@
 | Structurizr `structurizr:Deployment` | Backward | 容器依赖它部署到的节点 |
 | `arch:HasPart` | Backward | 同 Aggregation：从整体画向部分，整体依赖部分 |
 | UML `uml:Dependency` 及其子类（Abstraction、Realization、InterfaceRealization、Usage、Deployment） | Backward | 源依赖目标：Dependency、Usage 是 client 依赖 supplier（UML 2.5.1 §7.7）；Realization 是实现依赖规格，不取 am4 Realization 的 Both；Deployment 是制品依赖它部署到的节点，同 `structurizr:Deployment` |
+| UML `uml:Association` | None | 同 `am4:Association`：类元之间的结构连接，两端互不依赖 |
+| UML `uml:Aggregation` | Backward | 同 `am4:Aggregation`：上游从整体画向部分（`uml:aggregates`），共享的部分可独立存在，整体依赖部分 |
+| UML `uml:Composition` | Both | 同 `am4:Composition`：上游从整体画向部分（`uml:composedOf`），部分随整体删除，整体的结构依赖部分 |
+| UML `uml:Include`、`uml:Extend` | Backward | Include 从基用例画向被包含用例，基用例并入并依赖被包含的行为；Extend 从扩展用例画向被扩展用例，被扩展用例不依赖扩展，扩展依赖它（UML 2.5.1 §18.2，按上游定义所引） |
+| UML `uml:InformationFlow`、`uml:ActivityEdge`（ControlFlow、ObjectFlow 继承） | Forward | 同 Flow：信息项、控制令牌、对象令牌从源流向目标，下游依赖上游（§20.2、§15.2） |
+| UML `uml:PackageImport`、`uml:PackageMerge` | Backward | 导入方按名字引用被导入包的成员；接收包并入被合并包的内容；都是源依赖目标（§12.2） |
+| 决策 `ad:IncludesConcept` | Backward | 同 `arch:HasPart`：从方案画向它包含的模型概念（`ad:includesConcept` ⊑ `arch:hasPart`），方案依赖这些概念 |
 | `aisep:verifies`、`aisep:implements` | Backward | 测试、代码依赖设计 |
 
 **两种模式**：

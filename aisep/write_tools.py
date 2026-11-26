@@ -18,6 +18,7 @@ MODULE_FILE = {"am4": "am4.ttl", "bpmn": "bpmn.ttl", "uml": "uml.ttl", "ddd": "d
 SLUG_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]*$")
 LABEL_MAX, DEFINITION_MAX = 200, 4000
 _CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f\u2028\u2029]")
+_TEXT_CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u2028\u2029]")  # as _CONTROL, but tab, LF, CR pass
 RDF_TYPE = core.A
 LABEL_LIMITS = {PREF: LABEL_MAX, ALT: LABEL_MAX, DEF: DEFINITION_MAX}
 UNSET = object()
@@ -56,6 +57,43 @@ def _check_text(field, v, limit, allow_newline=False):
         raise _bad(field, f"{field} 不能含控制字符或换行（U+{ord(bad.group()):04X}）")
     if len(v) > limit:
         raise _bad(field, f"{field} 最长 {limit} 个字符（现为 {len(v)}）")
+
+
+def _expand_term(ctx, name, field):
+    """core.expand, but a '_:' name is refused: it would be expanded into an IRI, never a blank node."""
+    if isinstance(name, str) and name.startswith("_:"):
+        raise _bad(field, f"{field} 里不能用空白节点 {name}（写工具只写 IRI 或字面量）")
+    return core.expand(ctx, name)
+
+
+def _escape_cr(text, triples):
+    """writer.term leaves U+000D raw, which a short string may not hold: escape it in the rendered text of the literals
+    being written (step 6, graph equivalence, still judges the result)."""
+    for body in {writer.term(ox.Literal(t.object.value), {}) for t in triples
+                 if isinstance(t.object, ox.Literal) and "\r" in t.object.value}:
+        text = text.replace(body, body.replace("\r", "\\r"))
+    return text
+
+
+def _value_term(ctx, v, field):
+    """The `value` shape shared by model_add_element's attributes (§5.2) and model_set_attributes' set (§5.12):
+    {iri} or {value, datatype?, lang?}; lang and datatype exclude each other, lang is non-empty, and a literal holds no
+    C0/C1 control character other than tab, LF and CR, nor U+2028/2029 (NUL would turn the .ttl into a binary file)."""
+    if set(v) == {"iri"}:
+        return ox.NamedNode(_expand_term(ctx, v["iri"], field))
+    if "value" not in v or not set(v) <= {"value", "datatype", "lang"}:
+        raise _bad(field, f"{field} 的 value 须为 {{iri}} 或 {{value, datatype?, lang?}}")
+    if "lang" in v and "datatype" in v:
+        raise _bad(field, f"{field} 的 value 不能同时给 lang 和 datatype")
+    if "lang" in v and not v["lang"]:
+        raise _bad(field, f"{field} 的 lang 不能为空")
+    o = ox.Literal(v["value"], language=v["lang"]) if "lang" in v else \
+        ox.Literal(v["value"], datatype=ox.NamedNode(_expand_term(ctx, v["datatype"], field))) if v.get("datatype") else \
+        ox.Literal(v["value"])
+    bad = _TEXT_CONTROL.search(o.value)
+    if bad:
+        raise _bad(field, f"{field} 的值不能含控制字符（U+{ord(bad.group()):04X}）")
+    return o
 
 
 def _pfx(ws, f, model_iri):
@@ -213,15 +251,8 @@ def add_element_build(model, type, prefLabel, altLabel=None, slug=None, definiti
                 raise _bad("attributes", "attributes 每项须为 {predicate, value}")
             v = a["value"]
             try:  # pyoxigraph rejects a bad IRI, language tag or non-string value with ValueError/TypeError (MCP-5)
-                if set(v) == {"iri"}:
-                    o = ox.NamedNode(core.expand(ctx, v["iri"]))
-                elif "value" in v and set(v) <= {"value", "datatype", "lang"}:
-                    o = ox.Literal(v["value"], language=v.get("lang")) if v.get("lang") else \
-                        ox.Literal(v["value"], datatype=ox.NamedNode(core.expand(ctx, v["datatype"]))) if v.get("datatype") else \
-                        ox.Literal(v["value"])
-                else:
-                    raise _bad("attributes", "attributes.value 须为 {iri} 或 {value, datatype?, lang?}")
-                p = ox.NamedNode(core.expand(ctx, a["predicate"]))
+                o = _value_term(ctx, v, "attributes")
+                p = ox.NamedNode(_expand_term(ctx, a["predicate"], "attributes"))
             except (ValueError, TypeError) as e:
                 raise _bad("attributes", f"attributes 里有不合法的 IRI、语言标签或值：{e}") from None
             except AisepError as e:  # core.expand refused an IRI or prefix (its own error names no field)
@@ -236,7 +267,7 @@ def add_element_build(model, type, prefLabel, altLabel=None, slug=None, definiti
         st = _subject_triples(ctx)
         f = _check_file(mslug, file) if file else default_element_file(ctx, mslug, cls)
         pfx = _pfx(ws, f, model_iri)
-        block = writer.render_block(s, [(t.predicate, t.object) for t in triples], pfx)
+        block = _escape_cr(writer.render_block(s, [(t.predicate, t.object) for t in triples], pfx), triples)
         result = {"iri": iri, "file": f, "turtle": block}
         if iri in st:
             if writer.canon([t for _, t in st[iri]]) == writer.canon(triples):
@@ -509,7 +540,8 @@ def model_remove(cfg, iri, cascade=False, dryRun=False, planDigest=None, repo=No
 _USE_LABELS = "名称、英文名、定义请用 model_set_labels"
 _NEW_REL = "关系端点不能改（改端点 = 删掉旧关系、新建一个）"
 NOT_SETTABLE = {RDF_TYPE: "类型不能改（改类型不在本版）", IN_MODEL: "所属模型不能改", SOURCE: _NEW_REL, TARGET: _NEW_REL,
-                PREF: _USE_LABELS, ALT: _USE_LABELS, DEF: _USE_LABELS}
+                PREF: _USE_LABELS, ALT: _USE_LABELS, DEF: _USE_LABELS,
+                core.ARCH + "inView": "视图成员关系不能改（视图写工具不在本版）"}
 XSD_STRING = core.NS["xsd"] + "string"
 
 
@@ -530,8 +562,10 @@ def _attr_values(objects):
 
 def _settable(ctx, name, field):
     try:
-        p = core.expand(ctx, name)
+        p = _expand_term(ctx, name, field)
     except AisepError as e:
+        if "rejectedFields" in e.details:
+            raise
         raise _bad(field, f"{field} 里有不合法的 IRI 或前缀名：{e.message}") from None
     if p in NOT_SETTABLE:
         raise _bad(field, f"{field} 不能含 {core.short(p)}：{NOT_SETTABLE[p]}")
@@ -557,14 +591,7 @@ def _set_attributes_build(iri, new, drop):  # not set/unset: the body uses the b
                 raise _bad("set", "set 每项须为 {predicate, value}")
             p, v = _settable(ctx, a["predicate"], "set"), a["value"]
             try:  # pyoxigraph rejects a bad IRI, language tag or non-string value with ValueError/TypeError
-                if set(v) == {"iri"}:
-                    o = ox.NamedNode(core.expand(ctx, v["iri"]))
-                elif "value" in v and set(v) <= {"value", "datatype", "lang"}:
-                    o = ox.Literal(v["value"], language=v.get("lang")) if v.get("lang") else \
-                        ox.Literal(v["value"], datatype=ox.NamedNode(core.expand(ctx, v["datatype"]))) if v.get("datatype") else \
-                        ox.Literal(v["value"])
-                else:
-                    raise _bad("set", "set 的 value 须为 {iri} 或 {value, datatype?, lang?}")
+                o = _value_term(ctx, v, "set")
             except (ValueError, TypeError) as e:
                 raise _bad("set", f"set 里有不合法的 IRI、语言标签或值：{e}") from None
             except AisepError as e:  # core.expand refused an IRI or prefix (its own error names no field)
@@ -615,10 +642,8 @@ def _set_attributes_build(iri, new, drop):  # not set/unset: the body uses the b
                     adds.setdefault(f, {}).setdefault(x, []).append((nt.predicate, nt.object))
         files = sorted(set(removed) | set(added))
         edits = {f: writer.rewrite_blocks(ws.text(f), removed.get(f, set()), adds.get(f, {})) for f in files}
-        for f, ts in added.items():  # writer.term leaves U+000D raw, which a short string may not hold: escape it here
-            for body in {writer.term(ox.Literal(t.object.value), {}) for t in ts
-                         if isinstance(t.object, ox.Literal) and "\r" in t.object.value}:
-                edits[f] = edits[f].replace(body, body.replace("\r", "\\r"))  # step 6 (graph equivalence) still judges it
+        for f, ts in added.items():
+            edits[f] = _escape_cr(edits[f], ts)
         return {"result": {"iri": x, "before": before, "after": after}, "edits": edits, "removed": removed, "added": added}
 
     return build

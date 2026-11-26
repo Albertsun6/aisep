@@ -228,6 +228,7 @@
   7. **不放宽的**：硬规则 1–5、7；批准记录只能由 Albert 本人做出；CI 必需检查；涉及 mergecheck 的 PR 核对 `negatives`（ADR-022）；用合并提交；PR 即锁；跨模型评审先问 Albert。
 - **理由**：Albert 原话「把可追溯，可审计，可复现这三个质量目标先搁置，后期再做，先做 mvp，不然太慢了」。放宽的都是事后可以补做的校验与留痕（批准记录、三步合并的留痕、本地约 48 分钟的全量测试、阶段关口）；IRI、限定关系、vendor 哈希、批准只能由本人做出这些事后补不回来或属于安全约束的不动。根目录文件、`aisep/**`、`aisep-mcp/**`、`tests/**`、`tools/**` 不放宽，因为 ADR-019 的评审实测过在这些位置放文件可以让 `mergecheck` 空跑通过；`modules/**` 与 `vendor/**` 不放宽的原因见第 1 款。分支保护不要求分支与 `main` 同步（`strict:false`），CI 的结论是对开 PR 时的 `main` 算的，所以会改变 gate 结论的 `modules/**`、`vendor/**` 仍走三步。
 - **后果**：评审方面实际省下的只有「新增 IRI 的模型 PR」；`modules/**`、`vendor/**` 的 PR 仍要等合并前评审，直到第 1 款的漏洞修掉。不改模型、模块、vendor 与负例清单的 PR 不再有合并前重算，靠 CI 的 `mergecheck` 必需检查兜底。第 1 款的漏洞在 `main` 上现已存在（不是本条引入），按 ADR-019 第 2 款的漏洞例外另开修复 PR。**恢复条件**（任一出现即逐条恢复，由 Albert 定）：① MVP 走通第一条含 C4 的端到端链路；② 出现第二个批准人或使用者；③ 有外部数据或受监管数据进入模型；④ 合并后评审在同一类路径上连续两次查出阻塞问题。
+  - 补记（Albert 2026-11-26 定）：`models/<slug>/governance/**` 与 `models/<slug>/governance.ttl` 的改动只要不新增 IRI，就不在第 1 款的排除范围内，走合并后评审，删除或修改已有批准记录也在其中。这类改动会直接改变 approvalState 的推导结果，由必需检查 `mergecheck` 兜底：目标分支上已有的批准记录或 AI 活动被删除、被修改时，check 1 拒绝合并（`governance-record-removed` / `governance-record-modified`），与 gate 结论无关，负例覆盖记录写在 `governance/` 单独文件里与写在 `governance.ttl` 里两种情形；改动 `arch:Stakeholder` 等其他治理元素（例如改掉或删除批准人）也能让已有记录失效、改变推导结果，这类改动 check 1 不管，目前靠 check 5（合并结果上的 gate）拦截（PR #132 独立评审实测）。
 
 ## ADR-025 · 2026-11-26
 

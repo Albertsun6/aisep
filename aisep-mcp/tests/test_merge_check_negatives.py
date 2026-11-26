@@ -1591,6 +1591,91 @@ def test_105_governance_type_outside_models_rejected(t, site, kind, monkeypatch)
     assert_rejected(check(t, h, "feat/x"), OUTSIDE, iri=M + local)
     assert OUTSIDE not in reasons(check(t, h0, "feat/x"))  # positive twin: the same branch before the record
 
+# A record typed with a subclass of aisep:ApprovalRecord is honoured by the derivation, but the approval-commit criterion
+# (§5.9 step 1 (c)) recognises only the class itself and subclasses declared in the same models/<slug>/ files, so a
+# commit adding a record typed with a module-declared subclass is not an approval commit: merge_check rejects it and
+# a PR made only of it is a normal PR (spec §6.6「类型」, Albert 2026-11-26 选 A; PR #110 review 2).
+def _gate_record(t, local, gate, approves, evidence, sub):
+    from fixtures.topology import record_ttl
+    body = record_ttl(local, gate, approves, evidence)
+    if sub:
+        assert " a aisep:ApprovalRecord ;" in body
+        body = body.replace(" a aisep:ApprovalRecord ;", f" a <{SUB_REC}> ;")
+    t.write(f"{GOV}/{local}.ttl", PREFIXES_() + body)
+    return t.commit_all(f"aisep: {gate} Approved {local}", trailers=[f"AISEP-Evidence: {evidence}"])
+
+
+@pytest.mark.parametrize("sub", [True, False], ids=["subclass", "class-itself"])
+def test_105_subclass_record_commit_is_not_an_approval_commit(t, sub):
+    """A feature-branch approval whose record is typed with a module-declared subclass, evidence a real commit on the
+    branch: rejected as not-approval-commit although the derivation approves :newThing. Positive twin: the same record
+    typed aisep:ApprovalRecord is clean."""
+    feature(t)
+    d = declare_sub(t, "module")
+    a = _gate_record(t, "approval-20261120110000-architecture-subcommit", "GateArchitecture", ["newThing"], d, sub)
+    assert state(t, a, M + "newThing") == {ARCH_NS + "Approved"}  # the derivation honours both
+    if sub:
+        assert_rejected(check(t, a, "feat/x"), "not-approval-commit", offending=a)
+    else:
+        assert_clean(check(t, a, "feat/x"))
+
+
+@pytest.mark.parametrize("sub", [True, False], ids=["subclass", "class-itself"])
+def test_105_subclass_release_record_not_approval_only(t, sub):
+    """A release branch whose one commit adds a GateRelease record typed with a module-declared subclass: classified
+    normal, rejected by merge_check, refused by release publishing. Positive twin: the class itself."""
+    from aisep import release
+    declare_sub(t, "module")  # on main
+    r = t.rev(MAIN)
+    name = release_branch(t, r)
+    a = _gate_record(t, "approval-20261120110000-release-subcommit", "GateRelease", ["quoteApproval"], r, sub)
+    t.tag(f"release/20261120-{r[:7]}", r)
+    if sub:
+        assert call("classify_pr", str(t.root), a, MAIN) == "normal"
+        assert_rejected(check(t, a, name), "not-approval-commit", offending=a)
+        with pytest.raises(release.ReleaseError, match="不是一个批准提交"):
+            release._release_record(str(t.root), name)
+    else:
+        assert call("classify_pr", str(t.root), a, MAIN) == "approval-only"
+        assert_clean(check(t, a, name))
+        assert release._release_record(str(t.root), name)[0] == a
+
+
+def test_has_type_empty_class_set_matches_nothing(t):
+    """_has_type with an explicit empty class set must not fall back to the model-file class chain (#110 review 3)."""
+    from aisep import mergecheck
+    side = mergecheck._side(str(t.root), t.rev(MAIN))
+    assert mergecheck._has_type(side, t.base_record, mergecheck.RECORD)  # positive twin: no set given
+    assert not mergecheck._has_type(side, t.base_record, mergecheck.RECORD, set())
+
+
+# A plain record kept in the shared models/<slug>/governance.ttl: deleting or rewriting it adds no IRI (post-merge
+# review under ADR-024 第 1 款) and the gate passes, so only check 1 stops it (ADR-024 后果补记; followups 第 4 项).
+@pytest.mark.parametrize("change", ["removed", "modified"])
+def test_T38_record_in_governance_ttl_removed_or_modified_rejected(t, change):
+    from fixtures.topology import record_ttl
+    local, rel = "approval-20261119140000-architecture-inttl", "models/procurement/governance.ttl"
+    t.write(rel, record_ttl(local, "GateArchitecture", ["supplier"], t.c0, at="2026-11-19T14:00:00Z",
+                            decision="Rejected"), "a")
+    t.commit_all("main: a plain record inside governance.ttl")
+    t.checkout("main", new="feat/x")
+    # positive twin: rewriting a non-record subject in the same governance.ttl is not a governance-record change
+    assert '"编码代理"@zh' in t.read(rel)
+    t.write(rel, t.read(rel).replace('"编码代理"@zh', '"编码代理V2"@zh'))
+    twin = check(t, t.commit_all("relabel :codingBot in governance.ttl"), "feat/x")
+    assert not {"governance-record-removed", "governance-record-modified"} & reasons(twin), twin
+    txt = t.read(rel)
+    if change == "removed":
+        t.write(rel, txt[:txt.index(f":{local}")])
+    else:
+        j = txt.rindex("aisep:DecisionRejected")
+        t.write(rel, txt[:j] + "aisep:DecisionApproved" + txt[j + len("aisep:DecisionRejected"):])
+    h = t.commit_all(f"{change} the record in governance.ttl")
+    assert t.git("diff", "--name-only", f"{h}^", h) == rel
+    assert cli_gate(t, h)  # the gate passes: only check 1 stops it
+    assert_rejected(check(t, h, "feat/x"), f"governance-record-{change}", iri=M + local)
+
+
 # ------------------------------------------------------------------ every test: build all fixtures, then XFAIL if the
 # checker was missing for any call (see "checker access" above)
 
