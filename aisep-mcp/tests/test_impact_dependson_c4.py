@@ -115,3 +115,6 @@ def test_declared_direction_agrees_with_core_dependency_property():
             assert d != wrong[root], f"{core.short(c)} is {d} but its unqualified form is under {core.short(root)}"
     assert judged.get("arch:DependsOn") == "Backward" and judged.get("am4:Serving") == "Forward", judged
     assert {judged.get("uml:" + c) for c in ("Dependency", "Usage")} == {"Backward"}, judged
+    family = ("Dependency", "Abstraction", "Realization", "InterfaceRealization", "Usage", "Deployment")
+    got = {c: (ctx.nearest("https://meta.linked.archi/uml/onto#" + c, dep) or "").replace(core.AISEP, "") for c in family}
+    assert set(got.values()) == {"Backward"}, got

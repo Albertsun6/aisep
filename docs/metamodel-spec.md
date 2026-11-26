@@ -278,7 +278,7 @@
 | C4 `c4:ContainerContainment`、`c4:ComponentContainment` | Both | 同 Composition：容器、组件只属于一个上级，上级的结构依赖它们 |
 | Structurizr `structurizr:Deployment` | Backward | 容器依赖它部署到的节点 |
 | `arch:HasPart` | Backward | 同 Aggregation：从整体画向部分，整体依赖部分 |
-| UML `uml:Dependency` 及其子类（Abstraction、Realization、InterfaceRealization、Usage、Deployment） | Backward | client 依赖 supplier（UML 2.5.1 §7.7） |
+| UML `uml:Dependency` 及其子类（Abstraction、Realization、InterfaceRealization、Usage、Deployment） | Backward | 源依赖目标：Dependency、Usage 是 client 依赖 supplier（UML 2.5.1 §7.7）；Realization 是实现依赖规格，不取 am4 Realization 的 Both；Deployment 是制品依赖它部署到的节点，同 `structurizr:Deployment` |
 | `aisep:verifies`、`aisep:implements` | Backward | 测试、代码依赖设计 |
 
 **两种模式**：
