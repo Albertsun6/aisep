@@ -63,6 +63,10 @@ reason vocabulary (details.reason; the two marked * are the strings §5.9 step 1
     git-error                       a git command failed / shallow clone (口径, G)
     governance-blank-node           a blank node in the model sources of H or M is typed as, or carries a predicate of, an
                                     ApprovalRecord / AgentActivity (2026-11-22 取证疑点一; independent of the L1 rule)
+    governance-approver-retyped     an approver referenced by aisep:approvedBy of a record on T is judged differently by the
+                                    derivation's approver test on M (to aisep:AIAgent, type dropped, a superclass
+                                    aisep:AIAgent …): its records turn illegal (PR #132 review N1, #136 review)
+    governance-approver-removed     … or that approver's subject is gone from the model sources of M
     governance-type-outside-models  a module or vendor file of M types a subject as an ApprovalRecord / AgentActivity (#105
                                     review; independent of the R1 rule)
 
@@ -1674,6 +1678,75 @@ def test_T38_record_in_governance_ttl_removed_or_modified_rejected(t, change):
     assert t.git("diff", "--name-only", f"{h}^", h) == rel
     assert cli_gate(t, h)  # the gate passes: only check 1 stops it
     assert_rejected(check(t, h, "feat/x"), f"governance-record-{change}", iri=M + local)
+
+
+
+# An approver referenced by a record on T (PR #132 review N1): retyping it (to aisep:AIAgent, or dropping its type) or
+# removing it makes its records illegal, so a later Rejected no longer counts and the derived state flips. Not a change
+# to a record, so check 1 does not see it; the approver check refuses it independent of the gate (check 5).
+DEPUTY_REL = "models/procurement/governance.ttl"
+DEPUTY = f"\n:deputy a arch:Stakeholder ;\n    arch:inModel <{M}> ;\n    skos:prefLabel \"副架构师\"@zh .\n"
+
+
+DEPUTY_ROLE = "\n:DeputyRole <http://www.w3.org/2000/01/rdf-schema#subClassOf> arch:Stakeholder .\n"
+
+
+def _deputy_rejects_audit_trail(t, role=False):
+    """main: :deputy rejects :auditTrail after the baseline approval, so :auditTrail is Rejected on T. role: :deputy is
+    typed by a model-local subclass :DeputyRole ⊑ arch:Stakeholder instead."""
+    from fixtures.topology import PREFIXES, record_ttl
+    t.write(DEPUTY_REL, (DEPUTY.replace("a arch:Stakeholder", "a :DeputyRole") + DEPUTY_ROLE) if role else DEPUTY, "a")
+    local = "approval-20261119140000-architecture-deputy"
+    t.write(f"{GOV}/{local}.ttl", PREFIXES + record_ttl(local, "GateArchitecture", ["auditTrail"], t.c0,
+                                                        at="2026-11-19T14:00:00Z", decision="Rejected",
+                                                        approved_by=":deputy"))
+    base = t.commit_all("main: :deputy rejects :auditTrail")
+    assert state(t, base, M + "auditTrail") == {"https://aisep.example/ont/aisep#Rejected"}
+    t.checkout("main", new="feat/x")
+    return base
+
+
+@pytest.mark.parametrize("change", ["to-ai-agent", "type-dropped", "removed", "module-type", "subclass-chain"])
+def test_approver_of_existing_record_retyped_or_removed_rejected(t, change):
+    """module-type: a module file adds aisep:AIAgent to :deputy (the check reads the types the derivation reads, not
+    only models/). subclass-chain: :deputy keeps its asserted type, its class gains aisep:AIAgent as a superclass
+    (#136 review N1)."""
+    _deputy_rejects_audit_trail(t, role=change == "subclass-chain")
+    txt = t.read(DEPUTY_REL)
+    if change == "module-type":
+        t.write("modules/ext-governance/onto.ttl", f"\n<{M}deputy> a <https://aisep.example/ont/aisep#AIAgent> .\n", "a")
+    elif change == "subclass-chain":
+        assert DEPUTY_ROLE in txt
+        t.write(DEPUTY_REL, txt.replace(DEPUTY_ROLE, DEPUTY_ROLE.replace(" .", ", aisep:AIAgent .")))
+    else:
+        assert DEPUTY in txt
+        after = {"to-ai-agent": DEPUTY.replace("a arch:Stakeholder", "a aisep:AIAgent"),
+                 "type-dropped": DEPUTY.replace("a arch:Stakeholder ;\n    ", ""), "removed": "\n"}[change]
+        t.write(DEPUTY_REL, txt.replace(DEPUTY, after))
+    h = t.commit_all(f"{change} :deputy")
+    assert state(t, h, M + "auditTrail") == {ARCH_NS + "Approved"}  # the attack works on the derivation
+    reason = "governance-approver-removed" if change == "removed" else "governance-approver-retyped"
+    assert_rejected(check(t, h, "feat/x"), reason, iri=M + "deputy")
+
+
+def test_approver_check_leaves_other_stakeholder_changes_alone(t):
+    """Positive twin: relabel the referenced approver, give it an extra legal subtype, add a harmless superclass to
+    arch:Stakeholder in a module, relabel an unreferenced Stakeholder, add a new Stakeholder and a new record it signs —
+    none changes whether an approver referenced on T is an approver (#136 re-review)."""
+    _deputy_rejects_audit_trail(t)
+    txt = t.read(DEPUTY_REL)
+    assert '"副架构师"@zh' in txt and '"编码代理"@zh' in txt and DEPUTY in txt
+    txt = txt.replace(DEPUTY, DEPUTY.replace("a arch:Stakeholder", "a arch:Stakeholder, :DeputyRole") + DEPUTY_ROLE)
+    t.write(DEPUTY_REL, txt.replace('"副架构师"@zh', '"副架构师V2"@zh').replace('"编码代理"@zh', '"编码代理V2"@zh')
+            + "\n:newLead a arch:Stakeholder ;\n    arch:inModel <" + M + "> ;\n    skos:prefLabel \"新干系人\"@zh .\n")
+    t.write("modules/ext-governance/onto.ttl", "\n<https://meta.linked.archi/core#Stakeholder> "
+            "<http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://www.w3.org/ns/prov#Agent> .\n", "a")
+    h = t.commit_all("relabel stakeholders, extra subtype, harmless superclass, add :newLead")
+    assert state(t, h, M + "auditTrail") == {"https://aisep.example/ont/aisep#Rejected"}
+    assert_clean(check(t, h, "feat/x"))
+    a, _, _ = t.approve("GateRequirements", ["supplier"], evidence=h, decision="Rejected", approved_by=":newLead")
+    p = check(t, a, "feat/x")
+    assert not {"governance-approver-removed", "governance-approver-retyped"} & reasons(p), p
 
 
 # ------------------------------------------------------------------ every test: build all fixtures, then XFAIL if the
