@@ -63,6 +63,8 @@ reason vocabulary (details.reason; the two marked * are the strings §5.9 step 1
     git-error                       a git command failed / shallow clone (口径, G)
     governance-blank-node           a blank node in the model sources of H or M is typed as, or carries a predicate of, an
                                     ApprovalRecord / AgentActivity (2026-11-22 取证疑点一; independent of the L1 rule)
+    governance-type-outside-models  a module or vendor file of M types a subject as an ApprovalRecord / AgentActivity (#105
+                                    review; independent of the R1 rule)
 
 Not covered here (other slices): record_approval's own errors (STALE_HEAD, INVALID_ARGUMENT …, slice S5), the workbench's
 tag/branch creation (client.ts, S8), the record_approval half of the stub-count test, and the GitHub server-side merge
@@ -1556,6 +1558,38 @@ def test_105_subclass_activity_branch_checked(t):
         else:
             assert "activity-branch-mismatch" not in reasons(p), p
 
+
+# A record / activity whose rdf:type triple sits in a module or vendor file (its other triples in a model file): the
+# derivation honours it (the type may come from any graph), but merge_check reads only models/, so checks 1, 3 and 4
+# cannot see it. Before this guard only the merge-result gate's R1 refused it; now merge_check itself fails closed
+# (reason governance-type-outside-models), independent of the gate (#105 review, non-blocking 1).
+OUTSIDE = "governance-type-outside-models"
+
+
+@pytest.mark.parametrize("site,kind", [("module", "record"), ("vendor", "record"), ("module", "activity")])
+def test_105_governance_type_outside_models_rejected(t, site, kind, monkeypatch):
+    from fixtures.topology import activity_ttl, record_ttl
+    h0 = feature(t)
+    if kind == "record":
+        local, cls = "approval-20261120110000-architecture-typeout", "ApprovalRecord"
+        body = record_ttl(local, "GateArchitecture", ["newThing"], NO_COMMIT)
+    else:
+        a = act(t, h0, "other/branch")
+        local, cls = a["local"], "AgentActivity"
+        body = activity_ttl(**a)
+    head = f" a aisep:{cls} ;\n    arch:inModel"
+    assert head in body
+    t.write(f"{GOV}/{local}.ttl", PREFIXES_() + body.replace(head, " arch:inModel"))
+    t.write(SUB_SITES[site], f"\n<{M}{local}> a <https://aisep.example/ont/aisep#{cls}> .\n", "a")
+    h = t.commit_all(f"aisep: {local}", trailers=[f"AISEP-Evidence: {NO_COMMIT}"])
+    if kind == "record":
+        assert state(t, h, M + "newThing") == {ARCH_NS + "Approved"}  # the derivation does honour it
+    assert_rejected(check(t, h, "feat/x"), OUTSIDE, iri=M + local)
+    # independent of the gate: with the merge-result gate stubbed to PASS the guard still holds
+    from aisep import mergecheck
+    monkeypatch.setattr(mergecheck._Analysis, "check5", lambda self: [])
+    assert_rejected(check(t, h, "feat/x"), OUTSIDE, iri=M + local)
+    assert OUTSIDE not in reasons(check(t, h0, "feat/x"))  # positive twin: the same branch before the record
 
 # ------------------------------------------------------------------ every test: build all fixtures, then XFAIL if the
 # checker was missing for any call (see "checker access" above)
