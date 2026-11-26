@@ -160,3 +160,22 @@ def test_out_refuses_models_via_symlink_or_case(tmp_path):
     ok = tmp_path / "out.md"
     p = subprocess.run(base + [str(ok)], cwd=ROOT, capture_output=True, text=True)
     assert p.returncode == 0 and ok.read_text(encoding="utf-8").startswith("# 路线图"), p.stdout + p.stderr
+
+
+def test_check_option_runs_only_the_given_files(tmp_path):
+    """--check 只跑给出的检查项文件，可在 docs/queries/adm/ 之外；阶段不符报错（issue #128）。"""
+    base = [PY, os.path.join(ROOT, "tools", "aisep.py"), "adm", "02-business", "--model", "workbench"]
+    src = os.path.join(ROOT, "docs", "queries", "adm", "02-business-11-capability-no-requirement.rq")
+    probe = tmp_path / "02-business-98-probe.rq"
+    probe.write_text(open(src, encoding="utf-8").read().replace("# title:", "# title: 探针", 1), encoding="utf-8")
+    p = subprocess.run(base + ["--check", str(probe)], cwd=ROOT, capture_output=True, text=True)
+    assert p.returncode == 0, p.stdout + p.stderr
+    assert "只跑了指定的检查项：`02-business-98-probe.rq`" in p.stdout
+    assert "缺口：探针" in p.stdout and "workbench:governanceSubdomain" in p.stdout
+    assert p.stdout.count("缺口：") == 1 and "已有" not in p.stdout  # 别的检查项（含清单查询）都没跑
+    r = adm.run("02-business", "workbench", files(copy_models(tmp_path)), check_files=[src, str(probe)])
+    assert r["only"] == ["02-business-11-capability-no-requirement.rq", "02-business-98-probe.rq"]
+    assert len([c for _, _, gaps in r["sections"] for c, _ in gaps]) == 2
+    other = os.path.join(ROOT, "docs", "queries", "adm", "01-vision-10-stakeholders.rq")
+    p = subprocess.run(base + ["--check", other], cwd=ROOT, capture_output=True, text=True)
+    assert p.returncode != 0 and "adm-phase 不是 02-business" in p.stderr, p.stdout + p.stderr

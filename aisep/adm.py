@@ -35,11 +35,16 @@ VALUES_RE = re.compile(r"VALUES\s+\?model\s*\{\s*<[^>]*>\s*\}")
 HEADER_KEYS = ("adm-phase", "section", "kind", "title")
 
 
-def load_checks(root=ROOT):
-    """[{file, phase, section, kind, title, source, query}] in file-name order; a malformed file is an error."""
+def load_checks(root=ROOT, paths=None):
+    """[{file, phase, section, kind, title, source, query}] in file-name order; a malformed file is an error.
+    paths 给出时只读这些检查项文件（调试单条或新写的查询，可在 docs/queries/adm/ 之外），按给出的顺序。"""
     checks = []
-    for path in sorted(glob.glob(os.path.join(root, QUERY_DIR, "*.rq"))):
-        text = open(path, encoding="utf-8").read()
+    for path in paths if paths else sorted(glob.glob(os.path.join(root, QUERY_DIR, "*.rq"))):
+        shown_name = path if paths else f"{QUERY_DIR}/{os.path.basename(path)}"
+        try:
+            text = open(path, encoding="utf-8").read()
+        except OSError as e:
+            raise AisepError("INVALID_ARGUMENT", f"读不了检查项 {shown_name}：{e}")
         meta = {}
         for line in text.splitlines():
             if not line.startswith("#"):
@@ -53,7 +58,7 @@ def load_checks(root=ROOT):
             missing.append("source")
         if missing or meta["adm-phase"] not in PHASES or meta["kind"] not in ("inventory", "gap") \
                 or len(VALUES_RE.findall(text)) != 1:
-            raise AisepError("INVALID_ARGUMENT", f"{QUERY_DIR}/{name}: 文件头缺 {missing or '合法取值'}，或 VALUES ?model 行不是恰好一行")
+            raise AisepError("INVALID_ARGUMENT", f"{shown_name}: 文件头缺 {missing or '合法取值'}，或 VALUES ?model 行不是恰好一行")
         checks.append({"file": name, "phase": meta["adm-phase"], "section": meta["section"], "kind": meta["kind"],
                        "title": meta["title"], "source": meta.get("source", ""), "query": text})
     return checks
@@ -72,10 +77,17 @@ def _provenance(root):
     return f"提交 {head.strip()}" + ("（models/ 或检查项有未提交改动）" if dirty.strip() else "")
 
 
-def run(phase, slug, files, read=None, root=ROOT):
-    """查一个阶段：返回 {sections: [(section, inventory_rows, gaps)], l4: [...], problems: [...]}。"""
+def run(phase, slug, files, read=None, root=ROOT, check_files=None):
+    """查一个阶段：返回 {sections: [(section, inventory_rows, gaps)], l4: [...], problems: [...], only: [...]}。
+    check_files 给出时只跑这些检查项（only 列出其文件名），它们的 adm-phase 都必须是 phase。"""
     model = f"https://aisep.example/model/{slug}/"
-    checks = [c for c in load_checks(root) if c["phase"] == phase]
+    checks = load_checks(root, check_files)
+    if check_files:
+        wrong = [c["file"] for c in checks if c["phase"] != phase]
+        if wrong:
+            raise AisepError("INVALID_ARGUMENT", f"检查项 {'、'.join(wrong)} 的 adm-phase 不是 {phase}")
+    else:
+        checks = [c for c in checks if c["phase"] == phase]
     ctx = Ctx(discover(), files, read=read)
     l0 = [p for p in ctx.problems if p[1] == "L0"]
     if l0:
@@ -99,7 +111,8 @@ def run(phase, slug, files, read=None, root=ROOT):
     prefix = short(model + "x")[:-1]
     found = [p for p in shown(ctx.problems, ("L4",)) if p[2].startswith(prefix)]
     ordered = sorted(sections.items(), key=lambda kv: _sort_key(kv[0], kv[1]["order"]))
-    return {"sections": [(s, v["inventory"], v["gaps"]) for s, v in ordered], "l4": found, "problems": []}
+    return {"sections": [(s, v["inventory"], v["gaps"]) for s, v in ordered], "l4": found, "problems": [],
+            "only": [c["file"] for c in checks] if check_files else []}
 
 
 def _cell(v):
@@ -112,7 +125,9 @@ def render(phase, slug, result, deliverable=False, root=ROOT):
     out = [f"# {PHASES[phase]}（{phase}）{'交付物' if deliverable else '现状'} · 模型 {slug}", "",
            f"> 由 `{cmd}` 从模型生成，依据{_provenance(root)}。以模型为准，重跑即更新；本文件不记录进度状态（ADR-013）。",
            "> 关口评审在 MVP 期间暂停（ADR-024 第 6 款）：入口条件里的批准一项只显示、不判定。",
-           f"> 检查项见 `docs/queries/adm/{phase}-*.rq`，结构见阶段模板 `docs/adm/{phase}/template.md`。", ""]
+           (f"> 只跑了指定的检查项：{'、'.join(f'`{f}`' for f in result['only'])}；不是本阶段的完整报告。"
+            if result.get("only") else
+            f"> 检查项见 `docs/queries/adm/{phase}-*.rq`，结构见阶段模板 `docs/adm/{phase}/template.md`。"), ""]
     blocks = [(s, "auto", inv, gaps) for s, inv, gaps in result["sections"]]
     if deliverable:
         blocks += [(s, "manual", None, []) for s in MANUAL[phase]]
@@ -149,7 +164,7 @@ def render(phase, slug, result, deliverable=False, root=ROOT):
 
 def overview(root=ROOT):
     checks = load_checks(root)
-    lines = ["ADM 向导：tools/aisep.py adm <阶段> --model <slug> [--deliverable] [--out 路径]", "", "阶段：",]
+    lines = ["ADM 向导：tools/aisep.py adm <阶段> --model <slug> [--check 检查项.rq]... [--deliverable] [--out 路径]", "", "阶段：",]
     for p, name in PHASES.items():
         n = lambda k: sum(1 for c in checks if c["phase"] == p and c["kind"] == k)
         lines.append(f"  {p:<14}{name}：清单查询 {n('inventory')} 条，缺口查询 {n('gap')} 条")
