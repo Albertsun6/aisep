@@ -1,0 +1,8 @@
+@prefix uml:   <https://meta.linked.archi/uml/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# Impact directions of the UML relationship classes (spec §9). Loaded via this module's manifest (aisep:impactFile).
+# Source depends on target, inherited by Abstraction, Realization, InterfaceRealization, Usage and Deployment:
+# Dependency/Usage: the client depends on the supplier (UML 2.5.1 §7.7); Realization: the implementation depends on the
+# specification; Deployment (upstream source = artifact, target = node): the artifact depends on its node.
+uml:Dependency aisep:dependency aisep:Backward .
