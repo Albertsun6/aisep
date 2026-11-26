@@ -63,6 +63,8 @@ reason vocabulary (details.reason; the two marked * are the strings §5.9 step 1
     git-error                       a git command failed / shallow clone (口径, G)
     governance-blank-node           a blank node in the model sources of H or M is typed as, or carries a predicate of, an
                                     ApprovalRecord / AgentActivity (2026-11-22 取证疑点一; independent of the L1 rule)
+    governance-type-outside-models  a module or vendor file of M types a subject as an ApprovalRecord / AgentActivity (#105
+                                    review; independent of the R1 rule)
 
 Not covered here (other slices): record_approval's own errors (STALE_HEAD, INVALID_ARGUMENT …, slice S5), the workbench's
 tag/branch creation (client.ts, S8), the record_approval half of the stub-count test, and the GitHub server-side merge
