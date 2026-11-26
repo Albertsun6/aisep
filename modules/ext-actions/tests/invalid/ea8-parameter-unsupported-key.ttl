@@ -1,5 +1,5 @@
 # expect: EA8:
-# Invalid: a parameter written as an IRI node (it also has sh:maxLength). Only sh:nodeKind sh:BlankNode fires; the unsupported key itself (ParameterShape sh:closed) is covered by test_gate_names_the_shape_of_each_catalogue_defect.
+# Invalid: a parameter written as an IRI node, with sh:maxLength. sh:nodeKind sh:BlankNode and ParameterShape both fire the same EA8 message, so this fixture alone falsifies neither; the unsupported key alone (ParameterShape sh:closed) is covered by test_gate_names_the_shape_of_each_catalogue_defect.
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .

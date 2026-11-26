@@ -1,5 +1,5 @@
 # expect: EA9:
-# Invalid: a guard written as an IRI node (it also lacks sh:message). Only sh:nodeKind sh:BlankNode fires; the missing message itself (GuardShape) is covered by test_gate_names_the_shape_of_each_catalogue_defect.
+# Invalid: a guard written as an IRI node, without sh:message. sh:nodeKind sh:BlankNode and GuardShape both fire the same EA9 message, so this fixture alone falsifies neither; the missing message alone (GuardShape) is covered by test_gate_names_the_shape_of_each_catalogue_defect.
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
