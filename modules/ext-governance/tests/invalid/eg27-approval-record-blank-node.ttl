@@ -1,5 +1,5 @@
 # expect: EG27:
-# Invalid (ADR-023, issue #120): the approval record is a blank node.
+# Invalid (ADR-023, issue #120): the approval record is a blank node (referenced by a named subject).
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
 @prefix prov:  <http://www.w3.org/ns/prov#> .
@@ -12,7 +12,7 @@
 :quoteSvc a am4:ApplicationComponent ; arch:inModel :model ; skos:prefLabel "报价服务"@zh .
 :chiefArchitect a arch:Stakeholder ; arch:inModel :model ; skos:prefLabel "首席架构师"@zh .
 
-[] a aisep:ApprovalRecord ; arch:inModel :model ; skos:prefLabel "批准记录"@zh ;
+:quoteSvc skos:note [ a aisep:ApprovalRecord ; arch:inModel :model ; skos:prefLabel "批准记录"@zh ;
     aisep:gate aisep:GateArchitecture ; aisep:decision aisep:DecisionApproved ; aisep:approvedBy :chiefArchitect ;
     aisep:approves :quoteSvc ; aisep:evidence "3f2a9c1e7b4d5a6f8e9c0b1a2d3e4f5a6b7c8d9e" ;
-    prov:generatedAtTime "2026-11-19T11:00:00Z"^^xsd:dateTime .
+    prov:generatedAtTime "2026-11-19T11:00:00Z"^^xsd:dateTime ] .
