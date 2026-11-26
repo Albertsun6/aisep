@@ -12,10 +12,13 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
   aisep.py query  FILE.rq|'SPARQL' [model files...]   -> over build graph + all ontologies + all alignments
   aisep.py impact <element IRI or prefixed name> [--mode depends|ripple] [--depth N] [--allow-invalid] [model files...]
                                           (spec §9; runs L1+L2 first and refuses an invalid model unless --allow-invalid)
-  aisep.py diagram (--view IRI | --viewpoint NAME --model SLUG) [-o OUT.svg] [model files...]
-                                       -> ArchiMate 4 view as SVG (default build/views/<model>/<view>.svg; layout by elkjs, needs
-                                          Node and `npm ci --prefix tools/elk --ignore-scripts`); a declared
-                                          arch:Diagram, or every element of the model the am4 viewpoint includes
+  aisep.py diagram (--view IRI | --viewpoint NAME --model SLUG | --viewpoint C4NAME --of SCOPE)
+                   [-o OUT.svg] [model files...]
+                                       -> ArchiMate 4 or C4 view as SVG (default build/views/<model>/<view>.svg; layout by elkjs,
+                                          needs Node and `npm ci --prefix tools/elk --ignore-scripts`); a declared
+                                          arch:Diagram, every element of the model the am4 viewpoint includes, or a C4 view
+                                          (C4NAME: SystemContext|ContainerDiagram --of <system>, ComponentDiagram --of
+                                          <container>, C4Deployment --of <environment> [--model SLUG])
   aisep.py adm [<阶段> --model <slug> [--deliverable] [--out FILE]]
                                        -> ADM 向导（docs/specs/adm-wizard.md）：按阶段列出模型里已有的元素和缺口，
                                           --deliverable 生成交付物 Markdown；默认打印，--out 只写这一个文件；有缺口也返回 0
@@ -298,18 +301,21 @@ def cmd_test(no_pytest=False):
 
 def cmd_diagram(args):
     """ArchiMate 4 view -> SVG (aisep/diagram.py). Read-only; not part of gate."""
-    from aisep import diagram
+    from aisep import diagram, diagram_c4
     opts = {}
-    for k in ("--view", "--viewpoint", "--model", "-o"):
+    for k in ("--view", "--viewpoint", "--model", "--of", "-o"):
         if k in args:
             i = args.index(k)
             if i + 1 >= len(args):
                 print(__doc__); return 2
             opts[k] = args[i + 1]; args = args[:i] + args[i + 2:]
-    if ("--view" in opts) == ("--viewpoint" in opts) or ("--viewpoint" in opts and "--model" not in opts):
+    c4 = opts.get("--viewpoint") in diagram_c4.VIEWPOINTS
+    if ("--view" in opts) == ("--viewpoint" in opts) or ("--of" in opts) != c4 or \
+            ("--viewpoint" in opts and "--model" not in opts and not c4):
         print(__doc__); return 2
-    for k in ("--viewpoint", "--model"):  # both end up inside SPARQL text: plain names only
-        if k in opts and not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", opts[k]):
+    for k in ("--viewpoint", "--model", "--of"):  # SPARQL text or a file name: plain names only
+        if k in opts and (k != "--of" or opts.get("--viewpoint") == "C4Deployment") and \
+                not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", opts[k]):
             print(f"[Violation] diagram: {k} {opts[k]!r} must be a plain name (letters, digits, _ and -)"); return 1
     files, read = model_files(args)
     ctx = Ctx(discover(), files, read=read)
@@ -321,6 +327,26 @@ def cmd_diagram(args):
         if not ms:
             print(f"[Violation] {opts['--view']}: no arch:inModel, not a view of any model"); return 1
         model, name = ms[0][0], diagram.local(view)
+        vps = sorted(v for (v,) in ctx.rows(f"SELECT ?v WHERE {{ <{view}> arch:viewConformsToViewpoint ?v }}"))
+        if vps and vps[0].startswith(diagram_c4.C4VP):
+            try:
+                sel = diagram_c4.select(ctx, vps[0], None, view=view)
+            except ValueError as e:
+                print(f"[Violation] diagram: {e}"); return 1
+            return _write_c4(sel, model, name, opts)
+    elif c4:
+        vp = opts["--viewpoint"]
+        if vp == "C4Deployment":
+            scope = opts["--of"]
+            model = f"https://aisep.example/model/{opts['--model']}/" if "--model" in opts else None
+        else:
+            scope = expand(ctx, opts["--of"]); model = None
+        try:
+            sel = diagram_c4.select(ctx, vp, scope, model=model)
+        except ValueError as e:
+            print(f"[Violation] diagram: {e}"); return 1
+        model = sel[5]
+        return _write_c4(sel, model, f"{vp}-{diagram.local(scope) if vp != 'C4Deployment' else scope}", opts)
     else:
         model, name = f"https://aisep.example/model/{opts['--model']}/", opts["--viewpoint"].rsplit("#", 1)[-1]
     try:
@@ -342,6 +368,28 @@ def cmd_diagram(args):
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(svg)
     print(f"SUMMARY diagram model={slug} view={name} elements={len(elements)} relationships={len(rels)} "
+          f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
+    return 0
+
+
+def _write_c4(sel, model, name, opts):
+    from aisep import diagram_c4
+    title, sub, boxes, edges, warnings = sel[:5]
+    for w in warnings:
+        print(f"[Warning] diagram {w}")
+    n = sum(1 for b in boxes.values() if not b["compound"])
+    if not n:
+        print(f"[Violation] diagram: no C4 element of {model} is in this view (wrong --of or an empty view?)"); return 1
+    slug = model.rstrip("/").rsplit("/", 1)[-1]
+    out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".svg")
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    try:
+        svg = diagram_c4.render(title, sub, boxes, edges)
+    except RuntimeError as e:
+        print(f"[Violation] diagram: {e}"); return 1
+    with open(out, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(svg)
+    print(f"SUMMARY diagram model={slug} view={name} elements={n} relationships={len(edges)} "
           f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
     return 0
 
