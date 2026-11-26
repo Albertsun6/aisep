@@ -277,6 +277,8 @@
 | C4 `c4:Using` | Backward | 使用方依赖被使用方（C4 的箭头从使用方指向被使用方，与 Serving 相反） |
 | C4 `c4:ContainerContainment`、`c4:ComponentContainment` | Both | 同 Composition：容器、组件只属于一个上级，上级的结构依赖它们 |
 | Structurizr `structurizr:Deployment` | Backward | 容器依赖它部署到的节点 |
+| `arch:HasPart` | Backward | 同 Aggregation：从整体画向部分，整体依赖部分 |
+| UML `uml:Dependency` 及其子类（Abstraction、Realization、InterfaceRealization、Usage、Deployment） | Backward | client 依赖 supplier（UML 2.5.1 §7.7） |
 | `aisep:verifies`、`aisep:implements` | Backward | 测试、代码依赖设计 |
 
 **两种模式**：

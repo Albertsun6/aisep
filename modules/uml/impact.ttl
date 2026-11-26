@@ -1,0 +1,7 @@
+@prefix uml:   <https://meta.linked.archi/uml/onto#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# Impact directions of the UML relationship classes (spec §9). Loaded via this module's manifest (aisep:impactFile).
+# UML 2.5.1 §7.7: a Dependency goes from the client to the supplier, and the client depends on the supplier.
+# Inherited by Abstraction, Realization, InterfaceRealization, Usage and Deployment.
+uml:Dependency aisep:dependency aisep:Backward .
