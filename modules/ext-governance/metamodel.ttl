@@ -24,4 +24,5 @@
                      "modules/aisep-core/onto.ttl" ,
                      "modules/ext-governance/onto.ttl" ;
     aisep:shapesFile "vendor/meta.linked.archi/ttl/arch-decision-shapes.ttl" ,
-                     "modules/ext-governance/shapes.ttl" .
+                     "modules/ext-governance/shapes.ttl" ;
+    aisep:impactFile "modules/ext-governance/impact.ttl" .   # spec §5/§9: only declared overrides take effect

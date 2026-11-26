@@ -1,0 +1,10 @@
+@prefix ad:    <https://meta.linked.archi/arch-decision#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+
+# Impact directions of the arch-decision relationship classes (spec §9). Loaded via this module's manifest
+# (aisep:impactFile); only the classes declared here are traversed.
+# ad:IncludesConcept (arch-decision.ttl: "a drawn link from an Option to a model concept that is part of the Option";
+# its direct form ad:includesConcept ⊑ arch:hasPart): drawn from the Option (whole) to the concept (part). Same reading
+# as arch:HasPart / am4:Aggregation: the candidate solution depends on the concepts it is made of, and a concept can be
+# part of several Options without depending on any of them.
+ad:IncludesConcept aisep:dependency aisep:Backward .

@@ -2,7 +2,34 @@
 @prefix aisep: <https://aisep.example/ont/aisep#> .
 
 # Impact directions of the UML relationship classes (spec §9). Loaded via this module's manifest (aisep:impactFile).
+# Section numbers are the ones the upstream definitions in vendor/meta.linked.archi/ttl/uml_onto.ttl cite.
 # Source depends on target, inherited by Abstraction, Realization, InterfaceRealization, Usage and Deployment:
 # Dependency/Usage: the client depends on the supplier (UML 2.5.1 §7.7); Realization: the implementation depends on the
 # specification; Deployment (upstream source = artifact, target = node): the artifact depends on its node.
 uml:Dependency aisep:dependency aisep:Backward .
+
+# Association (§11.5): a structural connection between Classifiers with no dependency between the ends, like
+# am4:Association. Aggregation and Composition are its upstream subclasses (source = whole, target = part, per
+# uml:aggregates / uml:composedOf) and override it as am4:Aggregation / am4:Composition do: a shared part can exist
+# on its own, so only the whole depends on it; a composite part is deleted with its whole, so both ways.
+uml:Association aisep:dependency aisep:None .
+uml:Aggregation aisep:dependency aisep:Backward .
+uml:Composition aisep:dependency aisep:Both .
+
+# Include (§18.2, source = base use case, target = included): the base incorporates the included behaviour and depends
+# on it. Extend (§18.2, source = extending, target = extended): the extension augments a use case that is defined
+# without it, so the extending use case depends on the extended one.
+uml:Include aisep:dependency aisep:Backward .
+uml:Extend  aisep:dependency aisep:Backward .
+
+# Flows go downstream like am4:Flow / am4:Triggering: InformationFlow (§20.2) carries information items from source to
+# target; ActivityEdge (§15.2, abstract; ControlFlow and ObjectFlow inherit) passes control / object tokens from the
+# source activity node to the target.
+uml:InformationFlow aisep:dependency aisep:Forward .
+uml:ActivityEdge    aisep:dependency aisep:Forward .
+
+# PackageImport (§12.2, source = importing namespace, target = imported package): the importer refers to the imported
+# members by name. PackageMerge (§12.2, source = receiving package, target = merged package): the merged package's
+# contents are combined into the receiving one. Either way the source depends on the target.
+uml:PackageImport aisep:dependency aisep:Backward .
+uml:PackageMerge  aisep:dependency aisep:Backward .
