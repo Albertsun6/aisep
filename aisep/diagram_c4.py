@@ -47,7 +47,7 @@ PEOPLE_SYSTEMS = {"person", "extperson", "sys", "extsys"}
 SYSTEMS = {"sys", "extsys"}
 CONTAINERS = {"cont", "db", "mobile", "spa"}
 
-NODE_W, PAD = 200, 16
+NODE_W = 200
 
 STYLE = """
 svg{--bg:#ffffff;--fg:#18202d;--muted:#586375;--edge:#3d495b;
@@ -94,7 +94,7 @@ class C4Model:
     """The C4 members of one model: kinds, containment parents, c4:Using, deployments, deployment-node nesting."""
 
     def __init__(self, ctx, model):
-        self.ctx, self.model = ctx, model
+        self.ctx = ctx
         members = {x: ts for (x,) in ctx.rows(f"SELECT DISTINCT ?x WHERE {{ ?x arch:inModel <{model}> }}")
                    if (ts := ctx.asserted.get(x))}
         ends = {}
@@ -197,11 +197,16 @@ def select(ctx, viewpoint, scope, model=None, view=None):
         children.setdefault(p, []).append(c)
     leaf_of = lambda y: [y]
     if view:
+        if local(viewpoint) == "C4Deployment":
+            raise ValueError(f"{view}: declared deployment views are not supported yet; "
+                             "use --viewpoint C4Deployment --of <environment>")
         inview = {x for (x,) in ctx.rows(f"SELECT ?x WHERE {{ ?x arch:inView <{view}> }}")}
         drawn = {x for x in inview if kind.get(x) and kind[x] not in ("dnode", "inode")}
         for x in sorted(inview - drawn):
-            if x not in {u for u, _, _ in m.using}:
-                warnings.append(f"{x}: in view but not a C4 element of a supported kind, not drawn")
+            if kind.get(x) in ("dnode", "inode"):
+                warnings.append(f"{x}: deployment and infrastructure nodes are drawn only in C4Deployment views")
+            elif x not in {u for u, _, _ in m.using}:
+                warnings.append(f"{x}: in view but not a C4 element, not drawn")
         parent = {x: next((y for y in m.chain(x)[1:] if y in drawn), None) for x in drawn}
         title = ctx.label(view) or local(view)
         vp_name = VIEWPOINTS.get(local(viewpoint), local(viewpoint))

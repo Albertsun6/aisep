@@ -9,7 +9,7 @@ Each claim prints CONFIRMED / REFUTED with evidence; exit 0 only if every claim 
 
 Run:  <venv python> tests/acceptance/test_diagram_c4.py      (also run by `aisep.py test`)
 """
-import os, shutil, subprocess, sys, tempfile
+import os, re, shutil, subprocess, sys, tempfile
 from xml.etree import ElementTree
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,6 +19,8 @@ PFX = ("PREFIX c4: <https://meta.linked.archi/c4/onto#> PREFIX sz: <https://meta
        f"PREFIX t: <{T}> ")
 PEOPLE_SYSTEMS = "VALUES ?ty { c4:Person c4:ExternalPerson c4:SoftwareSystem c4:ExternalSoftwareSystem }"
 DOWN = "(c4:hasContainer|c4:hasComponent)*"
+C4_TYPES = {"Person", "ExternalPerson", "SoftwareSystem", "ExternalSoftwareSystem", "Container", "Database", "MobileApp",
+            "ClientSideWebApp", "Component", "DeploymentNode", "InfrastructureNode", "c4:Using"}
 results = []
 
 EXTRA = """
@@ -43,12 +45,27 @@ EXTRA = """
 :rel-orderDb-deployed-dbNode a structurizr:Deployment ; arch:inModel :t ; arch:source :orderDb ; arch:target :dbNode .
 :lb a structurizr:InfrastructureNode ; arch:inModel :t ; skos:prefLabel "负载均衡"@zh ; structurizr:environment "Production" .
 :rel-euWest-haspart-lb a arch:HasPart ; arch:inModel :t ; arch:source :euWest ; arch:target :lb .
+:pod a structurizr:DeploymentNode ; arch:inModel :t ; skos:prefLabel "Pod"@zh .
+:rel-k8s-haspart-pod a arch:HasPart ; arch:inModel :t ; arch:source :k8s ; arch:target :pod .
+:rel-orderApi-deployed-pod a structurizr:Deployment ; arch:inModel :t ; arch:source :orderApi ; arch:target :pod .
+:devNode a structurizr:DeploymentNode ; arch:inModel :t ; skos:prefLabel "开发机"@zh ; structurizr:environment "Dev" .
+:rel-orderDb-deployed-dev a structurizr:Deployment ; arch:inModel :t ; arch:source :orderDb ; arch:target :devNode .
+:c2 a c4:Component ; arch:inModel :t ; skos:prefLabel "通知组件"@zh .
+:rel-orderApi-has-c2 a c4:ComponentContainment ; arch:inModel :t ; arch:source :orderApi ; arch:target :c2 .
+:rel-c2-uses-sms a c4:Using ; arch:inModel :t ; arch:source :c2 ; arch:target :sms ; skos:prefLabel "催付短信"@zh .
+:rel-payment-uses-validator a c4:Using ; arch:inModel :t ; arch:source :payment ; arch:target :validator ;
+    skos:prefLabel "支付回调"@zh .
+"""
+VIEW_DEP = """
+:view-depProbe a arch:Diagram ; arch:inModel :t ; skos:prefLabel "部署声明式探针"@zh ;
+    arch:viewConformsToViewpoint <https://meta.linked.archi/c4/viewpoints#C4Deployment> .
+:k8s arch:inView :view-depProbe . :orderApi arch:inView :view-depProbe .
 """
 VIEW = """
 :view-c4Probe a arch:Diagram ; arch:inModel :t ; skos:prefLabel "C4 声明式探针"@zh ;
     arch:viewConformsToViewpoint <https://meta.linked.archi/c4/viewpoints#ContainerDiagram> .
-:orderSys arch:inView :view-c4Probe . :orderApi arch:inView :view-c4Probe . :orderDb arch:inView :view-c4Probe .
-:buyer arch:inView :view-c4Probe .
+:orderSys arch:inView :view-c4Probe . :orderDb arch:inView :view-c4Probe .
+:buyer arch:inView :view-c4Probe . :validator arch:inView :view-c4Probe .
 """
 
 
@@ -115,12 +132,16 @@ def common_claims(name, svg, boxes, edges, using):
           want == got, f"missing={sorted(want - got)} extra={sorted(got - want)}")
     imp_bad = [e["iris"] for e in edges if e["implied"] and not all(u in using for u in e["iris"])]
     claim(f"{name}: every implied line stands for c4:Using resources of the model", not imp_bad, f"bad={imp_bad}")
-    by = {b["iri"]: b["box"] for b in elements}
-    geo = [e["iris"] for e in edges if not (on_border(e["pts"][0], by[e["source"]]) and on_border(e["pts"][-1], by[e["target"]]))]
+    by = {}
+    for b in elements:  # a container deployed twice has two boxes with the same data-iri
+        by.setdefault(b["iri"], []).append(b["box"])
+    geo = [e["iris"] for e in edges if not (any(on_border(e["pts"][0], x) for x in by[e["source"]])
+                                            and any(on_border(e["pts"][-1], x) for x in by[e["target"]]))]
     claim(f"{name}: every line starts on its source's box and ends on its target's box (geometry)", not geo,
           f"off-box={geo[:3]} checked={len(edges)}")
-    claim(f"{name}: no arch:Refines line and no am4 element drawn", "refines" not in svg and "orderComp" not in svg
-          and "am4:" not in svg, "checked data-iri/data-type text")
+    types = set(re.findall(r'data-type="([^"]*)"', svg))
+    claim(f"{name}: only C4 element kinds and c4:Using lines are drawn (no arch:Refines, no am4 element)",
+          types <= C4_TYPES and "orderComp" not in svg, f"data-type values={sorted(types)}")
 
 
 def main():
@@ -145,8 +166,11 @@ def main():
         claim("context: no boundary and no container drawn", all(b["kind"] == "element" for b in boxes)
               and 'data-type="Container"' not in svg and 'data-type="Database"' not in svg, f"boxes={len(boxes)}")
         imp = {(e["source"], e["target"]): e["iris"] for e in edges if e["implied"]}
-        claim("context: orderApi→sms is drawn as the implied line orderSys→sms",
-              imp.get(("t:orderSys", "t:sms")) == ("t:rel-orderApi-uses-sms",), f"implied={imp}")
+        claim("context: orderApi→sms and c2→sms are merged into one implied line orderSys→sms listing both",
+              imp.get(("t:orderSys", "t:sms")) == ("t:rel-c2-uses-sms", "t:rel-orderApi-uses-sms")
+              and sum(1 for e in edges if (e["source"], e["target"]) == ("t:orderSys", "t:sms")) == 1, f"implied={imp}")
+        claim("context: payment→validator is lifted to payment→orderSys although orderSys→payment exists (direction counts)",
+              imp.get(("t:payment", "t:orderSys")) == ("t:rel-payment-uses-validator",), f"implied={sorted(imp)}")
         claim("context: buyer→orderWeb is not lifted, buyer→orderSys already exists directly",
               ("t:buyer", "t:orderSys") not in imp and any(e["iris"] == ("t:rel-buyer-uses-orderSys",) for e in edges),
               f"implied={sorted(imp)}")
@@ -199,7 +223,8 @@ def main():
         got_nodes = {(b["parent"], b["iri"]) for b in boxes if b["kind"] == "deployment-node" and b["parent"]}
         claim("deployment: deployment-node nesting = arch:hasPart between deployment nodes (SPARQL)",
               got_nodes == {(p, n) for p, n in nest if n != "t:lb"}, f"svg={sorted(got_nodes)} sparql={sorted(nest)}")
-        placed = set(rows("SELECT ?n ?c WHERE { ?c sz:deployedOn ?n }", fs)) | {("t:euWest", "t:lb")}
+        placed = set(rows('SELECT ?n ?c WHERE { ?c sz:deployedOn ?n . ?a arch:hasPart* ?n . ?a sz:environment "Production" }', fs)) \
+            | {("t:euWest", "t:lb")}
         got = {(b["parent"], b["iri"]) for b in boxes if b["kind"] == "element"}
         claim("deployment: each container sits in the node structurizr:deployedOn names; infrastructure node in its parent",
               got == placed, f"svg={sorted(got)} sparql={sorted(placed)}")
@@ -207,7 +232,17 @@ def main():
             inside(b["box"], next(x["box"] for x in boxes if x["iri"] == b["parent"])) for b in boxes if b["parent"]),
               f"boxes={len(boxes)}")
         claim("deployment: the node title shows structurizr:instances", "×3" in svg, "×3")
+        claim("deployment: pod (no environment of its own) is in Production through k8s; Dev's node is not",
+              ("t:k8s", "t:pod") in got_nodes and "t:devNode" not in {b["iri"] for b in boxes}, f"nodes={sorted(got_nodes)}")
+        claim("deployment: orderApi deployed twice is drawn twice, each instance's line to orderDb drawn",
+              sorted(b["parent"] for b in boxes if b["iri"] == "t:orderApi") == ["t:k8s", "t:pod"]
+              and sum(1 for e in edges if e["iris"] == ("t:rel-orderApi-uses-orderDb",)) == 2, f"lines={len(edges)}")
         common_claims("deployment", svg, boxes, edges, using)
+        svg, boxes, edges = diagram(os.path.join(tmp, "dev.svg"), "--viewpoint", "C4Deployment", "--of", "Dev", *fs)
+        claim("deployment Dev: only the Dev node and what is deployed on it",
+              {(b["kind"], b["iri"], b["parent"]) for b in boxes} == {("deployment-node", "t:devNode", None),
+                                                                   ("element", "t:orderDb", "t:devNode")},
+              f"drawn={sorted((b['iri'], b['parent']) for b in boxes)}")
 
         # 5. renaming changes the picture, nothing else
         d = os.path.join(tmp, "renamed.ttl")
@@ -226,11 +261,19 @@ def main():
         claim("declared C4 view fixture passes gate", rc == 0, log.strip().splitlines()[-1])
         svg, boxes, edges = diagram(os.path.join(tmp, "dv.svg"), "--view", T + "view-c4Probe", dv)
         got = {(b["kind"], b["iri"], b["parent"]) for b in boxes}
-        claim("declared C4 view: orderSys is the boundary of orderApi and orderDb, buyer outside",
-              got == {("boundary", "t:orderSys", None), ("element", "t:orderApi", "t:orderSys"),
-                      ("element", "t:orderDb", "t:orderSys"), ("element", "t:buyer", None)}, f"drawn={sorted(got)}")
+        claim("declared C4 view: orderSys is the boundary of orderDb and of validator (its container orderApi is not "
+              "in the view: nearest drawn ancestor), buyer outside",
+              got == {("boundary", "t:orderSys", None),
+                      ("element", "t:orderDb", "t:orderSys"), ("element", "t:validator", "t:orderSys"),
+                      ("element", "t:buyer", None)}, f"drawn={sorted(got)}")
         claim("declared C4 view: title is the view's prefLabel", ">C4 声明式探针<" in svg, "title checked")
         common_claims("declared", svg, boxes, edges, using)
+        dd = os.path.join(tmp, "view-dep.ttl")
+        open(dd, "w", encoding="utf-8").write(txt + VIEW_DEP)
+        out = os.path.join(tmp, "dd.svg")
+        rc, log = run("diagram", "--view", T + "view-depProbe", "-o", out, dd)
+        claim("declared deployment view exits 1 with a Violation and writes nothing (not supported yet)",
+              rc == 1 and "[Violation]" in log and not os.path.exists(out), log.strip()[-120:])
 
         # errors are reported, not drawn
         for args, text in [(("ContainerDiagram", T + "orderApi"), "ContainerDiagram --of a container"),
