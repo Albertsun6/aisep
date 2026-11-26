@@ -1,8 +1,8 @@
-"""model_impact follows arch:DependsOn (core 0.7.0) and the C4 relationships (spec §9; directions are data in
-modules/aisep-core/impact.ttl and modules/c4/impact.ttl).
+"""model_impact follows arch:DependsOn (core 0.7.0), arch:HasPart, the C4 relationships and the UML Dependency family
+(spec §9; directions are data in modules/aisep-core/impact.ttl, modules/c4/impact.ttl and modules/uml/impact.ttl).
 
-Model: modules/c4/tests/valid/dual-model-ok.ttl (a valid C4 + am4 dual model) plus one arch:DependsOn between two am4
-components, copied into models/t/ of the temp repo. Each relationship class gets a positive case (a change to the
+Model: modules/c4/tests/valid/dual-model-ok.ttl (a valid C4 + am4 dual model, with one arch:HasPart) plus one
+arch:DependsOn between two am4 components and a small UML part, copied into models/t/ of the temp repo. Each relationship class gets a positive case (a change to the
 depended-on end reaches the dependent end) and a negative one (the other way is not traversed, nor listed as related).
 """
 import os
@@ -17,6 +17,16 @@ DEPENDS_ON = """
 :ledger a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "总账"@zh .
 :rel-billing-dependson-ledger a arch:DependsOn ; arch:inModel :t ; arch:source :billing ; arch:target :ledger .
 """
+UML = """@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch: <https://meta.linked.archi/core#> .
+@prefix uml:  <https://meta.linked.archi/uml/onto#> .
+@prefix :     <https://aisep.example/model/t/> .
+:invoice a uml:Class ; arch:inModel :t ; skos:prefLabel "发票"@zh .
+:taxCalc a uml:Class ; arch:inModel :t ; skos:prefLabel "计税"@zh .
+:priceable a uml:Interface ; arch:inModel :t ; skos:prefLabel "可计价"@zh .
+:use-invoice-taxCalc a uml:Usage ; arch:inModel :t ; arch:source :invoice ; arch:target :taxCalc .
+:real-invoice-priceable a uml:InterfaceRealization ; arch:inModel :t ; arch:source :invoice ; arch:target :priceable .
+"""
 
 
 def _model(repo):
@@ -24,6 +34,7 @@ def _model(repo):
         text = fh.read()
     os.makedirs(repo / "models/t")
     (repo / "models/t/c4.ttl").write_text(text + DEPENDS_ON, encoding="utf-8")
+    (repo / "models/t/uml.ttl").write_text(UML, encoding="utf-8")
 
 
 def hits(repo, focus, mode="depends", depth=3):
@@ -71,6 +82,22 @@ def test_structurizr_deployment_backward(repo):
     assert traversed(hits(repo, "orderApi", "ripple"), "k8s", 1, "Deployment")
 
 
+def test_core_haspart_backward(repo):
+    _model(repo)
+    assert traversed(hits(repo, "k8s"), "euWest", 1, "HasPart")             # euWest (whole) has part k8s
+    assert "k8s" not in hits(repo, "euWest")                                # the part does not depend on the whole
+    assert traversed(hits(repo, "euWest", "ripple"), "k8s", 1, "HasPart")
+
+
+def test_uml_dependency_family_backward(repo):
+    _model(repo)
+    assert traversed(hits(repo, "taxCalc"), "invoice", 1, "Usage")          # client invoice uses supplier taxCalc
+    assert traversed(hits(repo, "priceable"), "invoice", 1, "InterfaceRealization")
+    inv = hits(repo, "invoice")
+    assert "taxCalc" not in inv and "priceable" not in inv                  # suppliers do not depend on the client
+    assert traversed(hits(repo, "invoice", "ripple"), "taxCalc", 1, "Usage")
+
+
 def test_declared_direction_agrees_with_core_dependency_property():
     """A qualified class whose unqualified form is a subproperty of arch:dependsOn (source depends on target) must not
     be declared Forward, nor one under arch:dependencyOf (target depends on source) Backward: e.g. am4:Serving
@@ -87,3 +114,7 @@ def test_declared_direction_agrees_with_core_dependency_property():
             judged[core.short(c)] = d
             assert d != wrong[root], f"{core.short(c)} is {d} but its unqualified form is under {core.short(root)}"
     assert judged.get("arch:DependsOn") == "Backward" and judged.get("am4:Serving") == "Forward", judged
+    assert {judged.get("uml:" + c) for c in ("Dependency", "Usage")} == {"Backward"}, judged
+    family = ("Dependency", "Abstraction", "Realization", "InterfaceRealization", "Usage", "Deployment")
+    got = {c: (ctx.nearest("https://meta.linked.archi/uml/onto#" + c, dep) or "").replace(core.AISEP, "") for c in family}
+    assert set(got.values()) == {"Backward"}, got

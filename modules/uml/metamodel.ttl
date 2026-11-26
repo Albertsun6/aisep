@@ -24,4 +24,5 @@
     aisep:alignmentFile    "modules/uml/align.ttl" ;
     aisep:inheritsHubRules false ;
     aisep:notationLevel    aisep:LevelCode ;   # spec v0.2 §5/§7.2
-    aisep:ownsNamespace    "https://meta.linked.archi/uml/onto#" .
+    aisep:ownsNamespace    "https://meta.linked.archi/uml/onto#" ;
+    aisep:impactFile       "modules/uml/impact.ttl" .   # spec §5/§9: only declared overrides take effect

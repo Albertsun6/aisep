@@ -392,6 +392,15 @@ class _Analysis:
                          "批准记录和活动必须是带 arch:inModel 的 IRI（规范 §6.6、§6.7），合并检查无法核对它，按失败处理")
                 for (path, desc), where in sorted(found.items())]
 
+    # a record / activity typed in a module or vendor file (#105 review, non-blocking 1): the derivation honours a type
+    # from any graph, but the checks below read only models/, so fail closed, independent of the gate's R1
+    def check_type_outside_models(self):
+        rows = self.ctx_M.rows(f"""SELECT DISTINCT ?s ?g WHERE {{ GRAPH ?g {{ ?s a ?c }} {self.ctx_M.onto_graph_filter()}
+               ?c rdfs:subClassOf* ?k VALUES ?k {{ aisep:ApprovalRecord aisep:AgentActivity }} }}""")
+        return [_problem("governance-type-outside-models", f"合并结果 M（{self.M[:7]}）的 {g[len(core.ONTO_G):]} 给 "
+                         f"{core.short(s)} 声明了批准记录或活动的类型：批准记录和活动只能写在 models/ 下，合并检查无法核对它，"
+                         "按失败处理", iri=s) for s, g in sorted(rows)]
+
     # check 1 (第三轮 E)
     def check1(self):
         out = []
@@ -612,7 +621,7 @@ def merge_check(repo, pr_head, target_ref, *, head_ref, now, remote="origin"):
                 if e.code != "DIFF_BNODE_UNSUPPORTED":
                     raise
                 return _bnode_fallback(r, h, t, e)
-            return (a.check_bnodes() + a.check1() + a.check3() + a.check4(head_ref) + a.check5() + a.check6()
+            return (a.check_bnodes() + a.check_type_outside_models() + a.check1() + a.check3() + a.check4(head_ref) + a.check5() + a.check6()
                     + a.check7() + a.release_tags(remote))
     return _run(run)
 
@@ -654,7 +663,7 @@ def post_merge_verify(repo, new_head, t_used, pr_head, *, head_ref, now):
         with contextlib.ExitStack() as stack:
             a = _Analysis(r, h, parents[0] if parents else m, m, now, stack)
             a.check3()  # covers must pass check 3; its own verdict was given before the merge
-            return a.check_bnodes((("合并后的新头", m),)) + a.check5() + a.check6() + a.check7()
+            return a.check_bnodes((("合并后的新头", m),)) + a.check_type_outside_models() + a.check5() + a.check6() + a.check7()
     return _run(run)
 
 

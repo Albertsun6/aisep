@@ -394,6 +394,18 @@ def _write_c4(sel, model, name, opts):
     return 0
 
 
+def _under(path, directory):
+    """path 解析符号链接后是否落在 directory 里；逐级比对已存在的祖先目录用 samefile，不区分大小写的文件系统也拦得住。"""
+    p = os.path.realpath(path)
+    while True:
+        if os.path.exists(p) and os.path.samefile(p, directory):
+            return True
+        parent = os.path.dirname(p)
+        if parent == p:
+            return False
+        p = parent
+
+
 def cmd_adm(args):
     if not args:
         print(adm.overview(), end=""); return 0
@@ -414,11 +426,10 @@ def cmd_adm(args):
         report_rows(result["problems"]); return 1
     text = adm.render(phase, opts["--model"], result, deliverable=opts.get("--deliverable", False))
     if "--out" in opts:
-        out = os.path.abspath(opts["--out"])
-        if out.startswith(os.path.join(ROOT, "models") + os.sep):
+        if _under(opts["--out"], os.path.join(ROOT, "models")):
             print("--out 不能写到 models/ 下：生成的交付物不提交（docs/specs/adm-wizard.md 3.3）", file=sys.stderr); return 2
         try:
-            with open(out, "w", encoding="utf-8") as f:
+            with open(opts["--out"], "w", encoding="utf-8") as f:
                 f.write(text)
         except OSError as e:
             print(f"写不了 {opts['--out']}：{e}", file=sys.stderr); return 2
