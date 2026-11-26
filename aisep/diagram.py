@@ -355,7 +355,8 @@ def render(title, sub, elements, rels):
         x, y0, w, h = MARGIN + box[n][0], top + box[n][1], box[n][2], box[n][3]
         shape, icon = SHAPES.get(e["type"], ("rect", None))
         tip = f'{ZH.get(e["type"], e["type"])}：{e["label"]}' + (f'\n{e["definition"]}' if e["definition"] else "")
-        out.append(f'<g data-kind="element" data-iri="{escape(n)}" data-type="am4:{escape(e["type"])}"><title>{escape(tip)}</title>')
+        out.append(f'<g data-kind="element" data-iri="{escape(n)}" data-type="am4:{escape(e["type"])}" '
+                   f'data-box="{f(x)} {f(y0)} {f(w)} {f(h)}"><title>{escape(tip)}</title>')
         out += _shape(e, x, y0, w, h)
         out += _icon(icon, x + w - 21, y0 + 6)
         t0 = y0 + (16 if shape == "obj" else 0)

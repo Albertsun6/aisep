@@ -14,6 +14,7 @@ M = "https://aisep.example/model/"
 VP = "https://meta.linked.archi/archimate4/viewpoints#"
 results = []
 LAST_ENDS = {}  # relationship IRI -> (source, target, data-type) of the last diagram() call
+LAST_GEO = {}   # "boxes": element IRI -> (x, y, w, h); "paths": relationship IRI -> [(x, y), ...]
 
 
 def run(*args):
@@ -60,14 +61,18 @@ def diagram(out, *args):
     with open(out, encoding="utf-8") as fh:
         svg = fh.read()
     root = ElementTree.fromstring(svg)  # claim: well-formed XML (raises otherwise)
-    kinds, ends = {}, {}
+    kinds, ends, boxes, paths = {}, {}, {}, {}
     for e in root.iter():
         k = e.get("data-kind")
         if k:
             kinds.setdefault(k, []).append(e.get("data-iri"))
         if k == "relationship":
             ends[e.get("data-iri")] = (e.get("data-source"), e.get("data-target"), e.get("data-type"))
+            paths[e.get("data-iri")] = [tuple(float(v) for v in p.split(",")) for p in e.get("d")[1:].split(" L")]
+        if k == "element":
+            boxes[e.get("data-iri")] = tuple(float(v) for v in e.get("data-box").split())
     LAST_ENDS.clear(); LAST_ENDS.update(ends)
+    LAST_GEO.clear(); LAST_GEO.update(boxes=boxes, paths=paths)
     return svg, kinds.get("element", []), kinds.get("relationship", [])
 
 
@@ -90,16 +95,8 @@ def viewpoint_case(slug, viewpoint, tmp):
     claim(f"{slug} {viewpoint}: drawn element set equals the SPARQL element set",
           {short(i) for i in els} == want_set, f"only_svg={sorted({short(i) for i in els} - want_set)[:3]} "
           f"only_sparql={sorted(want_set - {short(i) for i in els})[:3]}")
-    ends = dict(LAST_ENDS)
-    facts = rows(f"SELECT ?r ?s ?o ?t WHERE {{ ?r arch:inModel <{model}> ; arch:source ?s ; arch:target ?o ; a ?t }}", fs)
-    st = {r: (s, o) for r, s, o, _ in facts}
-    types = {}
-    for r, _, _, t in facts:
-        types.setdefault(r, set()).add(t)
-    bad = [short(r) for r, (s, o, t) in ends.items()
-           if (short(s), short(o)) != st.get(short(r)) or t not in types.get(short(r), set())]
-    claim(f"{slug} {viewpoint}: every drawn relationship has the model's source, target and type", not bad and bool(ends),
-          f"mismatched={bad[:3]} checked={len(ends)}")
+    ends_claim(f"{slug} {viewpoint}", model, fs)
+    geometry_claim(f"{slug} {viewpoint}")
     claim(f"{slug} {viewpoint}: relationship count equals SPARQL count (>0)", len(rels) == want_r > 0,
           f"svg={len(rels)} sparql={want_r}")
     members = iris_in_model(model, fs)
@@ -110,6 +107,36 @@ def viewpoint_case(slug, viewpoint, tmp):
     svg2, _, _ = diagram(out + ".2.svg", "--viewpoint", viewpoint, "--model", slug, *fs)
     claim(f"{slug} {viewpoint}: generating twice gives identical bytes", svg == svg2, f"len={len(svg)}")
     return svg, els, rels
+
+
+def on_border(p, box, tol=1.5):
+    x, y, w, h = box
+    px, py = p
+    return ((abs(px - x) <= tol or abs(px - x - w) <= tol) and y - tol <= py <= y + h + tol) or \
+           ((abs(py - y) <= tol or abs(py - y - h) <= tol) and x - tol <= px <= x + w + tol)
+
+
+def geometry_claim(name):
+    """Each drawn line starts on its data-source's box and ends on its data-target's box."""
+    b, bad = LAST_GEO["boxes"], []
+    for r, pts in LAST_GEO["paths"].items():
+        s, t, _ = LAST_ENDS[r]
+        if not (on_border(pts[0], b[s]) and on_border(pts[-1], b[t])):
+            bad.append(short(r))
+    claim(f"{name}: every line starts on its source's box and ends on its target's box (geometry)",
+          not bad and bool(LAST_GEO["paths"]), f"off-box={bad[:3]} checked={len(LAST_GEO['paths'])}")
+
+
+def ends_claim(name, model, fs):
+    """Every drawn relationship has the model's source, target and type (SPARQL)."""
+    facts = rows(f"SELECT ?r ?s ?o ?t WHERE {{ ?r arch:inModel <{model}> ; arch:source ?s ; arch:target ?o ; a ?t }}", fs)
+    st, types = {r: (s, o) for r, s, o, _ in facts}, {}
+    for r, _, _, t in facts:
+        types.setdefault(r, set()).add(t)
+    bad = [short(r) for r, (s, o, t) in LAST_ENDS.items()
+           if (short(s), short(o)) != st.get(short(r)) or t not in types.get(short(r), set())]
+    claim(f"{name}: every drawn relationship has the model's source, target and type", not bad and bool(LAST_ENDS),
+          f"mismatched={bad[:3]} checked={len(LAST_ENDS)}")
 
 
 def main():
@@ -159,6 +186,8 @@ def main():
               sorted(els5) == sorted(f"{M}workbench/{x}" for x in members), f"drawn={[short(i) for i in els5]}")
         claim("declared view: relationship count equals SPARQL count (>0)", len(rels5) == want_r > 0,
               f"svg={len(rels5)} sparql={want_r}")
+        ends_claim("declared view", f"{M}workbench/", fs2)
+        geometry_claim("declared view")
         claim("declared view: title is the view's prefLabel", ">出图探针视图<" in svg5, "title checked")
 
         # errors are reported, not drawn
