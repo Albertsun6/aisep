@@ -1687,10 +1687,14 @@ DEPUTY_REL = "models/procurement/governance.ttl"
 DEPUTY = f"\n:deputy a arch:Stakeholder ;\n    arch:inModel <{M}> ;\n    skos:prefLabel \"副架构师\"@zh .\n"
 
 
-def _deputy_rejects_audit_trail(t):
-    """main: :deputy rejects :auditTrail after the baseline approval, so :auditTrail is Rejected on T."""
+DEPUTY_ROLE = "\n:DeputyRole <http://www.w3.org/2000/01/rdf-schema#subClassOf> arch:Stakeholder .\n"
+
+
+def _deputy_rejects_audit_trail(t, role=False):
+    """main: :deputy rejects :auditTrail after the baseline approval, so :auditTrail is Rejected on T. role: :deputy is
+    typed by a model-local subclass :DeputyRole ⊑ arch:Stakeholder instead."""
     from fixtures.topology import PREFIXES, record_ttl
-    t.write(DEPUTY_REL, DEPUTY, "a")
+    t.write(DEPUTY_REL, (DEPUTY.replace("a arch:Stakeholder", "a :DeputyRole") + DEPUTY_ROLE) if role else DEPUTY, "a")
     local = "approval-20261119140000-architecture-deputy"
     t.write(f"{GOV}/{local}.ttl", PREFIXES + record_ttl(local, "GateArchitecture", ["auditTrail"], t.c0,
                                                         at="2026-11-19T14:00:00Z", decision="Rejected",
@@ -1701,14 +1705,23 @@ def _deputy_rejects_audit_trail(t):
     return base
 
 
-@pytest.mark.parametrize("change", ["to-ai-agent", "type-dropped", "removed"])
+@pytest.mark.parametrize("change", ["to-ai-agent", "type-dropped", "removed", "module-type", "subclass-chain"])
 def test_approver_of_existing_record_retyped_or_removed_rejected(t, change):
-    _deputy_rejects_audit_trail(t)
+    """module-type: a module file adds aisep:AIAgent to :deputy (the check reads the types the derivation reads, not
+    only models/). subclass-chain: :deputy keeps its asserted type, its class gains aisep:AIAgent as a superclass
+    (#136 review N1)."""
+    _deputy_rejects_audit_trail(t, role=change == "subclass-chain")
     txt = t.read(DEPUTY_REL)
-    assert DEPUTY in txt
-    after = {"to-ai-agent": DEPUTY.replace("a arch:Stakeholder", "a aisep:AIAgent"),
-             "type-dropped": DEPUTY.replace("a arch:Stakeholder ;\n    ", ""), "removed": "\n"}[change]
-    t.write(DEPUTY_REL, txt.replace(DEPUTY, after))
+    if change == "module-type":
+        t.write("modules/ext-governance/onto.ttl", f"\n<{M}deputy> a <https://aisep.example/ont/aisep#AIAgent> .\n", "a")
+    elif change == "subclass-chain":
+        assert DEPUTY_ROLE in txt
+        t.write(DEPUTY_REL, txt.replace(DEPUTY_ROLE, DEPUTY_ROLE.replace(" .", ", aisep:AIAgent .")))
+    else:
+        assert DEPUTY in txt
+        after = {"to-ai-agent": DEPUTY.replace("a arch:Stakeholder", "a aisep:AIAgent"),
+                 "type-dropped": DEPUTY.replace("a arch:Stakeholder ;\n    ", ""), "removed": "\n"}[change]
+        t.write(DEPUTY_REL, txt.replace(DEPUTY, after))
     h = t.commit_all(f"{change} :deputy")
     assert state(t, h, M + "auditTrail") == {ARCH_NS + "Approved"}  # the attack works on the derivation
     reason = "governance-approver-removed" if change == "removed" else "governance-approver-retyped"

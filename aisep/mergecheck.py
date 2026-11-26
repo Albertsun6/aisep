@@ -129,9 +129,9 @@ def _subclasses(cls, *ctxs):
 
 
 def _types(ctx, iri):
-    """rdf:type values of iri asserted in the model sources, modules and vendor of ctx (derived graphs left out)."""
-    return {c for (c,) in ctx.rows(f"""SELECT DISTINCT ?c WHERE {{ GRAPH ?g {{ <{iri}> a ?c }}
-            FILTER(STRSTARTS(STR(?g), "{core.SRC_G}") || STRSTARTS(STR(?g), "{core.ONTO_G}")) }}""")}
+    """iri's types and all their superclasses, read as the approver test of the derivation reads them (core._approver):
+    a change anywhere in the subclass chain counts (#136 review N1)."""
+    return {a for t in ctx.types(iri) for a in ctx.ancestors(t)}
 
 
 def _named(side, iri, pred):
