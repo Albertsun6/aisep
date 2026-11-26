@@ -215,6 +215,20 @@ def test_T29_parse_failed_and_allow_partial(repo):
     assert r["findings"][0]["layer"] == "L0" and r["findings"][0]["file"] == "models/procurement/broken.ttl"
 
 
+@pytest.mark.parametrize("rel, tools_", [
+    ("modules/ext-actions/catalog.ttl", ("model_check", "model_gate")),  # loaded by the manifest (aisep:loads)
+    ("modules/ext-actions/shapes.ttl", ("model_gate",)),                  # read only by L3: model_check never opens it
+    ("modules/aisep-core/shapes.ttl", ("model_check", "model_gate")),    # its SHACL-SPARQL constraints run in L1
+])
+def test_broken_module_file_is_parse_failed(repo, rel, tools_):
+    """followups-20261126 第 16 项：模块文件不能解析 -> PARSE_FAILED，details.file 点名文件，不是 INTERNAL。"""
+    with open(repo / rel, "a", encoding="utf-8") as f:
+        f.write("\ngarbage <<<\n")
+    for name in tools_:
+        e = raises("PARSE_FAILED", getattr(T, name), CFG, repo=str(repo))
+        assert e.details["file"] == rel, (name, e.details)
+
+
 # ---------------------------------------------------------------- T37: committed legacy violations are visible
 
 def test_T37_open_violations(repo):

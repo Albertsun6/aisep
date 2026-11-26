@@ -16,7 +16,7 @@ import pyoxigraph as ox
 from rdflib import Graph
 from rdflib.compare import to_canonical_graph
 
-from aisep import core, gitio, tools, write_tools, writer
+from aisep import core, gitio, querybox, tools, write_tools, writer
 from aisep.errors import AisepError
 
 CATALOG = "modules/ext-actions/catalog.ttl"  # relative to the served worktree, next to the modules it loads
@@ -27,6 +27,7 @@ RDF, SH, XSD, SKOS = core.NS["rdf"], core.NS["sh"], core.NS["xsd"], core.NS["sko
 AI, A, NIL = core.AISEP, core.A, core.NS["rdf"] + "nil"
 DCT_ID, VERSION = core.NS["dcterms"] + "identifier", core.NS["owl"] + "versionInfo"
 XSD_STRING = XSD + "string"
+GUARD_TIMEOUT_S = tools.QUERY_TIMEOUT_MS / 1000  # per guard; a badly written ASK (e.g. a cartesian product) must not hang
 
 
 def _op(tool, build, scalar, lists, required, yields, modifies):
@@ -551,13 +552,26 @@ def _args(step, iri_params, params, iris, model_of):
 
 def _failed_guards(d, params, ctx):
     """Guards whose ASK is false. Parameters reach the query only as pre-bound terms ($name, substitutions), never as
-    query text. A guard that uses an optional parameter that was not given is skipped."""
+    query text. A guard that uses an optional parameter that was not given is skipped. Each ASK runs in querybox's
+    network-less child with a timeout (GUARD_TIMEOUT_S)."""
     failed, iri_params = [], set(_iri_params(d))
     for x in d["guards"]:
         if any(params.get(v) is None for v in x["vars"]):
             continue
-        subs = {ox.Variable(v): ox.NamedNode(params[v]) if v in iri_params else ox.Literal(params[v]) for v in x["vars"]}
-        if not bool(ctx.store.query(core.SPARQL_PREFIXES + x["ask"], use_default_graph_as_union=True, substitutions=subs)):
+        subs = {v: {"type": "iri" if v in iri_params else "literal", "value": params[v]} for v in x["vars"]}
+        where = {"action": d["id"], "guard": x["id"]}
+        try:
+            res = querybox.run(ctx.store, core.SPARQL_PREFIXES + x["ask"], {}, 1, GUARD_TIMEOUT_S, subs)
+        except querybox.Timeout:
+            raise AisepError("QUERY_TIMEOUT", f"动作 {d['id']} 的前置检查 {x['id']} 超过 {GUARD_TIMEOUT_S:g} 秒，未写入",
+                             hint="这条 guard 的查询写法有问题（例如笛卡尔积），要改 catalog.ttl 里的定义；原样重试没有用",
+                             details=where, retryable=False) from None
+        except querybox.NetworkAttempt:
+            raise AisepError("QUERY_NOT_READONLY", f"动作 {d['id']} 的前置检查 {x['id']} 试图访问外部端点，执行它的进程已被终止",
+                             details=where) from None
+        except querybox.Unavailable as e:
+            raise AisepError("INTERNAL", f"本机无法建立无网络的查询进程，前置检查未执行：{e}", details=where) from None
+        if not res["value"]:
             failed.append({"id": x["id"], "hint": x["hint"]})
     return failed
 

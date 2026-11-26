@@ -269,6 +269,10 @@ def test_executor_has_no_write_path_of_its_own():
         if name in ("write_text", "write_bytes"):
             bad.append(ast.unparse(n))
         if name in ("system", "popen", "run", "Popen", "call", "check_call", "check_output", "spawnv", "execv"):
+            # 唯一放行：guard 的 ASK 经 querybox.run 在无网络子进程里限时执行（PR #133）。子进程只从 stdin 读查询和图、
+            # 往 stdout 写结果，不碰工作区；放行只按这个确切的调用名，querybox 里别的函数和其他模块的 run 照样拦
+            if isinstance(f, ast.Attribute) and getattr(f.value, "id", "") == "querybox" and name == "run":
+                continue
             bad.append(ast.unparse(n))
         if name in ("open", "fdopen"):
             mode = n.args[1] if len(n.args) > 1 else next((k.value for k in n.keywords if k.arg == "mode"), None)

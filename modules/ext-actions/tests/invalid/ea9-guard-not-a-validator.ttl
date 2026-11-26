@@ -1,5 +1,5 @@
 # expect: EA9:
-# Invalid: a guard that is not an sh:SPARQLAskValidator (here: a literal).
+# Invalid: a guard that is a literal. sh:nodeKind sh:BlankNode fires; an untyped blank-node guard (sh:class sh:SPARQLAskValidator alone) is covered by test_gate_names_the_shape_of_each_catalogue_defect.
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .

@@ -322,6 +322,7 @@
 
 - gate FAIL **不是工具错误**（`isError: false`），是正常结果。
 - aisep-core 的 SHACL-SPARQL 约束（L1 与批准核对用，取自被检查内容自己的 `modules/`）在 §5.6 的同一种无网络子进程里执行（issue #66）：约束尝试建立网络连接 → `QUERY_NOT_READONLY`，无网络子进程建立不了 → `INTERNAL`。两者都是工具错误，gate 不会给出 PASS。
+- `modules/` 下被读到的 `.ttl` 不能解析（模块清单 `aisep:loads` 的文件，或 L3 才读的形状文件）→ `PARSE_FAILED`，`details.file` 是该文件的仓库相对路径。这是工具错误，不给部分结果；模型文件的解析失败仍是 L0 发现项。只有用到该文件的工具才报：形状文件坏了，`model_check`（L0–L2）照常返回，`model_validate`、`model_gate` 报错。
 - 判定逻辑就是原型的那几个函数，只把 `report()` 改成返回数据。
 
 **`model_findings` 的 `openViolations`**（Q6 条件二：写前只拒新增违规留下的遗留违规要查得到）
@@ -899,7 +900,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 2. 按 `params` schema 校验参数，再校验 IRI 参数（`iriParams`）的形状；不合规 → `INVALID_ARGUMENT`，`details.rejectedFields` 形如 `params.<名>`。参数只作为预绑定的项进入 guard 查询，不拼进查询文本。
 3. 进入一次 §5.1 写入（加锁、读工作区、基线）。依次跑各步的计划函数；后一步在前一步结果的内存叠加上规划，与第二次工具调用看到的相同。中间结果只检查能否解析，不能 → `EDIT_UNSAFE`。步骤自己的拒绝原样抛出（`ELEMENT_NOT_FOUND`、`IRI_EXISTS`、`UNKNOWN_TYPE`、`PROTECTED_RESOURCE`、`REFERENCED` 等），`details.step` 标出是哪一步。可选参数没给时，引用它的入参或列表项省略；某步的必填入参因此缺失 → `INVALID_ARGUMENT`。
 4. **判重放**：各步合并后的计划在当前工作区上无变化（每一步都无变化，或各步改动相互抵消、每个文件合并后的文本与工作区逐字节相同）→ 成功，`changed: false`，不重写文件，**不跑 guard**。只有部分文件相互抵消时，这些文件不计入改动。
-5. **跑 guard**：每条 guard 的 ASK 结果为 false 即失败 → `PRECONDITION_FAILED`，零写入，`hint` 是第一条失败 guard 的修法（`sh:message`），`details.failedGuards: [{id, hint}]`。IRI 参数预绑定为 IRI，字符串参数预绑定为普通字面量。guard 与 `aisep:modelOf` 都看动作开始时的工作区，不看前面步骤的产出。查询用到的可选参数没给时这条 guard 跳过。
+5. **跑 guard**：每条 guard 的 ASK 结果为 false 即失败 → `PRECONDITION_FAILED`，零写入，`hint` 是第一条失败 guard 的修法（`sh:message`），`details.failedGuards: [{id, hint}]`。IRI 参数预绑定为 IRI，字符串参数预绑定为普通字面量。guard 与 `aisep:modelOf` 都看动作开始时的工作区，不看前面步骤的产出。查询用到的可选参数没给时这条 guard 跳过。每条 guard 在 §5.6 的同一种无网络子进程里执行，限时 10 秒（同 `model_query` 的缺省 `timeoutMs`）：超时 → `QUERY_TIMEOUT`，零写入，`retryable: false`（guard 写法有问题，例如笛卡尔积，原样重试没有用，要改 `catalog.ttl`），`details: {action, guard}`；尝试联网 → `QUERY_NOT_READONLY`；子进程建立不了 → `INTERNAL`。
 6. 算 `planDigest` = sha256（动作 id、`definitionDigest`、`params`、计划触及的每个文件改前与改后的 sha256）。带了 `planDigest` 而不等 → `PLAN_STALE`（相关模型文件、动作定义或参数在 `dryRun` 之后变了；定义的任何改动，包括只改标题或说明，都会让旧哈希失效）。含删除步骤、不是 `dryRun`、也没带 `planDigest` → `PLAN_REQUIRED`。这两种错误的 `details` 带 `planDigest`、`steps`、`files`，含删除步骤时另带 `cascade` 和 `impact`。它们在候选图判定之前抛出，所以不含 L0–L2 结论。
 7. 把各步合并后的计划交回 §5.1 第 5–10 步：图等价断言、候选图 L0–L2 判定（只拒新增违规）、落盘。**一次动作就是一次写入**：工作区内全有或全无，不 `git add`、不提交。
 
@@ -913,7 +914,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 **参数里的特殊字符**：`}`、`>`、`;`、引号等只会得到 `INVALID_ARGUMENT` 或正常的 guard 结论，不会改变查询含义。字符串参数不另加限制，交给步骤对应写工具原有的检查；例如 `register-acceptance-criterion` 的 `gherkin` 经 `model_add_element` 的 `attributes` 写入，值里含回车（U+000D）时与直接调 `model_add_element` 一样返回 `EDIT_UNSAFE`，不写。
 
-**错误**：`INVALID_ARGUMENT`、`PRECONDITION_FAILED`、`PLAN_REQUIRED`、`PLAN_STALE`，步骤对应写工具的全部错误（见 §5.2、§5.3、§5.5、§5.10、§5.12），以及 §5.1 的 `WRITE_REJECTED`、`PARSE_FAILED`、`EDIT_UNSAFE`、`NOT_A_WORKTREE`、`LOCKED`、`CONFLICT`。
+**错误**：`INVALID_ARGUMENT`、`PRECONDITION_FAILED`、`PLAN_REQUIRED`、`PLAN_STALE`、`QUERY_TIMEOUT`（guard 超时，不可重试），步骤对应写工具的全部错误（见 §5.2、§5.3、§5.5、§5.10、§5.12），以及 §5.1 的 `WRITE_REJECTED`、`PARSE_FAILED`、`EDIT_UNSAFE`、`NOT_A_WORKTREE`、`LOCKED`、`CONFLICT`。
 
 **校验层**：候选图 L0–L2（只判最终状态）。
 
@@ -977,7 +978,7 @@ C 的附带决定（同在 Q4，已拍板收紧）：`aisep:approvedBy` **只接
 1. `message`：中文一句话，点名对象（短名 + 类型），不写"invalid input"。
 2. `hint`：下一次调用怎么改，点名工具和参数，不写"请检查"。没有可行建议时省略。
 3. 有候选值就放进 `details.candidates`，省一次查询。
-4. `retryable` 只对 `LOCKED`、`CONFLICT`（回滚时保留了文件（kept）、记录已被别的提交带走（taken）、撤回失败这三类除外，见 §7.2）、`WORKTREE_CHANGED`、`COMMIT_FAILED`（`index.lock` 被占用且已回滚时）、`QUERY_TIMEOUT` 为 true；其他原样重试没有意义。`PLAN_STALE` 不可重试：带同一个旧 `planDigest` 重试永远失败，要先重新 `dryRun`。
+4. `retryable` 只对 `LOCKED`、`CONFLICT`（回滚时保留了文件（kept）、记录已被别的提交带走（taken）、撤回失败这三类除外，见 §7.2）、`WORKTREE_CHANGED`、`COMMIT_FAILED`（`index.lock` 被占用且已回滚时）、`QUERY_TIMEOUT`（`model_apply_action` 的 guard 超时除外，§5.14）为 true；其他原样重试没有意义。`PLAN_STALE` 不可重试：带同一个旧 `planDigest` 重试永远失败，要先重新 `dryRun`。
 
 `content[0].text` 放同一句 `message` + `hint` + 发现项的 CLI 格式行，控制字符与行分隔符的转义同 §5.0。
 

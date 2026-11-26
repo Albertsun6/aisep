@@ -1,5 +1,5 @@
 # expect: EA5:
-# Invalid: a list member that is not typed aisep:ActionStep.
+# Invalid: a list and member written as IRI nodes, the member untyped. sh:nodeKind sh:BlankNode fires; an untyped blank-node member (sh:class aisep:ActionStep alone) is covered by test_gate_names_the_shape_of_each_catalogue_defect.
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
