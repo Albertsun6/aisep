@@ -70,6 +70,7 @@
 $PY tools/aisep.py adm                          # 列出阶段和检查项数
 $PY tools/aisep.py adm 02-business --model workbench            # 已有 / 缺口报告
 $PY tools/aisep.py adm 02-business --model workbench --deliverable   # 生成交付物 Markdown
+$PY tools/aisep.py adm 02-business --model workbench --check 新查询.rq   # 只跑给出的检查项（可重复；调试单条或新查询）
 ```
 
 ### 3.2 「已有什么、缺什么」怎么查

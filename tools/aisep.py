@@ -19,9 +19,10 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
                                           arch:Diagram, every element of the model the am4 viewpoint includes, or a C4 view
                                           (C4NAME: SystemContext|ContainerDiagram --of <system>, ComponentDiagram --of
                                           <container>, C4Deployment --of <environment> [--model SLUG])
-  aisep.py adm [<阶段> --model <slug> [--deliverable] [--out FILE]]
+  aisep.py adm [<阶段> --model <slug> [--check FILE.rq]... [--deliverable] [--out FILE]]
                                        -> ADM 向导（docs/specs/adm-wizard.md）：按阶段列出模型里已有的元素和缺口，
-                                          --deliverable 生成交付物 Markdown；默认打印，--out 只写这一个文件；有缺口也返回 0
+                                          --deliverable 生成交付物 Markdown；默认打印，--out 只写这一个文件；有缺口也返回 0；
+                                          --check 只跑给出的检查项文件（可重复，adm-phase 须是该阶段），调试单条或新查询用
   aisep.py test [--no-pytest]          -> every modules/*/tests fixture + tests/acceptance/*.py + aisep-mcp/tests (pytest);
                                           exit 1 on failure. --no-pytest skips aisep-mcp/tests (CI runs it in its own job)
 Default model files = models/**/*.ttl. Problem lines start with [Violation], [Warning] or [Info].
@@ -66,10 +67,14 @@ def model_files(args):
     return [os.path.join(ROOT, f) for f in gitio.model_files(ROOT)], lambda f: gitio.read_file(ROOT, rel(f))
 
 
-def report(ctx, layers):
-    rows = shown(ctx.problems, layers)
+def report_rows(rows):
     for sev, layer, text in rows:
         print(f"[{sev}] {layer} {text}")
+
+
+def report(ctx, layers):
+    rows = shown(ctx.problems, layers)
+    report_rows(rows)
     n = lambda s: sum(1 for p in rows if p[0] == s)
     return n("Violation"), n("Warning"), n("Info")
 
@@ -410,18 +415,20 @@ def cmd_adm(args):
     if not args:
         print(adm.overview(), end=""); return 0
     phase, rest = args[0], args[1:]
-    opts, i = {}, 0
+    opts, checks, i = {}, [], 0
     while i < len(rest):
         a = rest[i]
         if a == "--deliverable":
             opts[a] = True; i += 1
+        elif a == "--check" and i + 1 < len(rest):
+            checks.append(os.path.abspath(rest[i + 1])); i += 2
         elif a in ("--model", "--out") and i + 1 < len(rest):
             opts[a] = rest[i + 1]; i += 2
         else:
             print(__doc__); return 2
     if phase not in adm.PHASES or not re.fullmatch(r"[a-z0-9][a-z0-9-]*", opts.get("--model", "")):
         print(adm.overview(), end=""); return 2
-    result = adm.run(phase, opts["--model"], *model_files([]))
+    result = adm.run(phase, opts["--model"], *model_files([]), check_files=checks or None)
     if result["problems"]:
         report_rows(result["problems"]); return 1
     text = adm.render(phase, opts["--model"], result, deliverable=opts.get("--deliverable", False))
@@ -439,15 +446,9 @@ def cmd_adm(args):
     return 0
 
 
-def report_rows(rows):
-    for sev, layer, text in rows:
-        print(f"[{sev}] {layer} {text}")
-
-
 def main(argv):
-    if argv and argv[0] == "diagram":
-        return cmd_diagram(argv[1:])
-    if not argv or argv[0] not in ("build", "check", "validate", "findings", "gate", "query", "impact", "test", "adm"):
+    if not argv or argv[0] not in ("build", "check", "validate", "findings", "gate", "query", "impact", "test", "adm",
+                                   "diagram"):
         print(__doc__); return 2
     cmd, args = argv[0], argv[1:]
     if cmd == "test":
@@ -458,6 +459,8 @@ def main(argv):
         return cmd_impact(args)
     if cmd == "adm":
         return cmd_adm(args)
+    if cmd == "diagram":
+        return cmd_diagram(args)
     if cmd == "query":
         if not args:
             print(__doc__); return 2
