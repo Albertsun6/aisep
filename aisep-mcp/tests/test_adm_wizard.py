@@ -153,10 +153,16 @@ def test_out_refuses_models_via_symlink_or_case(tmp_path):
     link = tmp_path / "link"
     link.symlink_to(os.path.join(ROOT, "models"))
     base = [PY, os.path.join(ROOT, "tools", "aisep.py"), "adm", "05-roadmap", "--model", "workbench", "--out"]
-    for target in (str(link / "probe.md"), os.path.join(ROOT, "Models", "probe.md")):
-        p = subprocess.run(base + [target], cwd=ROOT, capture_output=True, text=True)
-        assert p.returncode == 2, target + p.stdout + p.stderr
-        assert not os.path.exists(os.path.join(ROOT, "models", "probe.md"))
+    probe = os.path.join(ROOT, "models", "probe.md")
+    assert not os.path.exists(probe), "开跑前 models/probe.md 已存在，先手工删掉"
+    try:
+        for target in (str(link / "probe.md"), os.path.join(ROOT, "Models", "probe.md")):
+            p = subprocess.run(base + [target], cwd=ROOT, capture_output=True, text=True)
+            assert p.returncode == 2, target + p.stdout + p.stderr
+            assert not os.path.exists(probe)
+    finally:  # 拦截失效时别把探针文件留在仓库里（issue #129）
+        if os.path.exists(probe):
+            os.remove(probe)
     ok = tmp_path / "out.md"
     p = subprocess.run(base + [str(ok)], cwd=ROOT, capture_output=True, text=True)
     assert p.returncode == 0 and ok.read_text(encoding="utf-8").startswith("# 路线图"), p.stdout + p.stderr
