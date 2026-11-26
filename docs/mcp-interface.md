@@ -267,7 +267,7 @@
 | `altLabel` | — | 写成 `skos:altLabel "…"@en` |
 | `slug` | 条件 | `^[A-Za-z][A-Za-z0-9]*$`（允许大写开头，例子里已有 UML 类 `QuotationEntity`）。不给时由 `altLabel` 转 camelCase；两者都没有 → `INVALID_ARGUMENT`（不自动拼音） |
 | `definition` | — | `skos:definition "…"@zh` |
-| `attributes` | — | `[{predicate, value: {iri} \| {value, datatype?, lang?}}]`，用于 `aisep:priority`、`aisep:path` 这类属性。合法与否由候选图上的 L1 闭世界规则（G7）判定，不另写白名单。不能含 `rdf:type`；写 skos:prefLabel / altLabel / definition 时受同样的标签约束；不合法的 IRI、语言标签或值 → `INVALID_ARGUMENT`。值的形状另有四条，违反也是 `INVALID_ARGUMENT`：字面量不含 C0/C1 控制字符（制表、换行、回车除外）与 U+2028/2029；`lang` 与 `datatype` 不能同时给；`lang` 不能为空（给了 `lang` 键就不能是空串或 null）；`predicate`、`iri`、`datatype` 不能用 `_:` 开头的空白节点名（否则会被展开成 IRI） |
+| `attributes` | — | `[{predicate, value: {iri} \| {value, datatype?, lang?}}]`，用于 `aisep:priority`、`aisep:path` 这类属性。合法与否由候选图上的 L1 闭世界规则（G7）判定，不另写白名单。不能含 `rdf:type`，也不能含 `arch:inView`（视图成员关系归视图，视图写工具不在本版，§1；与 §5.12 同口径）；写 skos:prefLabel / altLabel / definition 时受同样的标签约束；不合法的 IRI、语言标签或值 → `INVALID_ARGUMENT`。值的形状另有五条，违反也是 `INVALID_ARGUMENT`：字面量不含 C0/C1 控制字符（制表、换行、回车除外）与 U+2028/2029；`lang` 与 `datatype` 不能同时给；`lang` 不能为空（给了 `lang` 键就不能是空串或 null）；`datatype` 不能为空（给了 `datatype` 键就不能是空串或 null，不会退成普通字面量）；`predicate`、`iri`、`datatype` 不能用 `_:` 开头的空白节点名（否则会被展开成 IRI） |
 | `file`、`dryRun` | — | §5.1 |
 
 **IRI**：`{model}{slug}`。
@@ -812,7 +812,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 - `set`、`unset` 至少给一个且不能都为空，否则 `INVALID_ARGUMENT`。同一个谓词同时出现在 `set` 和 `unset` 里 → `INVALID_ARGUMENT`。没有出现的谓词保持不变。
 - **不接受的谓词**（出现在 `set` 或 `unset` 里 → `INVALID_ARGUMENT`，`details.rejectedFields` 为所在字段）：`rdf:type`、`arch:inModel`、`arch:source`、`arch:target`，以及 `skos:prefLabel`、`skos:altLabel`、`skos:definition`（这三个走 `model_set_labels`，那里有语言与长度约束）；还有 `arch:inView`：视图成员关系的增删归视图（§5.8 第 6 步"成员谓词归宾语"），视图写工具不在本版（§1）。
 - **其余谓词合不合法不另写白名单**，由候选图上的 L1 规则判定，与 `model_add_element` 的 `attributes` 同一口径：闭世界不允许的谓词（G7）、手写的 `arch:approvalState`（§6.6）都表现为新增违规 → `WRITE_REJECTED`。
-- 不合法的 IRI、语言标签或值，以及违反 §5.2 `attributes` 那四条值形状规则（控制字符、`lang` 与 `datatype` 同给、空 `lang`、`_:` 空白节点名）→ `INVALID_ARGUMENT`。没有声明过的前缀不在此列：`x:y` 按 `slug:local` 展开（§5.0），得到的谓词没有声明，结果是 `WRITE_REJECTED`。
+- 不合法的 IRI、语言标签或值，以及违反 §5.2 `attributes` 那五条值形状规则（控制字符、`lang` 与 `datatype` 同给、空 `lang`、空 `datatype`、`_:` 空白节点名）→ `INVALID_ARGUMENT`。没有声明过的前缀不在此列：`x:y` 按 `slug:local` 展开（§5.0），得到的谓词没有声明，结果是 `WRITE_REJECTED`。
 - `value.value` 给 JSON 数或布尔值时与 §5.2 的 `attributes` 一样，写成 `xsd:integer`、`xsd:double`、`xsd:boolean` 字面量。字符串里的换行与回车（U+000D）转义后写入，读回来逐字相同。
 - 不接受 `file`：值没有变的三元组留在原处；新值写进被替换的三元组所在的文件，这个谓词原来没有被替换的值时，写进该主语 `rdf:type` 三元组所在的文件。
 
