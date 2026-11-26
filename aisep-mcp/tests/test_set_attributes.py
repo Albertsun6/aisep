@@ -827,6 +827,22 @@ def test_unchanged_values_stay_in_their_file_and_new_values_follow_5_12(repo):
     assert violations(repo) == 0
 
 
+def test_replaced_values_in_several_files_new_value_goes_to_the_first_file_by_path(repo):
+    """§5.12: 被替换的值分布在多个文件里时，新值写进其中按仓库相对路径排在最前的那个文件
+    （不是 rdf:type 所在的 am4.ttl，也不是后追加的、路径更靠后的 verification.ttl）。"""
+    append(repo, VERIF, '\n:supplier skos:note "旧二"@zh .\n')     # appended first, but sorts after governance.ttl
+    append(repo, GOVTTL, '\n:supplier skos:note "旧一"@zh .\n')
+    assert GOVTTL < VERIF and violations(repo) == 0
+    commit_all(repo, "notes of :supplier in two files other than am4.ttl")
+    old1, old2, new = (tr(SUPPLIER, NOTE, lit(v, "zh")) for v in ("旧一", "旧二", "新"))
+    am4 = snap(repo)[AM4]
+    r = applied(repo, SUPPLIER, set=one("skos:note", {"value": "新", "lang": "zh"}), minus=[old1, old2], plus=[new])
+    assert new in file_triples(repo, GOVTTL) and new not in file_triples(repo, VERIF)
+    assert snap(repo)[AM4] == am4
+    assert sorted(f["path"] for f in r["filesChanged"]) == sorted([GOVTTL, VERIF])
+    assert violations(repo) == 0
+
+
 RDFS_COMMENT = "http://www.w3.org/2000/01/rdf-schema#comment"
 
 
