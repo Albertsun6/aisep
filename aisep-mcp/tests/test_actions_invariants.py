@@ -14,7 +14,7 @@
    - 经动作参数 `file` / `relationshipFile` 把落点指向冻结路径（含 `..`、绝对路径、经 models/ 下符号链接）一律被拒，
      整个副本逐字节不变；
    - 执行器与写工具共用的最后一道检查 `writer.check_paths`：即使上游构造出指向冻结路径的计划，transaction 也拒绝。
-     （`check_paths` 本身不拒绝 `models/<slug>/governance/`，那一层由 `write_tools._check_file` 守，见参数落点用例。）
+     `models/<slug>/governance/`（不区分大小写）也在这一层拒绝（#137），`write_tools._check_file` 另守参数落点。
 
 不覆盖：原 C1 还要求「分支不改冻结代码」，那是对 PR 的要求，不是运行时性质，仍靠合并前评审。
 维护约定：仓库目录新增动作时，test_catalogue_actions_write_only_under_models 会失败，给新动作补一组正常参数。
@@ -239,7 +239,9 @@ def test_action_file_parameter_cannot_write_through_a_symlink(mk, recorded_write
 
 
 @pytest.mark.parametrize("target", [CAT, "vendor/x.ttl", "aisep/writer.py", "models/../modules/ext-actions/catalog.ttl",
-                                    "models/workbench/./x.ttl", "/abs/models/w/x.ttl", "models/w"])
+                                    "models/workbench/./x.ttl", "/abs/models/w/x.ttl", "models/w",
+                                    "models/workbench/governance/x.ttl", "models/workbench/Governance/x.ttl",
+                                    "models/procurement/governance/a/b.ttl"])
 def test_transaction_last_line_refuses_frozen_paths(mk, recorded_writes, target):
     """执行器与写工具共用的 writer.transaction：计划里出现 models/<slug>/ 以外的路径就拒绝，什么也不写。"""
     r = mk()
@@ -251,6 +253,20 @@ def test_transaction_last_line_refuses_frozen_paths(mk, recorded_writes, target)
         writer.transaction(cfg(r), str(r), build)
     assert ei.value.code == "INVALID_ARGUMENT"
     assert recorded_writes == [] and tree(r) == before
+
+
+@pytest.mark.parametrize("key", ["edits", "removed", "added"])
+def test_check_paths_refuses_governance_dir_only(key):
+    """check_paths 拒绝 models/<slug>/governance/ 下的任何文件（批准记录只能经批准工具由 Albert 做出），
+    同模型里的普通文件、名字里带 governance 的文件与目录照常放行（#137）。"""
+    for f in ("models/workbench/governance/x.ttl", "models/workbench/GOVERNANCE/x.ttl",
+              "models/procurement/governance/a/b.ttl"):
+        with pytest.raises(AisepError) as ei:
+            writer.check_paths({key: {f: None}})
+        assert ei.value.code == "INVALID_ARGUMENT" and ei.value.details["file"] == f
+    for f in ("models/workbench/verification.ttl", "models/workbench/governance.ttl", "models/governance/x.ttl",
+              "models/workbench/sub/governance/x.ttl"):
+        writer.check_paths({key: {f: None}})
 
 
 def test_executor_has_no_write_path_of_its_own():
