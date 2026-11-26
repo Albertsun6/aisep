@@ -1,0 +1,10 @@
+{
+  "name": "aisep-elk-layout",
+  "private": true,
+  "description": "ELK layered layout for tools/aisep.py diagram (aisep/diagram.py). Install with: npm ci --prefix tools/elk --ignore-scripts",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "elkjs": "0.12.1"
+  }
+}

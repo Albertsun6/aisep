@@ -34,6 +34,11 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
+      # tests/acceptance/test_diagram.py 要 elkjs：Node 钉版本，依赖按 tools/elk/package-lock.json（含 sha512）安装
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.12.0"
+      - run: npm ci --prefix tools/elk --ignore-scripts --no-audit --no-fund
       - run: python tools/aisep.py test --no-pytest
   # aisep-mcp/tests 分 3 片并行（负例除外，见下面的 negatives）。分片由 conftest.py 按用例 nodeid 的 crc32 取模，
   # 新增测试自动归片；3 片的用例数之和等于不分片时的总数。
