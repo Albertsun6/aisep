@@ -1381,11 +1381,13 @@ def test_layer1_derivation_ignores_record_that_is_not_a_model_element(fixture):
 @pytest.mark.parametrize("typed", ["aisep:AgentActivity", ":ProbeRecord"])
 def test_bnode_typed_without_record_predicates_rejected_by_mergecheck(t, typed):
     """A blank node typed as a record / activity but with none of their predicates is reported too; a subclass declared
-    in a model file (itself an L1 violation, R1) is followed through the merge result's subclass closure."""
+    in a model file under the same models/<slug>/ (allowed: gate passes and the derivation follows it, §6.6) is followed
+    through the merge result's subclass closure."""
     t.checkout("main", new="feat/x")
     if typed == ":ProbeRecord":
         t.write(AM4, "\n:ProbeRecord rdfs:subClassOf aisep:ApprovalRecord .\n", "a")
         t.write(AM4, "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n" + t.read(AM4))
+        assert_clean(check(t, t.commit_all("subclass only"), "feat/x"))  # the declaration alone is not a violation
     h = hang(t, f"<{M}>", f"[ a {typed} ; skos:prefLabel \"无谓词\"@zh ]")
     assert_rejected(check(t, h, "feat/x"), BNODE)
 
