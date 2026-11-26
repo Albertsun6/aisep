@@ -279,6 +279,13 @@
 | Structurizr `structurizr:Deployment` | Backward | 容器依赖它部署到的节点 |
 | `arch:HasPart` | Backward | 同 Aggregation：从整体画向部分，整体依赖部分 |
 | UML `uml:Dependency` 及其子类（Abstraction、Realization、InterfaceRealization、Usage、Deployment） | Backward | 源依赖目标：Dependency、Usage 是 client 依赖 supplier（UML 2.5.1 §7.7）；Realization 是实现依赖规格，不取 am4 Realization 的 Both；Deployment 是制品依赖它部署到的节点，同 `structurizr:Deployment` |
+| UML `uml:Association` | None | 同 `am4:Association`：类元之间的结构连接，两端互不依赖 |
+| UML `uml:Aggregation` | Backward | 同 `am4:Aggregation`：上游从整体画向部分（`uml:aggregates`），共享的部分可独立存在，整体依赖部分 |
+| UML `uml:Composition` | Both | 同 `am4:Composition`：上游从整体画向部分（`uml:composedOf`），部分随整体删除，整体的结构依赖部分 |
+| UML `uml:Include`、`uml:Extend` | Backward | Include 从基用例画向被包含用例，基用例并入并依赖被包含的行为；Extend 从扩展用例画向被扩展用例，被扩展用例不依赖扩展，扩展依赖它（UML 2.5.1 §18.2，按上游定义所引） |
+| UML `uml:InformationFlow`、`uml:ActivityEdge`（ControlFlow、ObjectFlow 继承） | Forward | 同 Flow：信息项、控制令牌、对象令牌从源流向目标，下游依赖上游（§20.2、§15.2） |
+| UML `uml:PackageImport`、`uml:PackageMerge` | Backward | 导入方按名字引用被导入包的成员；接收包并入被合并包的内容；都是源依赖目标（§12.2） |
+| 决策 `ad:IncludesConcept` | Backward | 同 `arch:HasPart`：从方案画向它包含的模型概念（`ad:includesConcept` ⊑ `arch:hasPart`），方案依赖这些概念 |
 | `aisep:verifies`、`aisep:implements` | Backward | 测试、代码依赖设计 |
 
 **两种模式**：
