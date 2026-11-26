@@ -39,6 +39,7 @@
 | R6 每个 `am4:ApplicationComponent` 至少执行一个 Function 或 Process | 第二级（Warning） | `c4ash:ComponentPerformsBehaviourShape`；可直接执行，也可经一个 Role 执行（§4 偏离 6）；范围见 §4 偏离 3 | `r6-component-without-behaviour-warns`（期望出现 Warning） | `dual-model-ok`（期望无 C4 Warning） |
 | R7 每个 `am4:Service` 至少被一个行为实现，并能追溯到 Capability 或 Requirement | 第二级 | `c4ash:ServiceTraceShape`，只检查追溯这一半（§4 偏离 4）；范围见 §4 偏离 3 | `r7-service-without-trace-warns` | `dual-model-ok` |
 | R8 每个 `am4:DataObject` 至多一个权威来源（Assignment） | 第二级 | `c4ash:DataObjectOneSourceShape`，作用于全部数据对象 | `r8-dataobject-two-sources-warns` | `dual-model-ok` |
+| R9 每个 `c4:Component` 恰好属于一个 `c4:Container`（AISEP 补充，规范第 7 节没有；issue #122） | 第二级 | `c4ash:ComponentInOneContainerShape` | `r9-component-without-container-warns`、`r9-component-two-containers-warns` | `dual-model-ok`、`r5-same-container-no-technology-ok` |
 
 另外三个样例：
 - `upstream-containment-endpoints`：确认上游 `c4/shapes` 确实已接入，期望出现上游独有的消息；
@@ -71,7 +72,7 @@
 
 ## 4.1 已知局限（后续事项）
 
-- **组件归属没有检查**：组件不属于任何容器、或同时属于两个容器，都不报错；R5 对这类组件也会漏报。规范第 7 节没有要求这一条，上游同样不检查（核实报告 §5）。
+- **组件归属只告警**：组件不属于任何容器、或同时属于两个容器，由 R9 给出 Warning（issue #122），不阻断 gate；R5 对这类组件仍会漏报，靠 R9 的告警提示。规范第 7 节没有要求这一条，上游同样不检查（核实报告 §5）。是否升为 Violation，等真实模型用起来再定。
 - **独立治理的数据库**：规范 §6 允许独立治理的容器 refines 一个 am4 组件。但数据库按 R3 必须 refines 一个 DataObject，而 §7.2 的主锚唯一规则又不允许它再 refines 第二个 am4 节点，所以数据库无法同时对应两边。这是关口 A 方案 (a) 带来的副作用。
 - ~~**impact 不沿 C4 关系遍历**~~：已由 `modules/c4/impact.ttl` 补上（方向见规范 §9）。
 
