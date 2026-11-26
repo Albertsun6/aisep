@@ -19,7 +19,7 @@
 不覆盖：原 C1 还要求「分支不改冻结代码」，那是对 PR 的要求，不是运行时性质，仍靠合并前评审。
 维护约定：仓库目录新增动作时，test_catalogue_actions_write_only_under_models 会失败，给新动作补一组正常参数。
 """
-import ast, hashlib, json, os, shutil, subprocess, sys
+import ast, hashlib, json, os, shutil, subprocess, sys, threading
 
 import pytest
 
@@ -106,12 +106,52 @@ def raw_tools_list(repo, profile):
                         "clientInfo": {"name": "invariant-test", "version": "0"}}},
             {"jsonrpc": "2.0", "method": "notifications/initialized"},
             {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}]
-    p = subprocess.run([PY, "-m", "aisep.server", "--repo", str(repo), "--allow-root", str(repo.parent), "--profile", profile],
-                       cwd=str(repo), input=b"".join(json.dumps(m).encode() + b"\n" for m in msgs), capture_output=True,
-                       env=dict(os.environ, PYTHONPATH=ROOT, PYTHONDONTWRITEBYTECODE="1"), timeout=120)
-    lines = [ln for ln in p.stdout.splitlines(keepends=True) if json.loads(ln).get("id") == 2]
-    assert len(lines) == 1, f"tools/list 应答不是恰好一行：{p.stdout[-1000:]!r} {p.stderr[-1000:]!r}"
-    return lines[0]
+    p = subprocess.Popen([PY, "-m", "aisep.server", "--repo", str(repo), "--allow-root", str(repo.parent),
+                          "--profile", profile], cwd=str(repo), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                         stderr=subprocess.DEVNULL, env=dict(os.environ, PYTHONPATH=ROOT, PYTHONDONTWRITEBYTECODE="1"))
+    timer = threading.Timer(120, p.kill)  # 服务器卡住时 readline 会返回 EOF，不会挂到 CI 的全局超时
+    timer.start()
+    try:
+        p.stdin.write(b"".join(json.dumps(m).encode() + b"\n" for m in msgs))
+        p.stdin.flush()  # stdin 等拿到 tools/list 的应答之后才关：提前 EOF 会让服务器在应答前退出
+        for _ in range(20):
+            line = p.stdout.readline()
+            assert line, "服务器在应答 tools/list 之前退出或超时"
+            if json.loads(line).get("id") == 2:
+                return line
+        raise AssertionError("20 行之内没有 tools/list 的应答")
+    finally:
+        timer.cancel()
+        p.kill()
+        p.stdin.close()
+        p.wait(timeout=30)
+
+
+def ids(repo):
+    return {a["id"] for a in call(repo, "model_list_actions")[1]["actions"]}
+
+
+@pytest.mark.parametrize("profile", ["agent", "workbench", "all"])
+def test_tools_list_bytes_do_not_depend_on_the_catalogue(mk, profile):
+    """三个状态逐字节相同：原目录；加一个动作（动作数变了）；再删掉 remove-element（动作数回到原值，id 集合不同）。"""
+    r = mk()
+    original = raw_tools_list(r, profile)
+    assert json.loads(original)["result"]["tools"], "tools/list 为空，断言没有意义"
+    ids0 = ids(r)
+    text = open(r / CAT, encoding="utf-8").read()
+    with open(r / CAT, "w", encoding="utf-8") as f:
+        f.write(text + EXTRA_ACTION)
+    commit_all(r, "one action added")
+    assert ids(r) == ids0 | {"invariant-probe"}, "目录的改动没有被服务器读到，断言没有意义"
+    added = raw_tools_list(r, profile)
+    cut = text.index("aisep:ActionRemoveElement a aisep:ActionType")
+    with open(r / CAT, "w", encoding="utf-8") as f:
+        f.write(text[:cut] + EXTRA_ACTION)
+    commit_all(r, "one action removed")
+    assert ids(r) == ids0 - {"remove-element"} | {"invariant-probe"} and len(ids(r)) == len(ids0)
+    swapped = raw_tools_list(r, profile)
+    assert added == original, "加了一个动作，tools/list 的原始字节变了"
+    assert swapped == original, "换了一个动作，tools/list 的原始字节变了"
 
 
 # ================================================================== 2. 执行器的写入落点不在冻结路径里
@@ -164,14 +204,15 @@ def test_catalogue_actions_write_only_under_models(mk, recorded_writes):
     assert {f: h for f, h in after.items() if frozen(f)} == {f: h for f, h in before.items() if frozen(f)}
 
 
-FROZEN_TARGETS = [CAT, "modules/aisep-core/shapes.ttl", "vendor/x.ttl", "aisep/writer.py", "docs/decisions.md",
+# 一律要被拒的落点：冻结路径，加上不规范的路径（..、绝对路径、models/<slug>/ 下的子目录）
+REFUSED_TARGETS = [CAT, "modules/aisep-core/shapes.ttl", "vendor/x.ttl", "aisep/writer.py", "docs/decisions.md",
                   "models/../modules/ext-actions/catalog.ttl", "models/workbench/../../vendor/x.ttl",
                   "/etc/passwd", "../outside.ttl", "models/workbench/governance/approval-probe.ttl",
                   "models/workbench/governance/x.ttl", "models/workbench/Governance/x.ttl", "models/workbench/sub/x.ttl"]
 
 
 @pytest.mark.parametrize("key", ["file", "relationshipFile"])
-@pytest.mark.parametrize("target", FROZEN_TARGETS)
+@pytest.mark.parametrize("target", REFUSED_TARGETS)
 def test_action_file_parameter_cannot_reach_frozen_paths(mk, recorded_writes, key, target):
     r = mk()
     before = tree(r)
