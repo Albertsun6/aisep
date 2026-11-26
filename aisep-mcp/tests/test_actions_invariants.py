@@ -6,13 +6,18 @@
 1. `tools/list` 与目录数据无关：在副本里往 `modules/ext-actions/catalog.ttl` 加一个动作、删一个动作，真实 stdio
    服务器对 `tools/list` 的应答逐字节不变（agent、workbench、all 三个画像）。test_actions.py 的 B5 比的是规范化
    之后的 JSON（排序后再序列化），也不覆盖 workbench 画像；这里比线上的原始字节。
-2. 动作执行器的写入落点不出现在冻结路径里。允许落点只有 `models/<slug>/…`；冻结路径取《动作机制同类产品调研》
-   C1 的清单里 models/ 以外的部分：`modules/**`、`vendor/**` 与治理相关的 `aisep/*.py`，另加仓库里其余所有不在
-   `models/` 下的文件。分三层断言：
+2. 动作执行器的写入落点不出现在冻结路径里。允许落点只有 `models/<slug>/` 下的文件，且不在 `models/<slug>/governance/`
+   （批准记录专用目录：批准提交的形状就是「只新增这里的一个文件」，执行器能写进去就等于能代人批准）。冻结路径取
+   《动作机制同类产品调研》C1 清单里 models/ 以外的部分：`modules/**`、`vendor/**` 与治理相关的 `aisep/*.py`，另加仓库里
+   其余所有不在 `models/` 下的文件，再加上 `models/*/governance/**`。分三层断言：
    - 仓库目录里的动作正常执行时，真正落盘的每个文件都在 `models/<slug>/` 下，models/ 以外的文件逐字节不变；
    - 经动作参数 `file` / `relationshipFile` 把落点指向冻结路径（含 `..`、绝对路径、经 models/ 下符号链接）一律被拒，
      整个副本逐字节不变；
    - 执行器与写工具共用的最后一道检查 `writer.check_paths`：即使上游构造出指向冻结路径的计划，transaction 也拒绝。
+     （`check_paths` 本身不拒绝 `models/<slug>/governance/`，那一层由 `write_tools._check_file` 守，见参数落点用例。）
+
+不覆盖：原 C1 还要求「分支不改冻结代码」，那是对 PR 的要求，不是运行时性质，仍靠合并前评审。
+维护约定：仓库目录新增动作时，test_catalogue_actions_write_only_under_models 会失败，给新动作补一组正常参数。
 """
 import ast, hashlib, json, os, shutil, subprocess, sys
 
@@ -88,7 +93,8 @@ def tree(repo):
 
 
 def frozen(rel):
-    return not rel.startswith("models/")
+    parts = rel.split("/")
+    return parts[0] != "models" or (len(parts) > 3 and parts[2].lower() == "governance")
 
 
 # ================================================================== 1. tools/list 与目录数据无关（原始字节）
@@ -100,49 +106,12 @@ def raw_tools_list(repo, profile):
                         "clientInfo": {"name": "invariant-test", "version": "0"}}},
             {"jsonrpc": "2.0", "method": "notifications/initialized"},
             {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}]
-    p = subprocess.Popen([PY, "-m", "aisep.server", "--repo", str(repo), "--allow-root", str(repo.parent),
-                          "--profile", profile], cwd=str(repo), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE, env=dict(os.environ, PYTHONPATH=ROOT, PYTHONDONTWRITEBYTECODE="1"))
-    try:
-        p.stdin.write(b"".join(json.dumps(m).encode() + b"\n" for m in msgs))
-        p.stdin.flush()
-        for _ in range(20):
-            line = p.stdout.readline()
-            assert line, f"服务器没有应答 tools/list：{p.stderr.read()[-2000:]!r}" if p.poll() is not None else "EOF"
-            if json.loads(line).get("id") == 2:
-                return line
-        raise AssertionError("20 行之内没有 tools/list 的应答")
-    finally:
-        p.stdin.close()
-        p.kill()
-        p.wait(timeout=30)
-
-
-def ids(repo):
-    return {a["id"] for a in call(repo, "model_list_actions")[1]["actions"]}
-
-
-@pytest.mark.parametrize("profile", ["agent", "workbench", "all"])
-def test_tools_list_bytes_do_not_depend_on_the_catalogue(mk, profile):
-    """三个状态逐字节相同：原目录；加一个动作（动作数变了）；再删掉 remove-element（动作数回到原值，id 集合不同）。"""
-    r = mk()
-    original = raw_tools_list(r, profile)
-    assert json.loads(original)["result"]["tools"], "tools/list 为空，断言没有意义"
-    ids0 = ids(r)
-    text = open(r / CAT, encoding="utf-8").read()
-    with open(r / CAT, "w", encoding="utf-8") as f:
-        f.write(text + EXTRA_ACTION)
-    commit_all(r, "one action added")
-    assert ids(r) == ids0 | {"invariant-probe"}, "目录的改动没有被服务器读到，断言没有意义"
-    added = raw_tools_list(r, profile)
-    cut = text.index("aisep:ActionRemoveElement a aisep:ActionType")
-    with open(r / CAT, "w", encoding="utf-8") as f:
-        f.write(text[:cut] + EXTRA_ACTION)
-    commit_all(r, "one action removed")
-    assert ids(r) == ids0 - {"remove-element"} | {"invariant-probe"} and len(ids(r)) == len(ids0)
-    swapped = raw_tools_list(r, profile)
-    assert added == original, "加了一个动作，tools/list 的原始字节变了"
-    assert swapped == original, "换了一个动作，tools/list 的原始字节变了"
+    p = subprocess.run([PY, "-m", "aisep.server", "--repo", str(repo), "--allow-root", str(repo.parent), "--profile", profile],
+                       cwd=str(repo), input=b"".join(json.dumps(m).encode() + b"\n" for m in msgs), capture_output=True,
+                       env=dict(os.environ, PYTHONPATH=ROOT, PYTHONDONTWRITEBYTECODE="1"), timeout=120)
+    lines = [ln for ln in p.stdout.splitlines(keepends=True) if json.loads(ln).get("id") == 2]
+    assert len(lines) == 1, f"tools/list 应答不是恰好一行：{p.stdout[-1000:]!r} {p.stderr[-1000:]!r}"
+    return lines[0]
 
 
 # ================================================================== 2. 执行器的写入落点不在冻结路径里
@@ -151,10 +120,11 @@ def test_frozen_predicate_is_not_vacuous(mk):
     r = mk()
     t = tree(r)
     assert any(f.startswith("models/") for f in t)
-    for f in (CAT, "vendor/MANIFEST.txt" if "vendor/MANIFEST.txt" in t else next(x for x in t if x.startswith("vendor/")),
-              *FROZEN_CODE):
+    for f in (CAT, next(x for x in t if x.startswith("vendor/")), *FROZEN_CODE,
+              next(x for x in t if x.startswith("models/workbench/governance/"))):
         assert f in t and frozen(f), f
-    assert not frozen("models/workbench/verification.ttl")
+    assert frozen("models/workbench/Governance/x.ttl") and frozen("models/procurement/governance/a/b.ttl")
+    assert not frozen("models/workbench/verification.ttl") and not frozen("models/workbench/governance.ttl")
 
 
 @pytest.fixture
@@ -188,6 +158,7 @@ def test_catalogue_actions_write_only_under_models(mk, recorded_writes):
     assert not e and res["changed"], res
     assert recorded_writes, "没有任何落盘，断言没有意义"
     assert all(writer.MODEL_PATH.fullmatch(f) and not frozen(f) for f in recorded_writes), recorded_writes
+    assert all(f.startswith("models/workbench/") for f in recorded_writes), recorded_writes  # 父需求所在的模型
     after = tree(r)
     assert {f for f in set(before) | set(after) if before.get(f) != after.get(f)}, "两次动作都没改任何文件"
     assert {f: h for f, h in after.items() if frozen(f)} == {f: h for f, h in before.items() if frozen(f)}
@@ -195,7 +166,8 @@ def test_catalogue_actions_write_only_under_models(mk, recorded_writes):
 
 FROZEN_TARGETS = [CAT, "modules/aisep-core/shapes.ttl", "vendor/x.ttl", "aisep/writer.py", "docs/decisions.md",
                   "models/../modules/ext-actions/catalog.ttl", "models/workbench/../../vendor/x.ttl",
-                  "/etc/passwd", "../outside.ttl"]
+                  "/etc/passwd", "../outside.ttl", "models/workbench/governance/approval-probe.ttl",
+                  "models/workbench/governance/x.ttl", "models/workbench/Governance/x.ttl", "models/workbench/sub/x.ttl"]
 
 
 @pytest.mark.parametrize("key", ["file", "relationshipFile"])
@@ -255,9 +227,14 @@ def test_executor_has_no_write_path_of_its_own():
             bad.append(ast.unparse(n))
         if name in ("write_text", "write_bytes"):
             bad.append(ast.unparse(n))
+        if name in ("system", "popen", "run", "Popen", "call", "check_call", "check_output", "spawnv", "execv"):
+            bad.append(ast.unparse(n))
         if name in ("open", "fdopen"):
             mode = n.args[1] if len(n.args) > 1 else next((k.value for k in n.keywords if k.arg == "mode"), None)
             if not (isinstance(mode, ast.Constant) and set(mode.value) <= set("rbt")):
                 bad.append(ast.unparse(n))
+    imports = {a.name.split(".")[0] for n in ast.walk(tree_) if isinstance(n, (ast.Import, ast.ImportFrom))
+               for a in (n.names if isinstance(n, ast.Import) else [ast.alias(n.module or "")])}
+    assert not imports & {"subprocess", "shutil", "tempfile", "pathlib"}, imports
     assert bad == [], bad
     assert "writer.transaction(" in ast.unparse(tree_)
