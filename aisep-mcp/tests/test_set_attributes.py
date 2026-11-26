@@ -904,3 +904,70 @@ def test_view_as_target(repo):
     assert tr(SUPPLIER, ARCH + "inView", n(M + "v1")) in graph(repo)
     refused(repo, "INVALID_ARGUMENT", M + "v1", set=one("rdf:type", {"iri": "arch:Catalog"}))
     assert violations(repo) == 0
+
+
+# ------------------------------------------------------------------ followup 6: one value口径 with model_add_element
+
+BAD_VALUES = {
+    "nul": {"value": "a\x00b"}, "esc": {"value": "a\x1bb"}, "c1-nel": {"value": "a\x85b"}, "line-separator": {"value": "a b"},
+    "control-in-lang-literal": {"value": "a\x07b", "lang": "zh"}, "control-in-typed-literal": {"value": "1\x00", "datatype": "xsd:integer"},
+    "lang-and-datatype": {"value": "x", "lang": "zh", "datatype": "xsd:string"}, "empty-lang": {"value": "x", "lang": ""},
+    "bnode-iri": {"iri": "_:b"}, "bnode-datatype": {"value": "x", "datatype": "_:dt"},
+}
+
+
+def add_twin(repo, attributes):
+    return W.model_add_element(cfg(repo), "procurement", "am4:BusinessObject", "对照", slug="twin",
+                               attributes=attributes, repo=str(repo))
+
+
+@pytest.mark.parametrize("value", BAD_VALUES.values(), ids=BAD_VALUES.keys())
+def test_bad_value_is_refused_by_both_tools(repo, value):
+    e = refused(repo, "INVALID_ARGUMENT", REQ, set=one("skos:note", value))
+    assert e.details["rejectedFields"] == ["set"]
+    s = snap(repo)
+    with pytest.raises(AisepError) as e:
+        add_twin(repo, one("skos:note", value))
+    assert e.value.code == "INVALID_ARGUMENT" and e.value.details["rejectedFields"] == ["attributes"]
+    assert snap(repo) == s
+
+
+def test_bnode_predicate_is_refused_by_both_tools(repo):
+    e = refused(repo, "INVALID_ARGUMENT", REQ, set=one("_:p", {"value": "x"}))
+    assert e.details["rejectedFields"] == ["set"]
+    assert refused(repo, "INVALID_ARGUMENT", REQ, unset=["_:p"]).details["rejectedFields"] == ["unset"]
+    s = snap(repo)
+    with pytest.raises(AisepError) as e:
+        add_twin(repo, one("_:p", {"value": "x"}))
+    assert e.value.code == "INVALID_ARGUMENT" and e.value.details["rejectedFields"] == ["attributes"]
+    assert snap(repo) == s
+
+
+@pytest.mark.parametrize("value, term", [
+    ({"value": "第一行\n第二行\t尾", "lang": "zh"}, lit("第一行\n第二行\t尾", "zh")),
+    ({"value": "true", "datatype": "xsd:boolean"}, lit("true", dt=XSD + "boolean")),
+    ({"value": "无标签"}, lit("无标签")),
+], ids=["multiline-lang", "typed", "plain"])
+def test_good_value_is_written_the_same_by_both_tools(repo, value, term):
+    added = add_twin(repo, one("skos:note", value))
+    assert tr(added["iri"], NOTE, term) in graph(repo)
+    commit_all(repo, "twin")
+    applied(repo, REQ, set=one("skos:note", value), plus=[tr(REQ, NOTE, term)])
+    assert violations(repo) == 0
+
+
+# ------------------------------------------------------------------ followup 13: arch:inView belongs to view tools
+
+@pytest.mark.parametrize("kw", [
+    {"set": one("arch:inView", {"iri": "procurement:v1"})},
+    {"set": one(ARCH + "inView", {"iri": M + "v1"})},
+    {"unset": ["arch:inView"]},
+], ids=["set", "set-full-iri", "unset"])
+def test_in_view_is_not_settable(repo, kw):
+    vp = "<https://meta.linked.archi/archimate4/viewpoints#ApplicationCooperationViewpoint>"
+    append(repo, AM4, f"\n:v1 a arch:Diagram ;\n    arch:inModel <{M}> ;\n    skos:prefLabel \"视图\"@zh ;\n"
+                      f"    arch:viewConformsToViewpoint {vp} .\n:supplier arch:inView :v1 .\n")
+    commit_all(repo, "a view")
+    field = next(iter(kw))
+    assert refused(repo, "INVALID_ARGUMENT", SUPPLIER, **kw).details["rejectedFields"] == [field]
+    assert tr(SUPPLIER, ARCH + "inView", n(M + "v1")) in graph(repo)
