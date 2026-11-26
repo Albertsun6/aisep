@@ -63,8 +63,9 @@ reason vocabulary (details.reason; the two marked * are the strings §5.9 step 1
     git-error                       a git command failed / shallow clone (口径, G)
     governance-blank-node           a blank node in the model sources of H or M is typed as, or carries a predicate of, an
                                     ApprovalRecord / AgentActivity (2026-11-22 取证疑点一; independent of the L1 rule)
-    governance-approver-retyped     an approver referenced by aisep:approvedBy of a record on T has another rdf:type set on M
-                                    (to aisep:AIAgent, type dropped …): its records turn illegal (PR #132 review N1)
+    governance-approver-retyped     an approver referenced by aisep:approvedBy of a record on T is judged differently by the
+                                    derivation's approver test on M (to aisep:AIAgent, type dropped, a superclass
+                                    aisep:AIAgent …): its records turn illegal (PR #132 review N1, #136 review)
     governance-approver-removed     … or that approver's subject is gone from the model sources of M
     governance-type-outside-models  a module or vendor file of M types a subject as an ApprovalRecord / AgentActivity (#105
                                     review; independent of the R1 rule)
@@ -1729,14 +1730,19 @@ def test_approver_of_existing_record_retyped_or_removed_rejected(t, change):
 
 
 def test_approver_check_leaves_other_stakeholder_changes_alone(t):
-    """Positive twin: relabel the referenced approver, relabel an unreferenced Stakeholder, add a new Stakeholder and a
-    new record it signs — none touches the type set of an approver referenced on T."""
+    """Positive twin: relabel the referenced approver, give it an extra legal subtype, add a harmless superclass to
+    arch:Stakeholder in a module, relabel an unreferenced Stakeholder, add a new Stakeholder and a new record it signs —
+    none changes whether an approver referenced on T is an approver (#136 re-review)."""
     _deputy_rejects_audit_trail(t)
     txt = t.read(DEPUTY_REL)
-    assert '"副架构师"@zh' in txt and '"编码代理"@zh' in txt
+    assert '"副架构师"@zh' in txt and '"编码代理"@zh' in txt and DEPUTY in txt
+    txt = txt.replace(DEPUTY, DEPUTY.replace("a arch:Stakeholder", "a arch:Stakeholder, :DeputyRole") + DEPUTY_ROLE)
     t.write(DEPUTY_REL, txt.replace('"副架构师"@zh', '"副架构师V2"@zh').replace('"编码代理"@zh', '"编码代理V2"@zh')
             + "\n:newLead a arch:Stakeholder ;\n    arch:inModel <" + M + "> ;\n    skos:prefLabel \"新干系人\"@zh .\n")
-    h = t.commit_all("relabel stakeholders, add :newLead")
+    t.write("modules/ext-governance/onto.ttl", "\n<https://meta.linked.archi/core#Stakeholder> "
+            "<http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://www.w3.org/ns/prov#Agent> .\n", "a")
+    h = t.commit_all("relabel stakeholders, extra subtype, harmless superclass, add :newLead")
+    assert state(t, h, M + "auditTrail") == {"https://aisep.example/ont/aisep#Rejected"}
     assert_clean(check(t, h, "feat/x"))
     a, _, _ = t.approve("GateRequirements", ["supplier"], evidence=h, decision="Rejected", approved_by=":newLead")
     p = check(t, a, "feat/x")

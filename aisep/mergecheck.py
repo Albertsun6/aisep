@@ -128,12 +128,6 @@ def _subclasses(cls, *ctxs):
         f"SELECT DISTINCT ?c WHERE {{ ?c rdfs:subClassOf* <{cls}> FILTER(isIRI(?c)) }}")}
 
 
-def _types(ctx, iri):
-    """iri's types and all their superclasses, read as the approver test of the derivation reads them (core._approver):
-    a change anywhere in the subclass chain counts (#136 review N1)."""
-    return {a for t in ctx.types(iri) for a in ctx.ancestors(t)}
-
-
 def _named(side, iri, pred):
     return sorted(o.value for o in side.values(iri, pred) if isinstance(o, ox.NamedNode))
 
@@ -429,9 +423,11 @@ class _Analysis:
         for x in sorted(approvers):
             if x in self.S_T.sig and x not in self.S_M.sig:
                 out.append(_problem("governance-approver-removed", "目标分支上已有批准记录引用的批准人被删除", iri=x))
-            elif _types(self.ctx_T, x) != _types(self.ctx_M, x):
+            # the derivation's own approver test (types + subclass chain, #136 review N1); a harmless superclass or an
+            # extra legal subtype leaves it unchanged (#136 re-review)
+            elif self.ctx_T._approver(x) != self.ctx_M._approver(x):
                 out.append(_problem("governance-approver-retyped",
-                                    "目标分支上已有批准记录引用的批准人的类型被改动（会让已有批准记录失效）", iri=x))
+                                    "目标分支上已有批准记录引用的批准人，其类型改动使它能否当批准人的判定变了（会让已有批准记录失效或生效）", iri=x))
         return out
 
     # check 3 (per selected record) + approval-only / release rules
