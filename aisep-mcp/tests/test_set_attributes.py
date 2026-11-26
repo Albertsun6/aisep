@@ -913,6 +913,8 @@ BAD_VALUES = {
     "control-in-lang-literal": {"value": "a\x07b", "lang": "zh"}, "control-in-typed-literal": {"value": "1\x00", "datatype": "xsd:integer"},
     "lang-and-datatype": {"value": "x", "lang": "zh", "datatype": "xsd:string"}, "empty-lang": {"value": "x", "lang": ""},
     "bnode-iri": {"iri": "_:b"}, "bnode-datatype": {"value": "x", "datatype": "_:dt"},
+    "null-lang": {"value": "x", "lang": None},
+    "empty-datatype": {"value": "x", "datatype": ""}, "null-datatype": {"value": "x", "datatype": None},  # issue #138
 }
 
 
@@ -972,3 +974,20 @@ def test_in_view_is_not_settable(repo, kw):
     field = next(iter(kw))
     assert refused(repo, "INVALID_ARGUMENT", SUPPLIER, **kw).details["rejectedFields"] == [field]
     assert tr(SUPPLIER, ARCH + "inView", n(M + "v1")) in graph(repo)
+
+
+@pytest.mark.parametrize("predicate", ["arch:inView", ARCH + "inView"], ids=["prefixed", "full-iri"])
+def test_in_view_is_refused_by_add_element(repo, predicate):
+    """Issue #138: model_add_element's attributes take the same stand as model_set_attributes on arch:inView."""
+    vp = "<https://meta.linked.archi/archimate4/viewpoints#ApplicationCooperationViewpoint>"
+    append(repo, AM4, f"\n:v1 a arch:Diagram ;\n    arch:inModel <{M}> ;\n    skos:prefLabel \"视图\"@zh ;\n"
+                      f"    arch:viewConformsToViewpoint {vp} .\n")
+    commit_all(repo, "a view")
+    s = snap(repo)
+    with pytest.raises(AisepError) as e:
+        add_twin(repo, one(predicate, {"iri": M + "v1"}))
+    assert e.value.code == "INVALID_ARGUMENT" and e.value.details["rejectedFields"] == ["attributes"]
+    assert snap(repo) == s
+    added = add_twin(repo, one("skos:note", {"value": "不进视图", "lang": "zh"}))  # the same call without inView is written
+    assert tr(added["iri"], NOTE, lit("不进视图", "zh")) in graph(repo)
+    assert not any(p.value == ARCH + "inView" and s.value == added["iri"] for s, p, _ in graph(repo))

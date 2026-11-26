@@ -77,7 +77,7 @@ def _escape_cr(text, triples):
 
 def _value_term(ctx, v, field):
     """The `value` shape shared by model_add_element's attributes (§5.2) and model_set_attributes' set (§5.12):
-    {iri} or {value, datatype?, lang?}; lang and datatype exclude each other, lang is non-empty, and a literal holds no
+    {iri} or {value, datatype?, lang?}; lang and datatype exclude each other, both are non-empty, and a literal holds no
     C0/C1 control character other than tab, LF and CR, nor U+2028/2029 (NUL would turn the .ttl into a binary file)."""
     if set(v) == {"iri"}:
         return ox.NamedNode(_expand_term(ctx, v["iri"], field))
@@ -87,6 +87,8 @@ def _value_term(ctx, v, field):
         raise _bad(field, f"{field} 的 value 不能同时给 lang 和 datatype")
     if "lang" in v and not v["lang"]:
         raise _bad(field, f"{field} 的 lang 不能为空")
+    if "datatype" in v and not v["datatype"]:
+        raise _bad(field, f"{field} 的 datatype 不能为空")
     o = ox.Literal(v["value"], language=v["lang"]) if "lang" in v else \
         ox.Literal(v["value"], datatype=ox.NamedNode(_expand_term(ctx, v["datatype"], field))) if v.get("datatype") else \
         ox.Literal(v["value"])
@@ -261,6 +263,8 @@ def add_element_build(model, type, prefLabel, altLabel=None, slug=None, definiti
                 raise _bad("attributes", f"attributes 里有不合法的 IRI 或前缀名：{e.message}") from None
             if p.value == RDF_TYPE:  # one element, one type (hard rule 3); the type is the `type` argument
                 raise _bad("attributes", "attributes 不能写 rdf:type，类型只由 type 参数给出")
+            if p.value == core.ARCH + "inView":  # as in model_set_attributes (NOT_SETTABLE): view tools are not in this version
+                raise _bad("attributes", "attributes 不能写 arch:inView：视图成员关系归视图，视图写工具不在本版")
             if p.value in LABEL_LIMITS and isinstance(o, ox.Literal):  # same rules as the named arguments (SEC-7)
                 _check_text("attributes", o.value, LABEL_LIMITS[p.value], allow_newline=p.value == DEF)
             triples.append(ox.Triple(s, p, o))
