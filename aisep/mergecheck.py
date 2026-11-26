@@ -117,7 +117,7 @@ def _side(repo, commit, prefixes=("models/",)):
 def _has_type(side, iri, cls, classes=None):
     """classes: cls and its IRI subclasses declared on the merge context (modules/, vendor/, models/; #105); without it
     only the model-file subclass chain of side is followed."""
-    ks = classes or {cls}
+    ks = classes if classes is not None else {cls}  # an empty closure matches nothing (#110 review)
     return any(c in ks for t in side.types(iri) for c in side.chain(t))
 
 
