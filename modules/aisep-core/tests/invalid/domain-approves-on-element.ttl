@@ -1,0 +1,18 @@
+# expect: aisep:approves has rdfs:domain aisep:ApprovalRecord
+# Issue #67 invalid: the shape of an approval record (approves/decision/gate/evidence/time) written on an ordinary
+# element; the governance predicates may only be used on an aisep:ApprovalRecord.
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix arch:   <https://meta.linked.archi/core#> .
+@prefix am4:    <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep:  <https://aisep.example/ont/aisep#> .
+@prefix :       <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+:boss a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "架构师"@zh .
+:supplier a am4:BusinessActor ; arch:inModel :t ; skos:prefLabel "供应商"@zh ;
+    aisep:approves :quotation ; aisep:decision aisep:DecisionApproved ; aisep:gate aisep:GateMerge ;
+    aisep:approvedBy :boss ; aisep:evidence "0123456789abcdef0123456789abcdef01234567" ;
+    prov:generatedAtTime "2026-11-20T10:00:00Z"^^xsd:dateTime .
+:quotation a am4:BusinessObject ; arch:inModel :t ; skos:prefLabel "报价单"@zh .
