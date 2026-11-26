@@ -1729,6 +1729,31 @@ def test_approver_of_existing_record_retyped_or_removed_rejected(t, change):
     assert_rejected(check(t, h, "feat/x"), reason, iri=M + "deputy")
 
 
+@pytest.mark.parametrize("change", ["t-invalid-becomes-valid", "ghost-defined"])
+def test_approver_illegal_on_t_made_legal_rejected(t, change):
+    """The other direction (#139): on T the Rejected record's approver is illegal (:deputy a aisep:AIAgent, or an
+    undefined :ghost), so the record does not count and :auditTrail is Approved; the PR makes the approver a
+    Stakeholder, the record starts to count and the state flips to Rejected. T already fails EG13, so this only arises
+    when main was broken past the required checks — still refused."""
+    from fixtures.topology import PREFIXES, record_ttl
+    who = "deputy" if change == "t-invalid-becomes-valid" else "ghost"
+    if who == "deputy":
+        t.write(DEPUTY_REL, DEPUTY.replace("a arch:Stakeholder", "a aisep:AIAgent"), "a")
+    local = f"approval-20261119140000-architecture-{who}"
+    t.write(f"{GOV}/{local}.ttl", PREFIXES + record_ttl(local, "GateArchitecture", ["auditTrail"], t.c0,
+                                                        at="2026-11-19T14:00:00Z", decision="Rejected",
+                                                        approved_by=f":{who}"))
+    base = t.commit_all(f"main: illegal :{who} rejects :auditTrail")
+    assert state(t, base, M + "auditTrail") == {ARCH_NS + "Approved"}
+    t.checkout("main", new="feat/x")
+    txt = t.read(DEPUTY_REL)
+    t.write(DEPUTY_REL, txt.replace(DEPUTY.replace("a arch:Stakeholder", "a aisep:AIAgent"), DEPUTY) if who == "deputy"
+            else txt + DEPUTY.replace(":deputy", ":ghost"))
+    h = t.commit_all(f"make :{who} a Stakeholder")
+    assert state(t, h, M + "auditTrail") == {"https://aisep.example/ont/aisep#Rejected"}  # the flip is real
+    assert_rejected(check(t, h, "feat/x"), "governance-approver-retyped", iri=M + who)
+
+
 def test_approver_check_leaves_other_stakeholder_changes_alone(t):
     """Positive twin: relabel the referenced approver, give it an extra legal subtype, add a harmless superclass to
     arch:Stakeholder in a module, relabel an unreferenced Stakeholder, add a new Stakeholder and a new record it signs —
