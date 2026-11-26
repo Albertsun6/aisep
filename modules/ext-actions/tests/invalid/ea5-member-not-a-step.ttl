@@ -1,5 +1,5 @@
-# expect: EA5: every member
-# Invalid: a blank-node list member not typed aisep:ActionStep; only the member shape's sh:class can catch it.
+# expect: EA5:
+# Invalid: a list and member written as IRI nodes, the member untyped. sh:nodeKind sh:BlankNode fires; an untyped blank-node member (sh:class aisep:ActionStep alone) is covered by test_gate_names_the_shape_of_each_catalogue_defect.
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
@@ -14,4 +14,7 @@ aisep:ActionTestBad a aisep:ActionType ;
     dcterms:identifier "bad" ;
     skos:prefLabel "坏动作"@zh ;
     owl:versionInfo "1.0.0" ;
-    aisep:steps ( [ dcterms:identifier "remove" ; aisep:invokes aisep:BasicRemove ] ) .
+    aisep:steps :list .
+:list rdf:first :member ;
+    rdf:rest rdf:nil .
+:member aisep:invokes aisep:BasicRemove .

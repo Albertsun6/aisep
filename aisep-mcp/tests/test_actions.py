@@ -351,8 +351,9 @@ RM_STEP = '[ a aisep:ActionStep ; dcterms:identifier "remove" ;'
     ("ea5-member-not-a-step", lambda t: t.replace(RM_STEP, '[ dcterms:identifier "remove" ;'), "EA5: every member"),
 ])
 def test_gate_names_the_shape_of_each_catalogue_defect(mk, defect, edit, expect):
-    """followups-20261126 第 8 项：与 tests/invalid 里同名负例同一个缺陷，写进真实目录的副本后 gate FAIL 并报出该规则。
-    变异对照（去掉对应约束后本测试变红）记在 PR 正文。"""
+    """followups-20261126 第 8 项：tests/invalid 里同名负例只能写成 IRI 节点（模型文件里的空白节点会先被 G7 拒绝），
+    只证伪 sh:nodeKind；文件名所说的缺陷在这里写进真实目录（模块文件，不受 G7 约束）的副本，gate FAIL 并报出该规则。
+    变异对照（去掉对应约束后本测试变红）记在 PR #133 正文。"""
     r = mk()
     before = read(r, CAT)
     after = edit(before)

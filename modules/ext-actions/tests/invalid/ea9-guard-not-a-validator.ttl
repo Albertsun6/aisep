@@ -1,5 +1,5 @@
 # expect: EA9:
-# Invalid: a blank-node guard, complete but not typed sh:SPARQLAskValidator; only sh:class can catch it.
+# Invalid: a guard that is a literal. sh:nodeKind sh:BlankNode fires; an untyped blank-node guard (sh:class sh:SPARQLAskValidator alone) is covered by test_gate_names_the_shape_of_each_catalogue_defect.
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
@@ -14,6 +14,4 @@ aisep:ActionTestBad a aisep:ActionType ;
     dcterms:identifier "bad" ;
     skos:prefLabel "坏动作"@zh ;
     owl:versionInfo "1.0.0" ;
-    aisep:guard [ dcterms:identifier "g" ;
-        sh:ask "ASK { $iri a ?type }" ;
-        sh:message "测试用的修法提示。"@zh ] .
+    aisep:guard "ASK { ?s ?p ?o }" .

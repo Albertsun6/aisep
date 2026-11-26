@@ -329,9 +329,15 @@ class Ctx:
         they all run in one network-less child (querybox.run_batch, issue #66); an attempt to connect, or no such child
         on this platform, raises instead of returning hits (fail closed: the check cannot pass)."""
         core = [m for m in self.mods if m.name == "aisep-core"]
-        cons = [(shp, sev, msg, prefixes + re.sub(r"\$this\b", "?this", sel))
-                for sf in (core[0].shapes if core else []) for shp, sev, msg, sel, prefixes in sparql_constraints(sf, self.root)
-                if not shape or shp == shape]
+        cons = []
+        for sf in (core[0].shapes if core else []):
+            try:
+                scs = sparql_constraints(sf)
+            except SyntaxError as e:  # a tool error, as for the other module files
+                raise AisepError("PARSE_FAILED", f"[Violation] L0 cannot parse module file {self.rel(sf)}: {str(e)[:200]}",
+                                 hint="先修好这个文件", details={"file": self.rel(sf), "error": str(e)[:200]}) from None
+            cons += [(shp, sev, msg, prefixes + re.sub(r"\$this\b", "?this", sel))
+                     for shp, sev, msg, sel, prefixes in scs if not shape or shp == shape]
         if not cons:
             return
         try:
@@ -905,15 +911,11 @@ def rt_table(path=RT_FILE):
 _SC = {}
 
 
-def sparql_constraints(path, root=ROOT):
+def sparql_constraints(path):
     """(shape, severity, message, select, prefix-declarations) for every sh:sparql constraint in a shapes file."""
     if path not in _SC:
         st = ox.Store()
-        try:
-            st.load(path=path, format=TTL)
-        except SyntaxError as e:  # a tool error, as for the other module files
-            raise AisepError("PARSE_FAILED", f"[Violation] L0 cannot parse module file {rel(path, root)}: {str(e)[:200]}",
-                             hint="先修好这个文件", details={"file": rel(path, root), "error": str(e)[:200]}) from None
+        st.load(path=path, format=TTL)
         q = lambda s: [[None if v is None else v.value for v in r] for r in st.query(SPARQL_PREFIXES + s)]
         decl = "".join(f"PREFIX {p}: <{n}>\n" for p, n in q("SELECT DISTINCT ?p ?n WHERE { ?d sh:declare [ sh:prefix ?p ; sh:namespace ?n ] }"))
         _SC[path] = [(shape, (sev or NS["sh"] + "Violation").split("#")[-1], msg or "SPARQL constraint violated", sel, decl)
@@ -946,7 +948,7 @@ def rdflib_graph(kind, files, root=ROOT):
         for f in files:
             try:
                 g.parse(f, format="turtle")
-            except SyntaxError as e:  # e.g. a shapes file, which only L3 reads: a tool error, as for the other module files
+            except (SyntaxError, UnicodeDecodeError) as e:  # e.g. a shapes file, which only L3 reads: a tool error, as for the other module files
                 raise AisepError("PARSE_FAILED", f"[Violation] L0 cannot parse module file {rel(f, root)}: {str(e)[:200]}",
                                  hint="先修好这个文件", details={"file": rel(f, root), "error": str(e)[:200]}) from None
         if kind == "shapes":
