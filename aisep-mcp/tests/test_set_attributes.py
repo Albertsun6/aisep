@@ -947,7 +947,8 @@ def test_bnode_predicate_is_refused_by_both_tools(repo):
     ({"value": "第一行\n第二行\t尾", "lang": "zh"}, lit("第一行\n第二行\t尾", "zh")),
     ({"value": "true", "datatype": "xsd:boolean"}, lit("true", dt=XSD + "boolean")),
     ({"value": "无标签"}, lit("无标签")),
-], ids=["multiline-lang", "typed", "plain"])
+    ({"value": "回车\r\n与\r单独"}, lit("回车\r\n与\r单独")),
+], ids=["multiline-lang", "typed", "plain", "carriage-return"])
 def test_good_value_is_written_the_same_by_both_tools(repo, value, term):
     added = add_twin(repo, one("skos:note", value))
     assert tr(added["iri"], NOTE, term) in graph(repo)

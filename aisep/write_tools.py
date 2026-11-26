@@ -66,6 +66,15 @@ def _expand_term(ctx, name, field):
     return core.expand(ctx, name)
 
 
+def _escape_cr(text, triples):
+    """writer.term leaves U+000D raw, which a short string may not hold: escape it in the rendered text of the literals
+    being written (step 6, graph equivalence, still judges the result)."""
+    for body in {writer.term(ox.Literal(t.object.value), {}) for t in triples
+                 if isinstance(t.object, ox.Literal) and "\r" in t.object.value}:
+        text = text.replace(body, body.replace("\r", "\\r"))
+    return text
+
+
 def _value_term(ctx, v, field):
     """The `value` shape shared by model_add_element's attributes (§5.2) and model_set_attributes' set (§5.12):
     {iri} or {value, datatype?, lang?}; lang and datatype exclude each other, lang is non-empty, and a literal holds no
@@ -258,7 +267,7 @@ def add_element_build(model, type, prefLabel, altLabel=None, slug=None, definiti
         st = _subject_triples(ctx)
         f = _check_file(mslug, file) if file else default_element_file(ctx, mslug, cls)
         pfx = _pfx(ws, f, model_iri)
-        block = writer.render_block(s, [(t.predicate, t.object) for t in triples], pfx)
+        block = _escape_cr(writer.render_block(s, [(t.predicate, t.object) for t in triples], pfx), triples)
         result = {"iri": iri, "file": f, "turtle": block}
         if iri in st:
             if writer.canon([t for _, t in st[iri]]) == writer.canon(triples):
@@ -633,10 +642,8 @@ def _set_attributes_build(iri, new, drop):  # not set/unset: the body uses the b
                     adds.setdefault(f, {}).setdefault(x, []).append((nt.predicate, nt.object))
         files = sorted(set(removed) | set(added))
         edits = {f: writer.rewrite_blocks(ws.text(f), removed.get(f, set()), adds.get(f, {})) for f in files}
-        for f, ts in added.items():  # writer.term leaves U+000D raw, which a short string may not hold: escape it here
-            for body in {writer.term(ox.Literal(t.object.value), {}) for t in ts
-                         if isinstance(t.object, ox.Literal) and "\r" in t.object.value}:
-                edits[f] = edits[f].replace(body, body.replace("\r", "\\r"))  # step 6 (graph equivalence) still judges it
+        for f, ts in added.items():
+            edits[f] = _escape_cr(edits[f], ts)
         return {"result": {"iri": x, "before": before, "after": after}, "edits": edits, "removed": removed, "added": added}
 
     return build
