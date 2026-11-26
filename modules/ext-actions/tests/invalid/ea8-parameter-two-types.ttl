@@ -1,5 +1,5 @@
 # expect: EA8:
-# Invalid: a parameter with both sh:datatype and sh:nodeKind (written as an IRI node).
+# Invalid: a blank-node parameter with both sh:datatype and sh:nodeKind; only ParameterShape's sh:xone can catch it.
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
@@ -14,7 +14,4 @@ aisep:ActionTestBad a aisep:ActionType ;
     dcterms:identifier "bad" ;
     skos:prefLabel "坏动作"@zh ;
     owl:versionInfo "1.0.0" ;
-    sh:parameter :param .
-:param sh:path ap:iri ;
-    sh:nodeKind sh:IRI ;
-    sh:datatype xsd:string .
+    sh:parameter [ sh:path ap:iri ; sh:nodeKind sh:IRI ; sh:datatype xsd:string ] .

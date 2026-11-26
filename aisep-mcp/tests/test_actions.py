@@ -333,6 +333,36 @@ def test_gate_checks_the_catalogue_with_the_module_shapes(mk):
     assert result == "FAIL" and "EA6" in out, out[-1500:]
 
 
+RM_PARAM = "sh:parameter [ sh:path ap:iri ; sh:nodeKind sh:IRI ;"
+DEPRECATED_GUARD = '[ a sh:SPARQLAskValidator ; dcterms:identifier "parent-is-not-deprecated" ;'
+RM_STEP = '[ a aisep:ActionStep ; dcterms:identifier "remove" ;'
+
+
+@pytest.mark.parametrize("defect, edit, expect", [
+    # 每个缺陷都写在空白节点上（sh:nodeKind sh:BlankNode 满足），所以只有文件名所说的那条约束能报出这条规则：
+    # ParameterShape 的 sh:xone / sh:closed、GuardShape 的 sh:message、sh:class sh:SPARQLAskValidator、EA5 成员形状的 sh:class。
+    ("ea8-parameter-two-types", lambda t: t.replace(RM_PARAM, RM_PARAM + " sh:datatype xsd:string ;"), "EA8:"),
+    ("ea8-parameter-unsupported-key", lambda t: t.replace(RM_PARAM, RM_PARAM + " sh:maxLength 10 ;"), "EA8:"),
+    ("ea9-guard-without-message",
+     lambda t: re.sub(r'(dcterms:identifier "parent-is-not-deprecated" ;\s*sh:ask "[^"]*") ;\s*sh:message "[^"]*"@zh', r"\1", t),
+     "EA9:"),
+    ("ea9-guard-not-a-validator",
+     lambda t: t.replace(DEPRECATED_GUARD, '[ dcterms:identifier "parent-is-not-deprecated" ;'), "EA9:"),
+    ("ea5-member-not-a-step", lambda t: t.replace(RM_STEP, '[ dcterms:identifier "remove" ;'), "EA5: every member"),
+])
+def test_gate_names_the_shape_of_each_catalogue_defect(mk, defect, edit, expect):
+    """followups-20261126 第 8 项：与 tests/invalid 里同名负例同一个缺陷，写进真实目录的副本后 gate FAIL 并报出该规则。
+    变异对照（去掉对应约束后本测试变红）记在 PR 正文。"""
+    r = mk()
+    before = read(r, CAT)
+    after = edit(before)
+    assert after != before, defect
+    write(r, CAT, after)
+    result, out = gate(r)
+    assert result == "FAIL", out[-1500:]
+    assert any(expect in ln for ln in out.splitlines() if ln.startswith("[Violation] L3 [ext-actions]")), out[-1500:]
+
+
 # ================================================================== 模块夹具实跑（tests/valid 通过、tests/invalid 被 shapes 判违规）
 
 FIXTURE_SCRIPT = r"""
@@ -1498,6 +1528,23 @@ def test_B8_literal_bound_guard_cannot_be_injected(mk):
     for n, v in enumerate(hostile):            # 同一个值再来（换 slug，不是重放）：guard 现在失败，说明按值比较
         assert apply_err(r, "test-dedupe", {"gherkin": v, "slug": f"acHostileAgain{n}"})["code"] == "PRECONDITION_FAILED", v
     assert snap(r) == after
+
+
+def test_slow_guard_times_out_without_writing(mk, monkeypatch):
+    """followups-20261126 第 7 项：写坏的 guard（三重笛卡尔积、过滤条件永不成立）不能让 model_apply_action 卡死：
+    超时 -> QUERY_TIMEOUT（不可重试，details 点名动作与 guard），零写入。超时值调小只为测试快。"""
+    r = mk()
+    add_actions(r, act("ActionTestSlowGuard", "test-slow-guard", [new_criterion_step(slug_const="acSlowGuard")],
+                       params=[sp("label")],
+                       guards=[guard("slow", "ASK { ?a ?b ?c . ?d ?e ?f . ?g ?h ?i . "
+                                             "FILTER(STRLEN(STR(?c)) + STRLEN(STR(?f)) + STRLEN(STR(?i)) < 0) }")]))
+    assert by_id(r)["test-slow-guard"]["valid"] is True
+    monkeypatch.setattr(actions, "GUARD_TIMEOUT_S", 1)
+    before = snap(r)
+    e = apply_err(r, "test-slow-guard", {"label": "超时探针"})
+    assert e["code"] == "QUERY_TIMEOUT" and e["retryable"] is False, e
+    assert e["details"] == {"action": "test-slow-guard", "guard": "slow"}, e
+    assert snap(r) == before
 
 
 def test_B8_action_name_and_params_shape_cannot_be_abused(mk):

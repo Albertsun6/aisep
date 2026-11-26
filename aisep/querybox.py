@@ -98,10 +98,12 @@ def _term(v):
     return t
 
 
-def run_query(store, sparql, prefixes, limit):
-    """The §5.6 result dict of one query on `store`."""
+def run_query(store, sparql, prefixes, limit, subs=None):
+    """The §5.6 result dict of one query on `store`. subs: {variable name: {"type": "iri"|"literal", "value"}},
+    pre-bound (pyoxigraph substitutions), never spliced into the query text."""
     import pyoxigraph as ox
-    res = store.query(sparql, prefixes=prefixes, use_default_graph_as_union=True)
+    subs = {ox.Variable(k): (ox.NamedNode if v["type"] == "iri" else ox.Literal)(v["value"]) for k, v in (subs or {}).items()}
+    res = store.query(sparql, prefixes=prefixes, use_default_graph_as_union=True, substitutions=subs)
     if isinstance(res, (ox.QueryBoolean, bool)):
         return {"kind": "ask", "value": bool(res)}
     rows = []
@@ -136,7 +138,7 @@ def _child():
         if "batch" in head:  # run_batch: every query, in order, no row limit
             out = {"result": [run_query(store, q, head["prefixes"], None) for q in head["batch"]]}
         else:
-            out = {"result": run_query(store, head["sparql"], head["prefixes"], head["limit"])}
+            out = {"result": run_query(store, head["sparql"], head["prefixes"], head["limit"], head.get("subs"))}
     except Exception as e:  # noqa: BLE001 — handed to the parent, which maps it as before
         kind = next((c.__name__ for c in _ERRORS.values() if isinstance(e, c)), "Exception")
         out = {"error": {"type": kind, "message": str(e)}}
@@ -148,10 +150,10 @@ def _child():
 _ERRORS = {c.__name__: c for c in (SyntaxError, OSError, ValueError, RuntimeError)}
 
 
-def run(store, sparql, prefixes, limit, timeout_s):
+def run(store, sparql, prefixes, limit, timeout_s, subs=None):
     """run_query(store, ...) in a network-less child. Raises NetworkAttempt, Timeout, Unavailable, or the query's own
     SyntaxError / OSError / ValueError / RuntimeError (anything else as Exception)."""
-    return _spawn({"sparql": sparql, "prefixes": prefixes, "limit": limit}, store, timeout_s)
+    return _spawn({"sparql": sparql, "prefixes": prefixes, "limit": limit, "subs": subs}, store, timeout_s)
 
 
 def run_batch(store, queries, prefixes, timeout_s=None):

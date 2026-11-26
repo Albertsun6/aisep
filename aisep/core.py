@@ -164,7 +164,8 @@ def discover(root=ROOT):
         try:
             quads = list(ox.parse(path=mf, format=TTL))
         except SyntaxError as e:
-            raise AisepError("PARSE_FAILED", f"[Violation] L0 cannot parse manifest {rel(mf, root)}: {e}")
+            raise AisepError("PARSE_FAILED", f"[Violation] L0 cannot parse manifest {rel(mf, root)}: {e}",
+                             details={"file": rel(mf, root), "error": str(e)[:200]})
         subjects = {q.subject.value for q in quads if q.predicate.value == A and q.object.value == ARCH + "Metamodel"}
         if len(subjects) != 1:
             raise AisepError("PARSE_FAILED", f"[Violation] {rel(mf, root)} must declare exactly one arch:Metamodel (found {len(subjects)})")
@@ -240,7 +241,11 @@ class Ctx:
             self.src_quads[f] = qs
         self.store = ox.Store()
         for f in onto_files(mods, "all"):
-            self.store.load(path=f, format=TTL, to_graph=ox.NamedNode(ONTO_G + self.rel(f)))
+            try:
+                self.store.load(path=f, format=TTL, to_graph=ox.NamedNode(ONTO_G + self.rel(f)))
+            except SyntaxError as e:  # a module file, not a model file: no partial result, a tool error like the manifest
+                raise AisepError("PARSE_FAILED", f"[Violation] L0 cannot parse module file {self.rel(f)}: {str(e)[:200]}",
+                                 hint="先修好这个文件", details={"file": self.rel(f), "error": str(e)[:200]}) from None
         for f, qs in self.src_quads.items():
             g = ox.NamedNode(SRC_G + self.rel(f))
             self.store.extend(ox.Quad(q.subject, q.predicate, q.object, g) for q in qs)
@@ -325,7 +330,7 @@ class Ctx:
         on this platform, raises instead of returning hits (fail closed: the check cannot pass)."""
         core = [m for m in self.mods if m.name == "aisep-core"]
         cons = [(shp, sev, msg, prefixes + re.sub(r"\$this\b", "?this", sel))
-                for sf in (core[0].shapes if core else []) for shp, sev, msg, sel, prefixes in sparql_constraints(sf)
+                for sf in (core[0].shapes if core else []) for shp, sev, msg, sel, prefixes in sparql_constraints(sf, self.root)
                 if not shape or shp == shape]
         if not cons:
             return
@@ -900,11 +905,15 @@ def rt_table(path=RT_FILE):
 _SC = {}
 
 
-def sparql_constraints(path):
+def sparql_constraints(path, root=ROOT):
     """(shape, severity, message, select, prefix-declarations) for every sh:sparql constraint in a shapes file."""
     if path not in _SC:
         st = ox.Store()
-        st.load(path=path, format=TTL)
+        try:
+            st.load(path=path, format=TTL)
+        except SyntaxError as e:  # a tool error, as for the other module files
+            raise AisepError("PARSE_FAILED", f"[Violation] L0 cannot parse module file {rel(path, root)}: {str(e)[:200]}",
+                             hint="先修好这个文件", details={"file": rel(path, root), "error": str(e)[:200]}) from None
         q = lambda s: [[None if v is None else v.value for v in r] for r in st.query(SPARQL_PREFIXES + s)]
         decl = "".join(f"PREFIX {p}: <{n}>\n" for p, n in q("SELECT DISTINCT ?p ?n WHERE { ?d sh:declare [ sh:prefix ?p ; sh:namespace ?n ] }"))
         _SC[path] = [(shape, (sev or NS["sh"] + "Violation").split("#")[-1], msg or "SPARQL constraint violated", sel, decl)
@@ -927,7 +936,7 @@ def _content_key(files):
     return tuple(hashlib.sha256(open(f, "rb").read()).hexdigest() for f in files)
 
 
-def rdflib_graph(kind, files):
+def rdflib_graph(kind, files, root=ROOT):
     """Union of files as an rdflib Graph, cached by content; shapes files get MINUS rewritten (pyshacl rejects MINUS)."""
     from rdflib import Graph, Literal
     from rdflib.namespace import SH
@@ -935,7 +944,11 @@ def rdflib_graph(kind, files):
     if key not in _RDFLIB:
         g = Graph()
         for f in files:
-            g.parse(f, format="turtle")
+            try:
+                g.parse(f, format="turtle")
+            except SyntaxError as e:  # e.g. a shapes file, which only L3 reads: a tool error, as for the other module files
+                raise AisepError("PARSE_FAILED", f"[Violation] L0 cannot parse module file {rel(f, root)}: {str(e)[:200]}",
+                                 hint="先修好这个文件", details={"file": rel(f, root), "error": str(e)[:200]}) from None
         if kind == "shapes":
             for _, _, c in list(g.triples((None, SH.sparql, None))):
                 sel = str(g.value(c, SH.select) or "")
@@ -1003,9 +1016,9 @@ def _l3(ctx):
             continue
         data = _prepared_query_graph()
         for f in data_files:  # per file: the module runs share most ontology files
-            data += rdflib_graph("data", [f])
+            data += rdflib_graph("data", [f], ctx.root)
         data += model
-        shapes = rdflib_graph("shapes", shape_files)
+        shapes = rdflib_graph("shapes", shape_files, ctx.root)
         _, report, _ = shacl(data, shacl_graph=shapes, inference="none", allow_warnings=True)
         if not isinstance(report, Graph):  # pyshacl ValidationFailure (SHACL §3.6.2 failure, e.g. a shape breaking
             # the §5.3.1 pre-binding rules): no report graph, so the gate must not pass silently or crash

@@ -1,5 +1,5 @@
 # expect: EA9:
-# Invalid: a guard that is not an sh:SPARQLAskValidator (here: a literal).
+# Invalid: a blank-node guard, complete but not typed sh:SPARQLAskValidator; only sh:class can catch it.
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
@@ -14,4 +14,6 @@ aisep:ActionTestBad a aisep:ActionType ;
     dcterms:identifier "bad" ;
     skos:prefLabel "坏动作"@zh ;
     owl:versionInfo "1.0.0" ;
-    aisep:guard "ASK { ?s ?p ?o }" .
+    aisep:guard [ dcterms:identifier "g" ;
+        sh:ask "ASK { $iri a ?type }" ;
+        sh:message "测试用的修法提示。"@zh ] .
