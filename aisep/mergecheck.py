@@ -32,6 +32,7 @@ from aisep.errors import AisepError
 AISEP, ARCH = core.AISEP, core.ARCH
 RECORD, ACTIVITY = AISEP + "ApprovalRecord", AISEP + "AgentActivity"
 APPROVES, ACTIVITY_P, GATE, DECISION = AISEP + "approves", AISEP + "activity", AISEP + "gate", AISEP + "decision"
+APPROVED_BY = AISEP + "approvedBy"
 EVIDENCE, GENERATED = AISEP + "evidence", core.NS["prov"] + "generatedAtTime"
 HEAD_COMMIT, BASE_COMMIT, BRANCH = AISEP + "headCommit", AISEP + "baseCommit", AISEP + "branch"
 GATE_RELEASE, APPROVED = AISEP + "GateRelease", AISEP + "DecisionApproved"
@@ -125,6 +126,12 @@ def _subclasses(cls, *ctxs):
     """cls and every IRI subclass of it in the loaded contexts: the same closure the approvalState derivation uses."""
     return {cls} | {c for ctx in ctxs for (c,) in ctx.rows(
         f"SELECT DISTINCT ?c WHERE {{ ?c rdfs:subClassOf* <{cls}> FILTER(isIRI(?c)) }}")}
+
+
+def _types(ctx, iri):
+    """rdf:type values of iri asserted in the model sources, modules and vendor of ctx (derived graphs left out)."""
+    return {c for (c,) in ctx.rows(f"""SELECT DISTINCT ?c WHERE {{ GRAPH ?g {{ <{iri}> a ?c }}
+            FILTER(STRSTARTS(STR(?g), "{core.SRC_G}") || STRSTARTS(STR(?g), "{core.ONTO_G}")) }}""")}
 
 
 def _named(side, iri, pred):
@@ -413,6 +420,20 @@ class _Analysis:
                 out.append(_problem("governance-record-modified", "目标分支上已有的治理记录被修改（批准只能新增）", iri=x))
         return out
 
+    # approvers of records on T (PR #132 review N1): retyping or removing one invalidates its existing records and
+    # changes the derived approvalState, so like check 1 it is refused independent of the gate
+    def check_approvers(self):
+        approvers = {o.value for ts in self.S_T.triples.values() for p, o in ts
+                     if p == APPROVED_BY and isinstance(o, ox.NamedNode)}
+        out = []
+        for x in sorted(approvers):
+            if x in self.S_T.sig and x not in self.S_M.sig:
+                out.append(_problem("governance-approver-removed", "目标分支上已有批准记录引用的批准人被删除", iri=x))
+            elif _types(self.ctx_T, x) != _types(self.ctx_M, x):
+                out.append(_problem("governance-approver-retyped",
+                                    "目标分支上已有批准记录引用的批准人的类型被改动（会让已有批准记录失效）", iri=x))
+        return out
+
     # check 3 (per selected record) + approval-only / release rules
     def check3(self):
         out, ranges = [], {}
@@ -621,7 +642,7 @@ def merge_check(repo, pr_head, target_ref, *, head_ref, now, remote="origin"):
                 if e.code != "DIFF_BNODE_UNSUPPORTED":
                     raise
                 return _bnode_fallback(r, h, t, e)
-            return (a.check_bnodes() + a.check_type_outside_models() + a.check1() + a.check3() + a.check4(head_ref) + a.check5() + a.check6()
+            return (a.check_bnodes() + a.check_type_outside_models() + a.check1() + a.check_approvers() + a.check3() + a.check4(head_ref) + a.check5() + a.check6()
                     + a.check7() + a.release_tags(remote))
     return _run(run)
 

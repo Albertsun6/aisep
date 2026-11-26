@@ -63,6 +63,9 @@ reason vocabulary (details.reason; the two marked * are the strings §5.9 step 1
     git-error                       a git command failed / shallow clone (口径, G)
     governance-blank-node           a blank node in the model sources of H or M is typed as, or carries a predicate of, an
                                     ApprovalRecord / AgentActivity (2026-11-22 取证疑点一; independent of the L1 rule)
+    governance-approver-retyped     an approver referenced by aisep:approvedBy of a record on T has another rdf:type set on M
+                                    (to aisep:AIAgent, type dropped …): its records turn illegal (PR #132 review N1)
+    governance-approver-removed     … or that approver's subject is gone from the model sources of M
     governance-type-outside-models  a module or vendor file of M types a subject as an ApprovalRecord / AgentActivity (#105
                                     review; independent of the R1 rule)
 
@@ -1674,6 +1677,57 @@ def test_T38_record_in_governance_ttl_removed_or_modified_rejected(t, change):
     assert t.git("diff", "--name-only", f"{h}^", h) == rel
     assert cli_gate(t, h)  # the gate passes: only check 1 stops it
     assert_rejected(check(t, h, "feat/x"), f"governance-record-{change}", iri=M + local)
+
+
+
+# An approver referenced by a record on T (PR #132 review N1): retyping it (to aisep:AIAgent, or dropping its type) or
+# removing it makes its records illegal, so a later Rejected no longer counts and the derived state flips. Not a change
+# to a record, so check 1 does not see it; the approver check refuses it independent of the gate (check 5).
+DEPUTY_REL = "models/procurement/governance.ttl"
+DEPUTY = f"\n:deputy a arch:Stakeholder ;\n    arch:inModel <{M}> ;\n    skos:prefLabel \"副架构师\"@zh .\n"
+
+
+def _deputy_rejects_audit_trail(t):
+    """main: :deputy rejects :auditTrail after the baseline approval, so :auditTrail is Rejected on T."""
+    from fixtures.topology import PREFIXES, record_ttl
+    t.write(DEPUTY_REL, DEPUTY, "a")
+    local = "approval-20261119140000-architecture-deputy"
+    t.write(f"{GOV}/{local}.ttl", PREFIXES + record_ttl(local, "GateArchitecture", ["auditTrail"], t.c0,
+                                                        at="2026-11-19T14:00:00Z", decision="Rejected",
+                                                        approved_by=":deputy"))
+    base = t.commit_all("main: :deputy rejects :auditTrail")
+    assert state(t, base, M + "auditTrail") == {"https://aisep.example/ont/aisep#Rejected"}
+    t.checkout("main", new="feat/x")
+    return base
+
+
+@pytest.mark.parametrize("change", ["to-ai-agent", "type-dropped", "removed"])
+def test_approver_of_existing_record_retyped_or_removed_rejected(t, change):
+    _deputy_rejects_audit_trail(t)
+    txt = t.read(DEPUTY_REL)
+    assert DEPUTY in txt
+    after = {"to-ai-agent": DEPUTY.replace("a arch:Stakeholder", "a aisep:AIAgent"),
+             "type-dropped": DEPUTY.replace("a arch:Stakeholder ;\n    ", ""), "removed": "\n"}[change]
+    t.write(DEPUTY_REL, txt.replace(DEPUTY, after))
+    h = t.commit_all(f"{change} :deputy")
+    assert state(t, h, M + "auditTrail") == {ARCH_NS + "Approved"}  # the attack works on the derivation
+    reason = "governance-approver-removed" if change == "removed" else "governance-approver-retyped"
+    assert_rejected(check(t, h, "feat/x"), reason, iri=M + "deputy")
+
+
+def test_approver_check_leaves_other_stakeholder_changes_alone(t):
+    """Positive twin: relabel the referenced approver, relabel an unreferenced Stakeholder, add a new Stakeholder and a
+    new record it signs — none touches the type set of an approver referenced on T."""
+    _deputy_rejects_audit_trail(t)
+    txt = t.read(DEPUTY_REL)
+    assert '"副架构师"@zh' in txt and '"编码代理"@zh' in txt
+    t.write(DEPUTY_REL, txt.replace('"副架构师"@zh', '"副架构师V2"@zh').replace('"编码代理"@zh', '"编码代理V2"@zh')
+            + "\n:newLead a arch:Stakeholder ;\n    arch:inModel <" + M + "> ;\n    skos:prefLabel \"新干系人\"@zh .\n")
+    h = t.commit_all("relabel stakeholders, add :newLead")
+    assert_clean(check(t, h, "feat/x"))
+    a, _, _ = t.approve("GateRequirements", ["supplier"], evidence=h, decision="Rejected", approved_by=":newLead")
+    p = check(t, a, "feat/x")
+    assert not {"governance-approver-removed", "governance-approver-retyped"} & reasons(p), p
 
 
 # ------------------------------------------------------------------ every test: build all fixtures, then XFAIL if the
