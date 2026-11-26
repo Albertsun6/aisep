@@ -10,7 +10,7 @@
 
 # L3 shapes for governance, decisions and quality (spec §6.6, §6.7). SHACL Core only, except EG24 (see there).
 # Run together with the vendored arch-decision-shapes.ttl (decision state, selected option, rationale).
-# Each message starts with a rule id (EG1..EG26); every rule has a valid and an invalid fixture in tests/.
+# Each message starts with a rule id (EG1..EG28); every rule has a valid and an invalid fixture in tests/.
 # v0.2 (§6.6, D10): authors never write arch:approvalState (L1 rejects it); EG1 stays as a guard on the
 # value `aisep build` derives from aisep:ApprovalRecord (EG11..EG16).
 
@@ -260,4 +260,32 @@
         [ sh:property [ sh:path ( aisep:activity aisep:headCommit ) ; sh:equals aisep:evidence ] ]
     ) ;
     sh:message "EG26: an ApprovalRecord whose aisep:evidence is a git commit equals the aisep:headCommit of its aisep:activity." ;
+    sh:severity sh:Violation .
+
+# ADR-023 / issue #120: a governance record is a model element, an IRI whose arch:inModel names an arch:Model; the
+# same rule as the aisep-core ApprovalRecordShape / AgentActivityShape (L1), stated here for L3
+:ApprovalRecordModelElementShape a sh:NodeShape ;
+    sh:targetClass aisep:ApprovalRecord ;
+    sh:nodeKind sh:IRI ;
+    sh:message "EG27: an ApprovalRecord is a model element, an IRI whose arch:inModel names an arch:Model (not a blank node or a resource outside every model)." ;
+    sh:property [
+        sh:path arch:inModel ;
+        sh:minCount 1 ;
+        sh:class arch:Model ;
+        sh:message "EG27: an ApprovalRecord is a model element, an IRI whose arch:inModel names an arch:Model (not a blank node or a resource outside every model)." ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:severity sh:Violation .
+
+:AgentActivityModelElementShape a sh:NodeShape ;
+    sh:targetClass aisep:AgentActivity ;
+    sh:nodeKind sh:IRI ;
+    sh:message "EG28: an AgentActivity is a model element, an IRI whose arch:inModel names an arch:Model (not a blank node or a resource outside every model)." ;
+    sh:property [
+        sh:path arch:inModel ;
+        sh:minCount 1 ;
+        sh:class arch:Model ;
+        sh:message "EG28: an AgentActivity is a model element, an IRI whose arch:inModel names an arch:Model (not a blank node or a resource outside every model)." ;
+        sh:severity sh:Violation ;
+    ] ;
     sh:severity sh:Violation .
