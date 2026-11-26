@@ -1592,8 +1592,8 @@ def test_105_governance_type_outside_models_rejected(t, site, kind, monkeypatch)
     assert OUTSIDE not in reasons(check(t, h0, "feat/x"))  # positive twin: the same branch before the record
 
 # A record typed with a subclass of aisep:ApprovalRecord is honoured by the derivation, but the approval-commit criterion
-# (§5.9 step 1 (c)) recognises only the class itself, so a commit adding one is not an approval commit: merge_check
-# rejects it and a PR made only of it is a normal PR (spec §6.6「类型」, Albert 2026-11-26 选 A; PR #110 review 2).
+# (§5.9 step 1 (c)) recognises only the class itself and subclasses declared in the same models/<slug>/ files, so a
+# commit adding a record typed with a module-declared subclass is not an approval commit: merge_check rejects it and a PR made only of it is a normal PR (spec §6.6「类型」, Albert 2026-11-26 选 A; PR #110 review 2).
 def _gate_record(t, local, gate, approves, evidence, sub):
     from fixtures.topology import record_ttl
     body = record_ttl(local, gate, approves, evidence)
@@ -1658,7 +1658,10 @@ def test_T38_record_in_governance_ttl_removed_or_modified_rejected(t, change):
                             decision="Rejected"), "a")
     t.commit_all("main: a plain record inside governance.ttl")
     t.checkout("main", new="feat/x")
-    assert_clean(check(t, t.relabel("submitQuotation", "提交报价单V2"), "feat/x"))  # positive twin
+    # positive twin: rewriting a non-record subject in the same governance.ttl is not a governance-record change
+    t.write(rel, t.read(rel).replace('"编码代理"@zh', '"编码代理V2"@zh'))
+    twin = check(t, t.commit_all("relabel :codingBot in governance.ttl"), "feat/x")
+    assert not {"governance-record-removed", "governance-record-modified"} & reasons(twin), twin
     txt = t.read(rel)
     if change == "removed":
         t.write(rel, txt[:txt.index(f":{local}")])
