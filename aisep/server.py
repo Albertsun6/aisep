@@ -19,7 +19,7 @@ from mcp.shared.exceptions import MCPError
 from mcp_types import CLIENT_INFO_META_KEY
 from mcp_types.jsonrpc import INVALID_PARAMS
 
-from aisep import actions, approval, branches, calllog, diagram_c4, diff, tools, views, write_tools
+from aisep import actions, approval, branches, calllog, diagram_c4, diagram_ddd, diagram_uml, diff, tools, views, write_tools
 from aisep.errors import ACTION_CODES, CODES, VIEW_CODES, AisepError
 
 MAX_TEXT_LINES = 200
@@ -124,20 +124,27 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
                            out("action", "changed", codes=BASE_CODES | ACTION_CODES), ANN_DESTRUCTIVE, {"agent"}),
     # views (§5.15, §5.16): read-only; writing views is still out of scope (§1)
     "model_list_views": (views.model_list_views,
-                         "列出视图（只读）：每个模型的声明视图（arch:Diagram）与可出图的视点投影（ArchiMate 视点、C4 视点及其范围），"
-                         "每项带 model_render_view 的参数 render", READ_IN, out("models", "source"), ANN_READ,
+                         "列出视图（只读）：每个模型的声明视图（arch:Diagram）与可出图的投影（ArchiMate 视点、C4 视点及其范围、"
+                         "BPMN 流程、UML 类图、DDD 上下文映射图与聚合图），每项带 notation 与 model_render_view 的参数 render", READ_IN, out("models", "source"), ANN_READ,
                          {"agent", "workbench"}),
     "model_render_view": (views.model_render_view,
-                          "把一个视图画成 SVG（只读，与 tools/aisep.py diagram 同一出图器，同一模型字节相同）；"
-                          "三选一：{view} | {viewpoint, model} | {c4viewpoint, of}（C4Deployment 可加 model）",
+                          "把一个视图画出来（只读，与 tools/aisep.py diagram 同一出图器，同一模型字节相同）：BPMN 流程返回 "
+                          "format=bpmn-xml 的 content（BPMN 2.0 XML），其余返回 format=svg 的 svg；六选一：{view} | "
+                          "{viewpoint, model} | {c4viewpoint, of}（C4Deployment 可加 model） | {umldiagram, model} | "
+                          "{dddviewpoint: ContextMap, model} | {dddviewpoint: AggregateDiagram, of} | {process}",
                           obj({"view": S(maxLength=2048, description="视图 IRI 或 slug:local"),
                                "viewpoint": S(pattern="^[A-Za-z][A-Za-z0-9_-]*$", maxLength=128,
                                               description="ArchiMate 4 视点本地名，如 OrganizationViewpoint；须同时给 model"),
                                "model": MODEL, "c4viewpoint": S(enum=sorted(diagram_c4.VIEWPOINTS)),
                                "of": S(maxLength=2048,
-                                      description="c4viewpoint 的范围：软件系统或容器的 IRI；C4Deployment 时为部署环境名"),
+                                      description="c4viewpoint 的范围：软件系统或容器的 IRI；C4Deployment 时为部署环境名；"
+                                                  "dddviewpoint=AggregateDiagram 时为限界上下文的 IRI"),
+                               "umldiagram": S(enum=sorted(diagram_uml.DIAGRAMS), description="UML 图种；须同时给 model"),
+                               "dddviewpoint": S(enum=sorted(diagram_ddd.VIEWPOINTS),
+                                                 description="DDD 视图：ContextMap 须同时给 model，AggregateDiagram 须同时给 of"),
+                               "process": S(maxLength=2048, description="BPMN 流程（bpmn:Process）的 IRI 或 slug:local"),
                                "repo": REPO, "ref": REF}),
-                          out("svg", "title", "elementCount", "relationshipCount", "warnings", "source",
+                          out("format", "title", "notation", "elementCount", "relationshipCount", "warnings", "source",
                               codes=BASE_CODES | VIEW_CODES), ANN_READ, {"agent", "workbench"}),
     # ADR-031 as amended: the call log, read-only, workbench only (the profile is no security boundary, §4)
     "model_call_log": (calllog.model_call_log,

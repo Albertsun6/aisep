@@ -525,8 +525,8 @@ def _write_ddd(sel, name, opts):
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(svg)
-    n_rel = len(edges) + sum(1 for b in boxes.values() if b.get("via"))
-    print(f"SUMMARY diagram model={slug} view={name} elements={sum(1 for b in boxes.values() if not (b["compound"] and b["kind"] == "bc"))} relationships={n_rel} "
+    n_el, n_rel = diagram_ddd.counts(boxes, edges)
+    print(f"SUMMARY diagram model={slug} view={name} elements={n_el} relationships={n_rel} "
           f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
     return 0
 

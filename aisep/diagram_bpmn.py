@@ -21,7 +21,7 @@ import re
 from xml.sax.saxutils import escape as _esc
 
 from aisep.core import NS
-from aisep.diagram import elk_layout, local, tw, wrap
+from aisep.diagram import TextNotXml, elk_layout, local, tw, wrap
 
 BPMN = NS["bpmn"]
 
@@ -160,7 +160,8 @@ def select(ctx, process):
     for x, what, v in texts:
         c = NOT_XML_CHAR.search(v)
         if c:
-            raise ValueError(f"{x}: {what} contains U+{ord(c.group()):04X}, a character XML 1.0 cannot carry")
+            # TextNotXml is a ValueError (the CLI is unchanged); the view tool maps only it to text-not-xml, as for SVG
+            raise TextNotXml(f"{x}: {what} contains U+{ord(c.group()):04X}, a character XML 1.0 cannot carry")
     ids = [pid] + [n["id"] for n in nodes] + [f["id"] for f in flows]
     bad = [i for i in ids if not ID.match(i)]
     if bad:

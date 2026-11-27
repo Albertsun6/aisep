@@ -306,6 +306,13 @@ def select(ctx, viewpoint, scope, model=None):
     return title, sub, boxes, edges, warnings, model
 
 
+def counts(boxes, edges):
+    """(elements, relationships) as `tools/aisep.py diagram` reports them and model_render_view returns them: every box
+    but the bounded-context frames, and every edge plus the boxes drawn inside the context that owns them (`via`)."""
+    return (sum(1 for b in boxes.values() if not (b["compound"] and b["kind"] == "bc")),
+            len(edges) + sum(1 for b in boxes.values() if b.get("via")))
+
+
 # ------------------------------------------------------------------ layout
 
 def _lines(b, width):

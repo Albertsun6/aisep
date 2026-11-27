@@ -43,7 +43,7 @@ sh tools/aisep-mcp
 | `all` | 调试 | 以上 18 个 |
 
 - 批准工具 `governance_record_approval` **不在 agent 画像里**，编码代理看不到它。批准记录只能由 Albert 本人做出（`AGENTS.md`「分支与合并」），经工作台关口页触发（`docs/mcp-interface.md`）。
-- `model_list_views`、`model_render_view` 只读看视图：前者列出声明视图与视点投影，后者把一项画成 SVG（与 `tools/aisep.py diagram` 同一出图器，需要 elkjs，见 `docs/mcp-interface.md` §5.15、§5.16）。
+- `model_list_views`、`model_render_view` 只读看视图：前者列出声明视图与投影（ArchiMate、C4、BPMN、UML、DDD），后者把一项画出来：BPMN 流程返回 BPMN 2.0 XML（`format: "bpmn-xml"`，在 `content`，交给 bpmn-js 显示），其余返回 SVG（`format: "svg"`，在 `svg`）；与 `tools/aisep.py diagram` 同一出图器，需要 elkjs，见 `docs/mcp-interface.md` §5.15、§5.16。
 - `model_check`、`model_validate` 只做快速诊断；提交和 CI 只认 `gate`，读 `model_gate` 的结论看返回里的 `structuredContent.result`。
 - 写工具只改工作区、不提交。写完跑 `gate`，再按明确路径暂存、提交。
 - 工作台用的 HTTP 方式：`python -m aisep.server --transport http --profile workbench --allow-root <目录> --allow-origin <工作台页面来源>`，只绑本机回环地址，带 `Origin` 且不在白名单的请求返回 403，不带 `Origin` 的本机请求放行。
