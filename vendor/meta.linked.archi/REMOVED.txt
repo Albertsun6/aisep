@@ -10,3 +10,9 @@ ttl/ fetch.
             It carries no license statement, has no entry in ttl/catalog.ttl,
             and nothing in AISEP (module manifests, code, models, tests, docs)
             references it.
+
+2026-11-27  Note (no file removed). "kept unchanged" in the second paragraph
+            refers only to the 2026-11-21 removal of llms.txt above. The
+            2026-11-25 upgrade of this directory (commit 19a57c8, PR #103;
+            report: docs/specs/c4-archimate4-upstream-upgrade.md) regenerated
+            FETCHED_AT, fetch.log and SHA256SUMS; urls.txt was not changed.
