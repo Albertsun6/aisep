@@ -48,6 +48,38 @@ the fixture's environment; in a valid fixture `# expect-warning: <substring>` / 
 the fixture fail unless a Warning containing the substring is / is not reported (Warnings never fail otherwise; valid
 fixtures run L0–L4, so L4 Warnings can be expected too).
 
+## Versioning (semver, spec §11; issue #127)
+Version fields, each `<major>.<minor>.<patch>`:
+- **Module version** = the manifest's `owl:versionInfo` in `metamodel.ttl` (for ext-actions also the `catalogVersion`
+  that `model_list_actions` reports). It covers every file under `modules/<name>/` except `tests/**`, **and every file
+  the manifest names in `aisep:loads`, `aisep:shapesFile`, `aisep:alignmentFile` or `aisep:impactFile`, vendored
+  upstream files (`vendor/**`) included**: a change to the content of such a file is a change to the module, even when
+  no file under `modules/<name>/` changes (Albert 2026-11-27).
+- **File versions** = the `owl:versionInfo` of the `owl:Ontology` in `onto.ttl` / `align.ttl`; each covers only its own
+  file. Changing such a file bumps both its own version and the module version.
+- **Action type versions** in `modules/ext-actions/catalog.ttl` (EA4); each covers its own action definition.
+
+Which part to bump (take the highest level among the changes):
+- **minor** — adds or changes behaviour: a new class, property, concept or action; a new rule that judges data no
+  earlier rule judged (Violation or Warning); a new or changed `aisep:dependency` direction or sub-property that changes
+  what `impact` traverses; a new or changed manifest entry (`aisep:loads`, `aisep:shapesFile`, `aisep:impactFile` …).
+- **incompatible** — removes or renames a term, moves it to another namespace (e.g. the ext-actions parameter keys), or
+  changes its meaning, so that a model file, fixture or client that worked before breaks: **major** from 1.0.0 on;
+  **minor** while the version is 0.x.
+- **patch** — fixes a defect, or tightens a shape so that it rejects data the documented rules already forbade (e.g. a
+  trailing newline in a commit id, an L3 mirror of an existing L1 rule), with no new term and no change to
+  `aisep:dependency`.
+- **none** — changes only to `tests/**`, comments, whitespace or version fields themselves.
+
+A vendored file is judged by what changes in it, as a module file is (e.g. upstream core 0.7.0 adding `arch:DependsOn`
+is minor for every module that loads `core.ttl`); upstream metadata alone (`dcterms:modified`, history notes, the
+upstream file's own `owl:versionInfo`) is none.
+
+The PR that changes a module bumps it, once per PR for all its changes to that module; a PR that upgrades `vendor/`
+bumps every module whose named files change. A PR that touches an already-released module without bumping it is
+incomplete; a later PR that finds a missed bump bumps by the level of the missed change, unless a bump merged after
+that change already covers it at that level or higher.
+
 ## Authoring profile (what humans/AI write in model files)
 - Every element: exactly one most-specific rdf:type (asserting its own superclasses as well is allowed, D6; two types neither of which is a subclass of the other is a Violation); **one notation per element** (v0.2.1 R2, L1): every asserted type, redundant superclasses included, belongs to the same notation (Language module by `aisep:ownsNamespace` of the type's nearest owned ancestor; notation-neutral core classes such as arch:Element do not count) — `a ddd:Aggregate , am4:DataObject` is a Violation, model two nodes linked by `arch:Refines` instead; `arch:inModel <model IRI>` exactly once, exactly one `skos:prefLabel "…"@zh` (junctions/gateways may have none); English/other names go to `skos:altLabel`.
 - Every relationship: ONE qualified relationship resource (`a am4:Serving` etc. or a subclass) with `arch:source`, `arch:target`, `arch:inModel`. **Never write the direct triple** — `aisep build` generates it from `arch:unqualifiedForm` (declared upstream on QR classes; AISEP modules must declare it on their own QR classes too).

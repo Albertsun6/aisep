@@ -14,7 +14,7 @@
 
 <https://aisep.example/ont/aisep> a owl:Ontology ;
     rdfs:label "AISEP core vocabulary"@en ;
-    owl:versionInfo "0.2.0" .
+    owl:versionInfo "0.3.0" .
 
 ########## Module manifest terms (CONTRACT.md "Module layout") ##########
 
