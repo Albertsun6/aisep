@@ -1,6 +1,6 @@
 """Shared fixtures (docs/mcp-interface.md §11): every test works in a fresh `git init` under tmp_path holding copies of
 models/procurement, modules/, vendor/ (and tools/ + aisep/ so the CLI can run there); the real checkout is never touched."""
-import os, shutil, subprocess, sys, zlib
+import heapq, json, os, shutil, subprocess, sys
 
 import pytest
 
@@ -18,9 +18,34 @@ for _k, _v in (("maintenance.auto", "false"), ("gc.auto", "0")):
 os.environ["GIT_CONFIG_COUNT"] = str(_n)
 
 
+DURATIONS = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".test_durations")
+
+
+def assign_shards(tests, durations, n):
+    """tests: [(nodeid, group or None)] -> {nodeid: shard in range(n)}. Longest-processing-time-first greedy bin packing
+    (pytest-split's least_duration): tests sharing a group form one unit (one session-fixture setup, one shard), units go
+    heaviest first, each onto the shard with the least load so far; ties break on the unit key and the shard index, so the
+    same input gives the same split in every job and xdist worker. A test with no recorded duration counts as the mean of
+    the recorded ones among the tests given (1.0 when none is recorded)."""
+    known = [durations[t] for t, _ in tests if t in durations]
+    mean = sum(known) / len(known) if known else 1.0
+    units = {}
+    for t, g in sorted(tests):
+        units.setdefault(("g", g) if g else ("t", t), []).append(t)
+    order = sorted(((sum(durations.get(t, mean) for t in ts), k) for k, ts in units.items()), key=lambda u: (-u[0], u[1]))
+    loads, out = [(0.0, i) for i in range(n)], {}
+    for w, k in order:
+        load, i = heapq.heappop(loads)
+        out.update((t, i) for t in units[k])
+        heapq.heappush(loads, (load + w, i))
+    return out
+
+
 def pytest_collection_modifyitems(config, items):
-    """CI sharding: AISEP_SHARD="i/n" keeps the test cases whose nodeid hashes (crc32) to i mod n. A new test lands in a
-    shard by itself, with no list to maintain; unset, every test runs. Under xdist each worker collects and filters alike."""
+    """CI sharding: AISEP_SHARD="i/n" keeps shard i of the n that assign_shards makes from the recorded per-test durations
+    (.test_durations, refreshed with tools/update_test_durations.py); tests marked xdist_group (by name)
+    stay in one shard, so a session fixture they share is built in one shard only. Unset,
+    every test runs. Under xdist each worker collects the same items and computes the same split."""
     spec = os.environ.get("AISEP_SHARD")
     if not spec:
         return
@@ -29,9 +54,17 @@ def pytest_collection_modifyitems(config, items):
         assert 0 <= i < n
     except (ValueError, AssertionError):
         raise pytest.UsageError(f"AISEP_SHARD must be 'i/n' with 0 <= i < n, got {spec!r}")
+    try:
+        with open(DURATIONS, encoding="utf-8") as f:
+            durations = json.load(f)
+    except FileNotFoundError:
+        durations = {}
+    groups = {t: "_".join(sorted({str(m.args[0] if m.args else m.kwargs.get("name", "default"))
+                                  for m in t.iter_markers("xdist_group")})) or None for t in items}
+    shard = assign_shards([(t.nodeid, groups[t]) for t in items], durations, n)
     keep, drop = [], []
     for t in items:
-        (keep if zlib.crc32(t.nodeid.encode()) % n == i else drop).append(t)
+        (keep if shard[t.nodeid] == i else drop).append(t)
     if drop:
         config.hook.pytest_deselected(items=drop)
     items[:] = keep

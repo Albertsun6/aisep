@@ -310,7 +310,9 @@ def cmd_test(no_pytest=False):
                 jobs.append((m.name, fx, kind, mods if uses_all else [d for d in mods if d.name in want]))
     # Fixtures are independent (each builds its own Ctx; the caches are per process), so they run in a process pool;
     # map() yields in submission order, so the report reads the same as a serial run.
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as pool:
+    # the CPUs this process may run on (a container or taskset can allow fewer than the machine has); no affinity on macOS
+    cpus = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count()
+    with ProcessPoolExecutor(max_workers=cpus) as pool:
         done = list(pool.map(run_fixture, [j[3] for j in jobs], [j[1] for j in jobs]))
     results += [r if isinstance(r, tuple) else (jobs[r][0], os.path.basename(jobs[r][1]), jobs[r][2], *done[r])
                 for r in rows]
