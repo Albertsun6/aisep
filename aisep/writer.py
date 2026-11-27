@@ -415,11 +415,16 @@ def write_files(root, edits, before):
 
 def check_paths(plan):
     """Every file a plan touches is a normalised repo-relative models/<slug>/... path: no empty, '.' or '..' segment, no
-    leading '/'. The write tools build these paths from validated slugs; this is the last line before the disk."""
+    leading '/', and not under models/<slug>/governance/ (any case). The write tools build these paths from validated slugs; this is the last line before the disk."""
     for key in ("edits", "removed", "added"):
         for f in plan.get(key) or {}:
             if not isinstance(f, str) or not MODEL_PATH.fullmatch(f) or any(x in (".", "..") for x in f.split("/")):
                 raise AisepError("INVALID_ARGUMENT", f"要写的路径 {f!r} 不是规范化的 models/<slug>/ 路径，未写入",
+                                 details={"file": f})
+            parts = f.split("/")
+            if len(parts) > 3 and parts[2].lower() == "governance":
+                # approval records are made only by Albert through the approval tool, never by a write tool or action
+                raise AisepError("INVALID_ARGUMENT", f"要写的路径 {f!r} 在 models/<slug>/governance/ 下（批准记录专用），未写入",
                                  details={"file": f})
 
 
