@@ -20,7 +20,7 @@ AC = WB + "acProgressFourStages"
 REGISTER, REMOVE = "register-acceptance-criterion", "remove-element"
 P0 = {"requirement": REQ, "prefLabel": "探针验收标准", "altLabel": "Probe criterion",
       "definition": "独立测试用的验收标准。", "gherkin": "Given a\nWhen b\nThen c"}
-RUN = {"pid": 0, "profile": "all", "transport": "test", "allowRoots": []}
+RUN = {"pid": 0, "profile": "all", "transport": "test", "allowRoots": [], "repo": None}
 SENT = "SENTINEL-7f3a"  # a caller-supplied text that must never reach `measured`
 
 
@@ -86,7 +86,7 @@ def session(repo, profile, steps, allow_root=None):
 def one(outcome, tool):
     def check(res, new):
         assert len(new) == 1, (tool, new)
-        assert new[0]["measured"]["tool"] == tool and new[0]["measured"]["outcome"] == outcome, new[0]
+        assert new[0]["v"] == 1 and new[0]["measured"]["tool"] == tool and new[0]["measured"]["outcome"] == outcome, new[0]
         if outcome != "ok" and outcome != calllog.UNKNOWN_TOOL:
             assert res.is_error and res.structured_content["error"]["code"] == outcome
     return check
@@ -107,16 +107,18 @@ def test_exit1_each_audited_write_tool_logs_one_ok_line_with_real_hashes(wrepo):
             assert not res.is_error, res.content[0].text
             one("ok", tool)(res, new)
             m = new[0]["measured"]
-            assert m["worktree"] == {"path": os.path.realpath(wrepo), "branch": "main", "head": git(wrepo, "rev-parse", "HEAD")}
-            assert m["dryRun"] is dry and m["server"]["profile"] == "all" and m["server"]["transport"] == "stdio"
+            assert m["target"] == {"worktree": os.path.realpath(wrepo), "branch": "main", "head": git(wrepo, "rev-parse", "HEAD")}
+            assert m["request"]["dryRun"] is dry and m["server"]["profile"] == "all" and m["server"]["transport"] == "stdio"
+            assert m["server"]["repo"] == str(wrepo)
             assert new[0]["declared"]["clientInfo"]["name"]  # stdio: from initialize
             if dry:
                 assert m["files"] == []
             else:
                 assert m["files"], m
                 for f in m["files"]:
-                    assert f["sha256After"] == sha_file(wrepo, f["path"])           # after == disk now
-                    assert f["sha256Before"] == snap.get(f["path"])                  # before == disk before the call
+                    assert f["after"] == "sha256:" + sha_file(wrepo, f["path"])     # after == disk now
+                    before = snap.get(f["path"])                                     # before == disk before the call
+                    assert f["before"] == (None if before is None else "sha256:" + before)
             sc = res.structured_content
             state.setdefault("iris", []).append(sc.get("iri"))
             state["last"] = new[0]
@@ -147,12 +149,16 @@ def test_exit1_each_audited_write_tool_logs_one_ok_line_with_real_hashes(wrepo):
         step("model_apply_action", {"action": REGISTER, "params": P0}),
     ])
     a = state["last"]["measured"]
-    assert a["actionId"] == REGISTER and a["action"]["version"] and a["action"]["definitionDigest"].startswith("sha256:")
+    r = a["request"]
+    assert r["actionId"] == REGISTER and r["actionVersion"] and r["definitionDigest"].startswith("sha256:")
+    assert r["definitionDigest"] == next(x["definitionDigest"] for x in actions.model_list_actions(
+        tools.Config(repo=str(wrepo)))["actions"] if x["id"] == REGISTER)     # the single action's digest
+    assert r["iris"] == [REQ] and r["planDigestGiven"] is False and r["model"] is None
     rel_iri = state["iris"][1]
     session(wrepo, "all", [step("model_remove", {"iri": rel_iri})])
-    assert state["last"]["measured"]["targetIri"] == rel_iri
+    assert state["last"]["measured"]["request"]["iris"] == [rel_iri]
     # exit 4: the log is in the common dir, outside every graph the model tools load
-    sha = state["last"]["measured"]["argsSha256"]
+    sha = state["last"]["measured"]["request"]["argsSha256"].removeprefix("sha256:")
     q = server.call(tools.Config(repo=str(wrepo)), "model_query",
                     {"sparql": f'SELECT ?s WHERE {{ ?s ?p ?o FILTER(CONTAINS(STR(?o), "{sha}") || CONTAINS(STR(?o), "calls.jsonl")) }}'})
     assert not q.is_error and q.structured_content["rows"] == []
@@ -175,11 +181,12 @@ def test_exit1_record_approval_logs_commit_activity_and_file_hash(template, tmp_
             "activity": {"agent": M + "codingBot", "sessionRef": "s-calllog", "startedAt": "2026-11-20T09:00:00Z"}}
     session(t.root, "workbench", [("governance_record_approval", args, check)], allow_root=t.tmp)
     m, r = got["line"]["measured"], got["res"]
-    assert m["commit"] == r["commit"] == t.rev("refs/heads/feat/x") and m["activityIri"] == r["activity"]["iri"]
-    assert m["worktree"]["head"] == r["commit"] and m["worktree"]["branch"] == "feat/x"
-    assert m["files"] == [{"path": r["approval"]["file"], "sha256Before": None,
-                           "sha256After": sha_file(t.root, r["approval"]["file"])}]
-    assert got["line"]["declared"]["agent"] == M + "codingBot" and got["line"]["declared"]["sessionRef"] == "s-calllog"
+    assert m["approval"] == {"commit": r["commit"], "activity": r["activity"]["iri"]} and r["commit"] == t.rev("refs/heads/feat/x")
+    assert m["target"]["head"] == r["commit"] and m["target"]["branch"] == "feat/x"
+    assert m["files"] == [{"path": r["approval"]["file"], "before": None,
+                           "after": "sha256:" + sha_file(t.root, r["approval"]["file"])}]
+    assert m["request"]["iris"] == [M + "chiefArchitect", M + "newThing"] and m["request"]["model"] == "procurement"
+    assert got["line"]["declared"]["activity"] == {"agent": M + "codingBot", "sessionRef": "s-calllog"}
 
 
 # ---------------------------------------------------------------- exits 2 and 5: refusals; what is not logged
@@ -205,7 +212,8 @@ def test_exit2_and_5_refusals_each_log_one_line_reads_and_unknown_names_none(wre
         ("model_list_actions", {}, none),
         ("no_such_tool", {}, none),                                  # exit 5: an unknown name outside the audited set
     ])
-    assert lines(wrepo)[-1]["measured"]["worktree"] is None  # refused before any worktree was located
+    assert lines(wrepo)[-1]["measured"]["target"] is None  # refused before any worktree was located
+    assert lines(wrepo)[-1]["measured"]["request"]["repoArg"] == str(outside)
     session(wrepo, "agent", [
         ("governance_record_approval", {"model": "procurement"}, one(calllog.UNKNOWN_TOOL, "governance_record_approval")),
         ("model_query", {"sparql": "ASK { ?s ?p ?o }"}, none),
@@ -303,8 +311,8 @@ def test_exit7_caller_values_only_under_declared(repo):
         client_info={"name": SENT + "-client", "version": "1"})
     server.logged_call(cfg, RUN, "model_add_element", dict(DRY, prefLabel=SENT + "-label", definition=SENT + "-def"))
     a, b = lines(repo)
-    assert a["declared"] == {"clientInfo": {"name": SENT + "-client", "version": "1"}, "agent": SENT + "-agent",
-                             "sessionRef": SENT + "-session"}
+    assert a["declared"] == {"clientInfo": {"name": SENT + "-client", "version": "1"},
+                             "activity": {"agent": SENT + "-agent", "sessionRef": SENT + "-session"}}
     for x in (a, b):
         assert SENT not in json.dumps(x["measured"], ensure_ascii=False)
 

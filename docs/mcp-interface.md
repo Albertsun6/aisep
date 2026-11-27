@@ -51,6 +51,7 @@
 | L3、L4 单层诊断 | — | ✔ | `model_validate`、`model_findings` | `model.validate`、`model.findings` |
 | 遗留违规清单（写前判定放过的旧违规） | ✔ "架构全景"违规计数徽标 | ✔ | `model_findings` 的 `openViolations`（§5.4） | `model.findings` |
 | 提交前统一结论 | — | ✔ | `model_gate` | 新增 |
+| 调用日志：被审计的写调用与动作调用（诊断用、不防篡改） | ✔ | ✘ 不列出 | `model_call_log`（§5.15） | 无（规范外，ADR-031） |
 | 看自己分支改了什么（含未提交） | — | ✔ | `model_diff`（worktree 模式） | `model.diff` |
 
 **工作台：只读 + 1 个写操作。编码代理：读写模型，不碰治理。**
@@ -91,7 +92,7 @@
 
 - 同一个程序：`aisep-mcp --transport stdio|http`。
 - 选 HTTP 的唯一理由是 P10：stdio 要在 Electron 主进程起子进程，再经 preload 暴露给 renderer，要改上游的 `main.ts`、`preload.ts`。HTTP 由 renderer 直接 `fetch`，代码全部留在 `aisep/data/`。renderer 已经在用 `http://127.0.0.1` 访问 AO（`lib/api-client.ts`），注释说明 CSP 的 `connect-src` 放行了 http 127.0.0.1。
-- **协议没有会话**（2026-07-28）：没有 `initialize`，没有 `Mcp-Session-Id`；每个 POST 自带 `_meta` 里的协议版本和客户端能力（客户端还可以带 clientInfo，键为 MCP Python SDK 的 `CLIENT_INFO_META_KEY`，即 `io.modelcontextprotocol/clientInfo`；调用日志把它记为调用方声明，§3.6），独立处理，返回 `application/json`。这就是 P1 在传输层的落实。调用日志不构成会话：它只追加，服务器从不读它。对 2025-11-25 客户端（如部分代理），SDK 的 `stateless_http` 模式照常服务。
+- **协议没有会话**（2026-07-28）：没有 `initialize`，没有 `Mcp-Session-Id`；每个 POST 自带 `_meta` 里的协议版本和客户端能力（客户端还可以带 clientInfo，键为 MCP Python SDK 的 `CLIENT_INFO_META_KEY`，即 `io.modelcontextprotocol/clientInfo`；调用日志把它记为调用方声明，§3.6），独立处理，返回 `application/json`。这就是 P1 在传输层的落实。调用日志不构成会话：写入只追加；唯一读它的是只读工具 `model_call_log`（§5.15），它不保存游标，结果也不参与任何判定。对 2025-11-25 客户端（如部分代理），SDK 的 `stateless_http` 模式照常服务。
 - **安全面**：
 
 | 项 | 做法 | 出处 |
@@ -145,7 +146,7 @@
 | 每次调用重新解析文件或 Git 对象，构建 `Ctx` | 不是 |
 | 快照临时目录 | 不是：调用结束即删 |
 | 写锁文件 | 不是：只在一次写调用期间存在，在 `.git` 内，不进版本库 |
-| 调用日志 `<git-common-dir>/aisep/calls.jsonl`（§3.6） | 是跨调用存在的本机文件，但不是模型或治理状态：在 `.git` 内，不进版本库，服务器从不读它，不参与任何判定（ADR-031） |
+| 调用日志 `<git-common-dir>/aisep/calls.jsonl`（§3.6） | 是跨调用存在的本机文件，但不是模型或治理状态：在 `.git` 内，不进版本库，不参与任何判定；只有只读工具 `model_call_log`（§5.15）读它，读取时不保存任何游标（ADR-031） |
 | 会话、游标、草稿、订阅、"进行中"标记 | **不存在** |
 
 - v1 **不做跨调用缓存**。L0–L2 只要 0.07 秒（F1）；gate 要 5 秒（F2），关口页每次进入等一次，可接受。以后要加缓存，键只能是不可变的 Git 对象 ID，不改接口。
@@ -160,9 +161,15 @@
 - **挂钩点**：`aisep/server.py` 的 `on_call_tool`。被审计的工具：五个 `model_*` 写工具、`model_apply_action`（`dryRun` 也记）、`governance_record_approval`。成功与被拒都记：参数校验（`INVALID_ARGUMENT`）、guard（`PRECONDITION_FAILED`）、删除两段式（`PLAN_REQUIRED`、`PLAN_STALE`）、`PATH_OUTSIDE_ROOT` 等，结果值即 §7.2 的错误码。调用名属于审计集合、但当前画像没有列出的（如 `agent` 画像调用 `governance_record_approval`），`on_call_tool` 仍以 JSON-RPC「Unknown tool」拒绝，日志结果记 `UNKNOWN_TOOL`：这是日志专用值，不是错误码，不进 §7.2。只读工具不记，既不在审计集合、也不在画像里的未知工具名也不记，所以 T4 照样成立。
 - **位置**：`<git-common-dir>/aisep/calls.jsonl`，按 §3.3 所述只由启动参数决定（第一个 `--allow-root` 所在仓库 → `--repo` → 都没有则不写、启动时与每次被审计调用时在 stderr 警告）；不用 cwd 兜底。不进工作区、不进模型图（`model_query` 查不到）、不推远端，不做轮转。
 - **并发**：追加前拿仓库级 `flock`（`<git-common-dir>/aisep/calls.lock`），再用 `O_APPEND` 一次写入一整行。
-- **字段**：每行 `{"measured": {…}, "declared": {…}}`。
-  - `measured`（服务端测得）：`time`（UTC）、`server`（`pid`、`profile`、`transport`、`allowRoots`）、`tool`、`outcome`（`ok`、错误码或 `UNKNOWN_TOOL`）、`dryRun`、`argsSha256`（参数按键排序的紧凑 JSON 的 sha256）、结构性字段 `targetIri`（参数 `iri`；新增元素、关系成功时取生成的 IRI）与 `actionId`、`action`（动作的 `owl:versionInfo` 与 `definitionDigest`，找到定义后才有）、`worktree`（目标工作区的 `path`、`branch`、`head`，定位到工作区后才有）、`files`（每个被写文件的 `path`、`sha256Before`、`sha256After`，只在真的写了文件时有；新建文件的 `sha256Before` 为 `null`）、`durationMs`；`governance_record_approval` 成功时另有 `commit` 与 `activityIri`，只用来关联。不记标签、定义这类正文。
-  - `declared`（调用方声明）：`clientInfo`（stdio 取 `initialize` 的；HTTP 取每次请求 `params._meta` 的，§3.2）、`governance_record_approval` 的 `activity.agent` 与 `activity.sessionRef`。声明字段只用来关联，任何判定都不能用；调用方的声明值不进 `measured`。
+- **字段**：每行 `{"v": 1, "measured": {…}, "declared": {…}}`。行格式是对外契约（`model_call_log` 原样返回日志行）：改格式就升 `v`，读工具同时认新旧版本。
+  - `measured`（服务端测得或收到）：
+    - `time`（UTC，RFC 3339，毫秒，带 `Z`）、`durationMs`、`server`（`pid`、`profile`、`transport`、`allowRoots`、`repo`，即启动参数）、`tool`、`outcome`（`ok`、§7.2 的错误码或 `UNKNOWN_TOOL`）。
+    - `request`：服务端**收到**的结构性参数（Albert 2026-11-27 第 14 条：结构性参数放这里，不算调用方声明）。`argsSha256`（参数按键排序的紧凑 UTF-8 JSON 的 sha256，`sha256:` 前缀）；`model`（参数 `model` 原值：slug 或 IRI，没有为 `null`）；`iris`（参数 `iri`、`source`、`target`、`approvedBy`、`approves` 的值，`model_apply_action` 再加动作 `iriParams` 列出的参数值，新增元素、关系成功时再加生成的 IRI）；`actionId`、`actionVersion`、`definitionDigest`（该动作的 `owl:versionInfo` 与单个动作的 `definitionDigest`，§5.13；找到定义后才有，不记整份 `catalog.ttl` 的哈希）；`dryRun`、`planDigestGiven`（只记有没有带 `planDigest`）——工具没有这个参数时为 `null`；`repoArg`（调用方传的 `repo` 原值，供排查 `PATH_OUTSIDE_ROOT`）。标签、定义、gherkin 这类正文一律不记。结果为 `UNKNOWN_TOOL` 的行不解读参数：只有 `argsSha256`，其余为 `null`，`iris` 为 `[]`。
+    - `target`：目标工作区 `{worktree, branch, head}`，还没定位到工作区就被拒时为 `null`。
+    - `files`：每个被写文件 `{path, before, after}`（相对工作区的路径，改前、改后的 `sha256:` 哈希；新建文件的 `before` 为 `null`），只在真的写了文件时非空。
+    - `approval`：`{commit, activity}`，只出现在成功的 `governance_record_approval` 行里，只用来关联。
+  - `declared`（调用方声明）：`clientInfo`（stdio 取 `initialize` 的；HTTP 取每次请求 `params._meta` 的，§3.2）；`governance_record_approval` 行另有 `activity`（`{agent, sessionRef}`；`UNKNOWN_TOOL` 行不记）。声明字段只用来关联，任何判定都不能用；`declared` 组的字段不出现在 `measured` 下。
+- **读取**：`workbench` 画像经只读工具 `model_call_log` 读（§5.15）；`agent` 画像不列出它。
 - **失败策略**：fail-open。日志写不进去（目录只读、磁盘满等）时工具结果逐字节不变，只在 stderr 警告。
 - **威胁模型**：只保证服务进程按仓库里经过评审的代码诚实运行时，它经手的每次被审计调用都留一行。**不防代理篡改**：同一 macOS 用户下的代理能改服务端代码、换解释器、直接删改日志或绕过 MCP 改文件；不做哈希链（没有外部锚点挡不住重算）。日志不证明调用方身份，不代替 AgentActivity、`AISEP-Session` trailer 或批准记录。服务端写完文件、还没写日志时进程崩溃，这一行会丢。防篡改的 B 层及其触发条件见 ADR-031 决策第 7 款。
 
@@ -191,14 +198,15 @@
 | `model_set_attributes` | `model.set_attributes`（**新增**） | false | **true**（按谓词整体替换原值；原值留在 Git 历史里） | true（同参数重放 = 无变化） | 无 | **新实现**（校验复用 `check`，§5.12） |
 | `model_list_actions` | 无（规范外） | true | — | true | 无 | **新实现**：列动作目录（§5.13） |
 | `model_apply_action` | 无（规范外） | false | **true**（目录里有含删除步骤的动作；按目录内容逐个变就会让 `tools/list` 随数据变，所以固定按最坏情形标） | true（各步互不覆盖的动作同参数重放 = 无变化，边界见 §5.14） | 无 | **新实现**：把现有写工具的计划函数按目录组合，交给一次 §5.1 写入（§5.14） |
+| `model_call_log` | 无（规范外，ADR-031） | true | — | true（结果随日志文件增长而变；调用本身不改任何东西，也不记日志） | 无 | **新实现**：分页读调用日志（§5.15） |
 | `governance_record_approval` | `governance.record_approval` | false | false | true（完全重复的请求不写；去重键含调用方给的 `headCommit`，重放稳定） | 无 | **新实现**（gate 复用） |
 
 **画像**：启动参数 `--profile agent|workbench|all`，决定 `tools/list` 列出哪些工具。按进程定，不按连接变（满足 2026-07-28"`tools/list` 不得随连接变化"）。
 
 | 画像 | 列出 |
 |---|---|
-| `agent` | 除 `governance_record_approval`、`model_branches` 外全部 |
-| `workbench` | `model_query`、`model_findings`、`model_gate`、`model_impact`、`model_diff`、`model_branches`、`governance_record_approval` |
+| `agent` | 除 `governance_record_approval`、`model_branches`、`model_call_log` 外全部 |
+| `workbench` | `model_query`、`model_findings`、`model_gate`、`model_impact`、`model_diff`、`model_branches`、`model_call_log`、`governance_record_approval` |
 | `all` | 全部（测试用） |
 
 画像**不是安全边界**：代理可以直接手写 Turtle 伪造批准记录，真正的约束是代码评审和分支保护。画像只防"顺手调用"。
@@ -933,6 +941,42 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 **错误**：`INVALID_ARGUMENT`、`PRECONDITION_FAILED`、`PLAN_REQUIRED`、`PLAN_STALE`、`QUERY_TIMEOUT`（guard 超时，不可重试），步骤对应写工具的全部错误（见 §5.2、§5.3、§5.5、§5.10、§5.12），以及 §5.1 的 `WRITE_REJECTED`、`PARSE_FAILED`、`EDIT_UNSAFE`、`NOT_A_WORKTREE`、`LOCKED`、`CONFLICT`。
 
 **校验层**：候选图 L0–L2（只判最终状态）。
+
+### 5.15 `model_call_log`（读调用日志，规范外）
+
+出处：ADR-031 规定服务端调用日志（§3.6）；Albert 2026-11-27 拍板第 14 条：新增本工具，只列在 `workbench` 画像（以及测试用的 `all`），只返回哈希与标识符，和写日志同一个 PR。参照 AWS CloudTrail `LookupEvents`（只读、按属性与时间过滤、不透明续页令牌）与 GitHub 审计日志 API（倒序、游标续页、新事件不让旧页错位）。
+
+**画像**：不列在 `agent`：代理一旦能读跨调用存在的日志，就可能拿它当跨会话的「进行中状态」用（ADR-013）。画像不是安全边界（§4），代理照样能直接读文件；不列入只防顺手调用。
+
+**读哪个文件**：和写入同一套规则，只看启动参数（§3.3、§3.6）。**不接受 `repo` 参数**。不读模型、不跑校验层。本工具不在审计集合里，调用它不写日志。
+
+**入参**（全部可选，`additionalProperties: false`）：
+
+| 参数 | 类型 | 含义 |
+|---|---|---|
+| `limit` | 整数 1–200，缺省 50 | 单页条数上限 |
+| `cursor` | 字符串 | 上一页返回的 `nextCursor`，原样传回；续页时其他参数应与第一页相同 |
+| `tools` | 字符串数组，取值限于七个被审计的工具名 | 按 `measured.tool` 过滤 |
+| `outcome` | `"ok"`、`"rejected"`（结果不是 `ok` 的都算）、§7.2 的某个错误码或 `"UNKNOWN_TOOL"` | 按 `measured.outcome` 过滤 |
+| `model` | 字符串 | 按 `measured.request.model` 精确匹配 |
+| `actionId` | 字符串 | 按 `measured.request.actionId` 精确匹配 |
+| `branch` | 字符串 | 按 `measured.target.branch` 精确匹配 |
+| `since` / `until` | 带时区的 RFC 3339 时间 | 按 `measured.time` 过滤，左闭右开 |
+
+多个过滤条件同时给出时取交集。
+
+**出参**：`{log, items, skipped, nextCursor}`。
+
+- `log`：`{path, present, sizeBytes, resolvedFrom}`。`resolvedFrom` 为 `"allow-root"`、`"repo"` 或 `null`；取不到位置时 `path: null`。文件不存在时 `present: false`、`sizeBytes: null`、`items: []`，不报错。
+- `items`：按文件里的顺序**倒序**（新的在前）。每项是日志里那一行原样解析出的对象，外加 `offset`（这一行在文件里的起始字节偏移，可当行键）。只返回 `v` 为 `1` 的行。
+- `skipped`：`{malformed, unknownVersion}`，本次扫描跳过的行数。`malformed`：不是 JSON 对象（含 `NaN` 这类非标准 JSON），或 `v` 为 1 但 `measured` 不是对象；`unknownVersion`：其余 `v` 不是整数 1 的行（含没有 `v` 的行）。日志不防篡改，坏行只计数，不让整页报错，所以不会出现 `PARSE_FAILED`。文件末尾没有换行的半行可能正在写入，既不返回也不计数。
+- `nextCursor`：这一页满了 `limit` 条、且它最旧的一条之前还有内容时，给一个不透明字符串，否则 `null`。令牌里编的是文件的 inode 与这一页最旧一行的偏移；续页只读这个偏移之前的行。日志只在文件尾追加，所以续页不会因为新写入而错位。服务端不保存任何游标（§3.5）。
+
+**错误**：`INVALID_ARGUMENT`：参数不合规（`details.rejectedFields`）；或游标无效，此时 `rejectedFields: ["cursor"]`，提示「从第一页重新读」。游标对应的文件已被换掉（inode 变了或文件不存在）时 `details.reason: "log-replaced"`，被截短到游标偏移之前时为 `"log-truncated"`。不新增错误码。
+
+**幂等**：调用本身不改任何东西；结果随日志文件增长而变化，不随 Git 内容变化。两次调用之间重启服务器、中间没有被审计调用，结果相同（T4）。
+
+**说明**：这是诊断视图，不防篡改（§3.6 威胁模型）；它返回的 `declared` 组是调用方自报，仅供关联。
 
 ---
 

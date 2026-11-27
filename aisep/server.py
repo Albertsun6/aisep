@@ -118,6 +118,15 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
                            obj({"action": S(), "params": {"type": "object"}, "dryRun": B, "planDigest": S(),
                                 "repo": REPO}, ["action"]),
                            out("action", "changed", codes=CODES), ANN_DESTRUCTIVE, {"agent"}),
+    # ADR-031 as amended: the call log, read-only, workbench only (the profile is no security boundary, §4)
+    "model_call_log": (calllog.model_call_log,
+                       "读本机服务端调用日志（只读，新的在前；只含哈希与标识符；诊断用、不防篡改）",
+                       obj({"limit": {"type": "integer", "minimum": 1, "maximum": calllog.PAGE_MAX}, "cursor": S(),
+                            "tools": {"type": "array", "items": S(enum=sorted(calllog.AUDITED))},
+                            "outcome": S(enum=sorted({"ok", "rejected", calllog.UNKNOWN_TOOL} | CODES)),
+                            "model": S(), "actionId": S(), "branch": S(),
+                            "since": S(description="RFC 3339，含"), "until": S(description="RFC 3339，不含")}),
+                       out("log", "items", "skipped", "nextCursor"), ANN_READ, {"workbench"}),
     "governance_record_approval": (
         approval.governance_record_approval,
         "记录一次关口批准：在 branch 检出的工作区新建一个记录文件并提交一次（evidence=headCommit，时间与 baseCommit 由服务器给）",
@@ -186,6 +195,9 @@ def summary_text(name, res):
                                     + ("，部分文件解析失败" if r.get("incomplete") else ""),
             "model_impact": lambda r: f"影响面 {len(r['items'])} 个元素" + ("（模型不合法）" if r.get("invalidModel") else ""),
             "model_query": lambda r: f"查询结果：{r['kind']}",
+            "model_call_log": lambda r: f"调用日志 {len(r['items'])} 条" + ("，还有更早的" if r["nextCursor"] else "")
+                                        + (f"，跳过坏行 {r['skipped']['malformed']}、未知版本 {r['skipped']['unknownVersion']}"
+                                           if any(r["skipped"].values()) else ""),
             "model_branches": lambda r: f"分支 {len(r['branches'])} 个，改了模型且未合入 "
                                         f"{sum(b['hasModelChanges'] and not b['mergedIntoMain'] for b in r['branches'])} 个"}.get(name)
     if head is None:
@@ -263,7 +275,8 @@ def _client_info(ctx, params):
 
 def build_server(cfg, profile="all", transport="stdio"):
     names = listed(profile)
-    run = {"pid": os.getpid(), "profile": profile, "transport": transport, "allowRoots": list(cfg.allow_roots)}
+    run = {"pid": os.getpid(), "profile": profile, "transport": transport, "allowRoots": list(cfg.allow_roots),
+           "repo": cfg.repo}
     tool_list = [types.Tool(name=n, description=TOOLS[n][1], input_schema=TOOLS[n][2], output_schema=TOOLS[n][3],
                             annotations=types.ToolAnnotations(**TOOLS[n][4])) for n in names]
 

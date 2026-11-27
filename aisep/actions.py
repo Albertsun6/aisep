@@ -625,6 +625,7 @@ def model_apply_action(cfg, action, params=None, dryRun=False, planDigest=None, 
                          details={"rejectedFields": ["action"], "problems": problems})
     calllog.note(action={"version": d["version"], "definitionDigest": d["definitionDigest"]})  # ADR-031
     params = {} if params is None else params
+    calllog.note(iris=[params[k] for k in _iri_params(d) if isinstance(params.get(k), str)])  # ADR-031
     _check_params(d, params)
     destructive, ddigest, iri_params = _destructive(d), d["definitionDigest"], set(_iri_params(d))
     targets = []  # IRIs the remove steps act on (for the impact summary)
