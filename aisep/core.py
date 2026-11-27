@@ -659,6 +659,7 @@ class Ctx:
                              f"(aisep:approves/aisep:decision/prov:generatedAtTime); record an approval instead")
         self.l1_model_schema()
         self.l1_closed_predicates(set(direct_of))
+        self.l1_property_domains()
         for x, o in getattr(self, "bad_replacements", []):  # G8
             self.add("Violation", "L1", f"{short(x)}: dcterms:isReplacedBy {short(o) if isinstance(o, ox.NamedNode) else repr(o.value)} "
                      f"— isReplacedBy target must be an IRI that is an element (arch:inModel member) of some model; it "
@@ -770,6 +771,33 @@ class Ctx:
                     self.add("Violation", "L1", f"{short(q.subject)}: element-to-element link must be a qualified "
                              f"relationship — {short(q.subject)} {self.pname(p)} {short(q.object)} in {self.rel(f)} links two "
                              f"model elements with a plain property; write a qualified relationship resource (G7)")
+
+    def l1_property_domains(self):
+        """Issue #67: the rdfs:domain a module file (modules/**) declares for a property is enforced on model files —
+        a subject using the property must have an asserted rdf:type (in a source file) that is the domain class or a
+        subclass of it. Otherwise a declared property could be borrowed onto any element (aisep:swhid on a TestResult,
+        aisep:approves between two ordinary elements) and its targetClass shapes would never see it. Domains declared
+        only by vendored ontologies are not enforced here."""
+        domains = {}
+        for p, d in self.rows(f"""SELECT DISTINCT ?p ?d WHERE {{ GRAPH ?g {{ ?p rdfs:domain ?d }}
+                                  FILTER(STRSTARTS(STR(?g), "{ONTO_G}modules/") && isIRI(?d)) }}"""):
+            domains.setdefault(p, set()).add(d)
+        types = {}
+        for s, t in self.rows(f"SELECT DISTINCT ?s ?t WHERE {{ GRAPH ?g {{ ?s a ?t }} {self.src_graph_filter()} FILTER(isIRI(?t)) }}"):
+            types.setdefault(s, set()).add(t)
+        seen = set()
+        for f, qs in self.src_quads.items():
+            for q in qs:
+                p, s = q.predicate.value, q.subject.value
+                for d in sorted(domains.get(p, ())):
+                    if (s, p, d) in seen or any(d in self.ancestors(t) for t in types.get(s, ())):
+                        continue
+                    seen.add((s, p, d))
+                    self.add("Violation", "L1", f"{short(q.subject)}: {self.pname(p)} has rdfs:domain {short(d)} but "
+                             f"{short(q.subject)} is not a {short(d)} (asserted types: "
+                             f"{', '.join(sorted(map(short, types.get(s, ())))) or 'none'}) in {self.rel(f)} — a property "
+                             f"may only be used on its domain class (issue #67)",
+                             focus=s if isinstance(q.subject, ox.NamedNode) else None)
 
     def l1_one_notation(self):
         """R2 (v0.2.1) one notation per element: every asserted type, the redundant superclasses included, belongs to

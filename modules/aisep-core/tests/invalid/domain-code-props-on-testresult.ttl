@@ -1,0 +1,20 @@
+# expect: aisep:swhid has rdfs:domain aisep:CodeLocation
+# modules: ext-verification ext-code
+# Issue #67 invalid: CodeLocation / AgentActivity / ApprovalRecord attributes borrowed onto a TestResult (rdfs:domain
+# of module-declared properties is enforced by L1); the values are malformed too, which no targetClass shape would see.
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix arch:   <https://meta.linked.archi/core#> .
+@prefix am4:    <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep:  <https://aisep.example/ont/aisep#> .
+@prefix :       <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+:ac a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "组件"@zh .
+:tc a aisep:TestCase ; arch:inModel :t ; skos:prefLabel "测试"@zh .
+:ver a aisep:Verification ; arch:inModel :t ; arch:source :tc ; arch:target :ac .
+:tr a aisep:TestResult ; arch:inModel :t ; skos:prefLabel "运行结果"@zh ;
+    aisep:resultOf :tc ; aisep:verdict aisep:VerdictPassed ;
+    prov:generatedAtTime "2026-11-19T10:00:00Z"^^xsd:dateTime ;
+    aisep:swhid "garbage" ; aisep:headCommit "zzz" ; aisep:evidence "x" ; aisep:sessionRef "s" ; aisep:path "p" .
