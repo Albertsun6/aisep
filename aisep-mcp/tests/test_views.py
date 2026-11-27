@@ -137,8 +137,10 @@ def test_render_declared_view(vrepo):
 
 def test_render_viewpoint_is_the_cli_svg_byte_for_byte(vrepo, tmp_path):
     out = tmp_path / "cli.svg"
-    p = subprocess.run([PY, "tools/aisep.py", "diagram", "--viewpoint", "LayeredViewpoint", "--model", "procurement",
-                        "-o", str(out)], cwd=vrepo, capture_output=True, text=True, timeout=600)
+    # the checkout's CLI (its elkjs) on the fixture repo's model files
+    fs = sorted(str(f) for f in (vrepo / "models").rglob("*.ttl"))
+    p = subprocess.run([PY, os.path.join(ROOT, "tools", "aisep.py"), "diagram", "--viewpoint", "LayeredViewpoint",
+                        "--model", "procurement", "-o", str(out), *fs], cwd=vrepo, capture_output=True, text=True, timeout=600)
     assert p.returncode == 0, p.stdout + p.stderr
     r = ok(vrepo, "model_render_view", viewpoint="LayeredViewpoint", model="procurement")
     assert r["svg"] == out.read_text(encoding="utf-8")
@@ -170,7 +172,7 @@ def test_render_is_deterministic_and_reads_only(vrepo):
 
 def test_registered_for_workbench_and_agent_over_stdio(vrepo):
     async def go(profile):
-        p = StdioServerParameters(command=PY, args=["-m", "aisep.server", "--repo", str(vrepo), "--allow-root",
+        p = StdioServerParameters(command=PY, args=["-P", "-m", "aisep.server", "--repo", str(vrepo), "--allow-root",
                                                     str(vrepo.parent), "--profile", profile],
                                   cwd=str(vrepo), env=dict(os.environ, PYTHONPATH=ROOT))
         async with Client(p) as c:
