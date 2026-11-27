@@ -11,11 +11,11 @@
 - 定稿 ADR-013 留下的三处：`model.diff`、`governance.record_approval` 的活动参数、`aisep:AgentActivity`。
 - 工作台 `client.ts` 的正式接口，以及 `FixtureClient` 的替换路径。
 
-**已决前提（本文不推翻）**
+**已决前提（本文不推翻；P1 由 ADR-031 修订）**
 
 | # | 前提 | 出处 |
 |---|---|---|
-| P1 | MCP 不保存任何文件外状态；写操作 = 改 Turtle 文件，进 Git | §8.3、ADR-008 |
+| P1 | MCP 不保存任何文件外状态；写操作 = 改 Turtle 文件，进 Git。唯一例外是服务端调用日志（§3.6）：本机运维记录，不是模型或治理状态，不参与任何判定 | §8.3、ADR-008、ADR-031 |
 | P2 | 不提供上报"进行中"状态的写工具；运行态读编排器；改动元素由 `model.diff` 算 | ADR-013、§8.3 |
 | P3 | `model.diff` base 缺省取 merge-base；前提是模型与代码同仓、同分支。~~v1 只比较已提交内容~~：设计会话 2026-11-20 拍板 Q6 时撤销这条限制（条件一），改为 head 也可以是某分支检出的工作区（§5.8）；规范 §8.3、附录 C 与 ADR-013 的对应文字见 §9 | §8.3、附录 C、ADR-013 |
 | P4 | approvalState 只由合法批准记录推导，手填是 L1 违规 | §6.6、R3、G1 |
@@ -91,7 +91,7 @@
 
 - 同一个程序：`aisep-mcp --transport stdio|http`。
 - 选 HTTP 的唯一理由是 P10：stdio 要在 Electron 主进程起子进程，再经 preload 暴露给 renderer，要改上游的 `main.ts`、`preload.ts`。HTTP 由 renderer 直接 `fetch`，代码全部留在 `aisep/data/`。renderer 已经在用 `http://127.0.0.1` 访问 AO（`lib/api-client.ts`），注释说明 CSP 的 `connect-src` 放行了 http 127.0.0.1。
-- **协议没有会话**（2026-07-28）：没有 `initialize`，没有 `Mcp-Session-Id`；每个 POST 自带 `_meta` 里的协议版本和客户端能力，独立处理，返回 `application/json`。这就是 P1 在传输层的落实。对 2025-11-25 客户端（如部分代理），SDK 的 `stateless_http` 模式照常服务。
+- **协议没有会话**（2026-07-28）：没有 `initialize`，没有 `Mcp-Session-Id`；每个 POST 自带 `_meta` 里的协议版本和客户端能力（客户端还可以带 clientInfo，键为 MCP Python SDK 的 `CLIENT_INFO_META_KEY`，即 `io.modelcontextprotocol/clientInfo`；调用日志把它记为调用方声明，§3.6），独立处理，返回 `application/json`。这就是 P1 在传输层的落实。调用日志不构成会话：它只追加，服务器从不读它。对 2025-11-25 客户端（如部分代理），SDK 的 `stateless_http` 模式照常服务。
 - **安全面**：
 
 | 项 | 做法 | 出处 |
@@ -108,6 +108,7 @@
 - **每个工具都收可选参数 `repo`**：仓库内任意路径（主 checkout 或某个 worktree）。服务器用 `git -C <repo> rev-parse --show-toplevel` 规范化。
 - `repo` 必须落在启动参数 `--allow-root`（可重复）之下，否则 `PATH_OUTSIDE_ROOT`。不依赖 MCP roots（客户端是否声明 roots 未核实，靠启动参数更可验证）。
 - 不传 `repo`：取服务器的 `--repo`，再缺省取 cwd 所在仓库。编码代理一般不传；**工作台也不传**：v1 只支持单仓库项目（§1"不在本版"），工作台的服务器进程由开发脚本带 `--repo` 起。这样工作台不依赖 AO 的 `GET /api/v1/projects`，P10 的上游接触面不扩大。
+- **调用日志写到哪里**（§3.6）只看启动参数，不看调用方传的 `repo`：第一个 `--allow-root` 在某个 Git 仓库里时取该仓库的 common dir，否则取 `--repo` 的 common dir；都取不到就不写、在 stderr 报警告。所以还没定位到仓库就被拒的调用（如 `PATH_OUTSIDE_ROOT`）也有地方记。
 - 主分支：每次调用可传 `mainRef`；不传取启动参数 `--main-branch`，再缺省 `main`。不引入配置文件。
 - **主分支解析顺序**：给的是短名 `<b>` 时，先找 `refs/remotes/<upstream>/<b>`（`upstream` 取 `<b>` 的跟踪远端，没有就 `origin`），有就用；没有才退回 `refs/heads/<b>`。理由：会话分支通常从 `origin/main` 切出，本地 `main` 落后时 merge-base 会落在更老的提交上，diff 会把队友已合入的改动算进本会话（评审实测复现）。AO 读 base 用的也是远端跟踪引用（`workspace.ts` 的 `baseRef`，如 `"origin/main"`）。输出的 `base.mainRef` 给出实际用的完整 ref 名。
 - **读哪份内容**：
@@ -133,7 +134,8 @@
   1. `flock` 锁**被写入的那个 worktree** 的 `$(git -C <worktree> rev-parse --git-dir)/aisep-write.lock`。`model_*` 写工具的目标就是 `repo`；`record_approval` 的目标是 `branch` 检出所在的 worktree（§5.9 第 7 步），**不是**调用方传的 `repo`。这样工作台对 worktree A 批准时，与 A 里代理的写入抢的是同一把锁。拿不到立即返回 `LOCKED`（可重试），不排队。不同 worktree 互不阻塞。进程死了锁自动释放。
   2. 写前哈希核对：读入时记下目标文件 sha256；rename 前再算一次，不等就 `CONFLICT`（可重试）。**这不是真正的比较并交换**（R2-3）：外部编辑器、普通 `git` 命令不遵守 `aisep-write.lock`，在"核对哈希"与 `rename` 之间写入的内容会被静默覆盖。这个窗口只有毫秒级，v1 接受，列为已知限制（§9 附录 C）；不采用原子交换（Linux `renameat2(RENAME_EXCHANGE)`、macOS `renamex_np(RENAME_SWAP)`）再核对换出旧文件的做法：平台相关，换回时还有同样的窗口。T13 加一例：在核对之后、rename 之前注入外部写入，断言结果如上所述（被覆盖），证明文档如实。
   3. 替换：写临时文件 → `fsync` → `rename`。多个文件先全部写成临时文件，再依次 rename；进程内中途失败用内存里的原字节恢复，恢复前先比对文件仍等于本次写入后的哈希，不等就跳过（保留现场），其余文件照常回滚完，最后报 `CONFLICT`，**不可重试**，`details.kept: true`，`details.keptFiles` 列出所有因此未回滚、停在半写入状态的文件，`details.file` 为其中第一个（PR #34；`aisep/writer.py` 回滚处）。
-  4. **不是崩溃原子的**：进程在两次 rename 之间被杀（SIGKILL、宿主断开时杀子进程、断电），工作区会停在部分写入。服务器无状态，不做恢复日志；兜底是 pre-commit 的 gate（部分写入通常留下悬空引用，L1 报错）和 `git diff` 人工恢复。验收 T13 注入 SIGKILL 证明 gate 能拦住。
+  4. **不是崩溃原子的**：进程在两次 rename 之间被杀（SIGKILL、宿主断开时杀子进程、断电），工作区会停在部分写入。服务器无状态，不做恢复日志（调用日志 §3.6 不用于恢复）；兜底是 pre-commit 的 gate（部分写入通常留下悬空引用，L1 报错）和 `git diff` 人工恢复。验收 T13 注入 SIGKILL 证明 gate 能拦住。
+- 调用日志（§3.6）用仓库级锁 `<git-common-dir>/aisep/calls.lock`，与上面按 worktree 加的写锁分开：各 worktree 的服务器进程写同一个文件，拿锁后串行追加，阻塞等待而不报 `LOCKED`。
 - `record_approval` 的提交另受 Git 自己的 `index.lock` 保护，拿不到报 `COMMIT_FAILED`；只在回滚完成、且输出含 `index.lock` 时可重试，回滚未完成（`orphanApproval`）不可重试（§7.2）。`git add --intent-to-add` 失败时记录若已被别的提交带走（taken），不报 `COMMIT_FAILED`，报 `CONFLICT`（`taken-by-other-commit`），不可重试。
 
 ### 3.5 无状态的落实
@@ -143,12 +145,26 @@
 | 每次调用重新解析文件或 Git 对象，构建 `Ctx` | 不是 |
 | 快照临时目录 | 不是：调用结束即删 |
 | 写锁文件 | 不是：只在一次写调用期间存在，在 `.git` 内，不进版本库 |
+| 调用日志 `<git-common-dir>/aisep/calls.jsonl`（§3.6） | 是跨调用存在的本机文件，但不是模型或治理状态：在 `.git` 内，不进版本库，服务器从不读它，不参与任何判定（ADR-031） |
 | 会话、游标、草稿、订阅、"进行中"标记 | **不存在** |
 
 - v1 **不做跨调用缓存**。L0–L2 只要 0.07 秒（F1）；gate 要 5 秒（F2），关口页每次进入等一次，可接受。以后要加缓存，键只能是不可变的 Git 对象 ID，不改接口。
 - 列表结果有硬上限，超了截断并返回 `truncated: true`：`model_query` 用 `limit`；`model_impact` 的 `items` 最多 500 条；`model_diff` 的 `items` 最多 2000 条（计数 `counts` 永远完整）。v1 不做续页。续页令牌可以把 commit 和偏移编码进去而保持无状态，等真有大仓库再加，不改现有字段。
 - 输出体量参照 Claude Code 的阈值：结果文本超过 50,000 字符会被落盘，错误文本超过约 11,000 字符会被截成首尾各 5,000。`content` 摘要里的发现项行最多 200 行，其余只在 `structuredContent` 里。
 - 可证伪断言：两次调用之间杀掉重启服务器，所有只读工具的结果**规范化后**相同（T4）：去掉 `summary.seconds` 等耗时字段；无序集合先排序；`model_query` 只在 SPARQL 带 `ORDER BY` 时承诺行序。
+
+### 3.6 调用日志（ADR-031，A 层）
+
+服务器对**被审计的调用**各追加一行 JSON 到本机文件，供事后排查诚实代理的误调用与被拒情况。它是 P1 的唯一例外（ADR-031），只是本机运维记录。
+
+- **挂钩点**：`aisep/server.py` 的 `on_call_tool`。被审计的工具：五个 `model_*` 写工具、`model_apply_action`（`dryRun` 也记）、`governance_record_approval`。成功与被拒都记：参数校验（`INVALID_ARGUMENT`）、guard（`PRECONDITION_FAILED`）、删除两段式（`PLAN_REQUIRED`、`PLAN_STALE`）、`PATH_OUTSIDE_ROOT` 等，结果值即 §7.2 的错误码。调用名属于审计集合、但当前画像没有列出的（如 `agent` 画像调用 `governance_record_approval`），`on_call_tool` 仍以 JSON-RPC「Unknown tool」拒绝，日志结果记 `UNKNOWN_TOOL`：这是日志专用值，不是错误码，不进 §7.2。只读工具不记，既不在审计集合、也不在画像里的未知工具名也不记，所以 T4 照样成立。
+- **位置**：`<git-common-dir>/aisep/calls.jsonl`，按 §3.3 所述只由启动参数决定（第一个 `--allow-root` 所在仓库 → `--repo` → 都没有则不写、启动时与每次被审计调用时在 stderr 警告）；不用 cwd 兜底。不进工作区、不进模型图（`model_query` 查不到）、不推远端，不做轮转。
+- **并发**：追加前拿仓库级 `flock`（`<git-common-dir>/aisep/calls.lock`），再用 `O_APPEND` 一次写入一整行。
+- **字段**：每行 `{"measured": {…}, "declared": {…}}`。
+  - `measured`（服务端测得）：`time`（UTC）、`server`（`pid`、`profile`、`transport`、`allowRoots`）、`tool`、`outcome`（`ok`、错误码或 `UNKNOWN_TOOL`）、`dryRun`、`argsSha256`（参数按键排序的紧凑 JSON 的 sha256）、结构性字段 `targetIri`（参数 `iri`；新增元素、关系成功时取生成的 IRI）与 `actionId`、`action`（动作的 `owl:versionInfo` 与 `definitionDigest`，找到定义后才有）、`worktree`（目标工作区的 `path`、`branch`、`head`，定位到工作区后才有）、`files`（每个被写文件的 `path`、`sha256Before`、`sha256After`，只在真的写了文件时有；新建文件的 `sha256Before` 为 `null`）、`durationMs`；`governance_record_approval` 成功时另有 `commit` 与 `activityIri`，只用来关联。不记标签、定义这类正文。
+  - `declared`（调用方声明）：`clientInfo`（stdio 取 `initialize` 的；HTTP 取每次请求 `params._meta` 的，§3.2）、`governance_record_approval` 的 `activity.agent` 与 `activity.sessionRef`。声明字段只用来关联，任何判定都不能用；调用方的声明值不进 `measured`。
+- **失败策略**：fail-open。日志写不进去（目录只读、磁盘满等）时工具结果逐字节不变，只在 stderr 警告。
+- **威胁模型**：只保证服务进程按仓库里经过评审的代码诚实运行时，它经手的每次被审计调用都留一行。**不防代理篡改**：同一 macOS 用户下的代理能改服务端代码、换解释器、直接删改日志或绕过 MCP 改文件；不做哈希链（没有外部锚点挡不住重算）。日志不证明调用方身份，不代替 AgentActivity、`AISEP-Session` trailer 或批准记录。服务端写完文件、还没写日志时进程崩溃，这一行会丢。防篡改的 B 层及其触发条件见 ADR-031 决策第 7 款。
 
 ---
 
@@ -842,7 +858,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 出处：Albert 2026-11-25 确认动作机制走「薄封装」方向，2026-11-26 放行阶段 C 时改选：动作定义建进元模型（新模块 `modules/ext-actions/`，参照 Palantir Foundry 的 Action type，只建定义、不建执行记录），目录从 RDF 读。本节与 §5.14 随之加入。字段名、错误码名、词汇细节是实现时的取舍，Albert 没有逐条定过。用法见 `docs/actions.md`「动作目录」一节。
 
-**动作是什么**：现有写工具的具名组合，写成元模型里的 `aisep:ActionType` 个体，放在扩展模块 `modules/ext-actions/` 的 `catalog.ttl`（词汇在 `onto.ttl`，L3 形状 EA1–EA10 在 `shapes.ttl`）。`catalog.ttl` 列在模块清单的 `aisep:loads` 里，所以 `gate` 会用 `shapes.ttl` 校验它，`model_query` 也能查到有哪些动作。动作有 IRI（形如 `aisep:Action<名>`），调用时用短 id（`dcterms:identifier`）。动作个体不是模型元素：不在 `arch:Element` 之下，没有 `arch:inModel`，也没有批准状态。动作是**推荐通道**，不是唯一通道：逐个调写工具、直接编辑 `.ttl` 照旧允许，`gate` 与合并核对不知道改动是否经动作做的。动作不产生审批项，不留执行记录，不写日志文件。
+**动作是什么**：现有写工具的具名组合，写成元模型里的 `aisep:ActionType` 个体，放在扩展模块 `modules/ext-actions/` 的 `catalog.ttl`（词汇在 `onto.ttl`，L3 形状 EA1–EA10 在 `shapes.ttl`）。`catalog.ttl` 列在模块清单的 `aisep:loads` 里，所以 `gate` 会用 `shapes.ttl` 校验它，`model_query` 也能查到有哪些动作。动作有 IRI（形如 `aisep:Action<名>`），调用时用短 id（`dcterms:identifier`）。动作个体不是模型元素：不在 `arch:Element` 之下，没有 `arch:inModel`，也没有批准状态。动作是**推荐通道**，不是唯一通道：逐个调写工具、直接编辑 `.ttl` 照旧允许，`gate` 与合并核对不知道改动是否经动作做的。动作不产生审批项，不在模型里留执行记录；`model_apply_action` 的每次调用（含 `dryRun` 与被拒）由服务端调用日志记一行（§3.6，ADR-031），那不是模型对象，不可经 MCP 查询。
 
 **两个工具的形状是固定的**：目录增删改动作，`tools/list` 都不变（参数 schema 由本工具返回，不进 `inputSchema`）。
 

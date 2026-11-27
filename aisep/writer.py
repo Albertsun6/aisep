@@ -8,7 +8,7 @@ import contextlib, fcntl, hashlib, os, re
 
 import pyoxigraph as ox
 
-from aisep import core, gitio
+from aisep import calllog, core, gitio
 from aisep.errors import AisepError
 
 TTL = ox.RdfFormat.TURTLE
@@ -432,6 +432,7 @@ def transaction(cfg, repo, build, dry_run=False):
     """Run one write. build(ws, base_ctx) -> dict(result=…, edits={rel: text}, removed={rel: {(s,p,o)}},
     added={rel: [Triple]}) or dict(result=…, edits={}) for a no-op (changed:false)."""
     root = locate_worktree_root(cfg, repo)
+    calllog.note(worktree=root)
     with lock(root):
         ws = Workspace(root)
         base_ctx = ws.ctx()
@@ -459,5 +460,6 @@ def transaction(cfg, repo, build, dry_run=False):
                          for f, t in sorted(plan["edits"].items())]
         if not dry_run:
             write_files(root, plan["edits"], {f: ws.data.get(f) for f in plan["edits"]})
+            calllog.note(files=files_changed)  # the bytes before and after of every file written (ADR-031)
         return dict(result, changed=True, dryRun=bool(dry_run), filesChanged=files_changed, findings=findings,
                     preexistingViolations=pre)

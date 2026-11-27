@@ -6,7 +6,7 @@
 
 - **动作是推荐通道，不是唯一通道。** 人和代理仍然可以直接编辑 `.ttl`（接口文档 §1）。不管改动从哪来，提交和 CI 都只认 `gate`，合并时由 `mergecheck` 核对批准。
 - **写工具只改工作区**，不 `git add`、不提交。写之前在候选图上跑 L0–L2，只拒绝本次新增的违规，被拒绝时磁盘一个字节不改（接口文档 §5.1）。
-- **动作不产生审批项，也不留执行记录。** 批准只在关口做，只能由批准人本人做出；改了哪些元素由分支差异实时算（`model_diff`），不另存一份。
+- **动作不产生审批项，也不在模型里留执行记录。** 每次写调用与动作调用（成功和被拒）只由服务端在本机记一行调用日志，供排查用，不进模型、不可经 MCP 查询（接口文档 §3.6，ADR-031）。批准只在关口做，只能由批准人本人做出；改了哪些元素由分支差异实时算（`model_diff`），不另存一份。
 
 ## 1. 基本动作
 
@@ -150,7 +150,7 @@
 
 ### 动作目录：配方一、三的一次调用版
 
-配方一、三另有一份写成元模型定义的版本：扩展模块 `modules/ext-actions/` 的 `catalog.ttl` 里的 `aisep:ActionType` 个体（参照 Palantir Foundry 的 Action type：参数、有序步骤、提示级前置检查；不建执行记录）。两个固定工具读它：`model_list_actions` 列出目录里的动作和每个动作的参数说明，`model_apply_action` 按动作 id 执行一个动作。动作定义的写法、校验规则（`gate` 的 EA1–EA10 与执行器的 X1–X10）见接口文档 §5.13，执行见 §5.14。要查有哪些动作，也可以用 `model_query`：`SELECT ?a ?id WHERE { ?a a aisep:ActionType ; dcterms:identifier ?id }`。
+配方一、三另有一份写成元模型定义的版本：扩展模块 `modules/ext-actions/` 的 `catalog.ttl` 里的 `aisep:ActionType` 个体（参照 Palantir Foundry 的 Action type：参数、有序步骤、提示级前置检查；不在模型里建执行记录，服务端调用日志见接口文档 §3.6）。两个固定工具读它：`model_list_actions` 列出目录里的动作和每个动作的参数说明，`model_apply_action` 按动作 id 执行一个动作。动作定义的写法、校验规则（`gate` 的 EA1–EA10 与执行器的 X1–X10）见接口文档 §5.13，执行见 §5.14。要查有哪些动作，也可以用 `model_query`：`SELECT ?a ?id WHERE { ?a a aisep:ActionType ; dcterms:identifier ?id }`。
 
 动作目录也是**推荐通道**：上面的配方照旧可以逐个调写工具来做，两种做法写出的文件逐字节相同；`gate` 和合并核对不知道、也不关心改动是不是经动作做的。区别只有两点：
 

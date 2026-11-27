@@ -7,7 +7,7 @@ criterion of step 1 is aisep.mergecheck.approval_commit_problems — the same fu
 import hashlib, os, re, subprocess, time
 from datetime import datetime, timezone
 
-from aisep import core, gitio, mergecheck, tools, writer
+from aisep import calllog, core, gitio, mergecheck, tools, writer
 from aisep.errors import AisepError
 
 AISEP, ARCH, PROV = core.AISEP, core.ARCH, core.NS["prov"]
@@ -406,6 +406,7 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
             raise AisepError("BRANCH_NOT_CHECKED_OUT", f"分支 {branch} 没有检出的工作区（v1 只在检出的工作区里提交）",
                              hint="git worktree add <目录> " + branch) from None
         raise
+    calllog.note(worktree=w)
     with writer.lock(w):
         rc, sym, _ = gitio.git(w, "symbolic-ref", "-q", "HEAD")
         if rc != 0:
@@ -530,6 +531,7 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
                 raise _kept("STALE_HEAD", f"提交期间分支有新提交，已撤回提交 {a[:7]}；{rel} 已被改动，保留在磁盘上、已移出 index",
                             rel, reason="concurrent-commit")
             raise AisepError("STALE_HEAD", "提交期间分支有新提交，已撤回本次批准", details={"reason": "concurrent-commit"})
+    calllog.note(files=[{"path": rel, "sha256Before": None, "sha256After": written}])  # ADR-031
     return {"approval": {"iri": model_iri + rec_local, "file": rel},
             "activity": None if act_in is None else {"iri": act_iri, "reused": act_new is None},
             "evidence": head, "baseCommit": base, "commit": a, "branch": branch, "duplicate": False, "gate": gres,

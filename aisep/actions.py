@@ -16,7 +16,7 @@ import pyoxigraph as ox
 from rdflib import Graph
 from rdflib.compare import to_canonical_graph
 
-from aisep import core, gitio, querybox, tools, write_tools, writer
+from aisep import calllog, core, gitio, querybox, tools, write_tools, writer
 from aisep.errors import AisepError
 
 CATALOG = "modules/ext-actions/catalog.ttl"  # relative to the served worktree, next to the modules it loads
@@ -616,6 +616,7 @@ def model_apply_action(cfg, action, params=None, dryRun=False, planDigest=None, 
     if problems or len(found) > 1:
         raise AisepError("INVALID_ARGUMENT", f"动作 {action} 的定义无效，不能执行：{(problems or ['id 重复'])[0]}",
                          details={"rejectedFields": ["action"], "problems": problems})
+    calllog.note(action={"version": d["version"], "definitionDigest": d["definitionDigest"]})  # ADR-031
     params = {} if params is None else params
     _check_params(d, params)
     destructive, ddigest, iri_params = _destructive(d), d["definitionDigest"], set(_iri_params(d))

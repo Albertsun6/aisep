@@ -5,7 +5,8 @@
 
 Every tool is a plain function of aisep.tools / aisep.diff / aisep.write_tools; this module only lists them, validates
 the arguments against their inputSchema (additionalProperties: false), runs them and turns AisepError into a tool
-execution error (isError + structuredContent.error, §7.1). The server keeps no state between calls (§3.5)."""
+execution error (isError + structuredContent.error, §7.1). The server keeps no state between calls (§3.5); the only
+record outside the files is the call log of the audited tools (aisep.calllog, ADR-031), written from on_call_tool."""
 import argparse, io, json, os, re, sys, traceback
 
 import anyio
@@ -15,9 +16,10 @@ from mcp.server.lowlevel import Server
 from mcp.server.stdio import stdio_server
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import MCPError
+from mcp_types import CLIENT_INFO_META_KEY
 from mcp_types.jsonrpc import INVALID_PARAMS
 
-from aisep import actions, approval, branches, diff, tools, write_tools
+from aisep import actions, approval, branches, calllog, diff, tools, write_tools
 from aisep.errors import ACTION_CODES, CODES, AisepError
 
 MAX_TEXT_LINES = 200
@@ -221,10 +223,47 @@ def call(cfg, name, args):
         return error_result(AisepError("INTERNAL", f"服务器内部错误：{type(e).__name__}: {str(e)[:300]}"))
 
 
+def logged_call(cfg, run, name, args, client_info=None):
+    """call() plus one call-log line for an audited tool (ADR-031); the log never changes the result."""
+    if name not in calllog.AUDITED:
+        return call(cfg, name, args)
+    t0 = calllog.begin()
+    res = call(cfg, name, args)
+    _log(cfg, run, name, args, t0, res.structured_content["error"]["code"] if res.is_error else "ok",
+         res.structured_content, client_info)
+    return res
+
+
+def _log(cfg, run, name, args, t0, outcome, result, client_info):
+    try:
+        rec = calllog.record(run, name, args, t0, outcome, result, client_info)
+    except Exception as e:  # noqa: BLE001 — fail-open (ADR-031 decision 5)
+        return calllog.warn(f"组装记录失败：{e!r}")
+    calllog.append(cfg, rec)
+
+
+def _unknown(cfg, run, name, args, client_info):
+    _log(cfg, run, name, args, calllog.begin(), calllog.UNKNOWN_TOOL, None, client_info)
+
+
+def _client_info(ctx, params):
+    """Caller-declared clientInfo: from `initialize` (stdio), else from the request's params._meta (HTTP has no
+    initialize; MCP SDK CLIENT_INFO_META_KEY). Best effort: a declared field never decides anything."""
+    try:
+        cp = ctx.session.client_params
+        if cp is not None and cp.client_info is not None:
+            return cp.client_info.model_dump(mode="json", by_alias=True, exclude_none=True)
+        meta = params.meta
+        return meta.get(CLIENT_INFO_META_KEY) if isinstance(meta, dict) else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 # ---------------------------------------------------------------- the MCP server
 
-def build_server(cfg, profile="all"):
+def build_server(cfg, profile="all", transport="stdio"):
     names = listed(profile)
+    run = {"pid": os.getpid(), "profile": profile, "transport": transport, "allowRoots": list(cfg.allow_roots)}
     tool_list = [types.Tool(name=n, description=TOOLS[n][1], input_schema=TOOLS[n][2], output_schema=TOOLS[n][3],
                             annotations=types.ToolAnnotations(**TOOLS[n][4])) for n in names]
 
@@ -232,9 +271,12 @@ def build_server(cfg, profile="all"):
         return types.ListToolsResult(tools=tool_list)
 
     async def on_call_tool(ctx, params):
-        if params.name not in names:
-            raise MCPError(INVALID_PARAMS, f"Unknown tool: {params.name}")
-        return await anyio.to_thread.run_sync(call, cfg, params.name, dict(params.arguments or {}))
+        args, name = dict(params.arguments or {}), params.name
+        if name not in names:
+            if name in calllog.AUDITED:  # an audited name outside this profile: logged as UNKNOWN_TOOL
+                await anyio.to_thread.run_sync(_unknown, cfg, run, name, args, _client_info(ctx, params))
+            raise MCPError(INVALID_PARAMS, f"Unknown tool: {name}")
+        return await anyio.to_thread.run_sync(logged_call, cfg, run, name, args, _client_info(ctx, params))
 
     return Server("aisep", version="0.1.0", instructions="AISEP 架构模型仓库的 MCP 服务器（docs/mcp-interface.md）",
                   on_list_tools=on_list_tools, on_call_tool=on_call_tool)
@@ -322,7 +364,9 @@ def main(argv=None):
     a = parse_args(sys.argv[1:] if argv is None else argv)
     cfg = tools.Config(allow_roots=tuple(os.path.realpath(r) for r in a.allow_root), repo=a.repo,
                        main_branch=a.main_branch)
-    server = build_server(cfg, a.profile)
+    server = build_server(cfg, a.profile, a.transport)
+    if calllog.log_dir(cfg) is None:
+        calllog.warn("--allow-root 与 --repo 都不在 Git 仓库里，被审计的调用不会记录")
     if a.transport == "stdio":
         run_stdio(server)
     else:
