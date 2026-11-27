@@ -86,7 +86,8 @@
         sh:severity sh:Violation ;
     ] .
 
-# rdfs:domain is not enforced: the run-provenance properties are TestResult attributes only.
+# The run-provenance properties are TestResult attributes only. L1 enforces their rdfs:domain (issue #67); EV14 states
+# the same in L3.
 :RunProvenanceDomainShape a sh:NodeShape ;
     sh:targetSubjectsOf aisep:testedCommit , aisep:ciRun ;
     sh:class aisep:TestResult ;
