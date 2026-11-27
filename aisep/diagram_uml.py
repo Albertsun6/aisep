@@ -17,9 +17,13 @@ Notation follows UML 2.5.1 (§9 classifiers and features, §10 interfaces and da
 dependencies): generalization and realization point a hollow triangle at the general end, with the general classifier
 laid out above (the edge is fed to ELK reversed); aggregation / composition put a hollow / filled diamond at the source
 (whole) end; dependencies are dashed with an open arrow at the supplier. Layout is the same pipeline as diagram_c4.py:
-ELK layered with fixed options and seed, same model → same bytes. Anything that is in the diagram (or hangs on a drawn
-classifier) but is not drawn is reported as a warning, never silently dropped.
+ELK layered with fixed options and seed, same model → same bytes. A relationship whose two ends are the same classifier
+(a reflexive association, a self-dependency …) is drawn as an ELK self-loop, except the types in NO_SELF, which UML
+does not allow on one classifier and which get their own warning. Anything that is in the diagram (or hangs on a drawn
+classifier) but is not drawn is reported as a warning, never silently dropped. Scope, open questions and the acceptance
+list: docs/specs/uml-class-diagram.md.
 """
+import re
 from html import escape
 
 from aisep.core import ARCH, NS
@@ -27,7 +31,7 @@ from aisep.diagram import MARGIN, elk_layout, f, local, tw, wrap
 
 UML = "https://meta.linked.archi/uml/onto#"
 UMLVP = "https://meta.linked.archi/uml/viewpoints#"
-DIAGRAMS = {"ClassDiagram": "UML 类图"}  # first batch (coordination/design-uml-view-20261127.md §3.1)
+DIAGRAMS = {"ClassDiagram": "UML 类图"}  # first batch (docs/specs/uml-class-diagram.md「首批范围」)
 
 # asserted uml type -> keyword line (None: plain class)
 NODE_TYPES = {"Class": None, "Interface": "«interface»", "DataType": "«dataType»", "Enumeration": "«enumeration»",
@@ -46,6 +50,9 @@ EDGE_TYPES = {
     "Dependency": ("依赖", "e e-d", None, "u-open", None, False),
 }
 EDGE_ORDER = list(EDGE_TYPES)
+# relationship types whose two ends may not be the same classifier (anything else on one classifier is a self-loop)
+NO_SELF = {"Generalization": "泛化不得成环（UML 2.5.1 Classifier 约束 no_cycles_in_generalization）",
+           "InterfaceRealization": "接口实现的契约须是 Interface、实现方须是 BehavioredClassifier，不可能是同一个类元"}
 # properties of an association end; on a relationship resource they cannot be tied to either end
 END_PROPS = ("lower", "upper", "aggregationKind", "isOrdered", "isUnique", "isReadOnly", "isDerived", "defaultValue")
 VIS = {"Public": "+", "Private": "-", "Protected": "#", "PackageVisibility": "~"}
@@ -105,16 +112,34 @@ def _true(ctx, x, prop):
     return _value(ctx, x, prop) in ("true", "1")
 
 
-def _mult(ctx, x):
+def _bound(v, upper):
+    """Lexical form of a multiplicity bound -> its display text, or None if it is not a legal bound.
+    UML 2.5.1 §7.5.4: "*" is the unlimited upper bound; the vocabulary writes it as a negative integer (-1)."""
+    v = v.strip()
+    if upper and v == "*":
+        return "*"
+    if not re.fullmatch(r"[+-]?[0-9]+", v):
+        return None
+    n = int(v)
+    if n < 0:
+        return "*" if upper else None
+    return str(n)
+
+
+def _mult(ctx, x, warnings):
     lo, up = _value(ctx, x, "lower"), _value(ctx, x, "upper")
     if lo is None and up is None:
         return ""
-    lo = "1" if lo is None else lo
-    up = "1" if up is None else ("*" if int(up) < 0 else up)
-    return f"[{lo}]" if lo == up else f"[{lo}..{up}]"
+    lo_t = "1" if lo is None else _bound(lo, False)
+    up_t = "1" if up is None else _bound(up, True)
+    bad = [f"uml:{p} {v!r}" for p, v, t in (("lower", lo, lo_t), ("upper", up, up_t)) if t is None]
+    if bad:
+        warnings.append(f"{x}: 多重性 {', '.join(bad)} 不是合法的界（下界为非负整数，上界为非负整数、* 或 -1），多重性未画")
+        return ""
+    return f"[{lo_t}]" if lo_t == up_t else f"[{lo_t}..{up_t}]"
 
 
-def _feature(ctx, x):
+def _feature(ctx, x, warnings):
     """{iri, kind, text, italic, static} for one compartment row."""
     ts = _uml_types(ctx, x)
     kind = next(k for k in FEATURE_TYPES if k in ts)
@@ -123,7 +148,7 @@ def _feature(ctx, x):
     pre = (vis + " ") if vis else ""
     if kind == "Property":
         text = pre + ("/" if _true(ctx, x, "isDerived") else "") + name
-        m = _mult(ctx, x)
+        m = _mult(ctx, x, warnings)
         text += (" " + m if m else "")
         dv = _value(ctx, x, "defaultValue")
         text += (f" = {dv}" if dv is not None else "") + (" {readOnly}" if _true(ctx, x, "isReadOnly") else "")
@@ -205,7 +230,7 @@ def select(ctx, model, view=None, diagram="ClassDiagram"):
 
     for x in sorted(drawn):
         t = node_type(x)
-        rows = [_feature(ctx, p) for p in sorted(feats_of.get(x, []))]
+        rows = [_feature(ctx, p, warnings) for p in sorted(feats_of.get(x, []))]
         nodes[x] = {"type": t, "label": ctx.label(x) or local(x), "keyword": NODE_TYPES[t],
                     "abstract": t == "Class" and _true(ctx, x, "isAbstract"), "package": pkg_of[x],
                     "attrs": [r for r in rows if r["kind"] != "Operation"], "ops": [r for r in rows if r["kind"] == "Operation"]}
@@ -221,15 +246,18 @@ def select(ctx, model, view=None, diagram="ClassDiagram"):
         if set(ts) - set(EDGE_TYPES):  # e.g. uml:Deployment (a Dependency) is not a class-diagram line
             kind = None
         if s in drawn and t in drawn:
-            if kind is None or s == t:
+            if kind is None:
                 warnings.append(f"{x}: 关系 {', '.join('uml:' + u for u in ts)} 不在类图范围，未画")
+                continue
+            if s == t and kind in NO_SELF:
+                warnings.append(f"{x}: uml:{kind} 的两端是同一个类元 {s}，{NO_SELF[kind]}，未画")
                 continue
             bad = [p for p in END_PROPS if _value(ctx, x, p) is not None]
             if bad:
                 warnings.append(f"{x}: 关联端属性 {', '.join('uml:' + p for p in bad)} 无法对应到某一端，未画")
             edges.append({"iri": x, "type": kind, "source": s, "target": t, "label": ctx.label(x) or ""})
         elif x in inview:
-            warnings.append(f"{x}: in view but an end is not, not drawn")
+            warnings.append(f"{x}: 关系在视图中，但有一端不在图中，未画")
 
     if view:
         drawn_feats = {r["iri"] for n in nodes.values() for r in n["attrs"] + n["ops"]}

@@ -2,10 +2,12 @@
 
 Inputs: models/procurement (P, the only real UML data: 1 class); modules/uml/tests/valid/order-class-diagram.ttl (C0: 3
 classes, 1 interface, association, generalization, interface realization); and C1 = C0 plus, in a temp copy only, a package
-holding Quotation and Supplier (arch:HasPart), two attributes and an abstract operation of Quotation, a composition, a
-usage, an unsupported uml:InformationFlow and an association end property written on the association. Every expected set
-comes from an independent SPARQL query run through `aisep.py query`, never from aisep/diagram_uml.py.
-Acceptance list: coordination/design-uml-view-20261127.md §4. Each claim prints CONFIRMED / REFUTED with evidence;
+holding Quotation and Supplier (arch:HasPart), two attributes and an abstract operation of Quotation, a data type, an
+enumeration and a primitive type, one line of every remaining supported type (composition, aggregation, usage, dependency,
+abstraction, realization), a reflexive association, a self-generalization, an unsupported uml:InformationFlow and an
+association end property written on the association. Every expected set comes from an independent SPARQL query run
+through `aisep.py query`, never from aisep/diagram_uml.py.
+Acceptance list: docs/specs/uml-class-diagram.md「可证伪验收」. Each claim prints CONFIRMED / REFUTED with evidence;
 exit 0 only if every claim is CONFIRMED.
 
 Run:  <venv python> tests/acceptance/test_diagram_uml.py      (also run by `aisep.py test`)
@@ -37,11 +39,40 @@ C1_EXTRA = """
 :use-supplier-priceable a uml:Usage ; arch:inModel :model ; arch:source :Supplier ; arch:target :Priceable .
 :flow-document-supplier a uml:InformationFlow ; arch:inModel :model ; arch:source :Document ; arch:target :Supplier .
 :assoc-quotation-supplier uml:lower 0 .
+:Money a uml:DataType ; arch:inModel :model ; skos:prefLabel "金额"@zh .
+:Status a uml:Enumeration ; arch:inModel :model ; skos:prefLabel "状态"@zh .
+:Decimal a uml:PrimitiveType ; arch:inModel :model ; skos:prefLabel "小数"@zh .
+:agg-supplier-document a uml:Aggregation ; arch:inModel :model ; arch:source :Supplier ; arch:target :Document .
+:dep-quotation-money a uml:Dependency ; arch:inModel :model ; arch:source :Quotation ; arch:target :Money .
+:abs-money-decimal a uml:Abstraction ; arch:inModel :model ; arch:source :Money ; arch:target :Decimal .
+:realz-status-document a uml:Realization ; arch:inModel :model ; arch:source :Status ; arch:target :Document .
+:assoc-document-self a uml:Association ; arch:inModel :model ; skos:prefLabel "前序"@zh ;
+    arch:source :Document ; arch:target :Document .
+:gen-supplier-self a uml:Generalization ; arch:inModel :model ; arch:source :Supplier ; arch:target :Supplier .
 """
 VIEW = """
 :view-umlProbe a arch:Diagram ; arch:inModel :model ; skos:prefLabel "UML 声明式探针"@zh ;
     arch:viewConformsToViewpoint <https://meta.linked.archi/uml/viewpoints#ClassDiagram> .
 :Quotation arch:inView :view-umlProbe . :Document arch:inView :view-umlProbe . :Priceable arch:inView :view-umlProbe .
+:assoc-quotation-supplier arch:inView :view-umlProbe .
+"""
+MULT = """
+:Supplier arch:hasPart :p1 .
+:p1 a uml:Property ; arch:inModel :model ; skos:prefLabel "联系人"@zh ; uml:lower 0 ; uml:upper "*" .
+:p2 a uml:Property ; arch:inModel :model ; skos:prefLabel "电话"@zh ; uml:lower 1 ; uml:upper "many" .
+:p3 a uml:Property ; arch:inModel :model ; skos:prefLabel "地址"@zh ; uml:lower -2 ; uml:upper 3 .
+:rel-s-p1 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p1 .
+:rel-s-p2 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p2 .
+:rel-s-p3 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p3 .
+"""
+VIEW_UC = """
+:view-uc a arch:Diagram ; arch:inModel :model ; skos:prefLabel "用例图探针"@zh ;
+    arch:viewConformsToViewpoint <https://meta.linked.archi/uml/viewpoints#UseCaseDiagram> .
+:Quotation arch:inView :view-uc .
+"""
+OTHER = """
+<https://other.example/models/x/> a arch:Model ; skos:prefLabel "外部模型"@zh .
+<https://other.example/models/x/K> a uml:Class ; arch:inModel <https://other.example/models/x/> ; skos:prefLabel "K"@zh .
 """
 EVIL = '<script>alert(1)</script> & "q" \'x\''
 
@@ -224,15 +255,61 @@ def main():
               ("kw", "«interface»") in boxes["t:Priceable"]["texts"] and ("cn ab", "单据") in boxes["t:Document"]["texts"]
               and ("tag", "{abstract}") in boxes["t:Document"]["texts"], f"Document texts={boxes['t:Document']['texts']}")
 
+        ag = by.get("t:agg-supplier-document", {})
+        claim("aggregation: solid, hollow diamond at the source (whole) end, nothing at the part end",
+              ag.get("class") == "e" and ag.get("start") == "url(#u-dia-h)" and not ag.get("end")
+              and on_border(ag["pts"][0], boxes["t:Supplier"]["box"]), f"class={ag.get('class')} start={ag.get('start')} "
+              f"end={ag.get('end')}")
+        dp = by.get("t:dep-quotation-money", {})
+        claim("dependency: dashed with an open arrow at the Money (supplier) end, no keyword label",
+              dp.get("class") == "e e-d" and dp.get("end") == "url(#u-open)" and not dp.get("start")
+              and on_border(dp["pts"][-1], boxes["t:Money"]["box"]) and "«dependency»" not in svg,
+              f"class={dp.get('class')} start={dp.get('start')} end={dp.get('end')}")
+        ab = by.get("t:abs-money-decimal", {})
+        claim("abstraction: dashed with an open arrow at the Decimal end and an «abstraction» label",
+              ab.get("class") == "e e-d" and ab.get("end") == "url(#u-open)" and not ab.get("start")
+              and on_border(ab["pts"][-1], boxes["t:Decimal"]["box"]) and ">«abstraction»<" in svg,
+              f"class={ab.get('class')} end={ab.get('end')}")
+        rz, st = by.get("t:realz-status-document", {}), boxes["t:Status"]["box"]
+        claim("realization: dashed, hollow triangle at the Document (specification) end, Document above Status",
+              rz.get("class") == "e e-d" and rz.get("end") == "url(#u-tri)" and not rz.get("start")
+              and on_border(rz["pts"][-1], doc) and doc[1] + doc[3] <= st[1],
+              f"class={rz.get('class')} end={rz.get('end')} Document.y={doc[1]} Status.y={st[1]}")
+        kws = {i: [t for c, t in boxes[i]["texts"] if c == "kw"] for i in ("t:Money", "t:Status", "t:Decimal", "t:Supplier")}
+        claim("DataType / Enumeration / PrimitiveType show «dataType» / «enumeration» / «primitive»; a plain class has no keyword",
+              kws == {"t:Money": ["«dataType»"], "t:Status": ["«enumeration»"], "t:Decimal": ["«primitive»"], "t:Supplier": []}
+              and {boxes[i]["type"] for i in ("t:Money", "t:Status", "t:Decimal")} ==
+              {"uml:DataType", "uml:Enumeration", "uml:PrimitiveType"}, f"keywords={kws}")
+        sl = by.get("t:assoc-document-self", {})
+        claim("reflexive association: drawn as a self-loop from Document back to Document, with its name",
+              sl.get("source") == sl.get("target") == "t:Document" and len(sl.get("pts", [])) >= 4
+              and on_border(sl["pts"][0], doc) and on_border(sl["pts"][-1], doc) and ">前序<" in svg,
+              f"points={sl.get('pts')}")
+
         # 6. geometry
         geometry_claims("C1", boxes, edges)
 
         # 7. warnings
         ws = [l for l in log.splitlines() if l.startswith("[Warning]")]
-        claim("C1: exactly 2 warnings, one naming the InformationFlow, one the association with uml:lower; SUMMARY warnings=2",
-              len(ws) == 2 and any(T + "flow-document-supplier" in w for w in ws)
-              and any(T + "assoc-quotation-supplier" in w and "uml:lower" in w for w in ws) and "warnings=2" in log,
+        claim("C1: exactly 3 warnings: the InformationFlow (out of scope), the association with uml:lower, and the "
+              "self-generalization with its own reason (not 'out of scope'); SUMMARY warnings=3",
+              len(ws) == 3 and any(T + "flow-document-supplier" in w and "不在类图范围" in w for w in ws)
+              and any(T + "assoc-quotation-supplier" in w and "uml:lower" in w for w in ws)
+              and any(T + "gen-supplier-self" in w and "不得成环" in w and "不在类图范围" not in w for w in ws)
+              and "t:gen-supplier-self" not in by and "warnings=3" in log, f"warnings={ws}")
+        claim("every warning text is Chinese (no English 'not drawn')", ws and all("未画" in w and "not drawn" not in w for w in ws),
               f"warnings={ws}")
+
+        # multiplicity: "*" is unlimited; an illegal bound is a warning and the multiplicity is left out
+        mf = os.path.join(tmp, "mult.ttl")
+        open(mf, "w", encoding="utf-8").write(txt + MULT.replace(":model", f"<{T}>"))
+        _, _, _, mfeats, mlog = diagram(os.path.join(tmp, "mult.svg"), "--uml", "ClassDiagram", "--model", "uml-test", mf)
+        rowt = {i: t for i, _, t in mfeats.get("t:Supplier", [])}
+        mws = [l for l in mlog.splitlines() if l.startswith("[Warning]")]
+        claim("uml:upper \"*\" shows [0..*]; upper \"many\" and lower -2 each give one warning and no multiplicity",
+              rowt.get("t:p1") == "联系人 [0..*]" and rowt.get("t:p2") == "电话" and rowt.get("t:p3") == "地址"
+              and len(mws) == 2 and any(T + "p2" in w and "uml:upper 'many'" in w for w in mws)
+              and any(T + "p3" in w and "uml:lower '-2'" in w for w in mws), f"rows={rowt} warnings={mws}")
 
         # escaping: hostile label text is drawn as text, never as markup
         evil = os.path.join(tmp, "evil.ttl")
@@ -253,6 +330,28 @@ def main():
               and ">其他<" not in svg and ">UML 声明式探针<" in svg, f"types={sorted(types)} boxes={sorted(boxes)}")
         ends_claim("declared view", edges, [dv])
         geometry_claims("declared view", boxes, edges)
+        ws = [l for l in log.splitlines() if l.startswith("[Warning]")]
+        claim("declared view: exactly 1 warning, in Chinese, for the in-view association whose Supplier end is not in view",
+              len(ws) == 1 and T + "assoc-quotation-supplier" in ws[0] and "有一端不在图中" in ws[0]
+              and "not drawn" not in ws[0], f"warnings={ws}")
+
+        # --view with an unsupported umlvp: viewpoint: Violation naming umlvp:<name>, nothing written
+        uc = os.path.join(tmp, "uc.ttl")
+        open(uc, "w", encoding="utf-8").write(txt + VIEW_UC.replace(":model", f"<{T}>"))
+        out = os.path.join(tmp, "ucv.svg")
+        rc, log = run("diagram", "--view", T + "view-uc", "-o", out, uc)
+        claim("--view of a umlvp:UseCaseDiagram view exits 1 with a Violation naming umlvp:UseCaseDiagram, writes nothing",
+              rc == 1 and "[Violation]" in log and "umlvp:UseCaseDiagram" in log and "图种 UseCaseDiagram" not in log
+              and not os.path.exists(out), log.strip()[-160:])
+
+        # --uml list: a model whose IRI is not https://aisep.example/model/<slug>/ is not offered as --model
+        of = os.path.join(tmp, "other.ttl")
+        open(of, "w", encoding="utf-8").write(txt + OTHER)
+        rc, log = run("diagram", "--uml", "list", of)
+        claim("`--uml list` prints --model only for model/<slug>/ IRIs; the other model gets a warning, not '--model x'",
+              rc == 0 and "--uml ClassDiagram --model uml-test" in log and "--model x" not in log
+              and any(l.startswith("[Warning]") and "https://other.example/models/x/" in l for l in log.splitlines()),
+              log.strip())
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     ok = all(results)

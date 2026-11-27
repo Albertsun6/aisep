@@ -50,7 +50,7 @@ from xml.etree import ElementTree  # noqa: E402
 import pyoxigraph as ox  # noqa: E402
 
 from aisep.core import (AISEP, ARCH, Ctx, dependencies, discover, expand, impact, l3, l4, rel,  # noqa: E402
-                        run_check, short, shown)
+                        model_slug, run_check, short, shown)
 from aisep import adm, gitio  # noqa: E402
 from aisep.errors import AisepError  # noqa: E402
 
@@ -347,7 +347,11 @@ def cmd_diagram(args):
                 print(f"[Violation] diagram: {e}"); return 1
             return _write_c4(sel, model, name, opts)
         if vps and vps[0].startswith(diagram_uml.UMLVP):
-            return _write_uml(ctx, model, name, opts, view=view, kind=vps[0][len(diagram_uml.UMLVP):])
+            kind = vps[0][len(diagram_uml.UMLVP):]
+            if kind not in diagram_uml.DIAGRAMS:
+                print(f"[Violation] diagram: {opts['--view']} 的视点 umlvp:{kind} 暂不支持（首批只有 "
+                      f"{', '.join('umlvp:' + k for k in diagram_uml.DIAGRAMS)}）"); return 1
+            return _write_uml(ctx, model, name, opts, view=view, kind=kind)
     elif c4:
         vp = opts["--viewpoint"]
         if vp == "C4Deployment":
@@ -430,10 +434,16 @@ def _diagram_uml(opts, args):
         models = [m for m in models if m == f"https://aisep.example/model/{opts['--model']}/"]
     n = 0
     for m in models:
-        slug = m.rstrip("/").rsplit("/", 1)[-1]
+        try:
+            slug = model_slug(m)
+        except AisepError:  # not https://aisep.example/model/<slug>/: --model cannot name it
+            slug = None
         for k in diagram_uml.DIAGRAMS:
             nodes = diagram_uml.select(ctx, m, diagram=k)[2]
-            if nodes:
+            if nodes and slug is None:
+                print(f"[Warning] diagram {m}: 模型 IRI 不是 https://aisep.example/model/<slug>/ 形式，"
+                      f"不能用 --model 出 {k}（{len(nodes)} 个类元）")
+            elif nodes:
                 n += 1
                 print(f"--uml {k} --model {slug}  elements={len(nodes)}")
         for v, vp in sorted(ctx.rows(f"""SELECT ?v ?vp WHERE {{ ?v a arch:Diagram ; arch:inModel <{m}> ;
