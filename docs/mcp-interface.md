@@ -267,7 +267,7 @@
 | `altLabel` | — | 写成 `skos:altLabel "…"@en` |
 | `slug` | 条件 | `^[A-Za-z][A-Za-z0-9]*$`（允许大写开头，例子里已有 UML 类 `QuotationEntity`）。不给时由 `altLabel` 转 camelCase；两者都没有 → `INVALID_ARGUMENT`（不自动拼音） |
 | `definition` | — | `skos:definition "…"@zh` |
-| `attributes` | — | `[{predicate, value: {iri} \| {value, datatype?, lang?}}]`，用于 `aisep:priority`、`aisep:path` 这类属性。合法与否由候选图上的 L1 闭世界规则（G7）判定，不另写白名单。不能含 `rdf:type`，也不能含 `arch:inView`（视图成员关系归视图，视图写工具不在本版，§1；与 §5.12 同口径）；写 skos:prefLabel / altLabel / definition 时受同样的标签约束；不合法的 IRI、语言标签或值 → `INVALID_ARGUMENT`。值的形状另有五条，违反也是 `INVALID_ARGUMENT`：字面量不含 C0/C1 控制字符（制表、换行、回车除外）与 U+2028/2029；`lang` 与 `datatype` 不能同时给；`lang` 不能为空（给了 `lang` 键就不能是空串或 null）；`datatype` 不能为空（给了 `datatype` 键就不能是空串或 null，不会退成普通字面量）；`predicate`、`iri`、`datatype` 不能用 `_:` 开头的空白节点名（否则会被展开成 IRI） |
+| `attributes` | — | `[{predicate, value: {iri} \| {value, datatype?, lang?}}]`，用于 `aisep:priority`、`aisep:path` 这类属性。合法与否由候选图上的 L1 闭世界规则（G7）判定，不另写白名单。不能含 `rdf:type`（类型只由 `type` 给出）、`arch:inModel`（所属模型由 `model` 给出）、`arch:source`、`arch:target`（关系端点只由 `model_add_relationship` 写入）、`arch:inView`（视图成员关系归视图，视图写工具不在本版，§1），违反 → `INVALID_ARGUMENT`，不留给 L1 兜底；与 §5.12 的不接受谓词同口径、给同一条拒绝理由（服务器里只有一份清单），只有标签三谓词例外：写 skos:prefLabel / altLabel / definition 时受同样的标签约束；不合法的 IRI、语言标签或值 → `INVALID_ARGUMENT`。值的形状另有五条，违反也是 `INVALID_ARGUMENT`：字面量不含 C0/C1 控制字符（制表、换行、回车除外）与 U+2028/2029；`lang` 与 `datatype` 不能同时给；`lang` 不能为空（给了 `lang` 键就不能是空串或 null）；`datatype` 不能为空（给了 `datatype` 键就不能是空串或 null，不会退成普通字面量）；`predicate`、`iri`、`datatype` 不能用 `_:` 开头的空白节点名（否则会被展开成 IRI） |
 | `file`、`dryRun` | — | §5.1 |
 
 **IRI**：`{model}{slug}`。
