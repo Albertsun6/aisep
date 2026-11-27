@@ -805,11 +805,14 @@ class Ctx:
                     if (s, p, d) in seen or any(cs & set(self.ancestors(t)) for t in types.get(s, ())):
                         continue
                     seen.add((s, p, d))
-                    self.add("Violation", "L1", f"{short(q.subject)}: {self.pname(p)} has rdfs:domain {d} but "
-                             f"{short(q.subject)} is not a {d} (asserted types: "
+                    # a blank-node subject (e.g. an aisep:binding node in a model file) is shown and anchored like the
+                    # other L1 findings: never by its random label, so the write tools' instance key is stable (§7.3)
+                    it = short(q.subject) if isinstance(q.subject, ox.NamedNode) else "the blank node"
+                    self.add("Violation", "L1", f"{self.display(q.subject)}: {self.pname(p)} has rdfs:domain {d} but "
+                             f"{it} is not a {d} (asserted types: "
                              f"{', '.join(sorted(map(short, types.get(s, ())))) or 'none'}) in {self.rel(f)} — a property "
                              f"may only be used on its domain class (issue #67)",
-                             focus=s if isinstance(q.subject, ox.NamedNode) else None)
+                             **self.anchor(q.subject))
 
     def l1_one_notation(self):
         """R2 (v0.2.1) one notation per element: every asserted type, the redundant superclasses included, belongs to
