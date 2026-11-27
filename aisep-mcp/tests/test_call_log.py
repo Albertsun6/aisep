@@ -12,6 +12,7 @@ from conftest import ROOT, commit_all, git, init_repo
 from fixtures.topology import M, Topo
 from aisep import actions, calllog, server, tools
 from test_server import http_url  # noqa: F401 — fixture
+from test_record_approval_review import t  # noqa: F401 — fixture
 
 PY = sys.executable
 WB = "https://aisep.example/model/workbench/"
@@ -347,3 +348,127 @@ def test_http_client_info_comes_from_params_meta(repo, http_url):
     (line,) = lines(repo)
     assert line["declared"]["clientInfo"]["name"] == SENT + "-http" and line["measured"]["server"]["transport"] == "http"
     assert line["measured"]["outcome"] == "INVALID_ARGUMENT"
+
+
+# ---------------------------------------------------------------- PR #175 review: what the caller's values may become
+
+BAD = "哨兵 7f3a"  # passes no shape rule (non-ASCII, a space): must reach the log only as a hash
+
+
+def _h(v):
+    return {"sha256": "sha256:" + hashlib.sha256(v.encode("utf-8")).hexdigest()}
+
+
+def _raw(repo):
+    with open(log_path(repo), "rb") as f:
+        return f.read()
+
+
+def test_client_info_keeps_three_short_strings_only(repo):
+    cfg = tools.Config(repo=str(repo))
+    big = {"name": "n" * 1000, "version": {"nested": SENT}, "title": "t" * 129, "icons": [SENT] * 50, "extra": SENT}
+    for ci in (big, {"name": 7, "version": ["1"]}, "not-an-object", None):
+        server.logged_call(cfg, RUN, "model_add_element", dict(DRY), client_info=ci)
+    got = [x["declared"]["clientInfo"] for x in lines(repo)]
+    assert got == [{"name": "n" * 128, "title": "t" * 128}, {}, None, None]
+    assert SENT.encode() not in _raw(repo)
+
+
+def test_caller_values_outside_their_shape_are_hashed_and_errors_keep_only_the_code(repo):
+    """IRI, model, slug, actionId and repo arguments that fail their shape rule (or its length limit) leave only a
+    sha256; refused calls keep only the error code (no message, no details, decision 14)."""
+    cfg = tools.Config(repo=str(repo))
+    long_iri = "urn:x:" + "a" * calllog.IRI_MAX
+    calls = [
+        ("model_set_labels", {"iri": BAD, "prefLabel": "x"}),
+        ("model_set_labels", {"iri": long_iri, "prefLabel": "x"}),
+        ("model_add_element", dict(DRY, model=BAD, slug=BAD)),
+        ("model_add_element", dict(DRY, slug=BAD + "slug")),
+        ("model_add_relationship", {"model": "procurement", "type": "am4:Association", "source": BAD,
+                                    "target": "procurement:supplier", "dryRun": True}),
+        ("model_apply_action", {"action": BAD, "params": {}}),
+        ("model_apply_action", {"action": REGISTER, "params": dict(P0, requirement=BAD)}),
+        ("model_set_labels", {"iri": "procurement:supplier", "prefLabel": "x", "repo": "/nowhere/" + BAD}),
+        ("governance_record_approval", {"model": BAD, "gate": "GateArchitecture", "decision": "Approved",
+                                        "approvedBy": BAD, "approves": [BAD, "procurement:supplier"], "branch": "main",
+                                        "headCommit": "0" * 40, "repo": str(repo)}),
+    ]
+    results = [server.logged_call(cfg, RUN, n, a) for n, a in calls]
+    got = lines(repo)
+    assert len(got) == len(calls) and all(r.is_error for r in results)
+    raw = _raw(repo)
+    assert BAD.encode() not in raw and BAD.encode("unicode_escape") not in raw and b"a" * calllog.IRI_MAX not in raw
+    req = [g["measured"]["request"] for g in got]
+    assert req[0]["iris"] == [_h(BAD)] and req[1]["iris"] == [_h(long_iri)]
+    assert req[2]["model"] == _h(BAD)
+    assert req[4]["iris"] == [_h(BAD), "procurement:supplier"] and req[4]["model"] == "procurement"
+    assert req[5]["actionId"] == _h(BAD) and req[6]["actionId"] == REGISTER
+    assert req[7]["repoArg"] == _h("/nowhere/" + BAD) and req[7]["iris"] == ["procurement:supplier"]
+    assert req[8]["model"] == _h(BAD) and req[8]["iris"] == [_h(BAD), _h(BAD), "procurement:supplier"]
+    assert req[8]["repoArg"] == str(repo)
+    for r, g in zip(results, got):
+        e = r.structured_content["error"]
+        assert g["measured"]["outcome"] == e["code"]
+        assert e["message"] not in raw.decode("utf-8") and "message" not in json.dumps(g) and "details" not in json.dumps(g)
+
+
+@pytest.mark.parametrize("edited", [True, False])
+def test_record_approval_rolled_back_logs_the_file_only_while_it_stays_on_disk(t, monkeypatch, edited):
+    """STALE_HEAD after the take-back: the record someone edited stays on disk (_kept) -> `files` names what this call
+    wrote; the untouched record is deleted -> `files` is empty."""
+    from aisep import approval
+    from fixtures.topology import GOV
+    real_sha, injected, seen = approval._sha_file, [], {}
+
+    def agent_plain_commit(w, rel):
+        if not injected:
+            t.write("src/agent.py", "print('agent')\n")
+            t.git("add", "--", "src/agent.py")
+            t.git("commit", "-q", "-m", "agent: plain commit")
+            injected.append(1)
+        return real_sha(w, rel)
+    real_landed = approval._landed
+
+    def landed(w, root, branch, msg):
+        a = real_landed(w, root, branch, msg)
+        seen["rel"] = os.path.join(GOV, approval._name(msg))
+        p = os.path.join(w, seen["rel"])
+        with open(p, "rb") as f:
+            seen["sha"] = hashlib.sha256(f.read()).hexdigest()
+        if edited:
+            with open(p, "ab") as f:
+                f.write(b"# edited by someone else\n")
+        return a
+    monkeypatch.setattr(approval, "_sha_file", agent_plain_commit)
+    monkeypatch.setattr(approval, "_landed", landed)
+    cfg = tools.Config(allow_roots=(str(t.root),))
+    r = server.logged_call(cfg, RUN, "governance_record_approval", {
+        "model": "procurement", "gate": "GateArchitecture", "decision": "Approved", "approvedBy": M + "chiefArchitect",
+        "approves": [M + "newThing"], "branch": "feat/x", "headCommit": t.head, "repo": str(t.root)})
+    assert r.is_error and r.structured_content["error"]["code"] == "STALE_HEAD", r.content[0].text
+    assert r.structured_content["error"]["details"].get("fileKept", False) is edited
+    (line,) = lines(t.root)
+    assert line["measured"]["outcome"] == "STALE_HEAD"
+    assert os.path.exists(t.path(seen["rel"])) is edited
+    want = [{"path": seen["rel"], "before": None, "after": "sha256:" + seen["sha"]}] if edited else []
+    assert line["measured"]["files"] == want
+
+
+def test_append_waits_for_the_repository_lock(repo):
+    """While another holder keeps LOCK_EX on calls.lock, an audited call writes no line; on release it writes one."""
+    import fcntl, threading
+    cfg = tools.Config(repo=str(repo))
+    d = os.path.dirname(log_path(repo))
+    os.makedirs(d, exist_ok=True)
+    fd = os.open(os.path.join(d, calllog.LOCK), os.O_RDWR | os.O_CREAT, 0o644)
+    th = threading.Thread(target=server.logged_call, args=(cfg, RUN, "model_set_labels", {"iri": "urn:x:0", "bogus": 1}))
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        th.start()
+        th.join(timeout=3)
+        assert th.is_alive() and lines(repo) == []
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+    th.join(timeout=60)
+    assert not th.is_alive() and len(lines(repo)) == 1

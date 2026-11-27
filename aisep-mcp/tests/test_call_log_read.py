@@ -2,7 +2,7 @@
 decision 14 of 2026-11-27). Exits 1.5/1–8 of the workbench read-only contract: the profile split, page order and
 fidelity to disk, cursors that survive appends and refuse a replaced or truncated file, bad lines counted not returned,
 the sentinel label absent from log and output, every filter (one by one and combined), restart-stable results."""
-import json, os
+import base64, json, os
 
 import anyio
 from mcp import Client, StdioServerParameters
@@ -136,9 +136,49 @@ def test_cursor_on_a_replaced_or_truncated_log_is_refused(repo):
     os.replace(path + ".new", path)  # same bytes, another inode
     e = read(cfg, cursor=cur).structured_content["error"]
     assert e["details"] == {"rejectedFields": ["cursor"], "reason": "log-replaced"}
-    for bad in ("cl1.e30", "not-a-cursor", "cl1.!!"):
+    old = base64.urlsafe_b64encode(json.dumps({"ino": 1, "end": 10}).encode()).decode()  # no first-line hash
+    for bad in ("cl1.e30", "not-a-cursor", "cl1.!!", "cl1." + old):
         e = read(cfg, cursor=bad).structured_content["error"]
         assert e["code"] == "INVALID_ARGUMENT" and e["details"]["rejectedFields"] == ["cursor"]
+
+
+def test_cursor_on_a_log_recreated_on_the_same_inode_is_refused(repo):
+    """Deleted and recreated on a reused inode: same inode, same size and line boundaries, another first line (here
+    rewritten in place, which is what inode reuse looks like to the reader). The old cursor must not page it."""
+    cfg = tools.Config(repo=str(repo))
+    refused(cfg, 6)
+    cur = ok(cfg, limit=2)["nextCursor"]
+    path = log_path(repo)
+    ino = os.stat(path).st_ino
+    with open(path, "r+b") as f:
+        first = f.readline()
+        f.seek(0)
+        f.write(first.replace(b'"urn:x:0"', b'"urn:y:0"'))
+    assert os.stat(path).st_ino == ino
+    e = read(cfg, cursor=cur).structured_content["error"]
+    assert e["code"] == "INVALID_ARGUMENT" and e["details"] == {"rejectedFields": ["cursor"], "reason": "log-replaced"}
+    assert ids(walk(cfg, limit=2))[-1] == "urn:y:0"  # a fresh read pages the new file
+
+
+def test_T4_a_restarted_server_gives_the_same_page_and_honours_the_old_cursor(repo):
+    """Two server processes one after the other, no audited call between: first page and continuation are equal,
+    and the cursor from the first process works in the second (nothing kept in the server)."""
+    refused(tools.Config(repo=str(repo)), 5)
+
+    def run(cursor=None):
+        async def go():
+            p = StdioServerParameters(command=PY, args=["-m", "aisep.server", "--repo", str(repo), "--allow-root",
+                                                        str(repo.parent), "--profile", "workbench"],
+                                      cwd=str(repo), env=dict(os.environ, PYTHONPATH=ROOT))
+            async with Client(p) as c:
+                a = await c.call_tool("model_call_log", {"limit": 2})
+                b = await c.call_tool("model_call_log", {"limit": 2, "cursor": cursor or a.structured_content["nextCursor"]})
+                return a.structured_content, b.structured_content
+        return anyio.run(go)
+    a1, b1 = run()
+    a2, b2 = run(a1["nextCursor"])
+    assert (a1, b1) == (a2, b2) and ids(a1["items"] + b1["items"]) == ["urn:x:4", "urn:x:3", "urn:x:2", "urn:x:1"]
+    assert len(lines(repo)) == 5  # reading wrote nothing
 
 
 # ---------------------------------------------------------------- 5: bad lines are counted, never returned
@@ -152,6 +192,8 @@ def test_malformed_and_unknown_version_lines_are_counted(repo):
         f.write(json.dumps({"v": True, "measured": {}}).encode() + b"\n")   # true is not 1
         f.write(json.dumps({"v": 1, "measured": "x"}).encode() + b"\n")    # v1 without a measured object
         f.write(b'{"v": 1, "measured": {"durationMs": NaN}}\n')            # not JSON (NaN)
+        f.write(b'{"v": 1, "measured": {"durationMs": 1e999}}\n')          # no finite number: malformed
+        f.write(b'{"v": 1, "measured": {"durationMs": -1E+400}}\n')
         f.write(b'{"v": 1, "measured": {"x": ' + b"[" * 100000 + b"]" * 100000 + b"}}\n")  # json.loads: RecursionError
         f.write(b'{"v": 1, "measured": {"tool": "\\ud800"}}\n')            # lone surrogate: not encodable as UTF-8
     refused(cfg, 1)
@@ -162,7 +204,7 @@ def test_malformed_and_unknown_version_lines_are_counted(repo):
     r.model_dump_json()  # the whole page must still go out on the wire
     p = r.structured_content
     assert ids(p["items"]) == ["urn:x:0", "urn:x:0"]
-    assert p["skipped"] == {"malformed": 5, "unknownVersion": 2}
+    assert p["skipped"] == {"malformed": 7, "unknownVersion": 2}
 
 
 def test_unhashable_tool_field_does_not_break_a_filtered_read(repo):

@@ -269,9 +269,11 @@ def _unstage_and_maybe_delete(w, rel, written_sha, staged=True):
         if rc != 0:
             return "stuck"
     if not os.path.lexists(os.path.join(w, rel)):
+        calllog.note(files=[])  # ADR-031: the record this call wrote is no longer on disk
         return "gone"
     if written_sha is not None and _sha_file(w, rel) == written_sha:
         os.remove(os.path.join(w, rel))
+        calllog.note(files=[])
         return "removed"
     return "kept"
 
@@ -468,6 +470,7 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
         data = text.encode("utf-8")
         written = hashlib.sha256(data).hexdigest()
         _write_new(w, rel, data)
+        calllog.note(files=[{"path": rel, "sha256Before": None, "sha256After": written}])  # ADR-031, until rolled back
         # intent-to-add only: an agent's plain `git commit` in W during this window does not take an i-t-a entry
         # (write-tree skips it); `git commit --only -- rel` then commits the file's content with the hooks as usual
         rc, _, err = gitio.git(w, "add", "--intent-to-add", "--", rel)
@@ -531,7 +534,6 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
                 raise _kept("STALE_HEAD", f"提交期间分支有新提交，已撤回提交 {a[:7]}；{rel} 已被改动，保留在磁盘上、已移出 index",
                             rel, reason="concurrent-commit")
             raise AisepError("STALE_HEAD", "提交期间分支有新提交，已撤回本次批准", details={"reason": "concurrent-commit"})
-    calllog.note(files=[{"path": rel, "sha256Before": None, "sha256After": written}])  # ADR-031
     return {"approval": {"iri": model_iri + rec_local, "file": rel},
             "activity": None if act_in is None else {"iri": act_iri, "reused": act_new is None},
             "evidence": head, "baseCommit": base, "commit": a, "branch": branch, "duplicate": False, "gate": gres,
