@@ -537,11 +537,15 @@ def test_bpmn_uml_ddd_text_xml_cannot_carry_is_refused(vrepo, tmp_path):
 :ctrlStart a bpmn:StartEvent ; arch:inModel <{P}> .
 :CtrlClass a uml:Class ; arch:inModel <{P}> ; skos:prefLabel "坏\\u0001类"@zh .
 :ctrlBC a ddd:BoundedContext ; arch:inModel <{P}> ; skos:prefLabel "坏\\u0001上下文"@zh .
+:ctrlAggregate a ddd:Aggregate ; arch:inModel <{P}> ; skos:prefLabel "控制聚合"@zh .
+:rel-ctrlBC-owns-ctrlAggregate a ddd:Ownership ; arch:inModel <{P}> ; arch:source :ctrlBC ; arch:target :ctrlAggregate .
 """)
     for args, field, cli_args in (
             ({"process": "procurement:bpmnCtrl"}, "process", ["--process", "procurement:bpmnCtrl"]),
             ({"umldiagram": "ClassDiagram", "model": "procurement"}, "umldiagram", ["--uml", "ClassDiagram", "--model", "procurement"]),
-            ({"dddviewpoint": "ContextMap", "model": "procurement"}, "dddviewpoint", ["--viewpoint", "ContextMap", "--model", "procurement"])):
+            ({"dddviewpoint": "ContextMap", "model": "procurement"}, "dddviewpoint", ["--viewpoint", "ContextMap", "--model", "procurement"]),
+            ({"dddviewpoint": "AggregateDiagram", "of": "procurement:ctrlBC"}, "of",
+             ["--viewpoint", "AggregateDiagram", "--of", "procurement:ctrlBC"])):
         e = err(vrepo, "model_render_view", **args)
         assert (e["code"], e["details"]["reason"], e["details"]["rejectedFields"]) == ("INVALID_ARGUMENT", "text-not-xml", [field]), e
         assert "U+0001" in e["message"]
