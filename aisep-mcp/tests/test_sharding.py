@@ -72,6 +72,12 @@ def test_lpt_balance_bound(n):
     assert max(loads) <= sum(loads) / n + max(units.values()) + 1e-9, loads
 
 
+def test_recorded_durations_cover_real_test_ids():
+    d = recorded()
+    assert d and all(isinstance(v, (int, float)) and v >= 0 for v in d.values())
+    assert all("::" in t and "@" not in t for t in d)
+
+
 def test_aisep_shard_collections_partition_a_real_run(tmp_path):
     """End to end through pytest_collection_modifyitems: AISEP_SHARD=i/3 collections of a small suite (with a group and
     tests missing from .test_durations) are disjoint, cover it, and the grouped tests share a shard."""
