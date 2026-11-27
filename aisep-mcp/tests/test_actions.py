@@ -263,8 +263,10 @@ def new_criterion_step(sid="el", slug_const=None, label_param="label", typ="aise
 def test_json_catalog_is_gone():
     assert not os.path.exists(os.path.join(ROOT, "aisep", "action_catalog.json"))
     assert not os.path.exists(os.path.join(ROOT, "aisep", "actions", "catalog.json"))
-    tracked = git(ROOT, "ls-files", "--", "aisep").splitlines()
-    assert not [f for f in tracked if f.endswith(".json") and "action" in f], tracked
+    # 扫文件系统而不是 git ls-files：非 git 副本（如解压的源码包）里也要能跑
+    found = [os.path.relpath(os.path.join(d, f), ROOT)
+             for d, _, fs in os.walk(os.path.join(ROOT, "aisep")) for f in fs]
+    assert not [f for f in found if f.endswith(".json") and "action" in f], found
     assert os.path.isfile(os.path.join(ROOT, CAT))
 
 
@@ -1375,7 +1377,17 @@ def test_B7_definition_digest_changes_with_definition_only(mk):
     assert after[REGISTER]["definitionDigest"] == before[REGISTER]["definitionDigest"]
 
 
-def test_B7_digest_is_bound_to_parameters(mk):
+def test_B7_digest_is_bound_to_parameters():
+    """只换参数、动作 / 定义 / 文件前后字节都相同时，planDigest 也必须不同。"""
+    files = {VER: {"before": "sha256:" + "1" * 64, "after": "sha256:" + "2" * 64}}
+    ddigest = "sha256:" + "3" * 64
+    a = actions._plan_digest(REMOVE, ddigest, {"iri": WB + "acA"}, files)
+    b = actions._plan_digest(REMOVE, ddigest, {"iri": WB + "acB"}, files)
+    assert a != b
+    assert a == actions._plan_digest(REMOVE, ddigest, {"iri": WB + "acA"}, files)
+
+
+def test_B7_digest_of_one_target_is_stale_for_another(mk):
     r = mk()
     T, _ = plant(r)
     T2, _ = plant(r, "acDoomedToo")
