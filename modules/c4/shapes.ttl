@@ -181,3 +181,17 @@ c4ash:DataObjectOneSourceShape a sh:NodeShape ;
                 FILTER (?a != ?b)
             }""" ;
     ] .
+
+# R9 (level 2, AISEP addition beyond spec §7, issue #122): a component belongs to exactly one container (one
+# c4:ComponentContainment). Upstream c4/shapes checks only the endpoint types. A component in no container, or in
+# two, also slips past R5, which reads a component's container from c4:hasComponent. A Warning, not a Violation,
+# until real models show whether it should block (step-4 notes §4.1).
+c4ash:ComponentInOneContainerShape a sh:NodeShape ;
+    sh:targetClass c4:Component ;
+    sh:property [
+        sh:path [ sh:inversePath c4:hasComponent ] ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "C4：每个组件应恰好属于一个容器（一条 c4:ComponentContainment），否则 R5 无法判断跨容器"@zh ;
+    ] .
