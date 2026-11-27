@@ -7,7 +7,7 @@ criterion of step 1 is aisep.mergecheck.approval_commit_problems — the same fu
 import hashlib, os, re, subprocess, time
 from datetime import datetime, timezone
 
-from aisep import core, gitio, mergecheck, tools, writer
+from aisep import calllog, core, gitio, mergecheck, tools, writer
 from aisep.errors import AisepError
 
 AISEP, ARCH, PROV = core.AISEP, core.ARCH, core.NS["prov"]
@@ -269,9 +269,11 @@ def _unstage_and_maybe_delete(w, rel, written_sha, staged=True):
         if rc != 0:
             return "stuck"
     if not os.path.lexists(os.path.join(w, rel)):
+        calllog.note(files=[])  # ADR-031: the record this call wrote is no longer on disk
         return "gone"
     if written_sha is not None and _sha_file(w, rel) == written_sha:
         os.remove(os.path.join(w, rel))
+        calllog.note(files=[])
         return "removed"
     return "kept"
 
@@ -406,6 +408,7 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
             raise AisepError("BRANCH_NOT_CHECKED_OUT", f"分支 {branch} 没有检出的工作区（v1 只在检出的工作区里提交）",
                              hint="git worktree add <目录> " + branch) from None
         raise
+    calllog.note(worktree=w)
     with writer.lock(w):
         rc, sym, _ = gitio.git(w, "symbolic-ref", "-q", "HEAD")
         if rc != 0:
@@ -467,6 +470,7 @@ def governance_record_approval(cfg, model, gate, decision, approvedBy, approves,
         data = text.encode("utf-8")
         written = hashlib.sha256(data).hexdigest()
         _write_new(w, rel, data)
+        calllog.note(files=[{"path": rel, "sha256Before": None, "sha256After": written}])  # ADR-031, until rolled back
         # intent-to-add only: an agent's plain `git commit` in W during this window does not take an i-t-a entry
         # (write-tree skips it); `git commit --only -- rel` then commits the file's content with the hooks as usual
         rc, _, err = gitio.git(w, "add", "--intent-to-add", "--", rel)

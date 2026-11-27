@@ -74,10 +74,12 @@ EXPECTED_ANNOTATIONS = {  # §4 table: (readOnly, destructive, idempotent, openW
     "model_set_labels": (False, True, True, False), "model_set_attributes": (False, True, True, False),
     "governance_record_approval": (False, False, True, True),
     "model_list_actions": (True, None, True, False), "model_apply_action": (False, True, True, False),
-    "model_list_views": (True, None, True, False), "model_render_view": (True, None, True, False)}
-EXPECTED_PROFILES = {"agent": set(EXPECTED_ANNOTATIONS) - {"governance_record_approval", "model_branches"},
+    "model_list_views": (True, None, True, False), "model_render_view": (True, None, True, False),
+    "model_call_log": (True, None, True, False)}
+EXPECTED_PROFILES = {"agent": set(EXPECTED_ANNOTATIONS) - {"governance_record_approval", "model_branches", "model_call_log"},
                      "workbench": {"model_query", "model_findings", "model_gate", "model_impact", "model_diff",
-                                   "model_branches", "governance_record_approval", "model_list_views", "model_render_view"}}
+                                   "model_branches", "model_call_log", "governance_record_approval", "model_list_views",
+                                   "model_render_view"}}
 
 
 def test_T2_annotations_profiles_and_readonly_really_reads_only(repo):
