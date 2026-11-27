@@ -70,7 +70,9 @@
 
 **模型文件不能修改元模型**：模型文件里唯一允许出现的 schema 级三元组，是"单父类特化"，即 `:X rdfs:subClassOf <一个已声明的元素类>`，父类恰好一个，可以附带名称和定义。下面这些都在 L1 报错：声明属性或子属性、一个类有多个父类、以模块或上游术语为主语的三元组、在模型里写 `aisep:assertedShortcut`/`aisep:dependency`/`arch:unqualifiedForm`。这些注解只有写在模块文件里才生效。父类必须是 Language 或 Extension 模块里的**具体类**，不能是 `arch:Element`、`arch:QualifiedRelationship` 这类抽象根类。模型文件也不能往模块的概念表里添加成员（例如自造一个关口）。（原型审计发现：如果不加这条，模型文件可以绕过单一类型、禁手填 approvalState、派生捷径 Warning 等规则。）
 
-**谓词也是闭世界**：模型文件里用到的每个谓词，必须是已加载模块或上游本体声明过的属性，或者在一个小白名单里（`rdf:type`、SKOS 名称与定义、`dcterms:isReplacedBy`、`owl:deprecated`、`prov:generatedAtTime`、`prov:startedAtTime`、`prov:endedAtTime`、`prov:wasAssociatedWith` 等）。两个模型元素之间的连接，必须是限定关系资源；能直接写成谓词的只有几种追溯属性（`aisep:approves`、`ad:relatedConcept`、`aisep:activity`、`prov:wasAssociatedWith` 等）；其中 `aisep:activity` 只能用在批准记录上、`prov:wasAssociatedWith` 只能用在 `aisep:AgentActivity` 上（L1 报错）。（GPT 评审发现：如果不加这条，一个自定义谓词就能绕过全部关系规则。）
+**谓词也是闭世界**：模型文件里用到的每个谓词，必须是已加载模块或上游本体声明过的属性，或者在一个小白名单里（`rdf:type`、SKOS 名称与定义、`dcterms:isReplacedBy`、`owl:deprecated`、`prov:generatedAtTime`、`prov:startedAtTime`、`prov:endedAtTime`、`prov:wasAssociatedWith` 等）。两个模型元素之间的连接，必须是限定关系资源；能直接写成谓词的只有几种追溯属性（`aisep:approves`、`ad:relatedConcept`、`aisep:activity`、`prov:wasAssociatedWith` 等）；其中 `aisep:activity` 只能用在批准记录上、`prov:wasAssociatedWith` 只能用在 `aisep:AgentActivity` 上（L1 报错）。
+
+**属性只能用在定义域上**（issue #67）：模块文件（`modules/**`）声明的 `rdfs:domain` 在 L1 强制，模型文件里用到某属性的主语，必须在源文件里声明为定义域类或其子类；写了几条定义域就要全部满足（RDFS 的交集），写成 `owl:unionOf` 类表的定义域满足其中任一类即可（如 `ddd:triggers`）。每个模块属性（`owl:ObjectProperty`、`owl:DatatypeProperty`、`rdf:Property`，不含 `owl:AnnotationProperty`）都必须声明定义域，取值是 IRI 或 `owl:unionOf` 的 IRI 列表，这是模块合约，由 pytest `aisep-mcp/tests/test_module_property_domains.py` 检查。`vendor/` 上游本体声明的定义域暂不强制（ADR-029）。（GPT 评审发现：如果不加这条，一个自定义谓词就能绕过全部关系规则。）
 
 ## 5. 模块体系
 
@@ -84,6 +86,7 @@
   - `aisep:notationLevel` ∈ {code, design, hub}，见 §7.2。
   - `aisep:ownsNamespace`。
   - `owl:versionInfo`（semver）。
+- 模块文件声明的每个属性都要有 `rdfs:domain`（§4「属性只能用在定义域上」）。关系类的直连谓词（`arch:unqualifiedForm`）的定义域取该关系类定义里写明的源端类型。
 - 对齐公理**只放在 AISEP 自己的图里**，不往第三方词汇文件里写。上游的 SKOS 映射文件原样保留，只当文档用。
 - 每个模块都带 `tests/valid` 和 `tests/invalid`。原型的 8 个模块共 83 个用例，每条规则至少各有一个正例和一个负例。ext-actions 的正例只有一个（`tests/valid/catalog-loads.ttl`：随清单加载的 `catalog.ttl` 必须满足 EA1–EA10），每条 EA 规则各有负例。
 
@@ -200,7 +203,7 @@
 - `aisep:ActionType` ⊑ `sh:Parameterizable`（只作文档，不加载 SHACL 词汇，不参与推理），**不在 `arch:Element` 之下**：没有 `arch:inModel`，也没有批准状态。个体只在 `modules/ext-actions/catalog.ttl` 里声明才生效，IRI 形如 `aisep:Action<名>`（§3）。字段：`dcterms:identifier`（短 id，恰好一个）、`skos:prefLabel`@zh 恰好一个、`skos:definition`@zh 至多一个、`owl:versionInfo`（semver，恰好一个）、`sh:parameter`（参数）、`aisep:guard`（前置检查）、`aisep:steps`（步骤表，恰好一个、非空）。
 - 参数：`sh:parameter [ sh:path <参数键> ; sh:datatype xsd:string 或 sh:nodeKind sh:IRI ; sh:optional true? ; sh:description @zh? ]`，只认这几个键。参数键在 `ont/ext-actions#`，不声明为属性，G7 照样拒绝模型文件把它们当谓词用。
 - 前置检查：`sh:SPARQLAskValidator`（`sh:ask`、`sh:message`@zh、`dcterms:identifier`），ASK 为 true 即通过，参数以 `$名` 预绑定；只是提示（`PRECONDITION_FAILED`），不是合法性定义，`gate` 不知道它。
-- 步骤：`aisep:ActionStep`，`aisep:invokes` 五个基本动作之一（`aisep:BasicAddElement`、`aisep:BasicAddRelationship`、`aisep:BasicSetLabels`、`aisep:BasicSetAttributes`、`aisep:BasicRemove`，封闭集合，`skos:notation` 是对应 MCP 写工具名），每个入参一个 `aisep:binding` 空白节点：`aisep:argument` 加取值来源四选一（`aisep:constant`、`aisep:fromParameter`、`aisep:fromStep`、`aisep:modelOf`），列表型入参的一项另带 `aisep:attributePredicate`。
+- 步骤：`aisep:ActionStep`，`aisep:invokes` 五个基本动作之一（`aisep:BasicAddElement`、`aisep:BasicAddRelationship`、`aisep:BasicSetLabels`、`aisep:BasicSetAttributes`、`aisep:BasicRemove`，封闭集合，`skos:notation` 是对应 MCP 写工具名），每个入参一个 `aisep:binding` 空白节点（不写类型，按 `aisep:binding` 的值域是 `aisep:ActionBinding`，它是下面几个属性的定义域）：`aisep:argument` 加取值来源四选一（`aisep:constant`、`aisep:fromParameter`、`aisep:fromStep`、`aisep:modelOf`），列表型入参的一项另带 `aisep:attributePredicate`。
 - 校验：L3 `shapes.ttl` 的 EA1–EA10（结构；EA10 防止动作词汇被写到模型元素上）；执行器每次读目录再判同样的结构，另判 SHACL Core 说不了的 X2–X10（表良构、入参名、引用、guard 能执行、id 唯一、空白节点不共享、两步作用于同一目标）。
 - 不采纳：Foundry 的 Function rule、side effects、action log、「默认只能经动作编辑」。
 
@@ -304,7 +307,7 @@ spike 里 AI 试验用的 7 元素标准答案，其实是无向的 3 跳邻域�
 | 层 | 做什么 | 引擎 | 何时跑 |
 |---|---|---|---|
 | L0 | 能解析 | pyoxigraph | 每次写入 |
-| L1 | 闭世界：类型、必填项、禁用词汇、禁写直连三元组、禁手填 approvalState、悬空引用、记法混用、refines 层级 | pyoxigraph SPARQL | 每次写入 |
+| L1 | 闭世界：类型、必填项、禁用词汇、禁写直连三元组、禁手填 approvalState、悬空引用、记法混用、refines 层级、模块属性的定义域（§4） | pyoxigraph SPARQL | 每次写入 |
 | L2 | 枢纽关系表查表 + 派生捷径 Warning | pyoxigraph + Python | 每次写入 |
 | L3 | 完整 SHACL（含各记法自己的 shapes、闭合取值集） | pyshacl，跑在**构建后的图**上 | pre-commit 和 CI |
 | L4 | 发现项：追溯缺口（Must 级）、孤立元素、视点不符 | pyoxigraph | CI、关口评审 |

@@ -1,0 +1,14 @@
+# expect: EA10:
+# Invalid: a model member typed aisep:ActionBinding that is not the object of aisep:binding. The class exists only
+# as the rdfs:domain / rdfs:range of the binding properties (ADR-029); declaring it must not make it a usable type.
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix aisep: <https://aisep.example/ont/aisep#> .
+@prefix :      <https://aisep.example/model/ext-actions-test/> .
+
+:model a arch:Model ;
+    skos:prefLabel "动作扩展测试模型"@zh .
+
+:x a aisep:ActionBinding ;
+    arch:inModel :model ;
+    skos:prefLabel "x"@zh .

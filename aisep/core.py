@@ -776,12 +776,24 @@ class Ctx:
         """Issue #67: the rdfs:domain a module file (modules/**) declares for a property is enforced on model files —
         a subject using the property must have an asserted rdf:type (in a source file) that is the domain class or a
         subclass of it. Otherwise a declared property could be borrowed onto any element (aisep:swhid on a TestResult,
-        aisep:approves between two ordinary elements) and its targetClass shapes would never see it. Domains declared
-        only by vendored ontologies are not enforced here."""
-        domains = {}
-        for p, d in self.rows(f"""SELECT DISTINCT ?p ?d WHERE {{ GRAPH ?g {{ ?p rdfs:domain ?d }}
-                                  FILTER(STRSTARTS(STR(?g), "{ONTO_G}modules/") && isIRI(?d)) }}"""):
-            domains.setdefault(p, set()).add(d)
+        aisep:approves between two ordinary elements) and its targetClass shapes would never see it. Several domains
+        are an intersection (RDFS); a domain written as an owl:unionOf list of classes is met by any one of them
+        (ddd:triggers). Every module property declares a domain (module contract, aisep-mcp/tests/
+        test_module_property_domains.py). Domains declared only by vendored ontologies are not enforced here (ADR-029)."""
+        alts = {}  # (property, domain node) -> the classes any one of which meets that domain
+        for p, d, m in self.rows(f"""SELECT DISTINCT ?p ?d ?m WHERE {{ GRAPH ?g {{ ?p rdfs:domain ?d }}
+                                     FILTER(STRSTARTS(STR(?g), "{ONTO_G}modules/"))
+                                     OPTIONAL {{ ?d owl:unionOf/rdf:rest*/rdf:first ?m }} }}""", raw=True):
+            cs = alts.setdefault((p.value, d), set())
+            if isinstance(d, ox.NamedNode):
+                cs.add(d.value)
+            elif isinstance(m, ox.NamedNode):
+                cs.add(m.value)
+        domains = {}  # property -> {domain as shown: frozenset of the classes any one of which meets it}
+        for (p, d), cs in alts.items():
+            if cs:  # a blank-node domain that is not a union of IRIs: the module contract test refuses it
+                label = short(d) if isinstance(d, ox.NamedNode) else f"owl:unionOf({', '.join(sorted(map(short, cs)))})"
+                domains.setdefault(p, {})[label] = frozenset(cs)
         types = {}
         for s, t in self.rows(f"SELECT DISTINCT ?s ?t WHERE {{ GRAPH ?g {{ ?s a ?t }} {self.src_graph_filter()} FILTER(isIRI(?t)) }}"):
             types.setdefault(s, set()).add(t)
@@ -789,15 +801,18 @@ class Ctx:
         for f, qs in self.src_quads.items():
             for q in qs:
                 p, s = q.predicate.value, q.subject.value
-                for d in sorted(domains.get(p, ())):
-                    if (s, p, d) in seen or any(d in self.ancestors(t) for t in types.get(s, ())):
+                for d, cs in sorted(domains.get(p, {}).items()):
+                    if (s, p, d) in seen or any(cs & set(self.ancestors(t)) for t in types.get(s, ())):
                         continue
                     seen.add((s, p, d))
-                    self.add("Violation", "L1", f"{short(q.subject)}: {self.pname(p)} has rdfs:domain {short(d)} but "
-                             f"{short(q.subject)} is not a {short(d)} (asserted types: "
+                    # a blank-node subject (e.g. an aisep:binding node in a model file) is shown and anchored like the
+                    # other L1 findings: never by its random label, so the write tools' instance key is stable (§7.3)
+                    it = short(q.subject) if isinstance(q.subject, ox.NamedNode) else "the blank node"
+                    self.add("Violation", "L1", f"{self.display(q.subject)}: {self.pname(p)} has rdfs:domain {d} but "
+                             f"{it} is not a {d} (asserted types: "
                              f"{', '.join(sorted(map(short, types.get(s, ())))) or 'none'}) in {self.rel(f)} — a property "
                              f"may only be used on its domain class (issue #67)",
-                             focus=s if isinstance(q.subject, ox.NamedNode) else None)
+                             **self.anchor(q.subject))
 
     def l1_one_notation(self):
         """R2 (v0.2.1) one notation per element: every asserted type, the redundant superclasses included, belongs to
