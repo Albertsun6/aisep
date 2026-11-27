@@ -1,0 +1,16 @@
+# expect-warning: 至多一个权威来源
+# R8 (level 2) applies to every DataObject (metamodel-spec §6.8), also in a model with no C4 element at all.
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+:orderComp a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "订单管理"@zh .
+:orderData a am4:DataObject ; arch:inModel :t ; skos:prefLabel "订单数据"@zh .
+:crmComp a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "客户管理"@zh .
+:rel-orderComp-assigned-orderData a am4:Assignment ; arch:inModel :t ; arch:source :orderComp ; arch:target :orderData .
+:rel-crmComp-assigned-orderData a am4:Assignment ; arch:inModel :t ; arch:source :crmComp ; arch:target :orderData .
