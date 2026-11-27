@@ -180,7 +180,7 @@
 
 ### 6.8 C4（Language，`inheritsHubRules=false`，level=design；第一批之后由 PR #106 加入）
 - 模块 `modules/c4`（`https://aisep.example/module/c4`）。需求与关口 A 的决定见 `docs/specs/c4-archimate4-dual-model.md` 和 `docs/specs/c4-archimate4-verification.md` §9.3，实施说明见 `docs/specs/c4-archimate4-step4.md`。
-- **双模型**：ArchiMate 记录系统对企业意味着什么，C4 记录系统在技术上长什么样。同一事实只在一边记录，两边通过 `arch:refines` 关联（§7）。C4 不是 ArchiMate 的视图，模块**不声明任何对齐公理**（没有 C4 ⊑ am4）。
+- **双模型**：ArchiMate 记录系统对企业意味着什么，C4 记录系统在技术上长什么样。同一事实只在一边记录，两边通过 `arch:refines` 关联（§7）。「同一事实只在一边记录」是建模约定，gate 不检查。C4 不是 ArchiMate 的视图，模块**不声明任何对齐公理**（没有 C4 ⊑ am4）。
 - 词汇只用上游原样文件：`c4/onto`（人、软件系统、容器及其子类 Database/MobileApp/ClientSideWebApp、组件、外部人、外部系统；`c4:Using`、`c4:ContainerContainment`、`c4:ComponentContainment`；`c4:technology`），以及 `c4/structurizr`（部署节点、基础设施节点，`structurizr:Deployment`）。模块拥有这两个命名空间。上游 `c4/shapes`、`c4/structurizr-shapes` 原样运行。
 - 跨模型关联：C4 元素 refines am4 元素（design → hub）。规则 R1–R9（`modules/c4/shapes.ttl`）：
   - R1：本方软件系统恰好 refines 一个 `am4:ApplicationComponent`，外部系统除外；一个组件至多被一个 C4 软件系统 refines。
@@ -190,8 +190,8 @@
   - R5：跨容器的 `c4:Using` 必须写 `c4:technology`。
   - R6–R9 是 Warning：
     - R6：被 C4 软件系统或容器 refines 的 am4 组件，应直接或经一个 Role 执行 Function/Process。上游 am4 4.0 关系表中，组件只能直接分派到 Role 和 DataObject；分派到 Function/Process 必须经过 Role，直接画属于派生，见核实报告 §8 S10。
-    - R7：这类组件（直接或经 Role）执行的行为所实现的服务，应能追溯到 Capability 或 Requirement。只检查追溯这一半。
-    - R8：一个 DataObject 至多有一个权威来源（被 ApplicationComponent 分派）。作用于全部 DataObject，不限于 C4 所描述的系统。
+    - R7：这类组件（直接或经 Role）执行的行为所实现的服务，应能追溯到 Capability 或 Requirement。只检查追溯这一半，不检查服务是否被行为实现：没有行为实现的服务连不到 C4 元素，无法限定在 C4 所描述的系统内，所以不报（夹具 `r7-unrealized-service-not-checked-ok.ttl`）。
+    - R8：一个 DataObject 至多有一个权威来源（被 ApplicationComponent 分派）。作用于全部 DataObject，不限于 C4 所描述的系统；模型中没有 C4 元素时同样生效（夹具 `r8-no-c4-elements-warns.ttl`）。
     - R9：每个 `c4:Component` 应恰好属于一个容器（一条 `c4:ComponentContainment`）。规范第 7 节没有这一条，是 AISEP 的补充（issue #122）；组件归属不唯一时 R5 会漏报。
 - 不加载 c4 的 viewpoints、notation、deliverable-templates；不加载 core-vis、edgy（§12）。
 
@@ -384,3 +384,5 @@ Backstage 接入、TOGAF 内容元模型、ArchiMate 派生规则引擎、图形
 - `governance.record_approval` 在"新建记录文件"与"提交完成"之间被杀，会留下未提交的记录文件；下次调用以 DIRTY_WORKTREE 报出，需人工清理。多文件写入同样不是崩溃原子的，由 gate 兜底。
 - `model.remove` 对 BPMN 成员属性以外的引用一律拒绝，放开需要逐条进规范。布局文件出现前，删除不处理布局。
 - `tools/aisep.py` 需要 Python 3.12 及以上。
+- C4 的 R5 只管容器之间（组件按所属容器算）的 `c4:Using`：容器调用外部系统、人使用系统等其他 `c4:Using` 不要求写 `c4:technology`（Albert 2026-11-27 定为不升级，§6.8）。
+- C4 的 `c4:Database` 在 am4 侧按主锚唯一（§7.2）至多 refines 一个节点，R3 又要求这个节点是 `am4:DataObject`：一个独立治理、本身就是 am4 应用组件的数据库，无法同时 refines 该组件和它承载的 DataObject（Albert 2026-11-27 定为等真实用例再处理，§6.8）。
