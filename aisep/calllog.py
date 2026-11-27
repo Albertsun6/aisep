@@ -226,7 +226,7 @@ def _get(o, *keys):
 
 def _matches(m, tools, outcome, model, actionId, branch, since, until):
     out = m.get("outcome")
-    if tools is not None and m.get("tool") not in tools:
+    if tools is not None and not (isinstance(m.get("tool"), str) and m["tool"] in tools):  # an unhashable tool is a bad line
         return False
     if outcome is not None and not (out != "ok" if outcome == "rejected" else out == outcome):
         return False

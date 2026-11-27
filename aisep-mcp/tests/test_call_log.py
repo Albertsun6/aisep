@@ -165,6 +165,28 @@ def test_exit1_each_audited_write_tool_logs_one_ok_line_with_real_hashes(wrepo):
     assert "calls" not in git(wrepo, "status", "--porcelain", "--ignored")
 
 
+def test_exit9_definition_digest_follows_an_edit_of_the_action_definition(wrepo):
+    """ADR-031 exit 9, second half: after the action's definition changes, a new line carries the new digest (the one
+    model_list_actions now gives), not the old one."""
+    cfg = tools.Config(repo=str(wrepo))
+
+    def apply_and_digests():
+        r = server.logged_call(cfg, RUN, "model_apply_action", {"action": REGISTER, "params": P0, "dryRun": True})
+        assert not r.is_error, r.content[0].text
+        listed = next(x["definitionDigest"] for x in actions.model_list_actions(cfg)["actions"] if x["id"] == REGISTER)
+        return lines(wrepo)[-1]["measured"]["request"]["definitionDigest"], listed
+
+    before, listed_before = apply_and_digests()
+    assert before == listed_before
+    cat = wrepo / "modules" / "ext-actions" / "catalog.ttl"
+    text = cat.read_text(encoding="utf-8")
+    old = '"验收标准的中文名称"@zh'
+    assert text.count(old) == 1
+    cat.write_text(text.replace(old, '"验收标准的中文名称（改）"@zh'), encoding="utf-8")
+    after, listed_after = apply_and_digests()
+    assert after == listed_after and after != before
+
+
 def test_exit1_record_approval_logs_commit_activity_and_file_hash(template, tmp_path):
     t = Topo(template, tmp_path)
     t.checkout("main", new="feat/x")

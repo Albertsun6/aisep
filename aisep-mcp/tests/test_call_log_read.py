@@ -160,6 +160,19 @@ def test_malformed_and_unknown_version_lines_are_counted(repo):
     assert p["skipped"] == {"malformed": 3, "unknownVersion": 2}
 
 
+def test_unhashable_tool_field_does_not_break_a_filtered_read(repo):
+    """A v1 line whose measured.tool is not a string (a list: unhashable) is skipped by the tools filter, not an
+    INTERNAL error for the whole page."""
+    cfg = tools.Config(repo=str(repo))
+    refused(cfg, 1)
+    with open(log_path(repo), "ab") as f:
+        f.write(json.dumps({"v": 1, "measured": {"tool": ["model_remove"]}}).encode() + b"\n")
+        f.write(json.dumps({"v": 1, "measured": {"tool": {"x": 1}}}).encode() + b"\n")
+    assert len(ok(cfg)["items"]) == 3
+    assert ok(cfg, tools=["model_remove"])["items"] == []
+    assert ids(ok(cfg, tools=["model_set_labels"])["items"]) == ["urn:x:0"]
+
+
 # ---------------------------------------------------------------- 6: the sentinel label reaches neither log nor output
 
 def test_sentinel_label_is_in_neither_the_log_nor_the_reader_output(wrepo):

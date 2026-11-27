@@ -211,7 +211,7 @@
 
 画像**不是安全边界**：代理可以直接手写 Turtle 伪造批准记录，真正的约束是代码评审和分支保护。画像只防"顺手调用"。
 
-**加了五个规范外的工具**：`model_gate`、`model_set_labels`、`model_set_attributes`、`model_list_actions`、`model_apply_action`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。`model_set_attributes`：补上非标签属性的修改入口（Albert 2026-11-25 放行阶段 A 时随之加入，§5.12）。`model_list_actions`、`model_apply_action`：动作目录的两个固定入口，把几次写工具调用合成一次写入（§5.13、§5.14）。
+**加了六个规范外的工具**：`model_gate`、`model_set_labels`、`model_set_attributes`、`model_list_actions`、`model_apply_action`、`model_call_log`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。`model_set_attributes`：补上非标签属性的修改入口（Albert 2026-11-25 放行阶段 A 时随之加入，§5.12）。`model_list_actions`、`model_apply_action`：动作目录的两个固定入口，把几次写工具调用合成一次写入（§5.13、§5.14）。`model_call_log`：只读，给工作台读服务端调用日志（ADR-031，Albert 2026-11-27 拍板第 14 条，§3.6、§5.15）。
 
 ---
 
@@ -1213,7 +1213,38 @@ export interface ApprovalResult {
 	findings: Finding[];
 }
 
-/** 工作台用到的 6 个工具；写模型的 5 个工具（model_add_element、model_add_relationship、model_remove、
+/** model_call_log 结果（§5.15）。items 是日志行（§3.6）原样解析出的对象外加 offset，只含 v 为 1 的行。 */
+export type AuditedTool = "model_add_element" | "model_add_relationship" | "model_set_labels" | "model_set_attributes"
+	| "model_remove" | "model_apply_action" | "governance_record_approval";
+export interface CallLogRequest {
+	argsSha256: string; model: string | null; iris: string[]; actionId: string | null; actionVersion: string | null;
+	definitionDigest: string | null; dryRun: boolean | null; planDigestGiven: boolean | null; repoArg: string | null;
+}
+export interface CallLogLine {
+	offset: number; // 这一行在文件里的起始字节偏移
+	v: 1;
+	measured: {
+		time: string; durationMs: number; tool: string; outcome: string; // outcome：ok、§7.2 错误码或 UNKNOWN_TOOL
+		server: { pid: number; profile: string; transport: string; allowRoots: string[]; repo: string | null };
+		request: CallLogRequest;
+		target: { worktree: string; branch: string | null; head: Sha | null } | null;
+		files: { path: string; before: string | null; after: string }[];
+		approval?: { commit: Sha; activity: Iri | null };
+	};
+	declared: { clientInfo: Record<string, unknown> | null; activity?: { agent: Iri | null; sessionRef: string | null } }; // 调用方自报，只用来关联
+}
+export interface CallLogResult {
+	log: { path: string | null; present: boolean; sizeBytes: number | null; resolvedFrom: "allow-root" | "repo" | null };
+	items: CallLogLine[]; // 新的在前
+	skipped: { malformed: number; unknownVersion: number };
+	nextCursor: string | null; // 不透明，原样传回
+}
+export interface CallLogInput {
+	limit?: number; cursor?: string; tools?: AuditedTool[]; outcome?: string; // outcome："ok"、"rejected"、§7.2 错误码或 "UNKNOWN_TOOL"
+	model?: string; actionId?: string; branch?: string; since?: string; until?: string; // 不接受 repo（§5.15）
+}
+
+/** 工作台用到的 7 个工具；写模型的 5 个工具（model_add_element、model_add_relationship、model_remove、
  *  model_set_labels、model_set_attributes）不进工作台（一期），所以这里没有对应方法。 */
 export interface AisepModelClient {
 	query(sparql: string, target?: Target & { limit?: number }): Promise<QueryResult>;
@@ -1223,6 +1254,7 @@ export interface AisepModelClient {
 	diff(input: { repo?: string; head: string | { worktree: string }; base?: string; mainRef?: string; model?: string;
 	              detail?: "summary" | "items" | "triples" }): Promise<DiffResult>;
 	recordApproval(input: ApprovalInput): Promise<ApprovalResult>;
+	callLog(input?: CallLogInput): Promise<CallLogResult>; // 只读调用日志（§5.15）
 }
 
 /** isError: true 的工具结果统一抛成它；code 取 §7.2。 */
