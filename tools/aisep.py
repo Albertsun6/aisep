@@ -23,8 +23,9 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
                    [-o OUT.svg] [model files...]
                                        -> DDD view as SVG (aisep/diagram_ddd.py): the context map of a model (bounded
                                           contexts, subdomains, Context Mapper notation) or the aggregates of one context
-  aisep.py diagram --list --model SLUG [model files...]
+  aisep.py diagram --ddd list --model SLUG [model files...]
                                        -> the DDD views that model can render, one `VIEW <args>` line each
+                                          (--view / --viewpoint / --of alongside it are a usage error)
   aisep.py adm [<阶段> --model <slug> [--check FILE.rq]... [--deliverable] [--out FILE]]
                                        -> ADM 向导（docs/specs/adm-wizard.md）：按阶段列出模型里已有的元素和缺口，
                                           --deliverable 生成交付物 Markdown；默认打印，--out 只写这一个文件；有缺口也返回 0；
@@ -313,8 +314,8 @@ def cmd_test(no_pytest=False):
 def cmd_diagram(args):
     """ArchiMate 4 view -> SVG (aisep/diagram.py). Read-only; not part of gate."""
     from aisep import diagram, diagram_c4, diagram_ddd
-    if "--list" in args:
-        return _list_ddd([a for a in args if a != "--list"])
+    if "--ddd" in args:
+        return _list_ddd(args)
     opts = {}
     for k in ("--view", "--viewpoint", "--model", "--of", "-o"):
         if k in args:
@@ -447,8 +448,15 @@ def _write_ddd(sel, name, opts):
 
 
 def _list_ddd(args):
-    """diagram --list --model SLUG: the DDD views the model can render."""
+    """diagram --ddd list --model SLUG: the DDD views the model can render."""
     from aisep import diagram_ddd
+    i = args.index("--ddd")
+    if i + 1 >= len(args) or args[i + 1] != "list":
+        print("[Violation] diagram: --ddd takes only `list` (diagram --ddd list --model SLUG)"); return 2
+    args = args[:i] + args[i + 2:]
+    extra = [k for k in ("--view", "--viewpoint", "--of", "-o") if k in args]
+    if extra:
+        print(f"[Violation] diagram: --ddd list lists views and draws none; {', '.join(extra)} cannot go with it"); return 2
     if "--model" not in args or args.index("--model") + 1 >= len(args):
         print(__doc__); return 2
     i = args.index("--model")

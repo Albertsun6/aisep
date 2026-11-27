@@ -3,13 +3,14 @@
 Two views (plain names, no viewpoint IRI is minted):
   * ContextMap (scope: a model): its ddd:BoundedContext and ddd:Subdomain members, and the context-map relationships
     between them (ddd:UpstreamDownstream, ddd:CustomerSupplier, ddd:Partnership, ddd:SharedKernel) plus
-    ddd:SubdomainImplementation. Notation follows the Context Mapper context-map generator
-    (github.com/ContextMapper/context-map-generator): lines carry no arrow; the upstream end is labelled "U" or
-    "U | OHS, PL", the downstream end "D" or "D | ACL" (Customer-Supplier: "U,S" / "D,C", as CML writes
-    [U,S]->[D,C]); Partnership and Shared Kernel only name their type in the middle; exposed aggregates are listed in
-    the middle. Role abbreviations are the roles' skos:notation. Unlike Context Mapper, subdomains are drawn as a
-    second band ("问题空间") and implementation as a grey dashed line, so a model without context relationships still
-    shows how its contexts relate to its subdomains.
+    ddd:SubdomainImplementation. Where the notation comes from:
+      - the Context Mapper context-map generator (github.com/ContextMapper/context-map-generator): lines carry no
+        arrow; the upstream end is labelled "U" or "U | OHS, PL", the downstream end "D" or "D | ACL"; Partnership,
+        Shared Kernel and Customer-Supplier name their type in the middle; implementation is a grey dashed line (its
+        team map's "realizes"). Role abbreviations are the roles' skos:notation.
+      - CML syntax ([U,S]->[D,C]): the Customer-Supplier ends "U,S" / "D,C".
+      - AISEP's own: the "暴露：…" middle line for exposed aggregates, and subdomains as a second band ("问题空间"),
+        so a model without context relationships still shows how its contexts relate to its subdomains.
   * AggregateDiagram (scope: a bounded context B): B as the outer box, every aggregate B owns (ddd:Ownership) as an
     inner box holding the entities and value objects it contains (ddd:Containment); the root (ddd:RootContainment)
     is marked «聚合根». Containment and ownership are drawn as nesting, never as lines (as in Context Mapper's
@@ -20,6 +21,8 @@ What the model says but cannot be drawn, or is drawn degraded, is a warning nami
 Layout is ELK layered (elkjs pinned in tools/elk), fixed options and seed: same model, same bytes.
 """
 from html import escape
+
+import pyoxigraph as ox
 
 from aisep.core import NS
 from aisep.diagram import MARGIN, elk_layout, f, local, tw, wrap
@@ -46,10 +49,10 @@ NODE_W, LEAF_W, BAND_PAD, LABEL_W = 188, 156, 18, 92
 STYLE = """
 svg{--bg:#ffffff;--fg:#18202d;--muted:#586375;--edge:#3d495b;--band:#f3f5f8;--line:#596071;
  --bc:#dfe9f7;--bc-line:#3c70bf;--sub-core:#f6c9a8;--sub-sup:#fbe3cf;--sub-gen:#f4f0ea;--sub-none:#e2e5ea;
- --agg:#fff7cc;--agg-line:#b59a1f;--root:#fffab8;--root-bar:#d4b106;--leaf:#ffffff;--impl:#8f9aab}
+ --agg:#fff7cc;--agg-line:#b59a1f;--root:#fffab8;--root-bar:#d4b106;--leaf:#ffffff;--vo:#eef6ee;--impl:#8f9aab}
 @media (prefers-color-scheme:dark){svg{--bg:#151b24;--fg:#e5eaf1;--muted:#9ba6b7;--edge:#a9b3c2;--band:#1b222d;
  --line:#9aa3b2;--bc:#1f3049;--bc-line:#6d9be0;--sub-core:#5a3a24;--sub-sup:#45362a;--sub-gen:#35322e;--sub-none:#29303a;
- --agg:#3a3520;--agg-line:#c9ad3a;--root:#4a4422;--root-bar:#e0c23a;--leaf:#1d242f;--impl:#6f7a8b}}
+ --agg:#3a3520;--agg-line:#c9ad3a;--root:#4a4422;--root-bar:#e0c23a;--leaf:#1d242f;--vo:#1f2b22;--impl:#6f7a8b}}
 text{font-family:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif}
 .bg{fill:var(--bg)} .band{fill:var(--band)} .band-t{font-size:12px;font-weight:600;fill:var(--muted)}
 .title{font-size:16px;font-weight:600;fill:var(--fg)} .sub{font-size:11px;fill:var(--muted)}
@@ -58,7 +61,7 @@ text{font-family:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC
 .sd{stroke:var(--line);stroke-width:1.1}
 .bnd{fill:none;stroke:var(--bc-line);stroke-width:1.4;stroke-dasharray:7 5}
 .agg{fill:var(--agg);stroke:var(--agg-line);stroke-width:1.3} .leaf{fill:var(--leaf);stroke:var(--line);stroke-width:1}
-.root{fill:var(--root)} .root-bar{fill:var(--root-bar)}
+.root{fill:var(--root)} .root-bar{fill:var(--root-bar)} .vo{fill:var(--vo);stroke-dasharray:4 3}
 .tt{font-weight:700;font-size:13px;fill:var(--fg)} .ty{font-size:10.5px;fill:var(--muted)}
 .badge{font-size:10px;font-weight:600;fill:var(--fg)}
 .lbl-h{font-weight:700;font-size:13px;fill:var(--fg)} .lbl-s{font-size:11px;fill:var(--muted)}
@@ -105,8 +108,19 @@ class DDDModel:
                 if k:
                     self.kind[x] = k
 
+    def terms(self, x, prop):
+        """The objects of (x, prop) as RDF terms (IRI or literal), sorted on their value. A store pattern, not SPARQL
+        text, so a value is never spliced into a query."""
+        s = x if isinstance(x, ox.NamedNode) else ox.NamedNode(x)
+        return sorted({q.object for q in self.ctx.store.quads_for_pattern(s, ox.NamedNode(prop), None)},
+                      key=lambda t: (t.value, str(t)))
+
     def values(self, x, prop):
-        return sorted(v for (v,) in self.ctx.rows(f"SELECT ?v WHERE {{ <{x}> <{prop}> ?v }}"))
+        return sorted({t.value for t in self.terms(x, prop)})
+
+    def term_name(self, t):
+        """Display name of a term: an IRI's label (or local name), a literal's own text."""
+        return (self.ctx.label(t.value) or local(t.value)) if isinstance(t, ox.NamedNode) else t.value
 
     def name(self, x):
         return self.ctx.label(x) or local(x)
@@ -141,16 +155,18 @@ def views(ctx, model):
 # ------------------------------------------------------------------ selecting a view
 
 def _roles(m, x, prop, scheme, warnings):
-    """skos:notation of every role value of x that is a concept of scheme; other values are warned, not drawn."""
+    """skos:notation of every role value of x that is an IRI and a concept of scheme; other values (wrong scheme, no
+    notation, a literal) are warned, not drawn. Term types decide what an IRI is; nothing is spliced into SPARQL."""
     out = []
-    for v in m.values(x, prop):
-        ok = v.startswith(("http:", "https:")) and \
-            m.ctx.rows(f"SELECT ?s WHERE {{ <{v}> skos:inScheme ?s FILTER(?s = <{DDD}{scheme}>) }}")
-        notes = m.values(v, SKOS + "notation") if ok else []
+    for v in m.terms(x, prop):
+        ok = isinstance(v, ox.NamedNode) and \
+            ox.NamedNode(DDD + scheme) in {t for t in m.terms(v, SKOS + "inScheme") if isinstance(t, ox.NamedNode)}
+        notes = [n.value for n in m.terms(v, SKOS + "notation") if isinstance(n, ox.Literal)] if ok else []
         if notes:
             out.append(notes[0])
         else:
-            warnings.append(f"{x}: role {v} is not in ddd:{scheme}, not drawn")
+            shown = v.value if isinstance(v, ox.NamedNode) else f'"{v.value}"'
+            warnings.append(f"{x}: role {shown} is not in ddd:{scheme}, not drawn")
     return sorted(out)
 
 
@@ -158,14 +174,15 @@ def _context_map(ctx, m, warnings):
     boxes, edges = {}, []
     for x, k in sorted(m.kind.items()):
         if k == "bc":
-            ct = m.values(x, DDD + "contextType")
+            ct = m.terms(x, DDD + "contextType")
             boxes[x] = {"iri": x, "kind": "bc", "label": m.name(x), "parent": None, "compound": False,
-                        "stereo": "«限界上下文" + (f" · {ctx.label(ct[0]) or local(ct[0])}" if ct else "") + "»"}
+                        "stereo": "«限界上下文" + (f" · {m.term_name(ct[0])}" if ct else "") + "»"}
         elif k == "sub":
-            st = m.values(x, DDD + "subdomainType")
+            st = m.terms(x, DDD + "subdomainType")
             boxes[x] = {"iri": x, "kind": "sub", "label": m.name(x), "parent": None, "compound": False,
-                        "stereo": "«子域" + (f" · {ctx.label(st[0]) or local(st[0])}" if st else "") + "»",
-                        "fill": SUBTYPE.get(local(st[0]), "sub-none") if st else "sub-none"}
+                        "stereo": "«子域" + (f" · {m.term_name(st[0])}" if st else "") + "»",
+                        "fill": SUBTYPE.get(local(st[0].value), "sub-none")
+                        if st and isinstance(st[0], ox.NamedNode) else "sub-none"}
     for x, r, s, t in m.rels:
         if r not in MAP_RELS:
             continue
@@ -183,11 +200,11 @@ def _context_map(ctx, m, warnings):
             if r == "CustomerSupplier":
                 e["center"].append(zh)
             exposed = []
-            for a in m.values(x, DDD + "exposedAggregate"):
-                if m.kind.get(a) == "agg":
-                    exposed.append(m.name(a))
+            for a in m.terms(x, DDD + "exposedAggregate"):
+                if isinstance(a, ox.NamedNode) and m.kind.get(a.value) == "agg":
+                    exposed.append(m.name(a.value))
                 else:
-                    warnings.append(f"{x}: exposed aggregate {a} is not an Aggregate, not drawn")
+                    warnings.append(f"{x}: exposed aggregate {a.value} is not an Aggregate, not drawn")
             if exposed:
                 e["center"].append("暴露：" + "、".join(sorted(exposed)))
         elif r in ("Partnership", "SharedKernel"):
@@ -199,6 +216,16 @@ def _context_map(ctx, m, warnings):
         edges.append(e)
     for x, t in m.unsupported():
         warnings.append(f"{x}: ddd:{local(t)} is not drawn by any DDD view yet")
+    # tactical members no AggregateDiagram reaches: an aggregate no bounded context owns, an entity or value object in
+    # no aggregate that a bounded context owns
+    owned = {t for _, r, s, t in m.rels if r == "Ownership" and m.kind.get(s) == "bc" and m.kind.get(t) == "agg"}
+    reached = {t for _, r, s, t in m.rels if r in ("Containment", "RootContainment") and s in owned}
+    for x, k in sorted(m.kind.items()):
+        if k == "agg" and x not in owned:
+            warnings.append(f"{x}: ddd:Aggregate owned by no bounded context (ddd:Ownership), not drawn by any DDD view")
+        elif k in ("ent", "vo") and x not in reached:
+            warnings.append(f"{x}: ddd:{local(ELEMENTS[k][0])} is in no aggregate a bounded context owns "
+                            f"(ddd:Containment), not drawn by any DDD view")
     return boxes, edges
 
 
@@ -349,14 +376,27 @@ def layout(boxes, edges):
 
 # ------------------------------------------------------------------ rendering
 
-def _leaf(b, x, y, w, h):
+# shape of each box kind: (css class, corner radius). The legend draws its swatches from the same table, so a legend
+# entry always looks like what it explains. Entities are square-cornered and solid; value objects rounded, dashed, tinted.
+SHAPES = {"bc": ("bc", 14), "boundary": ("bnd", 10), "agg": ("agg", 4), "ent": ("leaf", 3), "root": ("leaf root", 3),
+          "vo": ("leaf vo", 10)}
+
+
+def _shape(b):
     if b["kind"] == "bc":
-        out = [f'<rect x="{f(x)}" y="{f(y)}" width="{f(w)}" height="{f(h)}" rx="14" class="bc"/>']
-    elif b["kind"] == "sub":
+        return SHAPES["boundary" if b["compound"] else "bc"]
+    if b["kind"] == "ent" and b["root"]:
+        return SHAPES["root"]
+    return SHAPES[b["kind"]]
+
+
+def _leaf(b, x, y, w, h):
+    if b["kind"] == "sub":
         out = [f'<rect x="{f(x)}" y="{f(y)}" width="{f(w)}" height="{f(h)}" rx="2" class="sd {b["fill"]}"/>']
     else:
-        out = [f'<rect x="{f(x)}" y="{f(y)}" width="{f(w)}" height="{f(h)}" rx="3" class="leaf{" root" if b["root"] else ""}"/>']
-        if b["root"]:
+        cls, rx = _shape(b)
+        out = [f'<rect x="{f(x)}" y="{f(y)}" width="{f(w)}" height="{f(h)}" rx="{rx}" class="{cls}"/>']
+        if b.get("root"):
             out.append(f'<rect x="{f(x)}" y="{f(y)}" width="5" height="{f(h)}" class="root-bar"/>')
     ls = _lines(b, w)
     lh = [px * 1.38 for _, _, px in ls]
@@ -374,11 +414,14 @@ def render(title, sub, boxes, edges):
     width = max(MARGIN * 2 + gw, 560)
     abbr = sorted({a for e in edges for end in ("tail", "head") if e[end] for part in e[end].split(" | ", 1)[1:]
                    for a in part.split(", ")})
-    kinds = [k for k in ("bc", "sub", "agg", "ent", "vo") if any(b["kind"] == k for b in boxes.values())]
+    kinds = [k for k in ("bc", "boundary", "agg", "ent", "vo") if any(
+        (b["kind"] == "bc" and b["compound"] == (k == "boundary")) if k in ("bc", "boundary")
+        else (b["kind"] == k and not b.get("root")) for b in boxes.values())]
+    cs = any(e["type"] == "CustomerSupplier" for e in edges)
     subfills = sorted({b["fill"] for b in boxes.values() if b["kind"] == "sub"},
                       key=["sub-core", "sub-sup", "sub-gen", "sub-none"].index)
     etypes = [r[0] for r in RELS if any(e["type"] == r[0] for e in edges)]
-    legend = [("k", k) for k in kinds if k != "sub"] + [("s", s) for s in subfills] + \
+    legend = [("k", k) for k in kinds] + [("s", s) for s in subfills] + \
              ([("root", None)] if any(b.get("root") for b in boxes.values()) else []) + [("e", t) for t in etypes] + \
              ([("ud", None)] if any(e["tail"] for e in edges) else []) + [("a", a) for a in abbr]
     per_row = max(1, int((width - 2 * MARGIN - 60) // 170))
@@ -412,9 +455,9 @@ def render(title, sub, boxes, edges):
         b, (x, y, w, h) = boxes[i], pos[i]
         x, y = MARGIN + x, top + y
         kind = "boundary" if b["kind"] == "bc" else "aggregate"
+        cls, rx = _shape(b)
         out.append(f'<g data-kind="{kind}" {attrs(i)}><title>{escape(b["stereo"] + " " + b["label"])}</title>')
-        out.append(f'<rect x="{f(x)}" y="{f(y)}" width="{f(w)}" height="{f(h)}" rx="{10 if kind == "boundary" else 4}" '
-                   f'class="{"bnd" if kind == "boundary" else "agg"}"/>')
+        out.append(f'<rect x="{f(x)}" y="{f(y)}" width="{f(w)}" height="{f(h)}" rx="{rx}" class="{cls}"/>')
         out.append(f'<text x="{f(x + 14)}" y="{f(y + 20)}" class="lbl-s">{escape(b["stereo"])}</text>')
         out.append(f'<text x="{f(x + 14)}" y="{f(y + 37)}" class="lbl-h">{escape(b["label"])}</text></g>')
     for k, e in enumerate(edges):
@@ -450,15 +493,17 @@ def render(title, sub, boxes, edges):
     role_zh = {"OHS": "开放主机服务", "PL": "发布语言", "ACL": "防腐层", "CF": "遵奉者"}
     for n, (what, k) in enumerate(legend):
         lx, yy = MARGIN + 60 + (n % per_row) * 170, y_leg + 22 + (n // per_row) * 26
+        out.append(f'<g data-kind="legend-item" data-legend="{escape(what + ":" + (k or ""))}">')
         if what == "k":
-            cls = {"bc": "bc", "agg": "agg", "ent": "leaf", "vo": "leaf"}[k]
-            out.append(f'<rect x="{f(lx)}" y="{f(yy)}" width="30" height="18" rx="{8 if k == "bc" else 3}" class="{cls}"/>')
-            name = ELEMENTS[k][1]
+            cls, rx = SHAPES[k]
+            out.append(f'<rect x="{f(lx)}" y="{f(yy)}" width="30" height="18" rx="{rx}" class="{cls}"/>')
+            name = ELEMENTS["bc" if k == "boundary" else k][1]
         elif what == "s":
             out.append(f'<rect x="{f(lx)}" y="{f(yy)}" width="30" height="18" rx="2" class="sd {k}"/>')
             name = names[k]
         elif what == "root":
-            out.append(f'<rect x="{f(lx)}" y="{f(yy)}" width="30" height="18" rx="3" class="leaf root"/>')
+            cls, rx = SHAPES["root"]
+            out.append(f'<rect x="{f(lx)}" y="{f(yy)}" width="30" height="18" rx="{rx}" class="{cls}"/>')
             out.append(f'<rect x="{f(lx)}" y="{f(yy)}" width="5" height="18" class="root-bar"/>')
             name = "聚合根"
         elif what == "e":
@@ -468,10 +513,10 @@ def render(title, sub, boxes, edges):
         elif what == "ud":
             out.append(f'<rect x="{f(lx)}" y="{f(yy)}" width="30" height="18" rx="2" class="end"/>')
             out.append(f'<text x="{f(lx + 15)}" y="{f(yy + 13)}" text-anchor="middle" class="end-t">U/D</text>')
-            name = "上游 / 下游（S 供应方，C 客户）"
+            name = "上游 / 下游" + ("（S 供应方，C 客户）" if cs else "")
         else:
             out.append(f'<text x="{f(lx)}" y="{f(yy + 13)}" class="end-t">{escape(k)}</text>')
             name = role_zh.get(k, "")
-        out.append(f'<text class="lg-t" x="{f(lx + 36)}" y="{f(yy + 13)}">{escape(name)}</text>')
+        out.append(f'<text class="lg-t" x="{f(lx + 36)}" y="{f(yy + 13)}">{escape(name)}</text></g>')
     out.append("</svg>")
     return "\n".join(out) + "\n"
