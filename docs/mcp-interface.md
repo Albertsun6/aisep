@@ -814,7 +814,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 - **其余谓词合不合法不另写白名单**，由候选图上的 L1 规则判定，与 `model_add_element` 的 `attributes` 同一口径：闭世界不允许的谓词（G7）、手写的 `arch:approvalState`（§6.6）都表现为新增违规 → `WRITE_REJECTED`。
 - 不合法的 IRI、语言标签或值，以及违反 §5.2 `attributes` 那五条值形状规则（控制字符、`lang` 与 `datatype` 同给、空 `lang`、空 `datatype`、`_:` 空白节点名）→ `INVALID_ARGUMENT`。没有声明过的前缀不在此列：`x:y` 按 `slug:local` 展开（§5.0），得到的谓词没有声明，结果是 `WRITE_REJECTED`。
 - `value.value` 给 JSON 数或布尔值时与 §5.2 的 `attributes` 一样，写成 `xsd:integer`、`xsd:double`、`xsd:boolean` 字面量。字符串里的换行与回车（U+000D）转义后写入，读回来逐字相同。
-- 不接受 `file`：值没有变的三元组留在原处；新值写进被替换的三元组所在的文件，这个谓词原来没有被替换的值时，写进该主语 `rdf:type` 三元组所在的文件。
+- 不接受 `file`：值没有变的三元组留在原处；新值写进被替换的三元组所在的文件，被替换的值分布在多个文件里时，写进其中第一个文件（按仓库相对路径的字符串顺序排在最前的那个）；这个谓词原来没有被替换的值时，写进该主语 `rdf:type` 三元组所在的文件。
 
 **前置检查**
 - 目标是 `arch:Model` → `PROTECTED_RESOURCE`（模型本身不经写工具修改，同 §5.5）。
