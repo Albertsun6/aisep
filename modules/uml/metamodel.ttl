@@ -17,7 +17,7 @@
     a                      arch:Metamodel ;
     skos:prefLabel         "UML 2.5.1（子集）"@zh ;
     aisep:moduleKind       aisep:Language ;
-    owl:versionInfo        "0.2.0" ;
+    owl:versionInfo        "0.3.0" ;
     aisep:loads            "vendor/meta.linked.archi/ttl/core.ttl" ,
                            "vendor/meta.linked.archi/ttl/uml_onto.ttl" ;
     aisep:shapesFile       "vendor/meta.linked.archi/ttl/uml_shapes.ttl" ;

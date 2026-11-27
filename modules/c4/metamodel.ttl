@@ -19,7 +19,7 @@
     skos:prefLabel         "C4 模型"@zh ;
     skos:altLabel          "C4 model"@en ;
     aisep:moduleKind       aisep:Language ;
-    owl:versionInfo        "0.1.0" ;
+    owl:versionInfo        "0.2.0" ;
     aisep:loads            "vendor/meta.linked.archi/ttl/core.ttl" ,
                            "vendor/meta.linked.archi/ttl/archimate4_onto.ttl" ,
                            "vendor/meta.linked.archi/ttl/c4_onto.ttl" ,
