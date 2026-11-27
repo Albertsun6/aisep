@@ -218,6 +218,16 @@ def main():
         claim("--ddd list names the renderable DDD views of procurement", rc == 0 and "VIEW --viewpoint ContextMap --model procurement" in log
               and "VIEW --viewpoint AggregateDiagram --of https://aisep.example/model/procurement/quotationBC" in log
               and "views=2" in log, log.strip()[-200:])
+        out = os.path.join(tmp, "wrong-model.svg")
+        rc, log = run("diagram", "--viewpoint", "AggregateDiagram", "--of", "procurement:quotationBC",
+                      "--model", "workbench", "-o", out)
+        claim("AggregateDiagram --of a context with --model of another model is a usage error (exit 2) naming both, "
+              "nothing written", rc == 2 and "[Violation] diagram: --of procurement:quotationBC is not in model workbench"
+              in log and not os.path.exists(out), log.strip()[-200:])
+        rc, log = run("diagram", "--viewpoint", "AggregateDiagram", "--of", "procurement:quotationBC",
+                      "--model", "procurement", "-o", out)
+        claim("AggregateDiagram --of with --model of its own model draws it (exit 0)", rc == 0 and os.path.exists(out),
+              log.strip()[-160:])
         for extra in (("--viewpoint", "ContextMap"), ("--of", "procurement:quotationBC"), ("--view", "x")):
             rc, log = run("diagram", "--ddd", "list", "--model", "procurement", *extra)
             claim(f"--ddd list with {extra[0]} is a usage error naming it (exit 2), nothing listed",
@@ -296,8 +306,9 @@ def main():
               {"ddd-legal:inventoryBC", "ddd-legal:stockAgg", "ddd-legal:stockItem"}, f"svg={sorted(b['iri'] for b in boxes)}")
 
         # ------------------------------------------------ escaping
-        # one hostile text per site the model's own words reach: context label, contextType label, role notation (end
-        # label and legend abbreviation), exposed aggregate (middle label), aggregate label, entity label
+        # one hostile text per site the model's own words reach: diagram title (model label), context label, contextType
+        # label, subdomain label, subdomainType label, role notation (end label and legend abbreviation), exposed
+        # aggregate (middle label), aggregate label, entity label, value object label
         def evil(site):
             return f'<script>alert(1)</script> A<&"B {site}'
 
@@ -306,6 +317,10 @@ def main():
         etxt = txt
         for old, new in (('"订单上下文"@zh', lit("bc") + "@zh"), ('"订单聚合"@zh', lit("agg") + "@zh"),
                          ('"订单"@zh', lit("ent") + "@zh"), ('"库存聚合"@zh', lit("exp") + "@zh"),
+                         ('"DDD 合法样例"@zh', lit("title") + "@zh"), ('"下单"@zh', lit("sub") + "@zh"),
+                         ('"收货地址"@zh', lit("vo") + "@zh"),
+                         ("ddd:subdomainType ddd:Core .",
+                          f"ddd:subdomainType :evilSubType .\n:evilSubType skos:prefLabel {lit('stype')}@zh ."),
                          ("ddd:contextType ddd:Application .",
                           f"ddd:contextType :evilType .\n:evilType skos:prefLabel {lit('ctype')}@zh ."),
                          ("ddd:upstreamRole ddd:OpenHost , ddd:PublishedLanguage ;",
@@ -323,13 +338,16 @@ def main():
             box = {b["iri"]: b["text"] for b in boxes}
             lab = {(l["for"], l["end"]): l["text"] for l in labels}
             lg = " ".join(v["text"] for v in legend(tree).values())
+            title = " ".join(t.text or "" for t in tree.iter() if t.tag.endswith("text") and t.get("class") == "title")
             if vp == "ContextMap":
-                sites = {"bc": box.get("ddd-legal:orderingBC", ""), "ctype": box.get("ddd-legal:orderingBC", ""),
+                sites = {"title": title, "bc": box.get("ddd-legal:orderingBC", ""),
+                         "ctype": box.get("ddd-legal:orderingBC", ""), "sub": box.get("ddd-legal:orderingSub", ""),
+                         "stype": box.get("ddd-legal:orderingSub", ""),
                          "role": lab.get(("ddd-legal:rel-ud", "tail"), ""), "exp": lab.get(("ddd-legal:rel-cs", "center"), "")}
                 sites["role (legend)"] = lg
             else:
                 sites = {"bc": box.get("ddd-legal:orderingBC", ""), "agg": box.get("ddd-legal:orderAgg", ""),
-                         "ent": box.get("ddd-legal:order", "")}
+                         "ent": box.get("ddd-legal:order", ""), "vo": box.get("ddd-legal:address", "")}
             missing = [k for k, v in sites.items() if not has(v, k.split()[0])]
             claim(f"escaping {vp}: hostile text (<script>, &, \") at {sorted(sites)} stays text: XML parses, no script "
                   "element, each site shows its text intact",
@@ -354,6 +372,11 @@ def main():
             ("w7", "ddd:downstreamRole ddd:AntiCorruptionLayer .",
              'ddd:downstreamRole ddd:AntiCorruptionLayer , "' + INJECT + '" .',
              "ContextMap", f'rel-ud: role "{INJECT}" is not in ddd:DownstreamRoleScheme, not drawn'),
+            # a literal whose value is a well-formed IRI of a real downstream role: the term type, not the string,
+            # decides, so it is warned and CF is not drawn
+            ("w8", "ddd:downstreamRole ddd:AntiCorruptionLayer .",
+             f'ddd:downstreamRole ddd:AntiCorruptionLayer , "{DDD}Conformist" .',
+             "ContextMap", f'rel-ud: role "{DDD}Conformist" is not in ddd:DownstreamRoleScheme, not drawn'),
             ("w1", None, "\n:rel-bad a ddd:UpstreamDownstream ; arch:inModel m:ddd-legal\\/ ; arch:source :pricingBC ; arch:target :orderingSub .\n",
              "ContextMap", "rel-bad: an end is not in this view, not drawn"),
             ("w6", "ddd:exposedAggregate :stockAgg .", "ddd:exposedAggregate :stockAgg , :stockItem .",
@@ -371,7 +394,7 @@ def main():
             ok = len(new_ws) == 1 and new_ws[0] == f"[Warning] diagram {L}{text}"
             if name == "w2":
                 ok = ok and not any(l["for"] == "ddd-legal:rel-partnership" and l["end"] != "center" for l in labels)
-            if name in ("w3", "w7"):
+            if name in ("w3", "w7", "w8"):
                 ok = ok and {(l["for"], l["end"]): l["text"] for l in labels}.get(("ddd-legal:rel-ud", "head")) == "D | ACL"
             if name == "w1":
                 ok = ok and "ddd-legal:rel-bad" not in {e["iri"] for e in edges}
@@ -398,6 +421,21 @@ def main():
               "warning each naming it (SPARQL agrees)",
               {short(re.match(r"\[Warning\] diagram (\S+):", w).group(1)) for w in new_ws} == want_o
               and len(new_ws) == 4 and want_o <= orphans(vf), f"new={new_ws}")
+        # a role notation that itself contains ", ": one legend entry named by the concept's skos:prefLabel, never split;
+        # the vocabulary's roles are named by their prefLabel too (no hard-coded table)
+        vf = variant("comma", "ddd:upstreamRole ddd:OpenHost , ddd:PublishedLanguage ;",
+                     "ddd:upstreamRole ddd:OpenHost , ddd:PublishedLanguage , :commaRole ;\n    ")
+        open(vf[0], "a", encoding="utf-8").write('\n:commaRole skos:inScheme ddd:UpstreamRoleScheme ; skos:notation "X, Y" ; '
+                                                 'skos:prefLabel "逗号角色"@zh .\n')
+        _, tree, _, _, labels, _ = diagram(os.path.join(tmp, "comma.svg"), "--viewpoint", "ContextMap", "--model", "ddd-legal", *vf)
+        lg = {k: v["text"] for k, v in legend(tree).items() if k.startswith("a:")}
+        names = dict(rows("SELECT ?n ?l WHERE { ?r skos:notation ?n ; skos:prefLabel ?l FILTER(LANG(?l) = \"zh\") "
+                          "VALUES ?r { ddd:OpenHost ddd:PublishedLanguage ddd:AntiCorruptionLayer } }", fs))
+        want_lg = {"a:X, Y": "X, Y 逗号角色", **{f"a:{n}": f"{n} {l}" for n, l in names.items()}}
+        claim("comma notation: legend has one entry 'X, Y' named by its skos:prefLabel, no 'X' / 'Y' split; every role "
+              "named by its prefLabel (SPARQL)", lg == want_lg
+              and {(l["for"], l["end"]): l["text"] for l in labels}.get(("ddd-legal:rel-ud", "tail")) == "U | OHS, PL, X, Y",
+              f"legend={lg} want={want_lg}")
         # no Customer-Supplier: the U/D legend says nothing about S and C
         vf = variant("nocs", ":rel-cs a ddd:CustomerSupplier ;", ":rel-cs a ddd:UpstreamDownstream ;")
         _, tree, *_ = diagram(os.path.join(tmp, "nocs.svg"), "--viewpoint", "ContextMap", "--model", "ddd-legal", *vf)

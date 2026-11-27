@@ -11,7 +11,7 @@ $PY tools/aisep.py diagram --viewpoint AggregateDiagram --of procurement:quotati
                                                                            # -> build/views/procurement/AggregateDiagram-quotationBC.svg
 ```
 
-`-o OUT.svg` 指定输出路径；末尾可以给模型文件，默认读 `models/**/*.ttl`。`ContextMap`、`AggregateDiagram` 只是命令行里的视图名，不对应视点 IRI。
+`-o OUT.svg` 指定输出路径；末尾可以给模型文件，默认读 `models/**/*.ttl`。`ContextMap`、`AggregateDiagram` 只是命令行里的视图名，不对应视点 IRI。`AggregateDiagram` 的模型取自 `--of` 所在的模型；同时给了 `--model` 而 `--of` 不在该模型里时报用法错误（退出码 2），不静默忽略。
 
 `--ddd list` 只列视图、不出图，同时给 `--view`、`--viewpoint`、`--of` 或 `-o` 时报用法错误（退出码 2），不静默忽略。列表开关写成「记法名 + list」，和 UML 的 `--uml list` 同一写法；BPMN 那边是 `--list-processes`。几个出图 PR 都合并后，再统一成一个列出全部视图的写法，届时另开 PR。
 
@@ -29,7 +29,7 @@ $PY tools/aisep.py diagram --viewpoint AggregateDiagram --of procurement:quotati
     - 有 `ddd:exposedAggregate` 时，中部追加一行「暴露：<聚合名>」（思路来自 Context Mapper 的 PlantUML 组件图，那里把暴露的聚合写在边上）。
     - 子域画成下层「问题空间」，上下文在上层「解空间」。现有模型几乎没有上下文之间的关系，不画子域的话图上只剩几个孤立的框。
 - **节点**：限界上下文画成圆角框，标「«限界上下文 · 应用»」这样的构造型。子域画成方框，按核心域、支撑域、通用域填色，同时用文字标出类型。
-- 每张图带图例，列出图里出现的节点、线型，以及用到的角色缩写的中文全称。「S 供应方，C 客户」只在图里有客户-供应方关系时写。
+- 每张图带图例，列出图里出现的节点、线型，以及用到的角色缩写及其全称（取角色概念的 `skos:prefLabel`，直接从画出的角色收集，不从端点文字反切）。「S 供应方，C 客户」只在图里有客户-供应方关系时写。
 
 ## 聚合图（AggregateDiagram，范围是一个限界上下文）
 

@@ -155,15 +155,16 @@ def views(ctx, model):
 # ------------------------------------------------------------------ selecting a view
 
 def _roles(m, x, prop, scheme, warnings):
-    """skos:notation of every role value of x that is an IRI and a concept of scheme; other values (wrong scheme, no
-    notation, a literal) are warned, not drawn. Term types decide what an IRI is; nothing is spliced into SPARQL."""
+    """(skos:notation, skos:prefLabel) of every role value of x that is an IRI and a concept of scheme; other values
+    (wrong scheme, no notation, a literal) are warned, not drawn. Term types decide what an IRI is; nothing is spliced
+    into SPARQL."""
     out = []
     for v in m.terms(x, prop):
         ok = isinstance(v, ox.NamedNode) and \
             ox.NamedNode(DDD + scheme) in {t for t in m.terms(v, SKOS + "inScheme") if isinstance(t, ox.NamedNode)}
         notes = [n.value for n in m.terms(v, SKOS + "notation") if isinstance(n, ox.Literal)] if ok else []
         if notes:
-            out.append(notes[0])
+            out.append((notes[0], m.term_name(v)))
         else:
             shown = v.value if isinstance(v, ox.NamedNode) else f'"{v.value}"'
             warnings.append(f"{x}: role {shown} is not in ddd:{scheme}, not drawn")
@@ -195,8 +196,9 @@ def _context_map(ctx, m, warnings):
             up = _roles(m, x, DDD + "upstreamRole", "UpstreamRoleScheme", warnings)
             down = _roles(m, x, DDD + "downstreamRole", "DownstreamRoleScheme", warnings)
             u, d = ("U,S", "D,C") if r == "CustomerSupplier" else ("U", "D")
-            e["tail"] = u + (" | " + ", ".join(up) if up else "")
-            e["head"] = d + (" | " + ", ".join(down) if down else "")
+            e["tail"] = u + (" | " + ", ".join(n for n, _ in up) if up else "")
+            e["head"] = d + (" | " + ", ".join(n for n, _ in down) if down else "")
+            e["roles"] = up + down  # the legend explains each abbreviation from here, never by re-splitting end text
             if r == "CustomerSupplier":
                 e["center"].append(zh)
             exposed = []
@@ -412,8 +414,9 @@ def render(title, sub, boxes, edges):
     top = MARGIN + 52
     flat = not any(b["compound"] for b in boxes.values())
     width = max(MARGIN * 2 + gw, 560)
-    abbr = sorted({a for e in edges for end in ("tail", "head") if e[end] for part in e[end].split(" | ", 1)[1:]
-                   for a in part.split(", ")})
+    role_names = {}  # notation -> prefLabels; one notation shared by two concepts lists both names
+    for a, name in sorted({r for e in edges for r in e.get("roles", [])}):
+        role_names.setdefault(a, []).append(name)
     kinds = [k for k in ("bc", "boundary", "agg", "ent", "vo") if any(
         (b["kind"] == "bc" and b["compound"] == (k == "boundary")) if k in ("bc", "boundary")
         else (b["kind"] == k and not b.get("root")) for b in boxes.values())]
@@ -423,7 +426,7 @@ def render(title, sub, boxes, edges):
     etypes = [r[0] for r in RELS if any(e["type"] == r[0] for e in edges)]
     legend = [("k", k) for k in kinds] + [("s", s) for s in subfills] + \
              ([("root", None)] if any(b.get("root") for b in boxes.values()) else []) + [("e", t) for t in etypes] + \
-             ([("ud", None)] if any(e["tail"] for e in edges) else []) + [("a", a) for a in abbr]
+             ([("ud", None)] if any(e["tail"] for e in edges) else []) + [("a", a) for a in role_names]
     per_row = max(1, int((width - 2 * MARGIN - 60) // 170))
     y_leg = top + gh + 28
     height = y_leg + 22 + -(-len(legend) // per_row) * 26 + MARGIN
@@ -490,7 +493,6 @@ def render(title, sub, boxes, edges):
         out.append("</g>")
     out.append(f'<text class="lg-h" x="{MARGIN}" y="{f(y_leg + 12)}">图例</text>')
     names = {"sub-core": "核心域", "sub-sup": "支撑域", "sub-gen": "通用域", "sub-none": "子域（未分类）"}
-    role_zh = {"OHS": "开放主机服务", "PL": "发布语言", "ACL": "防腐层", "CF": "遵奉者"}
     for n, (what, k) in enumerate(legend):
         lx, yy = MARGIN + 60 + (n % per_row) * 170, y_leg + 22 + (n // per_row) * 26
         out.append(f'<g data-kind="legend-item" data-legend="{escape(what + ":" + (k or ""))}">')
@@ -516,7 +518,7 @@ def render(title, sub, boxes, edges):
             name = "上游 / 下游" + ("（S 供应方，C 客户）" if cs else "")
         else:
             out.append(f'<text x="{f(lx)}" y="{f(yy + 13)}" class="end-t">{escape(k)}</text>')
-            name = role_zh.get(k, "")
+            name = "、".join(role_names[k])
         out.append(f'<text class="lg-t" x="{f(lx + 36)}" y="{f(yy + 13)}">{escape(name)}</text></g>')
     out.append("</svg>")
     return "\n".join(out) + "\n"

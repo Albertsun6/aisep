@@ -23,6 +23,8 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
                    [-o OUT.svg] [model files...]
                                        -> DDD view as SVG (aisep/diagram_ddd.py): the context map of a model (bounded
                                           contexts, subdomains, Context Mapper notation) or the aggregates of one context
+                                          (AggregateDiagram takes its model from --of; a --model it is not in is a
+                                          usage error, exit 2)
   aisep.py diagram --ddd list --model SLUG [model files...]
                                        -> the DDD views that model can render, one `VIEW <args>` line each
                                           (--view / --viewpoint / --of alongside it are a usage error)
@@ -362,6 +364,11 @@ def cmd_diagram(args):
                 scope, model = expand(ctx, opts["--of"]), None
             except AisepError as e:
                 print(f"[Violation] diagram: --of {e.message}"); return 1
+            if "--model" in opts and not ctx.rows(f"SELECT ?m WHERE {{ <{scope}> arch:inModel "
+                                                  f"<https://aisep.example/model/{opts['--model']}/> }}"):
+                print(f"[Violation] diagram: --of {opts['--of']} is not in model {opts['--model']} "
+                      f"(AggregateDiagram takes its model from --of; drop --model or name the model --of is in)")
+                return 2
         try:
             sel = diagram_ddd.select(ctx, vp, scope, model=model)
         except ValueError as e:
