@@ -14,6 +14,8 @@ from aisep.errors import AisepError
 TTL = ox.RdfFormat.TURTLE
 LOCK_NAME = "aisep-write.lock"
 XSD_STRING = core.NS["xsd"] + "string"
+# governance records and declarations (#167): approval records, AI activities, AI agent declarations
+GOVERNANCE_TYPES = (core.AISEP + "ApprovalRecord", core.AISEP + "AgentActivity", core.AISEP + "AIAgent")
 MODEL_PATH = re.compile(r"models/[A-Za-z0-9][A-Za-z0-9_-]*(/[^/]+)+")
 
 
@@ -420,12 +422,37 @@ def check_paths(plan):
         for f in plan.get(key) or {}:
             if not isinstance(f, str) or not MODEL_PATH.fullmatch(f) or any(x in (".", "..") for x in f.split("/")):
                 raise AisepError("INVALID_ARGUMENT", f"要写的路径 {f!r} 不是规范化的 models/<slug>/ 路径，未写入",
-                                 details={"file": f})
+                                 details={"file": f, "reason": "path-not-normalised"})
             parts = f.split("/")
             if len(parts) > 3 and parts[2].lower() == "governance":
                 # approval records are made only by Albert through the approval tool, never by a write tool or action
                 raise AisepError("INVALID_ARGUMENT", f"要写的路径 {f!r} 在 models/<slug>/governance/ 下（批准记录专用），未写入",
-                                 details={"file": f})
+                                 details={"file": f, "reason": "governance-directory"})
+
+
+def _governance_members(ctx):
+    """{model member: [protected classes it is an instance of]} over GOVERNANCE_TYPES (subclasses included)."""
+    out = {}
+    for x, ts in ctx.asserted.items():
+        hit = sorted({k for t in ts for k in GOVERNANCE_TYPES if k in ctx.ancestors(t)})
+        if hit:
+            out[x] = hit
+    return out
+
+
+def check_governance(base_ctx, cand_ctx, removed, added):
+    """Type-level guard (#167): no write tool or action adds, changes or removes a triple about an instance of a
+    governance type, nor makes a resource one (directly or through a new subclass). Paths cannot carry this rule:
+    models/<slug>/governance.ttl is also the default file for ordinary elements."""
+    before, after = _governance_members(base_ctx), _governance_members(cand_ctx)
+    touched = {s for rem in removed.values() for s, _, _ in rem} | {t.subject.value for add in added.values() for t in add}
+    hits = sorted((touched & (before.keys() | after.keys())) | (before.keys() ^ after.keys()))
+    if hits:
+        x = hits[0]
+        kinds = [core.short(k) for k in after.get(x) or before.get(x)]
+        raise AisepError("PROTECTED_RESOURCE", f"{core.short(x)} 是治理记录（{'、'.join(kinds)}），写工具与动作不能新增、修改或删除",
+                         hint="批准只能由批准人经 governance_record_approval 记录；AI 代理声明改动走合并前评审的 PR",
+                         details={"reason": "governance-type", "iri": x, "types": kinds, "iris": hits})
 
 
 def transaction(cfg, repo, build, dry_run=False):
@@ -448,6 +475,7 @@ def transaction(cfg, repo, build, dry_run=False):
             return dict(result, changed=False, filesChanged=[], findings=findings, preexistingViolations=pre)
         check_equivalence(ws, plan["edits"], plan.get("removed", {}), plan.get("added", {}))
         cand = ws.ctx({f: t.encode("utf-8") for f, t in plan["edits"].items()})
+        check_governance(base_ctx, cand, plan.get("removed", {}), plan.get("added", {}))
         if not any(p[1] == "L0" for p in cand.problems):
             core.run_check(cand)
         findings, new, pre = judge(base_ctx, cand)
