@@ -222,11 +222,15 @@ def _aggregates(ctx, m, scope, warnings):
         boxes[a] = {"iri": a, "kind": "agg", "label": m.name(a), "parent": scope, "compound": True,
                     "stereo": "«聚合»", "via": via}
     roots = {}
-    for x, r, s, t in m.rels:
+    # RootContainment first (stable on IRI order), so a member that one aggregate both contains and has as root keeps
+    # its root mark; the same aggregate containing the same member twice is not a conflict and is not warned.
+    for x, r, s, t in sorted(m.rels, key=lambda q: q[1] != "RootContainment"):
         if r not in ("Containment", "RootContainment") or s not in aggs:
             continue
         if m.kind.get(t) not in ("ent", "vo"):
             warnings.append(f"{x}: an end is not in this view, not drawn")
+            continue
+        if t in boxes and boxes[t]["parent"] == s:
             continue
         if t in boxes:
             warnings.append(f"{x}: {t} is already drawn in {boxes[t]['parent']}, not drawn again")

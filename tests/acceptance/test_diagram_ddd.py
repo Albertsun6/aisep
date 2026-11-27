@@ -285,6 +285,15 @@ def main():
             if name == "w5":
                 ok = ok and any(b["iri"] == "ddd-legal:stockAgg" and b["parent"] == "ddd-legal:orderingBC" for b in boxes)
             claim(f"warning {name}: exactly one new warning, naming the IRI; drawn as stated", ok, f"new={new_ws}")
+        # the same aggregate both contains (ddd:Containment, IRI sorting first) and has as root (ddd:RootContainment)
+        # the same entity: not a conflict, root mark kept, no warning
+        vf = variant("dup", None, "\n:rel-dup a ddd:Containment ; arch:inModel m:ddd-legal\\/ ; arch:source :orderAgg ; arch:target :order .\n")
+        _, _, boxes, _, _, ws = diagram(os.path.join(tmp, "dup.svg"), "--viewpoint", "AggregateDiagram",
+                                        "--of", L + "orderingBC", *vf)
+        order = [b for b in boxes if b["iri"] == "ddd-legal:order"]
+        claim("dup Containment + RootContainment of one member in one aggregate: drawn once, marked «聚合根», warnings=0",
+              len(order) == 1 and "«聚合根»" in order[0]["text"] and order[0]["parent"] == "ddd-legal:orderAgg" and not ws,
+              f"order={[(b['parent'], b['text']) for b in order]} warnings={ws}")
         vf = variant("nobc", None, "")
         open(vf[0], "w", encoding="utf-8").write("\n".join(l for l in txt.splitlines() if "a ddd:BoundedContext" not in l))
         out = os.path.join(tmp, "nobc.svg")

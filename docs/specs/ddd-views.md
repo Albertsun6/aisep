@@ -43,6 +43,7 @@ $PY tools/aisep.py diagram --viewpoint AggregateDiagram --of procurement:quotati
 | 聚合还被别的上下文拥有 | 照常画，同时提示 |
 | `ddd:exposedAggregate` 指向的不是聚合 | 不写进标签 |
 | 一个成员被同一张图里的两个聚合包含 | 只画在第一个聚合里 |
+| 同一个聚合对同一个成员既有 `ddd:Containment` 又有 `ddd:RootContainment` | 不算冲突，画一次并标「«聚合根»」，不提示 |
 | 首批没有视图画的 DDD 成员（领域、团队、上下文映射、领域事件、命令、策略、服务、读模型、事件触发） | 在 ContextMap 里逐个提示 |
 
 以下情况报 `[Violation]`，退出码为 1，不写文件：模型里没有限界上下文；`--of` 指向的不是限界上下文；`--of` 指向的上下文没有任何聚合。
