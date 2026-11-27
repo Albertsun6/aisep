@@ -116,15 +116,24 @@ def on_border(p, box, tol=1.5):
            ((abs(py - y) <= tol or abs(py - y - h) <= tol) and x - tol <= px <= x + w + tol)
 
 
-def geometry_claim(name):
-    """Each drawn line starts on its data-source's box and ends on its data-target's box."""
+def off_box(paths):
     b, bad = LAST_GEO["boxes"], []
-    for r, pts in LAST_GEO["paths"].items():
+    for r, pts in paths.items():
         s, t, _ = LAST_ENDS[r]
         if not (on_border(pts[0], b[s]) and on_border(pts[-1], b[t])):
             bad.append(short(r))
+    return bad
+
+
+def geometry_claim(name):
+    """Each drawn line starts on its data-source's box and ends on its data-target's box."""
+    bad = off_box(LAST_GEO["paths"])
     claim(f"{name}: every line starts on its source's box and ends on its target's box (geometry)",
           not bad and bool(LAST_GEO["paths"]), f"off-box={bad[:3]} checked={len(LAST_GEO['paths'])}")
+    # mutation control: the same lines drawn backwards (an edge reversed in the layout) must all be caught
+    rev = off_box({r: pts[::-1] for r, pts in LAST_GEO["paths"].items()})
+    claim(f"{name}: mutation control - every line reversed is caught by the geometry check",
+          len(rev) == len(LAST_GEO["paths"]) > 0, f"caught={len(rev)} of {len(LAST_GEO['paths'])}")
 
 
 def ends_claim(name, model, fs):
@@ -133,10 +142,16 @@ def ends_claim(name, model, fs):
     st, types = {r: (s, o) for r, s, o, _ in facts}, {}
     for r, _, _, t in facts:
         types.setdefault(r, set()).add(t)
-    bad = [short(r) for r, (s, o, t) in LAST_ENDS.items()
-           if (short(s), short(o)) != st.get(short(r)) or t not in types.get(short(r), set())]
+    def mismatched(ends):
+        return [short(r) for r, (s, o, t) in ends.items()
+                if (short(s), short(o)) != st.get(short(r)) or t not in types.get(short(r), set())]
+    bad = mismatched(LAST_ENDS)
     claim(f"{name}: every drawn relationship has the model's source, target and type", not bad and bool(LAST_ENDS),
           f"mismatched={bad[:3]} checked={len(LAST_ENDS)}")
+    # mutation control: every relationship with source and target swapped must be caught
+    swapped = mismatched({r: (o, s, t) for r, (s, o, t) in LAST_ENDS.items()})
+    claim(f"{name}: mutation control - every relationship with swapped ends is caught by the endpoint check",
+          len(swapped) == len(LAST_ENDS) > 0, f"caught={len(swapped)} of {len(LAST_ENDS)}")
 
 
 def main():
@@ -173,7 +188,12 @@ def main():
             fh.write(f"\n<{view}> a arch:Diagram ;\n    arch:inModel <{M}workbench/> ;\n"
                      f'    skos:prefLabel "出图探针视图"@zh ;\n'
                      f"    arch:viewConformsToViewpoint <{VP}RequirementsRealizationViewpoint> .\n"
-                     + "".join(f":{x} arch:inView <{view}> .\n" for x in members))
+                     + "".join(f":{x} arch:inView <{view}> .\n" for x in members)
+                     # a relationship asserted with an am4 type and its am4 subclass: the subclass must be drawn
+                     + f":rel-diagramProbe-twoTypes a am4:Association, am4:DirectedAssociation ;\n"
+                       f"    arch:inModel <{M}workbench/> ;\n"
+                       f'    skos:prefLabel "出图探针：多类型关系"@zh ;\n'
+                       f"    arch:source :approverRole ;\n    arch:target :reqApprovalProgress .\n")
         fs2 = files("workbench", d2)
         rc, log = run("gate", *fs2)
         claim("declared view fixture passes gate", rc == 0, log.strip().splitlines()[-1])
@@ -189,11 +209,17 @@ def main():
         ends_claim("declared view", f"{M}workbench/", fs2)
         geometry_claim("declared view")
         claim("declared view: title is the view's prefLabel", ">出图探针视图<" in svg5, "title checked")
+        two = LAST_ENDS.get(f"{M}workbench/rel-diagramProbe-twoTypes", (None, None, None))[2]
+        claim("a relationship typed am4:Association and am4:DirectedAssociation is drawn as the most specific type",
+              two == "am4:DirectedAssociation", f"data-type={two}")
 
         # errors are reported, not drawn
         rc, log = run("diagram", "--viewpoint", "NoSuchViewpoint", "--model", "workbench", "-o",
                       os.path.join(tmp, "x.svg"), *files("workbench"))
         claim("unknown viewpoint exits 1 with a Violation", rc == 1 and "[Violation]" in log, log.strip()[-120:])
+        rc, log = run("diagram", "--view", "http://not an iri/", "-o", os.path.join(tmp, "v.svg"), *files("workbench"))
+        claim("--view that is not a valid IRI exits 1 with a Violation", rc == 1 and "[Violation]" in log
+              and not os.path.exists(os.path.join(tmp, "v.svg")), log.strip()[-120:])
         rc, log = run("diagram", "--viewpoint", "LayeredViewpoint", "--model", "procurement/> } #", "-o",
                       os.path.join(tmp, "y.svg"), *files("procurement"))
         claim("--model that is not a plain name is refused (no SPARQL injection)", rc == 1 and "[Violation]" in log

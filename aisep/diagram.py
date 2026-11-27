@@ -166,7 +166,7 @@ def select(ctx, model, view=None, viewpoint=None):
         explicit_rels = {x for x in inview if x in ends}
         title, vp = ctx.label(view) or local(view), (vps[0] if vps else None)
     else:
-        vp = viewpoint if viewpoint.startswith("http") else AM4VP + viewpoint
+        vp = AM4VP + viewpoint  # the CLI accepts only a plain viewpoint name
         concepts = {c for (c,) in ctx.rows(f"SELECT ?c WHERE {{ <{vp}> arch:includesConcept ?c }}")}
         if not concepts:
             raise ValueError(f"unknown viewpoint or viewpoint without arch:includesConcept: {vp}")

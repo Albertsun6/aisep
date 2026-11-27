@@ -327,7 +327,10 @@ def cmd_diagram(args):
     if report(ctx, ("L0",))[0]:
         return 1
     if "--view" in opts:
-        view = expand(ctx, opts["--view"])
+        try:
+            view = expand(ctx, opts["--view"])
+        except AisepError as e:
+            print(f"[Violation] diagram: --view {e.message}"); return 1
         ms = ctx.rows(f"SELECT ?m WHERE {{ <{view}> arch:inModel ?m }}")
         if not ms:
             print(f"[Violation] {opts['--view']}: no arch:inModel, not a view of any model"); return 1
