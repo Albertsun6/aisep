@@ -92,9 +92,11 @@ def test_list_views_declared_and_projections(vrepo):
     tv = by["t"]["views"]
     assert [(v["iri"], v["notation"], v["memberCount"], v["viewpointLabel"]) for v in tv] == \
            [(TM + "view-c4Probe", "c4", 3, "容器图")]
-    # ArchiMate projections: exactly the vendor viewpoints that admit a type some procurement element has (SPARQL)
+    # ArchiMate projections: exactly the vendor ArchiMate viewpoints (am4vp:, not the UML ones that also use
+    # arch:includesConcept) that admit a type some procurement element has (SPARQL)
     want = {vp.rsplit("#", 1)[1] for (vp,) in rows(vrepo, f"""SELECT DISTINCT ?vp WHERE {{ ?vp arch:includesConcept ?c .
-        ?x arch:inModel <{P}> ; a ?c . FILTER NOT EXISTS {{ ?x arch:source ?s }} }}""")}
+        ?x arch:inModel <{P}> ; a ?c . FILTER NOT EXISTS {{ ?x arch:source ?s }}
+        FILTER(STRSTARTS(STR(?vp), "https://meta.linked.archi/archimate4/viewpoints#")) }}""")}
     got = {p["viewpoint"] for p in by["procurement"]["projections"] if p["notation"] == "archimate"}
     assert got == want and want
     # C4 projections of t: a context per (internal) software system, container/component diagrams where there is
