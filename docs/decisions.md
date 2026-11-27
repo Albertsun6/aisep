@@ -229,6 +229,7 @@
 - **理由**：Albert 原话「把可追溯，可审计，可复现这三个质量目标先搁置，后期再做，先做 mvp，不然太慢了」。放宽的都是事后可以补做的校验与留痕（批准记录、三步合并的留痕、本地约 48 分钟的全量测试、阶段关口）；IRI、限定关系、vendor 哈希、批准只能由本人做出这些事后补不回来或属于安全约束的不动。根目录文件、`aisep/**`、`aisep-mcp/**`、`tests/**`、`tools/**` 不放宽，因为 ADR-019 的评审实测过在这些位置放文件可以让 `mergecheck` 空跑通过；`modules/**` 与 `vendor/**` 不放宽的原因见第 1 款。分支保护不要求分支与 `main` 同步（`strict:false`），CI 的结论是对开 PR 时的 `main` 算的，所以会改变 gate 结论的 `modules/**`、`vendor/**` 仍走三步。
 - **后果**：评审方面实际省下的只有「新增 IRI 的模型 PR」；`modules/**`、`vendor/**` 的 PR 仍要等合并前评审，直到第 1 款的漏洞修掉。不改模型、模块、vendor 与负例清单的 PR 不再有合并前重算，靠 CI 的 `mergecheck` 必需检查兜底。第 1 款的漏洞在 `main` 上现已存在（不是本条引入），按 ADR-019 第 2 款的漏洞例外另开修复 PR。**恢复条件**（任一出现即逐条恢复，由 Albert 定）：① MVP 走通第一条含 C4 的端到端链路；② 出现第二个批准人或使用者；③ 有外部数据或受监管数据进入模型；④ 合并后评审在同一类路径上连续两次查出阻塞问题。
   - 补记（Albert 2026-11-26 定）：`models/<slug>/governance/**` 与 `models/<slug>/governance.ttl` 的改动只要不新增 IRI，就不在第 1 款的排除范围内，走合并后评审，删除或修改已有批准记录也在其中。这类改动会直接改变 approvalState 的推导结果，由必需检查 `mergecheck` 兜底：目标分支上已有的批准记录或 AI 活动被删除、被修改时，check 1 拒绝合并（`governance-record-removed` / `governance-record-modified`），与 gate 结论无关，负例覆盖记录写在 `governance/` 单独文件里与写在 `governance.ttl` 里两种情形；改动 `arch:Stakeholder` 等其他治理元素（例如改掉或删除批准人）也能让已有记录失效、改变推导结果，这类改动 check 1 不管，原先只靠 check 5（合并结果上的 gate）拦截（PR #132 独立评审实测）；Albert 2026-11-26 同意加一道不依赖 gate 的防线（ADR-019 第 2 款治理加固冻结的例外，由 Albert 批准）：T 上已有记录引用的批准人在 M 上被删除，或推导判定它能否当批准人的结论（按类型及其子类链）改变时，`mergecheck` 拒绝合并（`governance-approver-removed` / `governance-approver-retyped`，`docs/mcp-interface.md` §5.9 检查项 10），负例覆盖改成 `aisep:AIAgent`、去掉类型、删除干系人、在模块里加类型、给其类加父类 `aisep:AIAgent` 五种。
+  - 补记（Albert 2026-11-27 定，issue #124 第④项）：第 1 款的两个排除项 `models/<slug>/governance/**` 与 `models/<slug>/governance.ttl` 中的 `governance` 按不区分大小写比较（如 `models/<slug>/Governance/` 下的文件、`models/<slug>/GOVERNANCE.ttl` 同样排除，留在合并前评审），与 ADR-019 第 1 款白名单①的文档排除项、ADR-027 第 1 款的三个排除目录同一口径，也与写入层拒写 `models/<slug>/governance/` 时按不区分大小写比较（`aisep/writer.py` 的 `check_paths`）一致。这是收紧，只让更多路径留在合并前评审；`AGENTS.md`「分支与合并」第 2 条按此表述。
 
 ## ADR-025 · 2026-11-26
 
@@ -279,7 +280,7 @@
 
 ## ADR-028 · 2026-11-27
 
-- **状态**：已采纳（补记。`model_set_attributes` 由 PR #102 加入，Albert 2026-11-25 放行动作机制阶段 A 时随之加入；下面的接口取舍是动作机制调研报告的推荐，Albert 未逐条复核；2026-11-27 Albert 同意把这些取舍补记成本条，issue #124 第⑤项）。接口契约以 `docs/mcp-interface.md` §5.12 为准，本条只记取舍与理由。
+- **状态**：已采纳（补记。`model_set_attributes` 由 PR #102 加入，Albert 2026-11-25 放行动作机制阶段 A 时随之加入；下面的接口取舍是动作机制调研报告的推荐，Albert 2026-11-27 已认可；2026-11-27 Albert 同意把这些取舍补记成本条，issue #124 第⑤项）。接口契约以 `docs/mcp-interface.md` §5.12 为准，本条只记取舍与理由。
 - **决策**：
   1. **新增独立写工具，不扩展 `model_set_labels`。** 改已存在元素或关系的非标签属性（如 `aisep:priority`、`aisep:gherkin`、`aisep:path`）走 `model_set_attributes`；名称、英文名、定义仍只走 `model_set_labels`，那里有语言与长度约束。没采纳的两个方案：给 `model_set_labels` 加 `attributes` 参数（改了已评审工具的契约，工具名也名不副实）；不加工具、继续「删了重加」（已批准元素的非标签属性没有修改路径，`docs/methodology.md`「改已批准元素」）。
   2. **`set` 按谓词整体替换，`unset` 删除该谓词的全部值。** 写入后主语在该谓词上的值恰好是 `set` 给出的那几项；没出现的谓词不变。参照 JSON Merge Patch（RFC 7396）对成员值、包括数组的整体替换，以及 SPARQL 1.1 Update 的 `DELETE/INSERT … WHERE`：一次调用就是一个「删该谓词旧值、插新值」的替换。没采纳逐值的「追加一个 / 移除一个」（JSON Patch 式）：整体替换的请求本身就是结果，同参数重放天然幂等（`changed: false`、文件不变），与其他写工具的重放语义一致。
