@@ -199,8 +199,8 @@
 | `model_set_attributes` | `model.set_attributes`（**新增**） | false | **true**（按谓词整体替换原值；原值留在 Git 历史里） | true（同参数重放 = 无变化） | 无 | **新实现**（校验复用 `check`，§5.12） |
 | `model_list_actions` | 无（规范外） | true | — | true | 无 | **新实现**：列动作目录（§5.13） |
 | `model_apply_action` | 无（规范外） | false | **true**（目录里有含删除步骤的动作；按目录内容逐个变就会让 `tools/list` 随数据变，所以固定按最坏情形标） | true（各步互不覆盖的动作同参数重放 = 无变化，边界见 §5.14） | 无 | **新实现**：把现有写工具的计划函数按目录组合，交给一次 §5.1 写入（§5.14） |
-| `model_list_views` | 无（规范外） | true | — | true | `diagram`（选视图部分） | **新实现**：列声明视图与可出图的视点投影，每项带出图参数（§5.15） |
-| `model_render_view` | 无（规范外） | true | — | true（同一模型字节相同） | `diagram` | 复用 `aisep/diagram.py`、`aisep/diagram_c4.py` 出 SVG（§5.16） |
+| `model_list_views` | 无（规范外） | true | — | true | `diagram`（选视图部分） | **新实现**：列声明视图与可出图的投影（ArchiMate、C4、BPMN、UML、DDD），每项带出图参数（§5.15） |
+| `model_render_view` | 无（规范外） | true | — | true（同一模型字节相同） | `diagram` | 复用 `aisep/diagram.py`、`diagram_c4.py`、`diagram_uml.py`、`diagram_ddd.py` 出 SVG，`diagram_bpmn.py` 出 BPMN 2.0 XML（§5.16） |
 | `model_call_log` | 无（规范外，ADR-031） | true | — | true（结果随日志文件增长而变；调用本身不改任何东西，也不记日志） | 无 | **新实现**：分页读调用日志（§5.17） |
 | `governance_record_approval` | `governance.record_approval` | false | false | true（完全重复的请求不写；去重键含调用方给的 `headCommit`，重放稳定） | 无 | **新实现**（gate 复用） |
 
@@ -949,7 +949,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 2026-11-27 加入：工作台要先「能看视图」。**只读；视图写工具仍不在本版（§1）**。实现在 `aisep/views.py`，契约测试 `aisep-mcp/tests/test_views.py`。
 
-视图有两种，出图规则都是 `tools/aisep.py diagram` 的（不存坐标，ELK 自动布局）：**声明视图**是模型里的 `arch:Diagram`（成员经 `arch:inView`）；**视点投影**由视点从模型里选元素：ArchiMate 视点按 vendor `archimate4_viewpoints.ttl` 的 `arch:includesConcept`，C4 视点按 `aisep/diagram_c4.py` 的四个（系统上下文、容器、组件、部署），各有一个范围。
+视图有两种，出图规则都是 `tools/aisep.py diagram` 的（不存坐标，ELK 自动布局）：**声明视图**是模型里的 `arch:Diagram`（成员经 `arch:inView`）；**投影**由出图器从模型里选元素：ArchiMate 视点按 vendor `archimate4_viewpoints.ttl` 的 `arch:includesConcept`，C4 视点按 `aisep/diagram_c4.py` 的四个（系统上下文、容器、组件、部署），各有一个范围；BPMN 每个 `bpmn:Process` 一张（`aisep/diagram_bpmn.py`，`docs/specs/bpmn-view.md`）；UML 类图每个模型一张（`aisep/diagram_uml.py`，`docs/specs/uml-class-diagram.md`）；DDD 每个模型一张上下文映射图、每个拥有聚合的限界上下文一张聚合图（`aisep/diagram_ddd.py`，`docs/specs/ddd-views.md`）。2026-11-27 第二次扩充加入 BPMN、UML、DDD。
 
 **输入**：`model`（可选，口径同 §5.0；不给就列全仓）、`repo`、`ref`（§5.0）。
 
@@ -957,9 +957,11 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 | 字段 | 说明 |
 |---|---|
-| `views[]` | 声明视图，按 IRI 排序：`{iri, label, notation: "archimate"\|"c4", viewpoint, viewpointLabel, memberCount, render: {view}}`。`viewpoint` 是 `arch:viewConformsToViewpoint`（多个取排序第一个，没有为 `null`）；视点是 `c4vp:` 下的就是 C4 视图。`memberCount` 是 `arch:inView` 指向它、且属于本模型的主语个数（元素与关系都算），不是画出来的个数 |
-| `projections[]` | 本模型里至少能画出一个元素的视点投影：先 ArchiMate（按视点名），再 C4（系统上下文、容器、组件、部署，同类按范围）。ArchiMate 项 `{notation: "archimate", viewpoint: <视点本地名>, label, elementCount, relationshipCount, render: {viewpoint, model}}`；C4 项 `{notation: "c4", viewpoint, label, scope, scopeLabel, elementCount, relationshipCount, render: {c4viewpoint, of[, model]}}` |
+| `views[]` | 声明视图，按 IRI 排序：`{iri, label, notation: "archimate"\|"c4"\|"uml", viewpoint, viewpointLabel, memberCount, render: {view}}`。`viewpoint` 是 `arch:viewConformsToViewpoint`（多个取排序第一个，没有为 `null`）；视点是 `c4vp:` 下的就是 C4 视图，`umlvp:` 下的就是 UML 视图（首批只能画 `umlvp:ClassDiagram`，`viewpointLabel` 为「UML 类图」；别的 `umlvp:` 视图照样列出，出图时报 `INVALID_ARGUMENT`）。`memberCount` 是 `arch:inView` 指向它、且属于本模型的主语个数（元素与关系都算），不是画出来的个数 |
+| `projections[]` | 本模型里至少能画出一个元素的视点投影：先 ArchiMate（按视点名），再 C4（系统上下文、容器、组件、部署，同类按范围）。ArchiMate 项 `{notation: "archimate", viewpoint: <视点本地名>, label, elementCount, relationshipCount, render: {viewpoint, model}}`；C4 项 `{notation: "c4", viewpoint, label, scope, scopeLabel, elementCount, relationshipCount, render: {c4viewpoint, of[, model]}}`；之后依次是 BPMN、UML、DDD：BPMN 项 `{notation: "bpmn", viewpoint: "Process", label: "BPMN 流程", scope: <流程 IRI>, scopeLabel, elementCount: <流程节点数>, relationshipCount: <顺序流数>, render: {process}}`（按流程 IRI 排序）；UML 项 `{notation: "uml", viewpoint: "ClassDiagram", label: "UML 类图", elementCount: <类元数>, relationshipCount, render: {umldiagram, model}}`；DDD 项先上下文映射图 `{notation: "ddd", viewpoint: "ContextMap", label: "上下文映射图", elementCount, relationshipCount, render: {dddviewpoint: "ContextMap", model}}`，再按限界上下文 IRI 排序的聚合图 `{notation: "ddd", viewpoint: "AggregateDiagram", label: "聚合图", scope, scopeLabel, elementCount, relationshipCount, render: {dddviewpoint: "AggregateDiagram", of}}`。DDD 的计数与 CLI 的 `SUMMARY` 相同（`aisep/diagram_ddd.py` 的 `counts`：元素不含限界上下文外框，关系含画在上下文里的归属） |
 | `render` | 原样传给 `model_render_view` 就能画出这一项；`elementCount`、`relationshipCount` 与那次出图的结果相同（同一个选择函数算的） |
+
+BPMN 流程的选择被出图器拒绝时（标签含 XML 1.0 不能承载的字符、本地名不是 bpmn-js 能读入的 id、id 重名等），这个流程不列，`tools/aisep.py diagram --process` 会说明原因；其余记法在选择阶段不核对文本，列出后出图时才报 `text-not-xml`（§5.16）。
 
 C4 范围：每个内部软件系统（`c4:SoftwareSystem`，不含外部系统）一张系统上下文图；含容器的软件系统一张容器图；含组件的容器一张组件图；每个部署环境（`structurizr:environment`）一张部署图，`render` 带 `model`（同名环境可能在几个模型里）。环境名不是「字母开头、只含字母数字 `_` `-`」的不列（出图器把它拼进查询文本，§5.16）。
 
@@ -971,21 +973,25 @@ C4 范围：每个内部软件系统（`c4:SoftwareSystem`，不含外部系统�
 
 出处同 §5.15。**只读；视图写工具仍不在本版（§1）**。
 
-**输入**：三选一，外加可选的 `repo`、`ref`（§5.0）。不是这三种组合之一 → `INVALID_ARGUMENT`（`details.rejectedFields` 点名多给或缺的字段）。不用 `oneOf` 写进 `inputSchema`：部分客户端不接受顶层组合关键字，组合由服务器校验。
+**输入**：六选一（下表七种形式，`dddviewpoint` 有两种），外加可选的 `repo`、`ref`（§5.0）。不是这些组合之一 → `INVALID_ARGUMENT`（`details.rejectedFields` 点名多给或缺的字段）。不用 `oneOf` 写进 `inputSchema`：部分客户端不接受顶层组合关键字，组合由服务器校验。
 
 | 形式 | 字段 | 说明 |
 |---|---|---|
-| 声明视图 | `view` | 视图 IRI 或 `slug:local`（至多 2048 字符，`of` 同）；视点是 `c4vp:` 下的按 C4 画，否则按 ArchiMate 画。不接受 `model`、`of` |
+| 声明视图 | `view` | 视图 IRI 或 `slug:local`（至多 2048 字符，`of`、`process` 同）；视点是 `c4vp:` 下的按 C4 画，`umlvp:` 下的按 UML 画（只支持 `umlvp:ClassDiagram`，别的 `INVALID_ARGUMENT`，同 CLI），否则按 ArchiMate 画。不接受 `model`、`of` |
 | ArchiMate 视点投影 | `viewpoint` + `model` | `viewpoint` 是视点本地名（如 `LayeredViewpoint`，`^[A-Za-z][A-Za-z0-9_-]*$`）；没有这个视点 → `INVALID_ARGUMENT`，`details.candidates` 列出全部视点名 |
 | C4 视点投影 | `c4viewpoint` + `of`（+ `model`） | `c4viewpoint` ∈ `SystemContext`、`ContainerDiagram`、`ComponentDiagram`、`C4Deployment`。前三个的 `of` 是软件系统或容器的 IRI（模型由它决定，不接受 `model`）；`C4Deployment` 的 `of` 是环境名（同上的纯名字规则），`model` 可选，用来区分同名环境 |
+| UML 类图投影 | `umldiagram` + `model` | `umldiagram` ∈ `ClassDiagram`（首批只有这一种）；画模型里全部类元，同 `diagram --uml ClassDiagram --model` |
+| DDD 上下文映射图 | `dddviewpoint: "ContextMap"` + `model` | 不接受 `of`；模型里没有限界上下文 → `INVALID_ARGUMENT` |
+| DDD 聚合图 | `dddviewpoint: "AggregateDiagram"` + `of` | `of` 是限界上下文的 IRI（模型由它决定，不接受 `model`）；不是限界上下文、或它不拥有聚合 → `INVALID_ARGUMENT` |
+| BPMN 流程 | `process` | `bpmn:Process` 的 IRI 或 `slug:local`，同 `diagram --process`；不接受 `model`、`of`；不是 `bpmn:Process`、本地名不能作 id 等 → `INVALID_ARGUMENT` |
 
-**输出**：`{ svg, title, notation, elementCount, relationshipCount, warnings, source }`。视图里至少有一个元素时，`svg` 与 `tools/aisep.py diagram` 对同一输入写出的文件逐字节相同（声明视图、ArchiMate 视点投影、C4 视点投影都如此）；同一模型两次调用逐字节相同。视图或范围属于几个模型（`arch:inModel` 不止一个）时，两边都取模型 IRI 排序后的第一个。`elementCount` 是画出的元素个数（C4 不含边界与部署节点这类外框），`relationshipCount` 是画出的连线数。`warnings` 是出图器的提示（如「在视图里但另一端不在，不画」；原文为英文），视图里一个元素都没有时加一条「视图里没有元素」，仍返回只有标题与图例的 SVG；这时 CLI 不写文件、报 `[Violation]`（退出码 1），两边在这一种情况下不同，所以上面的逐字节相同限于有元素时。`content[0].text` 只放一句摘要，不放 SVG。
+**输出**：`{ format, svg | content, title, notation, elementCount, relationshipCount, warnings, source }`。`format` 为 `"svg"` 时图在 `svg` 字段（第一版就有的字段，ArchiMate、C4 照旧，UML、DDD 同样）；BPMN 流程的 `format` 为 `"bpmn-xml"`，图是 BPMN 2.0 XML（语义部分 + BPMNDI 坐标），在 `content` 字段，没有 `svg` 字段（`docs/specs/bpmn-view.md`：交给 bpmn-js 等标准查看器显示）。旧客户端只读 `svg` 的，对原有三种入口不受影响。但它请求 BPMN 流程（`process`）时读不到图：结果里没有 `svg` 字段，须先看 `format`，为 `"bpmn-xml"` 时改读 `content`。`notation` ∈ `archimate`、`c4`、`uml`、`ddd`、`bpmn`。BPMN 的 `title` 是流程标签（没有标签时为本地名），`elementCount` 是流程节点数、`relationshipCount` 是顺序流数。视图里至少有一个元素时，`svg` / `content` 与 `tools/aisep.py diagram` 对同一输入写出的文件逐字节相同（每种入口都如此，`aisep-mcp/tests/test_views.py` 逐一核对）；同一模型两次调用逐字节相同。视图或范围属于几个模型（`arch:inModel` 不止一个）时，两边都取模型 IRI 排序后的第一个。除 BPMN 外，`elementCount` 是画出的元素个数（C4 不含边界与部署节点这类外框），`relationshipCount` 是画出的连线数。`warnings` 是出图器的提示（如「在视图里但另一端不在，不画」；原文为英文），视图里一个元素都没有时加一条「视图里没有元素」，仍返回只有标题与图例的 SVG；这时 CLI 不写文件、报 `[Violation]`（退出码 1），两边在这一种情况下不同，所以上面的逐字节相同限于有元素时。`content[0].text` 只放一句摘要，不放 SVG。
 
-**SVG 只含模型文本的转义**：标签、定义、技术、IRI 进 SVG 前一律经 `html.escape`（`< > & " '` 都转义），只作为元素文本或带引号的属性值；输出里没有 `<script>`、`on*` 属性、`href`、`foreignObject`。测试用含 `<script>`、`" onload=`、`' onmouseover=` 等的标签核对（`test_views.py::test_hostile_labels_are_inert_text`）。模型文本里有 XML 1.0 不能承载的字符（制表、换行、回车以外的 C0 控制字符、U+FFFE、U+FFFF 等，任何转义都写不进 XML）时**拒绝出图**：`INVALID_ARGUMENT`，`details.reason` 为 `text-not-xml`，`details.rejectedFields` 为本次的 `view`、`viewpoint` 或 `of`，message 写出字符码位；CLI 同样报 `[Violation]`。不剔除后照画：与写工具拒绝控制字符的口径一致，也不会悄悄画出和模型不一样的文字（`aisep/diagram.py` 的 `check_xml_text`，出图前、布局前核对）。嵌入建议：用 `<img src="data:image/svg+xml,…">` 或 iframe，不直接 `innerHTML`：SVG 自带的 `<style>` 与 `<marker id>` 直接内联时会作用到整页、与别的图重名。
+**SVG 只含模型文本的转义**：标签、定义、技术、IRI 进 SVG 前一律经 `html.escape`（`< > & " '` 都转义），只作为元素文本或带引号的属性值；输出里没有 `<script>`、`on*` 属性、`href`、`foreignObject`。测试用含 `<script>`、`" onload=`、`' onmouseover=` 等的标签核对（`test_views.py::test_hostile_labels_are_inert_text`）。BPMN XML 里模型文本同样只作为转义后的属性值或元素文本。模型文本里有 XML 1.0 不能承载的字符（制表、换行、回车以外的 C0 控制字符、U+FFFE、U+FFFF 等，任何转义都写不进 XML）时**拒绝出图**，五种记法一致：`INVALID_ARGUMENT`，`details.reason` 为 `text-not-xml`，`details.rejectedFields` 为本次的 `view`、`viewpoint`、`of`、`umldiagram`、`dddviewpoint` 或 `process`（有 `of` 时为 `of`），message 写出字符码位；CLI 同样报 `[Violation]`。不剔除后照画：与写工具拒绝控制字符的口径一致，也不会悄悄画出和模型不一样的文字（`aisep/diagram.py` 的 `check_xml_text`，出图前、布局前核对）。BPMN 在选择阶段核对（`aisep/diagram_bpmn.py` 抛 `diagram.TextNotXml`，CLI 行为不变），其余在出图前。嵌入建议：BPMN XML 交给 bpmn-js 的只读查看器（`NavigatedViewer`）；SVG 用 `<img src="data:image/svg+xml,…">` 或 iframe，不直接 `innerHTML`：SVG 自带的 `<style>` 与 `<marker id>` 直接内联时会作用到整页、与别的图重名。
 
 **出图器不可用**：布局用 elkjs（Node ≥ 20，`npm ci --prefix tools/elk --ignore-scripts`）。没装 elkjs、PATH 上没有 `node`、ELK 超时（120 秒）、ELK 运行失败或输出不是 JSON → `RENDERER_UNAVAILABLE`（不可重试，`details.reason` 依次为 `elkjs-missing`、`node-missing`、`layout-timeout`、`layout-failed`、`layout-failed`），不返回半成品。
 
-**错误**：`INVALID_ARGUMENT`（含范围类型不对，如 `SystemContext` 的 `of` 是容器；部署环境不存在；声明的部署视图暂不支持）、`ELEMENT_NOT_FOUND`（`view` 或 `of` 不是任何模型的成员）、`MODEL_NOT_FOUND`、`PARSE_FAILED`、`RENDERER_UNAVAILABLE`，以及定位的 `NOT_A_GIT_REPO`、`PATH_OUTSIDE_ROOT`、`REF_NOT_FOUND`、`MODULES_NOT_IN_REF`。
+**错误**：`INVALID_ARGUMENT`（含范围类型不对，如 `SystemContext` 的 `of` 是容器、`AggregateDiagram` 的 `of` 不是限界上下文；部署环境不存在；声明的部署视图暂不支持；不支持的 `umlvp:` 视点；`process` 不是 `bpmn:Process`）、`ELEMENT_NOT_FOUND`（`view`、`of` 或 `process` 不是任何模型的成员）、`MODEL_NOT_FOUND`、`PARSE_FAILED`、`RENDERER_UNAVAILABLE`，以及定位的 `NOT_A_GIT_REPO`、`PATH_OUTSIDE_ROOT`、`REF_NOT_FOUND`、`MODULES_NOT_IN_REF`。
 
 **校验层**：同 §5.15。
 

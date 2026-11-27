@@ -92,9 +92,11 @@ def test_list_views_declared_and_projections(vrepo):
     tv = by["t"]["views"]
     assert [(v["iri"], v["notation"], v["memberCount"], v["viewpointLabel"]) for v in tv] == \
            [(TM + "view-c4Probe", "c4", 3, "容器图")]
-    # ArchiMate projections: exactly the vendor viewpoints that admit a type some procurement element has (SPARQL)
+    # ArchiMate projections: exactly the vendor ArchiMate viewpoints (am4vp:, not the UML ones that also use
+    # arch:includesConcept) that admit a type some procurement element has (SPARQL)
     want = {vp.rsplit("#", 1)[1] for (vp,) in rows(vrepo, f"""SELECT DISTINCT ?vp WHERE {{ ?vp arch:includesConcept ?c .
-        ?x arch:inModel <{P}> ; a ?c . FILTER NOT EXISTS {{ ?x arch:source ?s }} }}""")}
+        ?x arch:inModel <{P}> ; a ?c . FILTER NOT EXISTS {{ ?x arch:source ?s }}
+        FILTER(STRSTARTS(STR(?vp), "https://meta.linked.archi/archimate4/viewpoints#")) }}""")}
     got = {p["viewpoint"] for p in by["procurement"]["projections"] if p["notation"] == "archimate"}
     assert got == want and want
     # C4 projections of t: a context per (internal) software system, container/component diagrams where there is
@@ -109,10 +111,12 @@ def test_list_views_declared_and_projections(vrepo):
     for m in res["models"]:
         for item in m["views"] + m["projections"]:
             r = ok(vrepo, "model_render_view", **item["render"])
+            assert r["notation"] == item["notation"], item
             if "elementCount" in item:
                 assert (r["elementCount"], r["relationshipCount"]) == (item["elementCount"], item["relationshipCount"]), item
-            assert r["elementCount"] == len(drawn(r["svg"])) and r["relationshipCount"] == len(drawn(r["svg"], "relationship"))
-            ElementTree.fromstring(r["svg"])  # well-formed XML (strict parser)
+            if r["notation"] in ("archimate", "c4", "uml"):  # DDD and BPMN counts: test_render_is_the_cli_output_*
+                assert r["elementCount"] == len(drawn(r["svg"])) and r["relationshipCount"] == len(drawn(r["svg"], "relationship"))
+            ElementTree.fromstring((r["svg"] if r["format"] == "svg" else r["content"]).encode())  # well-formed (strict)
 
 
 def test_list_views_one_model_and_ref(vrepo):
@@ -395,3 +399,192 @@ def test_text_xml_cannot_carry_is_refused_not_drawn(vrepo, tmp_path):
     r = ok(vrepo, "model_render_view", view="procurement:view-ok")
     root = ElementTree.fromstring(r["svg"])  # strict parse
     assert r["elementCount"] == 1 and any("制" in (el.text or "") for el in root.iter())
+
+
+# ---------------------------------------------------------------- BPMN, UML, DDD (the CLI's other renderers)
+
+BPMN_NS = "{http://www.omg.org/spec/BPMN/20100524/MODEL}"
+UML_VIEW = f"""
+:view-umlProbe a arch:Diagram ; arch:inModel <{P}> ; skos:prefLabel "UML 声明视图"@zh ;
+    arch:viewConformsToViewpoint <https://meta.linked.archi/uml/viewpoints#ClassDiagram> .
+:QuotationEntity arch:inView :view-umlProbe .
+:view-uc a arch:Diagram ; arch:inModel <{P}> ; skos:prefLabel "用例图"@zh ;
+    arch:viewConformsToViewpoint <https://meta.linked.archi/uml/viewpoints#UseCaseDiagram> .
+:QuotationEntity arch:inView :view-uc .
+"""
+
+
+@pytest.fixture
+def nrepo(vrepo):
+    with open(vrepo / "models" / "procurement" / "uml.ttl", "a", encoding="utf-8") as fh:
+        fh.write(UML_VIEW)
+    commit_all(vrepo, "uml views")
+    return vrepo
+
+
+def test_list_views_bpmn_uml_ddd(nrepo):
+    m = ok(nrepo, "model_list_views", model="procurement")["models"][0]
+    views = {v["iri"]: v for v in m["views"]}
+    assert (views[P + "view-umlProbe"]["notation"], views[P + "view-umlProbe"]["viewpointLabel"],
+            views[P + "view-umlProbe"]["memberCount"]) == ("uml", "UML 类图", 1)
+    assert views[P + "view-uc"]["notation"] == "uml" and views[P + "view-probe"]["notation"] == "archimate"
+    proj = [p for p in m["projections"] if p["notation"] in ("bpmn", "uml", "ddd")]
+    # after ArchiMate and C4, in this order: BPMN processes, UML class diagram, DDD context map then aggregate diagrams
+    assert [p["notation"] for p in m["projections"]][-len(proj):] == [p["notation"] for p in proj]
+    assert [p["notation"] for p in proj] == sorted((p["notation"] for p in proj), key=["bpmn", "uml", "ddd"].index)
+    procs = {x for (x,) in rows(nrepo, f"SELECT ?x WHERE {{ ?x a bpmn:Process ; arch:inModel <{P}> }}")}
+    nodes = rows(nrepo, f"""SELECT ?p ?n WHERE {{ ?p a bpmn:Process ; arch:inModel <{P}> ; bpmn:flowElements ?n .
+        FILTER NOT EXISTS {{ ?n a bpmn:SequenceFlow }} }}""")
+    flows = rows(nrepo, f"SELECT ?p ?n WHERE {{ ?p a bpmn:Process ; arch:inModel <{P}> ; bpmn:flowElements ?n . ?n a bpmn:SequenceFlow }}")
+    got = {p["render"]["process"]: p for p in proj if p["notation"] == "bpmn"}
+    assert set(got) == procs and procs
+    for x, p in got.items():
+        assert (p["scope"], p["elementCount"], p["relationshipCount"]) == \
+               (x, sum(1 for q, _ in nodes if q == x), sum(1 for q, _ in flows if q == x))
+    classes = {x for (x,) in rows(nrepo, f"SELECT ?x WHERE {{ ?x a uml:Class ; arch:inModel <{P}> }}")}
+    assert [(p["render"], p["elementCount"]) for p in proj if p["notation"] == "uml"] == \
+           [({"umldiagram": "ClassDiagram", "model": "procurement"}, len(classes))] and classes
+    owners = {x for (x,) in rows(nrepo, f"""SELECT ?x WHERE {{ ?r a ddd:Ownership ; arch:inModel <{P}> ; arch:source ?x .
+        ?x a ddd:BoundedContext . ?r arch:target ?a . ?a a ddd:Aggregate }}""")}
+    assert [p["render"] for p in proj if p["notation"] == "ddd"] == \
+           [{"dddviewpoint": "ContextMap", "model": "procurement"}] + \
+           [{"dddviewpoint": "AggregateDiagram", "of": x} for x in sorted(owners)] and owners
+
+
+@pytest.mark.parametrize("args, cli_args", [
+    ({"process": "procurement:bpmnQuoteApproval"}, ["--process", "procurement:bpmnQuoteApproval"]),
+    ({"umldiagram": "ClassDiagram", "model": "procurement"}, ["--uml", "ClassDiagram", "--model", "procurement"]),
+    ({"view": "procurement:view-umlProbe"}, ["--view", "procurement:view-umlProbe"]),  # declared umlvp: view
+    ({"dddviewpoint": "ContextMap", "model": "procurement"}, ["--viewpoint", "ContextMap", "--model", "procurement"]),
+    ({"dddviewpoint": "AggregateDiagram", "of": "procurement:quotationBC"},
+     ["--viewpoint", "AggregateDiagram", "--of", "procurement:quotationBC"]),
+])
+def test_render_is_the_cli_output_byte_for_byte(nrepo, tmp_path, args, cli_args):
+    bpmn = "process" in args
+    p, text = cli(nrepo, tmp_path / ("cli.bpmn" if bpmn else "cli.svg"), *cli_args)
+    assert p.returncode == 0, p.stdout + p.stderr
+    r = ok(nrepo, "model_render_view", **args)
+    if bpmn:
+        assert (r["format"], r["notation"], "svg" in r) == ("bpmn-xml", "bpmn", False)
+        assert r["content"].encode() == text.encode()
+        assert (r["elementCount"], r["relationshipCount"]) == \
+               tuple(int(re.search(rf"{k}=(\d+)", p.stdout).group(1)) for k in ("nodes", "flows"))
+    else:
+        assert (r["format"], "content" in r) == ("svg", False)
+        assert r["svg"].encode() == text.encode()
+        assert (r["elementCount"], r["relationshipCount"]) == \
+               tuple(int(re.search(rf"{k}=(\d+)", p.stdout).group(1)) for k in ("elements", "relationships"))
+    assert r["elementCount"] > 0
+
+
+def test_render_bpmn_is_bpmn_xml_of_the_process(nrepo):
+    r = ok(nrepo, "model_render_view", process=P + "bpmnQuoteApproval")
+    assert r["title"] == "报价审批流程"
+    root = ElementTree.fromstring(r["content"].encode())
+    proc = root.find(BPMN_NS + "process")
+    assert proc.get("id") == "bpmnQuoteApproval"
+    want = {x.rsplit("/", 1)[1] for (x,) in rows(nrepo, f"SELECT ?n WHERE {{ <{P}bpmnQuoteApproval> bpmn:flowElements ?n }}")}
+    assert {el.get("id") for el in proc} == want
+    assert root.find(".//{http://www.omg.org/spec/BPMN/20100524/DI}BPMNPlane") is not None
+
+
+def test_existing_entries_keep_svg_and_say_format(vrepo):
+    for args in ({"view": "procurement:view-probe"}, {"c4viewpoint": "SystemContext", "of": "t:orderSys"}):
+        r = ok(vrepo, "model_render_view", **args)
+        assert r["format"] == "svg" and r["svg"].startswith("<svg ") and "content" not in r
+
+
+def test_uml_view_of_an_unsupported_diagram_is_refused(nrepo, tmp_path):
+    e = err(nrepo, "model_render_view", view="procurement:view-uc")
+    assert e["code"] == "INVALID_ARGUMENT" and "umlvp:UseCaseDiagram" in e["message"] and e["details"]["rejectedFields"] == ["view"]
+    p, _ = cli(nrepo, tmp_path / "cli.svg", "--view", "procurement:view-uc")
+    assert p.returncode == 1 and "umlvp:UseCaseDiagram" in p.stdout
+
+
+@pytest.mark.parametrize("args, code, field", [
+    ({"process": "procurement:bpmnQuoteApproval", "model": "procurement"}, "INVALID_ARGUMENT", "model"),
+    ({"process": "procurement:bpmnQuoteApproval", "of": "x"}, "INVALID_ARGUMENT", "of"),
+    ({"process": "procurement:bpmnQuoteApproval", "view": "procurement:view-probe"}, "INVALID_ARGUMENT", "process"),
+    ({"process": "procurement:supplier"}, "INVALID_ARGUMENT", "process"),  # a member, not a bpmn:Process
+    ({"process": "procurement:noSuch"}, "ELEMENT_NOT_FOUND", "process"),
+    ({"process": "procurement:" + "x" * 2040}, "INVALID_ARGUMENT", "process"),  # schema maxLength 2048
+    ({"umldiagram": "ClassDiagram"}, "INVALID_ARGUMENT", "model"),
+    ({"umldiagram": "UseCaseDiagram", "model": "procurement"}, "INVALID_ARGUMENT", "umldiagram"),  # schema enum
+    ({"umldiagram": "ClassDiagram", "model": "procurement", "of": "x"}, "INVALID_ARGUMENT", "of"),
+    ({"umldiagram": "ClassDiagram", "model": "nope"}, "MODEL_NOT_FOUND", None),
+    ({"dddviewpoint": "ContextMap"}, "INVALID_ARGUMENT", "model"),
+    ({"dddviewpoint": "ContextMap", "model": "procurement", "of": "procurement:quotationBC"}, "INVALID_ARGUMENT", "of"),
+    ({"dddviewpoint": "ContextMap", "model": "t"}, "INVALID_ARGUMENT", "dddviewpoint"),  # t has no bounded context
+    ({"dddviewpoint": "AggregateDiagram"}, "INVALID_ARGUMENT", "of"),
+    ({"dddviewpoint": "AggregateDiagram", "of": "procurement:quotationBC", "model": "procurement"}, "INVALID_ARGUMENT", "model"),
+    ({"dddviewpoint": "AggregateDiagram", "of": "procurement:supplier"}, "INVALID_ARGUMENT", "of"),  # not a context
+    ({"dddviewpoint": "AggregateDiagram", "of": "procurement:noSuch"}, "ELEMENT_NOT_FOUND", "of"),
+    ({"dddviewpoint": "Map", "model": "procurement"}, "INVALID_ARGUMENT", "dddviewpoint"),  # schema enum
+])
+def test_render_errors_bpmn_uml_ddd(nrepo, args, code, field):
+    e = err(nrepo, "model_render_view", **args)
+    assert e["code"] == code, e
+    if field:
+        assert field in e["details"]["rejectedFields"], e
+
+
+def test_bpmn_uml_ddd_text_xml_cannot_carry_is_refused(vrepo, tmp_path):
+    # the #174 rule for every renderer: U+0001 refused with reason text-not-xml naming this call's field, CLI likewise;
+    # the BPMN process is not offered by model_list_views either (its selection refuses it)
+    with open(vrepo / "models" / "procurement" / "ctrl.ttl", "w", encoding="utf-8") as fh:
+        fh.write(f"""@prefix skos: <http://www.w3.org/2004/02/skos/core#> . @prefix arch: <https://meta.linked.archi/core#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> . @prefix uml: <https://meta.linked.archi/uml/onto#> .
+@prefix ddd: <https://aisep.example/ont/ddd#> . @prefix : <{P}> .
+:bpmnCtrl a bpmn:Process ; arch:inModel <{P}> ; skos:prefLabel "坏\\u0001流程"@zh ; bpmn:flowElements :ctrlStart .
+:ctrlStart a bpmn:StartEvent ; arch:inModel <{P}> .
+:CtrlClass a uml:Class ; arch:inModel <{P}> ; skos:prefLabel "坏\\u0001类"@zh .
+:ctrlBC a ddd:BoundedContext ; arch:inModel <{P}> ; skos:prefLabel "坏\\u0001上下文"@zh .
+:ctrlAggregate a ddd:Aggregate ; arch:inModel <{P}> ; skos:prefLabel "控制聚合"@zh .
+:rel-ctrlBC-owns-ctrlAggregate a ddd:Ownership ; arch:inModel <{P}> ; arch:source :ctrlBC ; arch:target :ctrlAggregate .
+""")
+    for args, field, cli_args in (
+            ({"process": "procurement:bpmnCtrl"}, "process", ["--process", "procurement:bpmnCtrl"]),
+            ({"umldiagram": "ClassDiagram", "model": "procurement"}, "umldiagram", ["--uml", "ClassDiagram", "--model", "procurement"]),
+            ({"dddviewpoint": "ContextMap", "model": "procurement"}, "dddviewpoint", ["--viewpoint", "ContextMap", "--model", "procurement"]),
+            ({"dddviewpoint": "AggregateDiagram", "of": "procurement:ctrlBC"}, "of",
+             ["--viewpoint", "AggregateDiagram", "--of", "procurement:ctrlBC"])):
+        e = err(vrepo, "model_render_view", **args)
+        assert (e["code"], e["details"]["reason"], e["details"]["rejectedFields"]) == ("INVALID_ARGUMENT", "text-not-xml", [field]), e
+        assert "U+0001" in e["message"]
+        p, out = cli(vrepo, tmp_path / "cli.out", *cli_args)
+        assert p.returncode == 1 and "U+0001" in p.stdout and out is None, p.stdout + p.stderr
+    listed = ok(vrepo, "model_list_views", model="procurement")["models"][0]["projections"]
+    assert P + "bpmnQuoteApproval" in {p["render"].get("process") for p in listed}
+    assert P + "bpmnCtrl" not in {p["render"].get("process") for p in listed}
+
+
+def test_bpmn_uml_ddd_hostile_labels_are_inert(vrepo):
+    h = HOSTILE[0] + HOSTILE[1] + HOSTILE[3]
+    with open(vrepo / "models" / "procurement" / "evil.ttl", "w", encoding="utf-8") as fh:
+        fh.write(f"""@prefix skos: <http://www.w3.org/2004/02/skos/core#> . @prefix arch: <https://meta.linked.archi/core#> .
+@prefix bpmn: <https://meta.linked.archi/bpmn/onto#> . @prefix uml: <https://meta.linked.archi/uml/onto#> .
+@prefix ddd: <https://aisep.example/ont/ddd#> . @prefix : <{P}> .
+:bpmnEvil a bpmn:Process ; arch:inModel <{P}> ; skos:prefLabel {ttl_str(h)} ; bpmn:flowElements :evilStart .
+:evilStart a bpmn:StartEvent ; arch:inModel <{P}> ; skos:prefLabel {ttl_str(h)} .
+:EvilClass a uml:Class ; arch:inModel <{P}> ; skos:prefLabel {ttl_str(h)} .
+:evilBC a ddd:BoundedContext ; arch:inModel <{P}> ; skos:prefLabel {ttl_str(h)} .
+""")
+    for args in ({"umldiagram": "ClassDiagram", "model": "procurement"}, {"dddviewpoint": "ContextMap", "model": "procurement"}):
+        r = ok(vrepo, "model_render_view", **args)
+        assert h in assert_inert(r["svg"]) and "<script" not in r["svg"].replace("&lt;script", "")
+    r = ok(vrepo, "model_render_view", process="procurement:bpmnEvil")
+    root = ElementTree.fromstring(r["content"].encode())
+    assert root.find(BPMN_NS + "process").get("name") == h and r["title"] == h  # an attribute value, not markup
+    assert not [el for el in root.iter() if el.tag.rsplit("}", 1)[-1] in ("script", "foreignObject")]
+
+
+@pytest.mark.parametrize("args", [{"process": "procurement:bpmnQuoteApproval"},
+                                  {"umldiagram": "ClassDiagram", "model": "procurement"},
+                                  {"dddviewpoint": "AggregateDiagram", "of": "procurement:quotationBC"}])
+def test_bpmn_uml_ddd_renderer_unavailable(vrepo, monkeypatch, tmp_path, args):
+    monkeypatch.setattr(diagram, "ELK_DIR", _fake_elk(tmp_path, 'process.stdout.write("not json");\n'))
+    e = err(vrepo, "model_render_view", **args)
+    assert (e["code"], e["details"]["reason"]) == ("RENDERER_UNAVAILABLE", "layout-failed"), e
+    monkeypatch.setattr(diagram, "ELK_DIR", str(tmp_path / "none"))
+    e = err(vrepo, "model_render_view", **args)
+    assert (e["code"], e["details"]["reason"]) == ("RENDERER_UNAVAILABLE", "elkjs-missing"), e
