@@ -25,7 +25,7 @@ UNKNOWN_TOOL = "UNKNOWN_TOOL"  # a log-only outcome (an audited name the profile
 LOG, LOCK = "calls.jsonl", "calls.lock"
 PAGE_MAX, PAGE_DEFAULT = 200, 50
 CURSOR_PREFIX = "cl1."
-IRI_MAX, PATH_MAX, TEXT_MAX = 512, 1024, 128
+IRI_MAX, PATH_MAX, TEXT_MAX, SESSION_REF_MAX = 512, 1024, 128, 200
 # Shape rules for the caller's structural values kept verbatim in measured.request (decision 14: identifiers and
 # hashes only). A value outside its rule, or longer than its limit, is kept as {"sha256": "sha256:<hex>"} only.
 _IRI = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*:[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%-]+")  # ASCII IRI or CURIE, no spaces
@@ -145,8 +145,10 @@ def record(run, name, args, t0, outcome, result=None, client_info=None):
         if ok:
             m["approval"] = {"commit": result.get("commit"), "activity": (result.get("activity") or {}).get("iri")}
         act = args.get("activity") if known and isinstance(args.get("activity"), dict) else None
-        if act is not None:
-            d["activity"] = {"agent": _text(act.get("agent"), IRI_MAX), "sessionRef": _text(act.get("sessionRef"), IRI_MAX)}
+        if act is not None:  # refused calls too, so the same shape rules as measured.request (decision 14)
+            from aisep import approval  # late: aisep.approval imports this module
+            d["activity"] = {"agent": _iri(act.get("agent")),
+                             "sessionRef": _shaped(act.get("sessionRef"), approval.SESSION_REF_RE.fullmatch, SESSION_REF_MAX)}
     return {"v": VERSION, "measured": m, "declared": d}
 
 

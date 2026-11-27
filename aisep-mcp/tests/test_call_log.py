@@ -334,8 +334,9 @@ def test_exit7_caller_values_only_under_declared(repo):
         client_info={"name": SENT + "-client", "version": "1"})
     server.logged_call(cfg, RUN, "model_add_element", dict(DRY, prefLabel=SENT + "-label", definition=SENT + "-def"))
     a, b = lines(repo)
-    assert a["declared"] == {"clientInfo": {"name": SENT + "-client", "version": "1"},
-                             "activity": {"agent": SENT + "-agent", "sessionRef": SENT + "-session"}}
+    assert a["declared"] == {"clientInfo": {"name": SENT + "-client", "version": "1"},  # SENT-agent is no IRI: hashed
+                             "activity": {"agent": {"sha256": "sha256:" + hashlib.sha256((SENT + "-agent").encode()).hexdigest()},
+                                          "sessionRef": SENT + "-session"}}
     for x in (a, b):
         assert SENT not in json.dumps(x["measured"], ensure_ascii=False)
 
@@ -410,6 +411,28 @@ def test_caller_values_outside_their_shape_are_hashed_and_errors_keep_only_the_c
         e = r.structured_content["error"]
         assert g["measured"]["outcome"] == e["code"]
         assert e["message"] not in raw.decode("utf-8") and "message" not in json.dumps(g) and "details" not in json.dumps(g)
+
+
+def test_refused_record_approval_keeps_activity_values_only_when_they_pass_their_shape(repo):
+    """PR #175 re-review B1: declared.activity of a refused governance_record_approval follows the same shape rules
+    as measured.request (decision 14): agent an IRI, sessionRef approval.SESSION_REF_RE (<= 200); else only a sha256.
+    Neither the raw log nor model_call_log's output carries the caller's text."""
+    cfg = tools.Config(repo=str(repo))
+    agent, sess = "哨兵Q9 agent", "哨兵Q9sess"
+    base = {"model": "procurement", "gate": "GateArchitecture", "decision": "Approved", "approvedBy": M + "chiefArchitect",
+            "approves": [M + "supplier"], "branch": "main", "headCommit": "0" * 40, "repo": str(repo)}
+    acts = [{"agent": agent, "sessionRef": sess, "startedAt": "2026-11-20T09:00:00Z"},
+            {"agent": M + "codingBot", "sessionRef": "s" * 201},
+            {"agent": M + "codingBot", "sessionRef": "s-ok", "startedAt": "2026-11-20T09:00:00Z"},
+            {"agent": 7, "sessionRef": ["x"]}]
+    results = [server.logged_call(cfg, RUN, "governance_record_approval", dict(base, activity=a)) for a in acts]
+    assert all(r.is_error for r in results) and results[0].structured_content["error"]["code"] == "INVALID_ARGUMENT"
+    got = [g["declared"]["activity"] for g in lines(repo)]
+    assert got == [{"agent": _h(agent), "sessionRef": _h(sess)}, {"agent": M + "codingBot", "sessionRef": _h("s" * 201)},
+                   {"agent": M + "codingBot", "sessionRef": "s-ok"}, {"agent": None, "sessionRef": None}]
+    out = json.dumps(calllog.model_call_log(cfg), ensure_ascii=False)
+    for v in ("哨兵Q9", "s" * 201):
+        assert v.encode() not in _raw(repo) and v.encode("unicode_escape") not in _raw(repo) and v not in out
 
 
 @pytest.mark.parametrize("edited", [True, False])
