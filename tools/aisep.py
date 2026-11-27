@@ -428,7 +428,7 @@ def _diagram_bpmn(args):
     out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".bpmn")
     try:
         xml = diagram_bpmn.render(sel)
-    except RuntimeError as e:
+    except (RuntimeError, ValueError) as e:
         print(f"[Violation] diagram: {e}"); return 1
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     with open(out, "w", encoding="utf-8", newline="\n") as fh:

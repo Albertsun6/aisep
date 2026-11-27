@@ -6,7 +6,7 @@
 - Python ≥ 3.12，依赖见 `requirements.txt`。解释器用主 checkout 的 `.venv`（已 gitignore，所有 worktree 共用，不要在 worktree 里另建）：`PY=~/code/AISEP/aisep/.venv/bin/python`。新机器上建：`uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt`。
 - 启用提交钩子：`git config core.hooksPath .githooks`
 - 出图（`tools/aisep.py diagram`）的布局用 elkjs，需要 Node ≥ 20：在仓库根跑 `npm ci --prefix tools/elk --ignore-scripts`，装到 `tools/elk/node_modules/`（已 gitignore，不要全局装）；版本与 sha512 钉在 `tools/elk/package-lock.json`。
-- BPMN 出图（`tools/aisep.py diagram --process <IRI>`，`--list-processes` 列出可画的流程）把一个 `bpmn:Process` 输出为标准 BPMN 2.0 XML（含 BPMNDI 坐标，默认写到 `build/views/<模型>/<流程>.bpmn`），布局同样用上面的 elkjs，可用 bpmn-js 等 BPMN 查看器打开；泳道、子流程等暂不支持的结构打 `[Warning]`、不写进输出。它的验收 `tests/acceptance/test_diagram_bpmn.py` 另需 bpmn-moddle 做读入校验：`npm ci --prefix tools/bpmn-check --ignore-scripts`（只用于测试，版本钉在 `tools/bpmn-check/package-lock.json`）。
+- BPMN 出图（`tools/aisep.py diagram --process <IRI>`，`--list-processes` 列出可画的流程）把一个 `bpmn:Process` 输出为标准 BPMN 2.0 XML（含 BPMNDI 坐标，默认写到 `build/views/<模型>/<流程>.bpmn`），布局同样用上面的 elkjs，可用 bpmn-js 等 BPMN 查看器打开（设计与映射见 `docs/specs/bpmn-view.md`）；泳道、子流程等暂不支持的结构打 `[Warning]`、不写进输出。它的验收 `tests/acceptance/test_diagram_bpmn.py` 另需 bpmn-moddle 做读入校验：`npm ci --prefix tools/bpmn-check --ignore-scripts`（只用于测试，版本钉在 `tools/bpmn-check/package-lock.json`）。
 
 ## 硬规则（违反即返工）
 1. **提交和 CI 只认 `gate`**：`$PY tools/aisep.py gate` 为 PASS 才算完成。`check` / `validate` 只做开发时快速反馈。
