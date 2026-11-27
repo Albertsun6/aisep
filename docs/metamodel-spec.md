@@ -202,7 +202,7 @@
 - 参数：`sh:parameter [ sh:path <参数键> ; sh:datatype xsd:string 或 sh:nodeKind sh:IRI ; sh:optional true? ; sh:description @zh? ]`，只认这几个键。参数键在 `ont/ext-actions#`，不声明为属性，G7 照样拒绝模型文件把它们当谓词用。
 - 前置检查：`sh:SPARQLAskValidator`（`sh:ask`、`sh:message`@zh、`dcterms:identifier`），ASK 为 true 即通过，参数以 `$名` 预绑定；只是提示（`PRECONDITION_FAILED`），不是合法性定义，`gate` 不知道它。
 - 步骤：`aisep:ActionStep`，`aisep:invokes` 五个基本动作之一（`aisep:BasicAddElement`、`aisep:BasicAddRelationship`、`aisep:BasicSetLabels`、`aisep:BasicSetAttributes`、`aisep:BasicRemove`，封闭集合，`skos:notation` 是对应 MCP 写工具名），每个入参一个 `aisep:binding` 空白节点：`aisep:argument` 加取值来源四选一（`aisep:constant`、`aisep:fromParameter`、`aisep:fromStep`、`aisep:modelOf`），列表型入参的一项另带 `aisep:attributePredicate`。
-- 校验：L3 `shapes.ttl` 的 EA1–EA10（结构；EA10 防止动作词汇被写到模型元素上）；L1 另有一条规则拦模型源图引用工具区术语（作主语、作谓词、作 `rdf:type` 宾语），不依赖 EA（ADR-030，随 #169 生效）；执行器每次读目录再判同样的结构，另判 SHACL Core 说不了的 X2–X10（表良构、入参名、引用、guard 能执行、id 唯一、空白节点不共享、两步作用于同一目标）。
+- 校验：L3 `shapes.ttl` 的 EA1–EA10（结构；EA10 防止动作词汇被写到模型元素上）；L1 另有一条规则拦模型源图引用工具区术语（作主语、作谓词、作 `rdf:type` 宾语或 `aisep:approves` 宾语），不依赖 EA（ADR-030，随 #169 生效）；执行器每次读目录再判同样的结构，另判 SHACL Core 说不了的 X2–X10（表良构、入参名、引用、guard 能执行、id 唯一、空白节点不共享、两步作用于同一目标）。
 - 不采纳：Foundry 的 Function rule、side effects、action log、「默认只能经动作编辑」。
 
 ## 7. 跨记法追溯

@@ -322,7 +322,7 @@
 
 - gate FAIL **不是工具错误**（`isError: false`），是正常结果。
 - aisep-core 的 SHACL-SPARQL 约束（L1 与批准核对用，取自被检查内容自己的 `modules/`）在 §5.6 的同一种无网络子进程里执行（issue #66）：约束尝试建立网络连接 → `QUERY_NOT_READONLY`，无网络子进程建立不了 → `INTERNAL`。两者都是工具错误，gate 不会给出 PASS。
-- `modules/` 下被读到的 `.ttl` 不能解析（模块清单 `aisep:loads` 的文件，或 L3 才读的形状文件）→ `PARSE_FAILED`，`details.file` 是该文件的仓库相对路径。这是工具错误，不给部分结果；模型文件的解析失败仍是 L0 发现项。只有用到该文件的工具才报：形状文件坏了，`model_check`（L0–L2）照常返回，`model_validate`、`model_gate` 报错。
+- `modules/` 下被读到的 `.ttl` 不能解析（模块清单 `aisep:loads`、`aisep:toolingLoads` 的文件，或 L3 才读的形状文件；`toolingLoads` 见 ADR-030，随 #169 生效）→ `PARSE_FAILED`，`details.file` 是该文件的仓库相对路径。这是工具错误，不给部分结果；模型文件的解析失败仍是 L0 发现项。只有用到该文件的工具才报：形状文件坏了，`model_check`（L0–L2）照常返回，`model_validate`、`model_gate` 报错。
 - 判定逻辑就是原型的那几个函数，只把 `report()` 改成返回数据。
 
 **`model_findings` 的 `openViolations`**（Q6 条件二：写前只拒新增违规留下的遗留违规要查得到）
@@ -408,7 +408,7 @@
 ### 5.6 `model_query`
 
 - **输入**：`sparql`（必填）、`limit`（缺省 1000，最大 10000）、`timeoutMs`（缺省 10000，最大 60000）、公共字段。
-- **图**：构建后的图 + 领域区的全部本体 + 全部对齐 + 模型源图（同原型 `cmd_query`，`use_default_graph_as_union=True`），不含工具区（模块清单 `aisep:toolingLoads` 声明的文件，如 ext-actions 的 `onto.ttl`、`catalog.ttl`；ADR-030，随 #169 生效）。数据集由服务端决定，查询里的 `FROM` / `FROM NAMED` 不生效（SPARQL 1.1 Protocol §2.1.4）。原型预声明的前缀都可用。
+- **图**：构建后的图 + 领域区的全部本体 + 全部对齐 + 模型源图（同原型 `cmd_query`，`use_default_graph_as_union=True`），不含工具区（模块清单 `aisep:toolingLoads` 声明的文件，如 ext-actions 的 `onto.ttl`、`catalog.ttl`；ADR-030，随 #169 生效）。默认图恒为领域区并集，查询里的 `FROM` 不生效；`FROM NAMED` 只能在领域区的命名图里收窄 `GRAPH ?g` 遍历的范围，取不到工具区（pyoxigraph `use_default_graph_as_union=True` 的行为；ADR-030 第 5 款）。原型预声明的前缀都可用。
 - **只读的落实**：
   - 只调 `Store.query`，从不调 `Store.update`。Update 语句解析失败（F5）→ `QUERY_NOT_READONLY`，message 写"只接受 SELECT/ASK/CONSTRUCT/DESCRIBE"。
   - 不访问网络（F6，issue #60）：pyoxigraph 遇到 `SERVICE` 会真的发 HTTP 请求，所以查询在一个无网络的子进程里执行（`aisep/querybox.py`）。Linux 用 seccomp、macOS 用 sandbox，限制在读入查询之前生效，查询一旦尝试建立网络连接，子进程即被终止，不发出请求 → `QUERY_NOT_READONLY`。这条保证不看查询文本。限制建立不了或确认不了（其他平台、内核不支持）时不执行查询 → `INTERNAL`。超时后子进程被杀掉。
