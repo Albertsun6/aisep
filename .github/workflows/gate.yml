@@ -2,9 +2,8 @@ name: gate
 on:
   pull_request:
   push:
-    # batch/** 是验证批分支（只用于验证叠合树、不进 main，见 coordination/design-batch-merge-20261127.md）
-    branches: [main, 'batch/**']
-# 同一个 PR 推新提交时取消它进行中的旧运行；push（main 与 batch/**）的运行按 sha 分组，不取消。
+    branches: [main]
+# 同一个 PR 推新提交时取消它进行中的旧运行；main 上的运行按 sha 分组，不取消。
 concurrency:
   group: gate-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
