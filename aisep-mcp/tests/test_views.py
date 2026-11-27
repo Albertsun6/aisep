@@ -112,6 +112,7 @@ def test_list_views_declared_and_projections(vrepo):
             if "elementCount" in item:
                 assert (r["elementCount"], r["relationshipCount"]) == (item["elementCount"], item["relationshipCount"]), item
             assert r["elementCount"] == len(drawn(r["svg"])) and r["relationshipCount"] == len(drawn(r["svg"], "relationship"))
+            ElementTree.fromstring(r["svg"])  # well-formed XML (strict parser)
 
 
 def test_list_views_one_model_and_ref(vrepo):
@@ -135,16 +136,50 @@ def test_render_declared_view(vrepo):
     assert 'data-kind="boundary" data-iri="' + TM + 'orderSys"' in c4["svg"]
 
 
-def test_render_viewpoint_is_the_cli_svg_byte_for_byte(vrepo, tmp_path):
-    out = tmp_path / "cli.svg"
-    # the checkout's CLI (its elkjs) on the fixture repo's model files
-    fs = sorted(str(f) for f in (vrepo / "models").rglob("*.ttl"))
-    p = subprocess.run([PY, os.path.join(ROOT, "tools", "aisep.py"), "diagram", "--viewpoint", "LayeredViewpoint",
-                        "--model", "procurement", "-o", str(out), *fs], cwd=vrepo, capture_output=True, text=True, timeout=600)
+def cli(repo, out, *args):
+    """The checkout's CLI (its elkjs) on the fixture repo's model files: (process, SVG text or None)."""
+    fs = sorted(str(f) for f in (repo / "models").rglob("*.ttl"))
+    p = subprocess.run([PY, os.path.join(ROOT, "tools", "aisep.py"), "diagram", *args, "-o", str(out), *fs], cwd=repo,
+                       capture_output=True, text=True, timeout=600)
+    return p, (out.read_text(encoding="utf-8") if out.exists() else None)
+
+
+@pytest.mark.parametrize("args, cli_args", [
+    ({"viewpoint": "LayeredViewpoint", "model": "procurement"}, ["--viewpoint", "LayeredViewpoint", "--model", "procurement"]),
+    ({"view": "procurement:view-probe"}, ["--view", "procurement:view-probe"]),  # declared ArchiMate view
+    ({"view": "t:view-c4Probe"}, ["--view", "t:view-c4Probe"]),  # declared C4 view
+    ({"c4viewpoint": "SystemContext", "of": "t:orderSys"}, ["--viewpoint", "SystemContext", "--of", "t:orderSys"]),
+    ({"c4viewpoint": "C4Deployment", "of": "Production", "model": "t"},
+     ["--viewpoint", "C4Deployment", "--of", "Production", "--model", "t"]),
+])
+def test_render_is_the_cli_svg_byte_for_byte(vrepo, tmp_path, args, cli_args):
+    p, svg = cli(vrepo, tmp_path / "cli.svg", *cli_args)
     assert p.returncode == 0, p.stdout + p.stderr
-    r = ok(vrepo, "model_render_view", viewpoint="LayeredViewpoint", model="procurement")
-    assert r["svg"] == out.read_text(encoding="utf-8")
-    assert r["elementCount"] == int(re.search(r"elements=(\d+)", p.stdout).group(1))
+    r = ok(vrepo, "model_render_view", **args)
+    assert r["svg"].encode() == svg.encode()
+    assert r["elementCount"] == int(re.search(r"elements=(\d+)", p.stdout).group(1)) > 0
+
+
+def test_view_in_several_models_takes_the_first_by_iri_in_both(vrepo, tmp_path):
+    # a view with two arch:inModel (an L1 problem, but L0 is all the view tools need): tool and CLI both take the
+    # model IRIs sorted, first one (procurement < t). Its members are procurement elements, so taking `t` draws nothing
+    with open(vrepo / "models" / "t" / "c4.ttl", "a", encoding="utf-8") as fh:
+        fh.write(f"<{P}view-probe> arch:inModel <{TM}> .\n")
+    assert sorted(m for (m,) in rows(vrepo, f"SELECT ?m WHERE {{ <{P}view-probe> arch:inModel ?m }}")) == [P, TM]
+    p, svg = cli(vrepo, tmp_path / "cli.svg", "--view", "procurement:view-probe")
+    assert p.returncode == 0, p.stdout + p.stderr
+    r = ok(vrepo, "model_render_view", view="procurement:view-probe")
+    assert drawn(r["svg"]) == {P + x for x in VIEW_MEMBERS} and r["svg"].encode() == svg.encode()
+
+
+def test_empty_view_tool_draws_title_and_legend_cli_refuses(vrepo, tmp_path):
+    with open(vrepo / "models" / "procurement" / "am4.ttl", "a", encoding="utf-8") as fh:
+        fh.write(f':view-empty a arch:Diagram ; arch:inModel <{P}> ; skos:prefLabel "空视图"@zh .\n')
+    r = ok(vrepo, "model_render_view", view="procurement:view-empty")
+    assert r["elementCount"] == 0 and "视图里没有元素" in r["warnings"] and not drawn(r["svg"])
+    ElementTree.fromstring(r["svg"])
+    p, svg = cli(vrepo, tmp_path / "cli.svg", "--view", "procurement:view-empty")
+    assert p.returncode == 1 and "[Violation]" in p.stdout and svg is None
 
 
 def test_render_c4_viewpoints(vrepo):
@@ -207,6 +242,8 @@ def test_registered_for_workbench_and_agent_over_stdio(vrepo):
     ({"view": "procurement:supplier"}, "INVALID_ARGUMENT", "view"),  # a member, not an arch:Diagram
     ({"view": "<urn:x y>"}, "INVALID_ARGUMENT", "view"),
     ({"view": "procurement:view-probe", "ref": "no-such-ref"}, "REF_NOT_FOUND", None),
+    ({"view": "procurement:" + "x" * 2040}, "INVALID_ARGUMENT", "view"),  # schema maxLength 2048
+    ({"c4viewpoint": "SystemContext", "of": "t:" + "x" * 2047}, "INVALID_ARGUMENT", "of"),
 ])
 def test_render_errors(vrepo, args, code, field):
     e = err(vrepo, "model_render_view", **args)
@@ -228,6 +265,27 @@ def test_renderer_unavailable_is_an_error_not_a_partial_svg(vrepo, monkeypatch, 
     for args in ({"view": "procurement:view-probe"}, {"c4viewpoint": "SystemContext", "of": "t:orderSys"}):
         e = err(vrepo, "model_render_view", **args)
         assert (e["code"], e["details"]["reason"]) == ("RENDERER_UNAVAILABLE", "node-missing")
+
+
+def _fake_elk(tmp_path, script):
+    d = tmp_path / "elk"
+    (d / "node_modules" / "elkjs").mkdir(parents=True)
+    (d / "layout.cjs").write_text(script, encoding="utf-8")
+    return str(d)
+
+
+@pytest.mark.parametrize("args", [{"view": "procurement:view-probe"}, {"c4viewpoint": "SystemContext", "of": "t:orderSys"},
+                                  {"view": "t:view-c4Probe"}])
+def test_layout_timeout_and_garbage_are_renderer_unavailable(vrepo, monkeypatch, tmp_path, args):
+    # ELK printing something that is not JSON (a JSONDecodeError, a ValueError: it must not read as INVALID_ARGUMENT,
+    # on the C4 path no more than on the ArchiMate one), and ELK not finishing in time (not INTERNAL)
+    monkeypatch.setattr(diagram, "ELK_DIR", _fake_elk(tmp_path, 'process.stdout.write("not json");\n'))
+    e = err(vrepo, "model_render_view", **args)
+    assert (e["code"], e["details"]["reason"], e["retryable"]) == ("RENDERER_UNAVAILABLE", "layout-failed", False), e
+    monkeypatch.setattr(diagram, "ELK_DIR", _fake_elk(tmp_path / "slow", "setTimeout(() => {}, 30000);\n"))
+    monkeypatch.setattr(diagram, "ELK_TIMEOUT", 1)
+    e = err(vrepo, "model_render_view", **args)
+    assert (e["code"], e["details"]["reason"], e["retryable"]) == ("RENDERER_UNAVAILABLE", "layout-timeout", False), e
 
 
 def test_parse_failure_draws_nothing(vrepo):
@@ -285,3 +343,26 @@ def test_hostile_labels_are_inert_text(vrepo):
     assert "' onmouseover='alert(3)" in shown and "<script" not in c4["svg"].replace("&lt;script", "")
     listed = ok(r, "model_list_views", model="procurement")
     assert any(v["iri"] == P + "view-evil" for v in listed["models"][0]["views"])
+
+
+def test_text_xml_cannot_carry_is_refused_not_drawn(vrepo, tmp_path):
+    # U+0001 in a label (Turtle escape \u0001): no escape can put it into XML 1.0. Refused like the write tools refuse
+    # control characters, in the tool and in the CLI alike; tab and newline are XML characters and still render
+    with open(vrepo / "models" / "procurement" / "am4.ttl", "a", encoding="utf-8") as fh:
+        fh.write(f':ctrl a am4:Role ; arch:inModel <{P}> ; skos:prefLabel "坏\\u0001字"@zh ; arch:inView :view-ctrl .\n'
+                 f':tabbed a am4:Role ; arch:inModel <{P}> ; skos:prefLabel "制\\t表\\n换行"@zh ; arch:inView :view-ok .\n'
+                 f':view-ctrl a arch:Diagram ; arch:inModel <{P}> ; skos:prefLabel "控制字符"@zh .\n'
+                 f':view-ok a arch:Diagram ; arch:inModel <{P}> ; skos:prefLabel "制表换行"@zh .\n')
+    with open(vrepo / "models" / "t" / "c4.ttl", "a", encoding="utf-8") as fh:
+        fh.write(f'<{TM}ctrlSys> a c4:ExternalSoftwareSystem ; arch:inModel <{TM}> ; skos:prefLabel "外\\u0001部"@zh .\n'
+                 f'<{TM}rel-ctrl> a c4:Using ; arch:inModel <{TM}> ; arch:source <{TM}orderSys> ; arch:target <{TM}ctrlSys> .\n')
+    assert "\x01" in {x for (x,) in rows(vrepo, f"SELECT ?l WHERE {{ <{P}ctrl> skos:prefLabel ?l }}")}.pop()
+    for args, field in (({"view": "procurement:view-ctrl"}, "view"), ({"c4viewpoint": "SystemContext", "of": "t:orderSys"}, "of")):
+        e = err(vrepo, "model_render_view", **args)
+        assert (e["code"], e["details"]["reason"], e["details"]["rejectedFields"]) == ("INVALID_ARGUMENT", "text-not-xml", [field]), e
+        assert "U+0001" in e["message"]
+    p, svg = cli(vrepo, tmp_path / "cli.svg", "--view", "procurement:view-ctrl")
+    assert p.returncode == 1 and "U+0001" in p.stdout and svg is None, p.stdout + p.stderr
+    r = ok(vrepo, "model_render_view", view="procurement:view-ok")
+    root = ElementTree.fromstring(r["svg"])  # strict parse
+    assert r["elementCount"] == 1 and any("制" in (el.text or "") for el in root.iter())

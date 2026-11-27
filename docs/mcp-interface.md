@@ -950,15 +950,15 @@ C4 范围：每个内部软件系统（`c4:SoftwareSystem`，不含外部系统�
 
 | 形式 | 字段 | 说明 |
 |---|---|---|
-| 声明视图 | `view` | 视图 IRI 或 `slug:local`；视点是 `c4vp:` 下的按 C4 画，否则按 ArchiMate 画。不接受 `model`、`of` |
+| 声明视图 | `view` | 视图 IRI 或 `slug:local`（至多 2048 字符，`of` 同）；视点是 `c4vp:` 下的按 C4 画，否则按 ArchiMate 画。不接受 `model`、`of` |
 | ArchiMate 视点投影 | `viewpoint` + `model` | `viewpoint` 是视点本地名（如 `LayeredViewpoint`，`^[A-Za-z][A-Za-z0-9_-]*$`）；没有这个视点 → `INVALID_ARGUMENT`，`details.candidates` 列出全部视点名 |
 | C4 视点投影 | `c4viewpoint` + `of`（+ `model`） | `c4viewpoint` ∈ `SystemContext`、`ContainerDiagram`、`ComponentDiagram`、`C4Deployment`。前三个的 `of` 是软件系统或容器的 IRI（模型由它决定，不接受 `model`）；`C4Deployment` 的 `of` 是环境名（同上的纯名字规则），`model` 可选，用来区分同名环境 |
 
-**输出**：`{ svg, title, notation, elementCount, relationshipCount, warnings, source }`。`svg` 与 `tools/aisep.py diagram` 对同一输入写出的文件逐字节相同，同一模型两次调用逐字节相同。`elementCount` 是画出的元素个数（C4 不含边界与部署节点这类外框），`relationshipCount` 是画出的连线数。`warnings` 是出图器的提示（如「在视图里但另一端不在，不画」；原文为英文），视图里一个元素都没有时加一条「视图里没有元素」，仍返回只有标题与图例的 SVG。`content[0].text` 只放一句摘要，不放 SVG。
+**输出**：`{ svg, title, notation, elementCount, relationshipCount, warnings, source }`。视图里至少有一个元素时，`svg` 与 `tools/aisep.py diagram` 对同一输入写出的文件逐字节相同（声明视图、ArchiMate 视点投影、C4 视点投影都如此）；同一模型两次调用逐字节相同。视图或范围属于几个模型（`arch:inModel` 不止一个）时，两边都取模型 IRI 排序后的第一个。`elementCount` 是画出的元素个数（C4 不含边界与部署节点这类外框），`relationshipCount` 是画出的连线数。`warnings` 是出图器的提示（如「在视图里但另一端不在，不画」；原文为英文），视图里一个元素都没有时加一条「视图里没有元素」，仍返回只有标题与图例的 SVG；这时 CLI 不写文件、报 `[Violation]`（退出码 1），两边在这一种情况下不同，所以上面的逐字节相同限于有元素时。`content[0].text` 只放一句摘要，不放 SVG。
 
-**SVG 只含模型文本的转义**：标签、定义、技术、IRI 进 SVG 前一律经 `html.escape`（`< > & " '` 都转义），只作为元素文本或带引号的属性值；输出里没有 `<script>`、`on*` 属性、`href`、`foreignObject`。测试用含 `<script>`、`" onload=`、`' onmouseover=` 等的标签核对（`test_views.py::test_hostile_labels_are_inert_text`）。嵌入建议：用 `<img src="data:image/svg+xml,…">` 或 iframe，不直接 `innerHTML`：SVG 自带的 `<style>` 与 `<marker id>` 直接内联时会作用到整页、与别的图重名。
+**SVG 只含模型文本的转义**：标签、定义、技术、IRI 进 SVG 前一律经 `html.escape`（`< > & " '` 都转义），只作为元素文本或带引号的属性值；输出里没有 `<script>`、`on*` 属性、`href`、`foreignObject`。测试用含 `<script>`、`" onload=`、`' onmouseover=` 等的标签核对（`test_views.py::test_hostile_labels_are_inert_text`）。模型文本里有 XML 1.0 不能承载的字符（制表、换行、回车以外的 C0 控制字符、U+FFFE、U+FFFF 等，任何转义都写不进 XML）时**拒绝出图**：`INVALID_ARGUMENT`，`details.reason` 为 `text-not-xml`，`details.rejectedFields` 为本次的 `view`、`viewpoint` 或 `of`，message 写出字符码位；CLI 同样报 `[Violation]`。不剔除后照画：与写工具拒绝控制字符的口径一致，也不会悄悄画出和模型不一样的文字（`aisep/diagram.py` 的 `check_xml_text`，出图前、布局前核对）。嵌入建议：用 `<img src="data:image/svg+xml,…">` 或 iframe，不直接 `innerHTML`：SVG 自带的 `<style>` 与 `<marker id>` 直接内联时会作用到整页、与别的图重名。
 
-**出图器不可用**：布局用 elkjs（Node ≥ 20，`npm ci --prefix tools/elk --ignore-scripts`）。没装 elkjs、PATH 上没有 `node`、ELK 运行失败 → `RENDERER_UNAVAILABLE`（不可重试，`details.reason` 为 `elkjs-missing`、`node-missing`、`layout-failed`），不返回半成品。
+**出图器不可用**：布局用 elkjs（Node ≥ 20，`npm ci --prefix tools/elk --ignore-scripts`）。没装 elkjs、PATH 上没有 `node`、ELK 超时（120 秒）、ELK 运行失败或输出不是 JSON → `RENDERER_UNAVAILABLE`（不可重试，`details.reason` 依次为 `elkjs-missing`、`node-missing`、`layout-timeout`、`layout-failed`、`layout-failed`），不返回半成品。
 
 **错误**：`INVALID_ARGUMENT`（含范围类型不对，如 `SystemContext` 的 `of` 是容器；部署环境不存在；声明的部署视图暂不支持）、`ELEMENT_NOT_FOUND`（`view` 或 `of` 不是任何模型的成员）、`MODEL_NOT_FOUND`、`PARSE_FAILED`、`RENDERER_UNAVAILABLE`，以及定位的 `NOT_A_GIT_REPO`、`PATH_OUTSIDE_ROOT`、`REF_NOT_FOUND`、`MODULES_NOT_IN_REF`。
 

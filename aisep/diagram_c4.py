@@ -22,7 +22,7 @@ the four viewpoint IRIs are only named here (c4vp:SystemContext, ContainerDiagra
 from html import escape
 
 from aisep.core import ARCH, NS
-from aisep.diagram import MARGIN, elk_layout, f, local, tw, wrap
+from aisep.diagram import MARGIN, check_xml_text, elk_layout, f, local, tw, wrap
 
 C4 = "https://meta.linked.archi/c4/onto#"
 SZ = "https://meta.linked.archi/c4/structurizr#"
@@ -179,7 +179,7 @@ def select(ctx, viewpoint, scope, model=None, view=None):
     instances}}; id is the element IRI, or 'container IRI@node IRI' for a deployed container. edges: see _edges."""
     warnings = []
     if view:
-        model = ctx.rows(f"SELECT ?m WHERE {{ <{view}> arch:inModel ?m }}")[0][0]
+        model = sorted(m for (m,) in ctx.rows(f"SELECT ?m WHERE {{ <{view}> arch:inModel ?m }}"))[0]
     elif viewpoint == "C4Deployment" and not model:  # scope is a plain name (checked by the CLI)
         ms = sorted({m for (m,) in ctx.rows(f'SELECT ?m WHERE {{ ?n <{SZ}environment> "{scope}" ; arch:inModel ?m }}')})
         if len(ms) != 1:
@@ -381,6 +381,7 @@ def _leaf(b, x, y, w, h):
 
 
 def render(title, sub, boxes, edges):
+    check_xml_text(title, sub, boxes, edges)
     pos, routes, labs, gw, gh = layout(boxes, edges)
     top = MARGIN + 52
     kinds = sorted({b["kind"] for b in boxes.values() if not b["compound"]}, key=[k for k, *_ in KINDS].index)

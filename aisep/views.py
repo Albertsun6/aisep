@@ -127,53 +127,64 @@ def _model_of(ctx, field, iri):
     return ms[0]
 
 
-def _render(fn, *args):
+def _render(field, fn, *args):
+    """The renderer's own failures, mapped here and not by the selection's `except ValueError` (a layout that printed
+    no JSON is a JSONDecodeError, a ValueError, but not the caller's fault: elk_layout raises RendererUnavailable)."""
     try:
         return fn(*args)
     except diagram.RendererUnavailable as e:
         raise AisepError("RENDERER_UNAVAILABLE", f"出图器不可用：{e}", details={"reason": e.reason},
-                         hint="在模型仓库根目录跑 `npm ci --prefix tools/elk --ignore-scripts`（需要 Node ≥ 20 在 PATH 上），再重试") from None
+                         hint="在模型仓库根目录跑 `npm ci --prefix tools/elk --ignore-scripts`（需要 Node ≥ 20 在 PATH 上），"
+                              "再重试；reason 为 layout-timeout、layout-failed 时看 message 里 ELK 的输出") from None
+    except ValueError as e:  # check_xml_text: model text with a character XML 1.0 cannot carry (same refusal as the CLI)
+        raise AisepError("INVALID_ARGUMENT", f"无法出图：{e}", hint="把模型文本里的控制字符去掉（写工具本就拒绝写入它们）",
+                         details={"rejectedFields": [field], "reason": "text-not-xml"}) from None
 
 
-def _c4_result(sel, source):
+def _c4_result(field, sel, source):
     title, sub, boxes, edges, warnings = sel[:5]
     n, r = _counts_c4(sel)
-    svg = _render(diagram_c4.render, title, sub, boxes, edges)
+    svg = _render(field, diagram_c4.render, title, sub, boxes, edges)
     return {"svg": svg, "title": title, "notation": "c4", "elementCount": n, "relationshipCount": r,
             "warnings": warnings + ([] if n else ["视图里没有元素"]), "source": source}
 
 
 def model_render_view(cfg, view=None, viewpoint=None, model=None, c4viewpoint=None, of=None, repo=None, ref=None):
     _shape_of_call(view, viewpoint, model, c4viewpoint, of)
+    field = "view" if view is not None else "of" if c4viewpoint is not None else "viewpoint"
     with tools.loaded(cfg, repo, ref, model) as (ctx, source):
         _parse_ok(ctx)
-        try:
+        c4sel = None
+        try:  # selection only; rendering (and its failures) is outside, in _render
             if c4viewpoint is not None:
                 if c4viewpoint == "C4Deployment":
                     m = f"{core.MODEL_BASE}{core.model_slug(model)}/" if model is not None else None
-                    return _c4_result(diagram_c4.select(ctx, c4viewpoint, of, model=m), source)
-                scope = _iri(ctx, "of", of)
-                _model_of(ctx, "of", scope)
-                return _c4_result(diagram_c4.select(ctx, c4viewpoint, scope), source)
-            if view is not None:
+                    c4sel = diagram_c4.select(ctx, c4viewpoint, of, model=m)
+                else:
+                    scope = _iri(ctx, "of", of)
+                    _model_of(ctx, "of", scope)
+                    c4sel = diagram_c4.select(ctx, c4viewpoint, scope)
+            elif view is not None:
                 v = _iri(ctx, "view", view)
                 m = _model_of(ctx, "view", v)
                 if not ctx.is_a(v, core.ARCH + "Diagram"):
                     raise _bad("view", f"{core.short(v)} 不是视图（arch:Diagram）")
                 vps = sorted(x for (x,) in ctx.rows(f"SELECT ?x WHERE {{ <{v}> arch:viewConformsToViewpoint ?x }}"))
                 if vps and vps[0].startswith(diagram_c4.C4VP):
-                    return _c4_result(diagram_c4.select(ctx, vps[0], None, view=v), source)
-                title, sub, elements, rels, warnings = diagram.select(ctx, m, view=v)
+                    c4sel = diagram_c4.select(ctx, vps[0], None, view=v)
+                else:
+                    title, sub, elements, rels, warnings = diagram.select(ctx, m, view=v)
             else:
                 known = _am4_viewpoints(ctx)
                 if viewpoint not in known:
                     raise _bad("viewpoint", f"没有 ArchiMate 视点 {viewpoint!r}", candidates=known)
                 m = f"{core.MODEL_BASE}{core.model_slug(model)}/"
                 title, sub, elements, rels, warnings = diagram.select(ctx, m, viewpoint=viewpoint)
-        except ValueError as e:  # the renderers' own refusals (wrong kind of scope, unknown environment, …)
-            raise AisepError("INVALID_ARGUMENT", f"无法出图：{e}", details={"rejectedFields": [
-                "view" if view is not None else "of" if c4viewpoint is not None else "viewpoint"]}) from None
-        svg = _render(diagram.render, title, sub, elements, rels)
+        except ValueError as e:  # the selection's own refusals (wrong kind of scope, unknown environment, …)
+            raise AisepError("INVALID_ARGUMENT", f"无法出图：{e}", details={"rejectedFields": [field]}) from None
+        if c4sel is not None:
+            return _c4_result(field, c4sel, source)
+        svg = _render(field, diagram.render, title, sub, elements, rels)
         return {"svg": svg, "title": title, "notation": "archimate", "elementCount": len(elements),
                 "relationshipCount": len(rels), "warnings": warnings + ([] if elements else ["视图里没有元素"]),
                 "source": source}
