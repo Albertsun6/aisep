@@ -1,6 +1,6 @@
 """Shared fixtures (docs/mcp-interface.md §11): every test works in a fresh `git init` under tmp_path holding copies of
 models/procurement, modules/, vendor/ (and tools/ + aisep/ so the CLI can run there); the real checkout is never touched."""
-import heapq, json, os, shutil, subprocess, sys
+import hashlib, heapq, json, os, shutil, subprocess, sys
 
 import pytest
 
@@ -65,6 +65,15 @@ def pytest_collection_modifyitems(config, items):
     keep, drop = [], []
     for t in items:
         (keep if shard[t.nodeid] == i else drop).append(t)
+    manifest = os.environ.get("AISEP_SHARD_MANIFEST")
+    if manifest:  # CI: what this shard collected and kept, for tools/check_shards.py in the summary job
+        ids = sorted(t.nodeid for t in items)
+        data = {"shard": i, "n": n, "total": len(ids), "count": len(keep), "kept": sorted(t.nodeid for t in keep), "all": ids,
+                "sha256": hashlib.sha256("\n".join(ids).encode("utf-8")).hexdigest()}
+        tmp = f"{manifest}.{os.getpid()}"  # every xdist worker writes the same content; replace atomically
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        os.replace(tmp, manifest)
     if drop:
         config.hook.pytest_deselected(items=drop)
     items[:] = keep
