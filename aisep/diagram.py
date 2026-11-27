@@ -237,17 +237,26 @@ ELK_OPTIONS = {
 }
 
 
+class RendererUnavailable(RuntimeError):
+    """No layout, so no SVG: elkjs not installed (`elkjs-missing`), node not on PATH (`node-missing`) or ELK failed
+    (`layout-failed`). A RuntimeError, so the CLI's handling is unchanged; the MCP view tool maps it to one error code."""
+
+    def __init__(self, reason, message):
+        super().__init__(message)
+        self.reason = reason
+
+
 def elk_layout(graph):
     """Run tools/elk/layout.cjs (elkjs, pinned in tools/elk/package-lock.json) on an ELK JSON graph."""
     if not os.path.isdir(os.path.join(ELK_DIR, "node_modules", "elkjs")):
-        raise RuntimeError("elkjs is not installed: run `npm ci --prefix tools/elk --ignore-scripts`")
+        raise RendererUnavailable("elkjs-missing", "elkjs is not installed: run `npm ci --prefix tools/elk --ignore-scripts`")
     try:
         p = subprocess.run(["node", os.path.join(ELK_DIR, "layout.cjs")], input=json.dumps(graph), cwd=ELK_DIR,
                            capture_output=True, text=True, timeout=120)
     except FileNotFoundError:
-        raise RuntimeError("node is not on PATH (needed by elkjs; Node >= 20)") from None
+        raise RendererUnavailable("node-missing", "node is not on PATH (needed by elkjs; Node >= 20)") from None
     if p.returncode != 0:
-        raise RuntimeError(f"ELK layout failed: {p.stderr.strip()[-400:]}")
+        raise RendererUnavailable("layout-failed", f"ELK layout failed: {p.stderr.strip()[-400:]}")
     return json.loads(p.stdout)
 
 

@@ -17,8 +17,8 @@ from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import MCPError
 from mcp_types.jsonrpc import INVALID_PARAMS
 
-from aisep import actions, approval, branches, diff, tools, write_tools
-from aisep.errors import ACTION_CODES, CODES, AisepError
+from aisep import actions, approval, branches, diagram_c4, diff, tools, views, write_tools
+from aisep.errors import ACTION_CODES, CODES, VIEW_CODES, AisepError
 
 MAX_TEXT_LINES = 200
 QUERY_TIMEOUT_MAX = 60000  # ms; a query thread that times out is not killed, so the wait is bounded here
@@ -48,9 +48,13 @@ def error_out(codes):
                               "details": {"type": "object"}}, ["code", "message", "retryable"])}, ["error"])
 
 
-def out(*required, codes=CODES - ACTION_CODES):
+BASE_CODES = CODES - ACTION_CODES - VIEW_CODES
+
+
+def out(*required, codes=BASE_CODES):
     """outputSchema = success ∪ error (§5.0): a success result has these keys (an error result has only `error`).
-    The codes only model_apply_action raises (errors.ACTION_CODES) are in its enum alone."""
+    The codes only model_apply_action raises (errors.ACTION_CODES) are in its enum alone, likewise model_render_view's
+    (errors.VIEW_CODES)."""
     return {"type": "object", "oneOf": [{"type": "object", "required": list(required)}, error_out(codes)]}
 
 
@@ -115,7 +119,23 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
                            "执行目录里的一个动作（一次写入，全有或全无，不提交）；含删除步骤的动作须先 dryRun 再带 planDigest",
                            obj({"action": S(), "params": {"type": "object"}, "dryRun": B, "planDigest": S(),
                                 "repo": REPO}, ["action"]),
-                           out("action", "changed", codes=CODES), ANN_DESTRUCTIVE, {"agent"}),
+                           out("action", "changed", codes=BASE_CODES | ACTION_CODES), ANN_DESTRUCTIVE, {"agent"}),
+    # views (§5.15, §5.16): read-only; writing views is still out of scope (§1)
+    "model_list_views": (views.model_list_views,
+                         "列出视图（只读）：每个模型的声明视图（arch:Diagram）与可出图的视点投影（ArchiMate 视点、C4 视点及其范围），"
+                         "每项带 model_render_view 的参数 render", READ_IN, out("models", "source"), ANN_READ,
+                         {"agent", "workbench"}),
+    "model_render_view": (views.model_render_view,
+                          "把一个视图画成 SVG（只读，与 tools/aisep.py diagram 同一出图器，同一模型字节相同）；"
+                          "三选一：{view} | {viewpoint, model} | {c4viewpoint, of}（C4Deployment 可加 model）",
+                          obj({"view": S(description="视图 IRI 或 slug:local"),
+                               "viewpoint": S(pattern="^[A-Za-z][A-Za-z0-9_-]*$", maxLength=128,
+                                              description="ArchiMate 4 视点本地名，如 OrganizationViewpoint；须同时给 model"),
+                               "model": MODEL, "c4viewpoint": S(enum=sorted(diagram_c4.VIEWPOINTS)),
+                               "of": S(description="c4viewpoint 的范围：软件系统或容器的 IRI；C4Deployment 时为部署环境名"),
+                               "repo": REPO, "ref": REF}),
+                          out("svg", "title", "elementCount", "relationshipCount", "warnings", "source",
+                              codes=BASE_CODES | VIEW_CODES), ANN_READ, {"agent", "workbench"}),
     "governance_record_approval": (
         approval.governance_record_approval,
         "记录一次关口批准：在 branch 检出的工作区新建一个记录文件并提交一次（evidence=headCommit，时间与 baseCommit 由服务器给）",
@@ -184,6 +204,10 @@ def summary_text(name, res):
                                     + ("，部分文件解析失败" if r.get("incomplete") else ""),
             "model_impact": lambda r: f"影响面 {len(r['items'])} 个元素" + ("（模型不合法）" if r.get("invalidModel") else ""),
             "model_query": lambda r: f"查询结果：{r['kind']}",
+            "model_list_views": lambda r: f"模型 {len(r['models'])} 个：声明视图 {sum(len(m['views']) for m in r['models'])} 个，"
+                                          f"视点投影 {sum(len(m['projections']) for m in r['models'])} 个",
+            "model_render_view": lambda r: f"视图「{r['title']}」：元素 {r['elementCount']}，关系 {r['relationshipCount']}"
+                                           + (f"，警告 {len(r['warnings'])}" if r["warnings"] else ""),
             "model_branches": lambda r: f"分支 {len(r['branches'])} 个，改了模型且未合入 "
                                         f"{sum(b['hasModelChanges'] and not b['mergedIntoMain'] for b in r['branches'])} 个"}.get(name)
     if head is None:
