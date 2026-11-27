@@ -338,6 +338,19 @@ def test_T26_dirty_models(t):
     assert commits(t) == n
 
 
+def test_adr032_dirty_check_ignores_non_ttl(t):
+    """ADR-032 第 7 款②（PR #179 评审 B6）：approval._dirty 只比对 models/ 下的 .ttl 与 models/ 下的暂存，看不见
+    未提交的 views/*.layout.json，也看不见 models/ 以外的改动；所以 view_set_layout 不能直接复用它作干净检查，
+    须按整个 worktree 的 git status 判。本测试钉住这条现状，P3 实现时干净检查另写。"""
+    from aisep import approval
+    h = feature(t)
+    t.write("models/procurement/views/v1.layout.json", '{"format":"aisep-layout/1"}\n')
+    t.write("README.md", "\n# uncommitted\n", "a")
+    assert approval._dirty(str(t.root), h) is None
+    status = t.git("status", "--porcelain", "--untracked-files=all")
+    assert "models/procurement/views/v1.layout.json" in status and "README.md" in status, status
+
+
 @pytest.mark.parametrize("staged", [False, True])
 def test_T26_orphan_record_file(t, staged):
     h = feature(t)
