@@ -15,7 +15,7 @@
     skos:prefLabel   "动作扩展"@zh ;
     skos:altLabel    "Actions extension"@en ;
     aisep:moduleKind aisep:Extension ;
-    owl:versionInfo  "0.2.0" ;
+    owl:versionInfo  "0.3.0" ;
     aisep:loads      "modules/ext-actions/onto.ttl" ,
                      "modules/ext-actions/catalog.ttl" ;
     aisep:shapesFile "modules/ext-actions/shapes.ttl" .

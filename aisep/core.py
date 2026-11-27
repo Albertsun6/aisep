@@ -1123,6 +1123,18 @@ def l4(ctx):
             FILTER NOT EXISTS { ?r arch:source|arch:target ?x }
             FILTER NOT EXISTS { { ?x ?p ?y } UNION { ?y ?p ?x } ?y arch:inModel ?m2 . FILTER(?p != arch:inModel) } }"""):
         ctx.add("Info", "L4", f"{short(x)} ({ctx.label(x)}, {short(t)}): isolated element — no relationship or link to another model member")
+    # ADR-024 recovery condition ② (#126 follow-up): a model declaring two or more members that can approve (the same
+    # test as aisep:approvedBy, Ctx._approver) may mean a second approver has appeared; a hint only, Albert decides
+    approvers = {}
+    for x, m in ctx.rows("""SELECT DISTINCT ?x ?m WHERE { ?x arch:inModel ?m ; a/rdfs:subClassOf* arch:Stakeholder .
+            FILTER(isIRI(?x)) }"""):
+        if ctx._approver(x):
+            approvers.setdefault(m, set()).add(x)
+    for m, xs in sorted(approvers.items()):
+        if len(xs) > 1:
+            ctx.add("Info", "L4", f"{short(m)}: {len(xs)} members can approve ({', '.join(sorted(short(x) for x in xs))}) — "
+                    "ADR-024 recovery condition ② (a second approver or user) may have been met; record it in the "
+                    "tracking issue #141 and report to Albert, who decides whether to restore review levels")
 
 
 # ------------------------------------------------------------------ impact

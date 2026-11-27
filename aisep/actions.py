@@ -1,7 +1,7 @@
 """Action catalogue (docs/mcp-interface.md §5.13, §5.14): model_list_actions, model_apply_action.
 
 An action is an aisep:ActionType defined in RDF in modules/ext-actions/catalog.ttl (vocabulary in onto.ttl, L3 shapes
-EA1-EA10 in shapes.ttl): parameters (sh:parameter), an ordered rdf:List of steps each invoking one of the closed set
+EA1-EA11 in shapes.ttl): parameters (sh:parameter), an ordered rdf:List of steps each invoking one of the closed set
 of basic actions below (the plan functions of the existing write tools), plus hint-level guards
 (sh:SPARQLAskValidator, ASK true = pass). This module only reads the catalogue, re-checks every definition on its own
 (X1-X10: it cannot assume `gate` ran), validates the parameters, resolves step arguments, runs the steps' plan
@@ -330,6 +330,9 @@ def _definition(g, a):
     if not isinstance(a, ox.NamedNode) or not ACTION_IRI_RE.match(a.value):
         P.append(f"EA1 动作 {_show(a)}：须为形如 aisep:Action<驼峰名> 的 IRI")
     _closed(g, a, ACTION_KEYS, "动作", "EA1", P)
+    other = sorted(_show(t) for t in g.vals(a, A) if t != ox.NamedNode(AI + "ActionType"))
+    if other:
+        P.append(f"EA11 动作：只能是 aisep:ActionType，不能另带类型 {', '.join(other)}")
     aid = _ident(g, a, "动作", "EA2", P)
     titles, defs, vers = g.vals(a, SKOS + "prefLabel"), g.vals(a, SKOS + "definition"), g.vals(a, VERSION)
     if len(titles) != 1 or not _is_zh(titles[0]) or len(defs) > 1 or not all(_is_zh(t) for t in defs):
@@ -374,8 +377,13 @@ def definition_digest(g, a):
     return "sha256:" + hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
 
 
-def _catalog_path(root):
-    return CATALOG_PATH or os.path.join(root, CATALOG)
+def _catalog_path(cfg):
+    """The catalogue both tools read: always the served worktree's (the server's --repo, cwd by default), never the
+    worktree a call's `repo` names. A definition edited in an unmerged worktree must not take effect there before it
+    went through a PR, and model_apply_action must run exactly what model_list_actions lists (#160)."""
+    if CATALOG_PATH:
+        return CATALOG_PATH
+    return os.path.join(gitio.locate_repo(None, cfg.allow_roots, cfg.repo), CATALOG)
 
 
 def load_catalog(path):
@@ -457,8 +465,7 @@ def model_list_actions(cfg, **extra):
     """Read-only: the catalogue with each action's parameter schema. The result depends on the catalogue; the tool
     list of the server does not."""
     write_tools._no_extra(extra)
-    root = None if CATALOG_PATH else gitio.locate_repo(None, cfg.allow_roots, cfg.repo)
-    entries, version = load_catalog(_catalog_path(root))
+    entries, version = load_catalog(_catalog_path(cfg))
     actions = []
     for d, problems in entries:
         if problems:
@@ -605,8 +612,8 @@ def _impact(cfg, repo, targets):
 
 def model_apply_action(cfg, action, params=None, dryRun=False, planDigest=None, repo=None, **extra):
     write_tools._no_extra(extra)
-    root = None if CATALOG_PATH else writer.locate_worktree_root(cfg, repo)
-    entries, _ = load_catalog(_catalog_path(root))
+    writer.locate_worktree_root(cfg, repo)  # `repo` is still checked first; it selects the models written, nothing else
+    entries, _ = load_catalog(_catalog_path(cfg))  # the served catalogue, not `repo`'s
     found = [(d, p) for d, p in entries if d.get("id") == action]
     if not found:
         raise AisepError("INVALID_ARGUMENT", f"没有动作 {action!r}", hint="用 model_list_actions 看目录",
