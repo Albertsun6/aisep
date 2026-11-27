@@ -1007,3 +1007,40 @@ def test_in_view_is_refused_by_add_element(repo, predicate):
     added = add_twin(repo, one("skos:note", {"value": "不进视图", "lang": "zh"}))  # the same call without inView is written
     assert tr(added["iri"], NOTE, lit("不进视图", "zh")) in graph(repo)
     assert not any(p.value == ARCH + "inView" and s.value == added["iri"] for s, p, _ in graph(repo))
+
+
+# ------------------------------------------------------------------ issue #164: one list of reserved predicates
+
+RESERVED = [  # (predicate as written, a value, the model_set_attributes target that carries it)
+    ("rdf:type", {"iri": "am4:BusinessObject"}, REQ),
+    ("arch:inModel", {"iri": M}, REQ),  # the element's own model: written twice before #164
+    ("arch:inModel", {"iri": "https://aisep.example/model/other/"}, REQ),
+    (ARCH + "inModel", {"iri": M}, REQ),
+    ("arch:source", {"iri": SUPPLIER}, REL),
+    ("arch:target", {"iri": REQ}, REL),
+    (ARCH + "target", {"iri": REQ}, REL),
+    ("arch:inView", {"iri": M + "v1"}, REQ),
+]
+RESERVED_IDS = ["type", "inModel-own", "inModel-other", "inModel-full-iri", "source", "target", "target-full-iri", "inView"]
+
+
+@pytest.mark.parametrize("predicate,value,target", RESERVED, ids=RESERVED_IDS)
+def test_reserved_predicates_are_refused_by_add_element(repo, predicate, value, target):
+    """Issue #164: model_add_element's attributes refuse what model_set_attributes refuses (bar the three labels), as
+    an argument error up front, not left to L1 (WRITE_REJECTED) or, for the element's own model, written twice."""
+    s = snap(repo)
+    with pytest.raises(AisepError) as e:
+        add_twin(repo, one(predicate, value))
+    assert e.value.code == "INVALID_ARGUMENT" and e.value.details["rejectedFields"] == ["attributes"]
+    assert snap(repo) == s
+
+
+@pytest.mark.parametrize("predicate,value,target", RESERVED, ids=RESERVED_IDS)
+def test_both_tools_give_one_reason_for_a_reserved_predicate(repo, predicate, value, target):
+    """Issue #164: the reason a reserved predicate is refused is written once and both tools give it word for word."""
+    with pytest.raises(AisepError) as e:
+        add_twin(repo, one(predicate, value))
+    by_add = e.value.message
+    by_set = refused(repo, "INVALID_ARGUMENT", target, set=one(predicate, value)).message
+    assert by_add.startswith("attributes 不能含 ") and by_set.startswith("set 不能含 ")
+    assert by_add.removeprefix("attributes ") == by_set.removeprefix("set ")
