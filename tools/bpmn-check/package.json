@@ -1,0 +1,10 @@
+{
+  "name": "aisep-bpmn-check",
+  "private": true,
+  "description": "Test-only: reads BPMN 2.0 XML written by tools/aisep.py diagram --process with bpmn-moddle (the parser bpmn-js imports with) and reports its warnings. Not on any runtime path. Install with: npm ci --prefix tools/bpmn-check --ignore-scripts",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "bpmn-moddle": "10.3.1"
+  }
+}
