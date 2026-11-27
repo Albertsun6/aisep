@@ -9,7 +9,7 @@
 3. L1 对 owl:unionOf 定义域按「主语是其中任一类」判定，不跳过。
 4. 检查本身会因篡改而失败：在临时副本里加一个不带定义域的属性，检查要报出它。
 
-vendor/ 上游本体的定义域暂不强制（docs/decisions.md ADR-028）。
+vendor/ 上游本体的定义域暂不强制（docs/decisions.md ADR-029）。
 """
 import glob, os, shutil
 

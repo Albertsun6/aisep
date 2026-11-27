@@ -33,7 +33,8 @@ aisep:ActionStep a owl:Class ;
 
 # A binding node is written as an untyped blank node in catalog.ttl; the class exists to be the rdfs:domain of the
 # value-source properties below (every module property declares a domain). It is not asserted on the nodes, so the
-# definition digest of the shipped actions is unchanged; EA10 keeps these properties on objects of aisep:binding.
+# definition digest of the shipped actions is unchanged; EA10 keeps these properties, and this type, on objects of
+# aisep:binding (so declaring the class does not make it a legal type for a model member).
 aisep:ActionBinding a owl:Class ;
     skos:prefLabel "参数绑定节点"@zh , "Action binding"@en ;
     skos:definition "The value of one argument of a step's basic action: names the argument (aisep:argument) and gives exactly one value source (aisep:constant, aisep:fromParameter, aisep:fromStep or aisep:modelOf), plus aisep:attributePredicate for an item of a list argument. The object of aisep:binding."@en .

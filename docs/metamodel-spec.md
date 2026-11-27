@@ -72,7 +72,7 @@
 
 **谓词也是闭世界**：模型文件里用到的每个谓词，必须是已加载模块或上游本体声明过的属性，或者在一个小白名单里（`rdf:type`、SKOS 名称与定义、`dcterms:isReplacedBy`、`owl:deprecated`、`prov:generatedAtTime`、`prov:startedAtTime`、`prov:endedAtTime`、`prov:wasAssociatedWith` 等）。两个模型元素之间的连接，必须是限定关系资源；能直接写成谓词的只有几种追溯属性（`aisep:approves`、`ad:relatedConcept`、`aisep:activity`、`prov:wasAssociatedWith` 等）；其中 `aisep:activity` 只能用在批准记录上、`prov:wasAssociatedWith` 只能用在 `aisep:AgentActivity` 上（L1 报错）。
 
-**属性只能用在定义域上**（issue #67）：模块文件（`modules/**`）声明的 `rdfs:domain` 在 L1 强制，模型文件里用到某属性的主语，必须在源文件里声明为定义域类或其子类；写了几条定义域就要全部满足（RDFS 的交集），写成 `owl:unionOf` 类表的定义域满足其中任一类即可（如 `ddd:triggers`）。每个模块属性（`owl:ObjectProperty`、`owl:DatatypeProperty`、`rdf:Property`，不含 `owl:AnnotationProperty`）都必须声明定义域，取值是 IRI 或 `owl:unionOf` 的 IRI 列表，这是模块合约，由 pytest `aisep-mcp/tests/test_module_property_domains.py` 检查。`vendor/` 上游本体声明的定义域暂不强制（ADR-028）。（GPT 评审发现：如果不加这条，一个自定义谓词就能绕过全部关系规则。）
+**属性只能用在定义域上**（issue #67）：模块文件（`modules/**`）声明的 `rdfs:domain` 在 L1 强制，模型文件里用到某属性的主语，必须在源文件里声明为定义域类或其子类；写了几条定义域就要全部满足（RDFS 的交集），写成 `owl:unionOf` 类表的定义域满足其中任一类即可（如 `ddd:triggers`）。每个模块属性（`owl:ObjectProperty`、`owl:DatatypeProperty`、`rdf:Property`，不含 `owl:AnnotationProperty`）都必须声明定义域，取值是 IRI 或 `owl:unionOf` 的 IRI 列表，这是模块合约，由 pytest `aisep-mcp/tests/test_module_property_domains.py` 检查。`vendor/` 上游本体声明的定义域暂不强制（ADR-029）。（GPT 评审发现：如果不加这条，一个自定义谓词就能绕过全部关系规则。）
 
 ## 5. 模块体系
 

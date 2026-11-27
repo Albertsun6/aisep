@@ -779,7 +779,7 @@ class Ctx:
         aisep:approves between two ordinary elements) and its targetClass shapes would never see it. Several domains
         are an intersection (RDFS); a domain written as an owl:unionOf list of classes is met by any one of them
         (ddd:triggers). Every module property declares a domain (module contract, aisep-mcp/tests/
-        test_module_property_domains.py). Domains declared only by vendored ontologies are not enforced here (ADR-028)."""
+        test_module_property_domains.py). Domains declared only by vendored ontologies are not enforced here (ADR-029)."""
         alts = {}  # (property, domain node) -> the classes any one of which meets that domain
         for p, d, m in self.rows(f"""SELECT DISTINCT ?p ?d ?m WHERE {{ GRAPH ?g {{ ?p rdfs:domain ?d }}
                                      FILTER(STRSTARTS(STR(?g), "{ONTO_G}modules/"))
