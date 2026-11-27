@@ -5,8 +5,8 @@
 
 ## 1. 抓取
 
-- 范围：`vendor/meta.linked.archi/urls.txt` 中的全部 245 个 URL，请求头为 `Accept: text/turtle`。URL 清单没有改动，`REMOVED.txt` 也没有改动。
-- 结果：245 个请求都返回 `200 text/turtle`，全部用 pyoxigraph 解析通过。`FETCHED_AT` 改为 `2026-11-25T14:19:07Z`；`fetch.log` 与 `SHA256SUMS` 重新生成，文件顺序与原来相同。
+- 范围：`vendor/meta.linked.archi/urls.txt` 中的全部 245 个 URL，请求头为 `Accept: text/turtle`。URL 清单没有改动，`REMOVED.txt` 也没有改动。注意：`REMOVED.txt` 开头那句“FETCHED_AT, fetch.log and urls.txt are kept unchanged”是 2026-11-21 删除 `llms.txt` 时写的，只说那次删除没有动这三个文件；本次升级已重新生成 `FETCHED_AT` 与 `fetch.log`（见下一条），那句话不适用于本次升级。`vendor/` 只读，所以这条说明写在本报告里，没有改 `REMOVED.txt`。
+- 结果：245 个请求都返回 `200 text/turtle`，全部用 pyoxigraph 解析通过。`FETCHED_AT` 改为 `2026-11-25T14:19:07Z`；`fetch.log` 与 `SHA256SUMS` 重新生成。`SHA256SUMS` 的行顺序与原来相同；`fetch.log` 的行顺序变了，现在与 `urls.txt` 的顺序一致（原来的 `fetch.log` 不是这个顺序）。
 - `vendor/MANIFEST.json` 用 `tools/vendor_manifest.py generate` 重新生成，之后 `check` 结果为 `problems=0`。
 - 许可证：33 个有变化的文件中，没有一个的 `cc:license` 或 `dcterms:license` 声明发生变化；MANIFEST 里也没有缺许可证的上游文件。
 - 上游目录新增了一项资产 `https://meta.linked.archi/core-notation`。它不在 URL 清单里，本次没有引入，因为当前加载的任何文件都没有 import 它。
