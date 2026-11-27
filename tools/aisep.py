@@ -12,13 +12,15 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
   aisep.py query  FILE.rq|'SPARQL' [model files...]   -> over build graph + all ontologies + all alignments
   aisep.py impact <element IRI or prefixed name> [--mode depends|ripple] [--depth N] [--allow-invalid] [model files...]
                                           (spec §9; runs L1+L2 first and refuses an invalid model unless --allow-invalid)
-  aisep.py diagram (--view IRI | --viewpoint NAME --model SLUG | --viewpoint C4NAME --of SCOPE)
-                   [-o OUT.svg] [model files...]
-                                       -> ArchiMate 4 or C4 view as SVG (default build/views/<model>/<view>.svg; layout by elkjs,
+  aisep.py diagram (--view IRI | --viewpoint NAME --model SLUG | --viewpoint C4NAME --of SCOPE |
+                    --uml ClassDiagram --model SLUG | --uml list) [-o OUT.svg] [model files...]
+                                       -> ArchiMate 4, C4 or UML view as SVG (default build/views/<model>/<view>.svg; layout by elkjs,
                                           needs Node and `npm ci --prefix tools/elk --ignore-scripts`); a declared
                                           arch:Diagram, every element of the model the am4 viewpoint includes, or a C4 view
                                           (C4NAME: SystemContext|ContainerDiagram --of <system>, ComponentDiagram --of
-                                          <container>, C4Deployment --of <environment> [--model SLUG])
+                                          <container>, C4Deployment --of <environment> [--model SLUG]); --uml: a UML class
+                                          diagram of every classifier of the model (build/views/<model>/uml-ClassDiagram.svg),
+                                          --view of an arch:Diagram with a umlvp: viewpoint, `--uml list` lists them
   aisep.py adm [<阶段> --model <slug> [--check FILE.rq]... [--deliverable] [--out FILE]]
                                        -> ADM 向导（docs/specs/adm-wizard.md）：按阶段列出模型里已有的元素和缺口，
                                           --deliverable 生成交付物 Markdown；默认打印，--out 只写这一个文件；有缺口也返回 0；
@@ -305,15 +307,17 @@ def cmd_test(no_pytest=False):
 
 
 def cmd_diagram(args):
-    """ArchiMate 4 view -> SVG (aisep/diagram.py). Read-only; not part of gate."""
-    from aisep import diagram, diagram_c4
+    """ArchiMate 4 / C4 / UML view -> SVG (aisep/diagram.py, diagram_c4.py, diagram_uml.py). Read-only; not part of gate."""
+    from aisep import diagram, diagram_c4, diagram_uml
     opts = {}
-    for k in ("--view", "--viewpoint", "--model", "--of", "-o"):
+    for k in ("--view", "--viewpoint", "--model", "--of", "--uml", "-o"):
         if k in args:
             i = args.index(k)
             if i + 1 >= len(args):
                 print(__doc__); return 2
             opts[k] = args[i + 1]; args = args[:i] + args[i + 2:]
+    if "--uml" in opts:
+        return _diagram_uml(opts, args)
     c4 = opts.get("--viewpoint") in diagram_c4.VIEWPOINTS
     if ("--view" in opts) == ("--viewpoint" in opts) or ("--of" in opts) != c4 or \
             ("--viewpoint" in opts and "--model" not in opts and not c4):
@@ -342,6 +346,8 @@ def cmd_diagram(args):
             except ValueError as e:
                 print(f"[Violation] diagram: {e}"); return 1
             return _write_c4(sel, model, name, opts)
+        if vps and vps[0].startswith(diagram_uml.UMLVP):
+            return _write_uml(ctx, model, name, opts, view=view, kind=vps[0][len(diagram_uml.UMLVP):])
     elif c4:
         vp = opts["--viewpoint"]
         if vp == "C4Deployment":
@@ -398,6 +404,66 @@ def _write_c4(sel, model, name, opts):
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(svg)
     print(f"SUMMARY diagram model={slug} view={name} elements={n} relationships={len(edges)} "
+          f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
+    return 0
+
+
+def _diagram_uml(opts, args):
+    """--uml NAME --model SLUG, or --uml list."""
+    from aisep import diagram_uml
+    kind = opts["--uml"]
+    if {"--view", "--viewpoint", "--of"} & set(opts) or (kind != "list" and "--model" not in opts):
+        print(__doc__); return 2
+    for k in ("--uml", "--model"):
+        if k in opts and not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", opts[k]):
+            print(f"[Violation] diagram: {k} {opts[k]!r} must be a plain name (letters, digits, _ and -)"); return 1
+    if kind != "list" and kind not in diagram_uml.DIAGRAMS:
+        print(f"[Violation] diagram: UML 图种 {kind} 暂不支持（首批只有 {', '.join(diagram_uml.DIAGRAMS)}）"); return 1
+    files, read = model_files(args)
+    ctx = Ctx(discover(), files, read=read)
+    if report(ctx, ("L0",))[0]:
+        return 1
+    if kind != "list":
+        return _write_uml(ctx, f"https://aisep.example/model/{opts['--model']}/", f"uml-{kind}", opts, kind=kind)
+    models = sorted(m for (m,) in ctx.rows("SELECT DISTINCT ?m WHERE { ?m a arch:Model }"))
+    if "--model" in opts:
+        models = [m for m in models if m == f"https://aisep.example/model/{opts['--model']}/"]
+    n = 0
+    for m in models:
+        slug = m.rstrip("/").rsplit("/", 1)[-1]
+        for k in diagram_uml.DIAGRAMS:
+            nodes = diagram_uml.select(ctx, m, diagram=k)[2]
+            if nodes:
+                n += 1
+                print(f"--uml {k} --model {slug}  elements={len(nodes)}")
+        for v, vp in sorted(ctx.rows(f"""SELECT ?v ?vp WHERE {{ ?v a arch:Diagram ; arch:inModel <{m}> ;
+                                         arch:viewConformsToViewpoint ?vp FILTER(STRSTARTS(STR(?vp), "{diagram_uml.UMLVP}")) }}""")):
+            n += 1
+            print(f"--view {v}  viewpoint=umlvp:{vp[len(diagram_uml.UMLVP):]}")
+    print(f"SUMMARY diagram uml-list views={n}")
+    return 0
+
+
+def _write_uml(ctx, model, name, opts, view=None, kind="ClassDiagram"):
+    from aisep import diagram_uml
+    try:
+        title, sub, nodes, packages, edges, warnings = diagram_uml.select(ctx, model, view=view, diagram=kind)
+    except ValueError as e:
+        print(f"[Violation] diagram: {e}"); return 1
+    for w in warnings:
+        print(f"[Warning] diagram {w}")
+    if not nodes:
+        print(f"[Violation] diagram: no element of {model} is in this view (wrong --model or an empty view?)"); return 1
+    slug = model.rstrip("/").rsplit("/", 1)[-1]
+    out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".svg")
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    try:
+        svg = diagram_uml.render(title, sub, nodes, packages, edges)
+    except RuntimeError as e:
+        print(f"[Violation] diagram: {e}"); return 1
+    with open(out, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(svg)
+    print(f"SUMMARY diagram model={slug} view={name} elements={len(nodes)} relationships={len(edges)} "
           f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
     return 0
 
