@@ -5,8 +5,9 @@ GitHub). The builders write approval commits in exactly the shape `governance_re
 one new file `models/procurement/governance/<local>.ttl`, mode 100644, one ApprovalRecord (+ at most one AgentActivity
 it references), one `AISEP-Evidence` trailer. Deviations (forged trailer, symlink, two records …) are explicit options.
 """
-import os, shutil, subprocess
+import os, shutil, subprocess, tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 
 M = "https://aisep.example/model/procurement/"
 GOV = "models/procurement/governance"
@@ -64,13 +65,48 @@ def record_ttl(local, gate, approves, evidence, at="2026-11-20T11:00:00Z", decis
 
 # ------------------------------------------------------------------ the repository
 
-class Topo:
-    """A tmp repo whose `main` is the procurement example plus a baseline (see `baseline`), and a bare `origin`."""
+_GOLDEN = {}  # str(template) -> a Topo built the long way once per test process (xdist worker), never written to again
+_COPIED = ("c0", "base", "base_activity", "base_record", "base_rejected")
 
-    def __init__(self, template, tmp_path):
+
+def _refs(path):
+    return git(path, "for-each-ref")
+
+
+def _golden(template):
+    """The per-process golden Topo for this template: procurement + baseline commits on main and a bare origin holding
+    main, built by the same steps as Topo(fresh=True). Copies of it are what every test gets (see Topo.__init__)."""
+    key = str(template)
+    if key not in _GOLDEN:
+        g = Topo(template, Path(tempfile.mkdtemp(prefix="topo-golden-", dir=os.path.dirname(key))), fresh=True)
+        g.snapshot = (_refs(g.root), _refs(g.origin))
+        _GOLDEN[key] = g
+    return _GOLDEN[key]
+
+
+class Topo:
+    """A tmp repo whose `main` is the procurement example plus a baseline (see `baseline`), and a bare `origin`.
+
+    By default the repo and origin.git are plain copies (shutil.copytree: no shared object files, refs, tags, config or
+    worktree) of a golden Topo built once per test process, and the copy's `origin` is re-pointed at its own origin.git;
+    fresh=True builds them the long way (git init, two commits, baseline, init --bare, push). The copies' commits are
+    therefore identical across tests (same c0 / base ids); nothing in the checker caches by commit id alone."""
+
+    def __init__(self, template, tmp_path, fresh=False):
         self.tmp = tmp_path
         self.root = tmp_path / "repo"
         self.origin = tmp_path / "origin.git"
+        if not fresh:
+            g = _golden(template)
+            shutil.copytree(g.root, self.root, symlinks=True)
+            shutil.copytree(g.origin, self.origin, symlinks=True)
+            self.git("remote", "set-url", "origin", str(self.origin))
+            for k in _COPIED:
+                setattr(self, k, getattr(g, k))
+            # invariants: pushes land in this test's own origin, and refs/tags are what the long way builds
+            assert self.git("remote", "get-url", "origin") == str(self.origin), "fixture: origin not re-pointed"
+            assert (_refs(self.root), _refs(self.origin)) == g.snapshot, "fixture: golden Topo refs changed"
+            return
         shutil.copytree(template, self.root)
         git(self.root, "init", "-q", "-b", "main")
         git(self.root, "config", "user.name", "t")

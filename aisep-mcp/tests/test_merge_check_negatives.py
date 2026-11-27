@@ -76,13 +76,14 @@ of T43 (only the local `git merge` is exercised), the revert PR itself after a f
 record_approval's own
 side of G4-5 (`branch` = refs/heads/… → INVALID_ARGUMENT) and of R4-7 (seconds in the default IRI).
 """
-import functools, importlib, os, subprocess
+import functools, importlib, itertools, os, subprocess
 from datetime import datetime, timezone
 
 import pytest
 
-from conftest import PY
 from fixtures.topology import AM4, GOV, M, Topo, git
+
+from aisep import core, tools
 
 CHECKER = "aisep.mergecheck"
 NOW = datetime(2026, 11, 20, 12, 0, tzinfo=timezone.utc)
@@ -193,16 +194,27 @@ def refs_snapshot(t):
     return t.git("for-each-ref", "--format=%(refname) %(objectname)"), t.git("status", "--porcelain")
 
 
+_GATE_DIRS = itertools.count()
+
+
 def cli_gate(t, commit, merge=None):
-    """Fixture verification only: run the real `aisep.py gate` on a detached checkout of commit (optionally with
-    `git merge --no-ff --no-commit merge` applied). Returns True on PASS."""
-    d = t.tmp / f"gate-{len(os.listdir(t.tmp))}"
+    """Fixture verification only: gate a detached checkout of commit (optionally with `git merge --no-ff --no-commit
+    merge` applied) in this process. Returns True on PASS.
+
+    Same judgement as `aisep.py gate` in that checkout (L0..L4 on one context over the worktree's model files, modules/
+    and vendor/ discovered from the checkout), minus the CLI's tracked-bytecode check, which a fixture checkout never
+    trips. Deliberately not mergecheck._gate: its tree-id cache would make this the checker's own answer. Not runpy of
+    tools/aisep.py either: its ROOT is fixed at import from __file__, so it would gate this checkout, not d."""
+    d = t.tmp / f"gate-{next(_GATE_DIRS)}"  # never reused: core caches some shapes per file path (forgotten below too)
     t.git("worktree", "add", "-q", "--detach", str(d), commit)
-    if merge:
-        git(d, "merge", "-q", "--no-ff", "--no-commit", merge)
-    p = subprocess.run([PY, "tools/aisep.py", "gate"], cwd=d, capture_output=True, text=True)
-    t.git("worktree", "remove", "--force", str(d))
-    return p.returncode == 0 and "result=PASS" in p.stdout
+    try:
+        if merge:
+            git(d, "merge", "-q", "--no-ff", "--no-commit", merge)
+        r = tools.model_gate(tools.Config(), repo=str(d))
+    finally:
+        t.git("worktree", "remove", "--force", str(d))
+        core.forget_paths(os.path.realpath(d))
+    return r["result"] == "PASS"
 
 
 # ================================================================== fixture sanity (runs for real, must pass)
@@ -217,6 +229,29 @@ def test_fixture_baseline_and_approval_commit_pass_real_gate(t):
     assert t.git("ls-tree", a, f"{GOV}/{local}.ttl").split()[0] == "100644"
     assert t.git("log", "-1", "--format=%(trailers:key=AISEP-Evidence,valueonly)", a).strip() == h
     assert cli_gate(t, a)
+
+
+def test_fixture_copied_topo_matches_fresh_build(template, tmp_path):
+    """The per-test copy of the golden Topo is what the long way builds: same refs (names, types, commit subjects; ids
+    differ by timestamp, and the baseline names c0), same trees up to c0's id, same worktree state and local config,
+    its own origin holding the same refs, attributes alike."""
+    fresh, copy = Topo(template, tmp_path / "fresh", fresh=True), Topo(template, tmp_path / "copy")
+    fmt = "--format=%(refname) %(objecttype) %(subject)"
+    for t in (fresh, copy):
+        assert t.git("remote", "get-url", "origin") == str(t.origin)
+
+    def look(t):
+        diff = "\n".join(x for x in t.git("diff", t.c0, t.base).split("\n") if not x.startswith("index "))
+        parts = (t.git("for-each-ref", fmt), git(t.origin, "for-each-ref", fmt), t.git("status", "--porcelain"),
+                 t.git("config", "--local", "-l").replace(str(t.origin), "<origin>"), t.git("log", "--format=%s", "main"),
+                 t.git("rev-parse", f"{t.c0}^{{tree}}"), diff,
+                 t.git("rev-parse", "main", "origin/main", f"{t.base}^", "HEAD").replace(t.base, "<base>"),
+                 t.base_activity, t.base_record, t.base_rejected)
+        return tuple(x.replace(t.c0, "<c0>").replace(t.c0[:7], "<c0>") for x in parts)
+
+    assert look(copy) == look(fresh)
+    copy.push("main:refs/heads/probe")  # pushes from one copy reach neither the golden origin nor another copy
+    assert "refs/heads/probe" not in Topo(template, tmp_path / "other").git("ls-remote", "origin")
 
 
 # ================================================================== step-1 criterion (approval_commit_problems)
