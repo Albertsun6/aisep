@@ -136,7 +136,7 @@ def _render(field, fn, *args):
         raise AisepError("RENDERER_UNAVAILABLE", f"出图器不可用：{e}", details={"reason": e.reason},
                          hint="在模型仓库根目录跑 `npm ci --prefix tools/elk --ignore-scripts`（需要 Node ≥ 20 在 PATH 上），"
                               "再重试；reason 为 layout-timeout、layout-failed 时看 message 里 ELK 的输出") from None
-    except ValueError as e:  # check_xml_text: model text with a character XML 1.0 cannot carry (same refusal as the CLI)
+    except diagram.TextNotXml as e:  # check_xml_text: model text with a character XML 1.0 cannot carry (same refusal as the CLI)
         raise AisepError("INVALID_ARGUMENT", f"无法出图：{e}", hint="把模型文本里的控制字符去掉（写工具本就拒绝写入它们）",
                          details={"rejectedFields": [field], "reason": "text-not-xml"}) from None
 

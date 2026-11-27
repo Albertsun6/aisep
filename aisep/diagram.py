@@ -274,8 +274,13 @@ def elk_layout(graph):
 NOT_XML_CHAR = re.compile("[^\t\n\r\u0020-\ud7ff\ue000-\ufffd\U00010000-\U0010ffff]")
 
 
+class TextNotXml(ValueError):
+    """Model text has a character XML 1.0 cannot carry. Its own class, so callers map only this refusal to
+    `text-not-xml` and any other ValueError from a renderer stays an internal error."""
+
+
 def check_xml_text(*values):
-    """Raise ValueError if a string anywhere in values (dicts, lists, tuples, sets walked) has a character XML 1.0
+    """Raise TextNotXml if a string anywhere in values (dicts, lists, tuples, sets walked) has a character XML 1.0
     cannot carry. Run before layout, so a refused view costs no node process."""
     stack = list(values)
     while stack:
@@ -283,7 +288,7 @@ def check_xml_text(*values):
         if isinstance(v, str):
             c = NOT_XML_CHAR.search(v)
             if c:
-                raise ValueError(f"model text contains U+{ord(c.group()):04X}, a character XML 1.0 cannot carry: {v[:80]!r}")
+                raise TextNotXml(f"model text contains U+{ord(c.group()):04X}, a character XML 1.0 cannot carry: {v[:80]!r}")
         elif isinstance(v, dict):
             stack.extend(v.keys()); stack.extend(v.values())
         elif isinstance(v, (list, tuple, set, frozenset)):

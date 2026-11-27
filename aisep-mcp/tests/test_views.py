@@ -172,6 +172,19 @@ def test_view_in_several_models_takes_the_first_by_iri_in_both(vrepo, tmp_path):
     assert drawn(r["svg"]) == {P + x for x in VIEW_MEMBERS} and r["svg"].encode() == svg.encode()
 
 
+
+def test_c4_view_in_several_models_takes_the_first_by_iri_in_both(vrepo, tmp_path):
+    # the C4 twin of the test above: the declared C4 view also put in procurement, which sorts before t. Both take
+    # procurement, which has no C4 element, so the tool draws nothing and the CLI refuses naming procurement; taking
+    # the last model (t) would draw the view's members orderDb and buyer
+    with open(vrepo / "models" / "procurement" / "am4.ttl", "a", encoding="utf-8") as fh:
+        fh.write(f"<{TM}view-c4Probe> arch:inModel <{P}> .\n")
+    assert sorted(m for (m,) in rows(vrepo, f"SELECT ?m WHERE {{ <{TM}view-c4Probe> arch:inModel ?m }}")) == [P, TM]
+    r = ok(vrepo, "model_render_view", view="t:view-c4Probe")
+    assert r["notation"] == "c4" and r["elementCount"] == 0 and not drawn(r["svg"]), r["warnings"]
+    p, svg = cli(vrepo, tmp_path / "cli.svg", "--view", "t:view-c4Probe")
+    assert p.returncode == 1 and f"no C4 element of {P} " in p.stdout and svg is None, p.stdout + p.stderr
+
 def test_empty_view_tool_draws_title_and_legend_cli_refuses(vrepo, tmp_path):
     with open(vrepo / "models" / "procurement" / "am4.ttl", "a", encoding="utf-8") as fh:
         fh.write(f':view-empty a arch:Diagram ; arch:inModel <{P}> ; skos:prefLabel "空视图"@zh .\n')
@@ -295,6 +308,22 @@ def test_parse_failure_draws_nothing(vrepo):
         e = err(vrepo, name, **args)
         assert e["code"] == "PARSE_FAILED" and e["details"]["files"] == ["models/procurement/broken.ttl"]
 
+
+
+@pytest.mark.parametrize("module, args", [(diagram, {"view": "procurement:view-probe"}),
+                                          ("c4", {"c4viewpoint": "SystemContext", "of": "t:orderSys"})])
+def test_other_renderer_value_error_is_internal_not_text_not_xml(vrepo, monkeypatch, module, args):
+    # only check_xml_text's refusal (diagram.TextNotXml) reads as the caller's text-not-xml; any other ValueError
+    # inside a renderer is a bug of ours and stays INTERNAL
+    from aisep import diagram_c4
+    mod = diagram_c4 if module == "c4" else module
+
+    def boom(*a):
+        raise ValueError("renderer bug")
+    monkeypatch.setattr(mod, "render", boom)
+    e = err(vrepo, "model_render_view", **args)
+    assert e["code"] == "INTERNAL" and "renderer bug" in e["message"], e
+    assert issubclass(diagram.TextNotXml, ValueError)
 
 # ---------------------------------------------------------------- SVG safety: model text is only ever text
 

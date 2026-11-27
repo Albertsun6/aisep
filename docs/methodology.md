@@ -140,7 +140,7 @@ AISEP 是以 AI 辅助贯穿全过程软件研发（SDLC）的工程体系。目
 
 ### 10.2 入口标准
 
-- 编码代理里已启用项目的 `aisep` MCP 服务器，`tools/list` 返回 agent 画像的 14 个工具（启用方法见 `README.md`）。
+- 编码代理里已启用项目的 `aisep` MCP 服务器，`tools/list` 返回 agent 画像的 16 个工具（启用方法见 `README.md`）。
 - 从最新 `origin/main` 开 `claude/<主题>` 分支的 worktree，在 worktree 里起服务；不从落后的主检出起服务。
 - 新模型目录已手写：一个 `arch:Model` 声明和一个人类 `arch:Stakeholder`（带 `arch:inModel` 和中文 `prefLabel`，照 `models/procurement/governance.ttl` 写）。MCP 写工具建不了模型本身：目录不存在时报 `MODEL_NOT_FOUND`；目录在但没有 `arch:Model` 声明时，写入能成功，`gate` 报 L3 违规（`arch:inModel` 须指向 `arch:Model`）。
 - 载体需求已定。
