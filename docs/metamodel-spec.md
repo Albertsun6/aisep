@@ -88,7 +88,7 @@
   - `owl:versionInfo`（semver）。
 - 模块文件声明的每个属性都要有 `rdfs:domain`（§4「属性只能用在定义域上」）。关系类的直连谓词（`arch:unqualifiedForm`）的定义域取该关系类定义里写明的源端类型。
 - 对齐公理**只放在 AISEP 自己的图里**，不往第三方词汇文件里写。上游的 SKOS 映射文件原样保留，只当文档用。
-- 每个模块都带 `tests/valid` 和 `tests/invalid`。原型的 8 个模块共 83 个用例，每条规则至少各有一个正例和一个负例。ext-actions 的正例只有一个（`tests/valid/catalog-loads.ttl`：随清单加载的 `catalog.ttl` 必须满足 EA1–EA10），每条 EA 规则各有负例。
+- 每个模块都带 `tests/valid` 和 `tests/invalid`。原型的 8 个模块共 83 个用例，每条规则至少各有一个正例和一个负例。ext-actions 的正例只有一个（`tests/valid/catalog-loads.ttl`：随清单加载的 `catalog.ttl` 必须满足 EA1–EA11），每条 EA 规则各有负例。
 
 ## 6. 第一批模块
 
@@ -204,7 +204,7 @@
 - 参数：`sh:parameter [ sh:path <参数键> ; sh:datatype xsd:string 或 sh:nodeKind sh:IRI ; sh:optional true? ; sh:description @zh? ]`，只认这几个键。参数键在 `ont/ext-actions#`，不声明为属性，G7 照样拒绝模型文件把它们当谓词用。
 - 前置检查：`sh:SPARQLAskValidator`（`sh:ask`、`sh:message`@zh、`dcterms:identifier`），ASK 为 true 即通过，参数以 `$名` 预绑定；只是提示（`PRECONDITION_FAILED`），不是合法性定义，`gate` 不知道它。
 - 步骤：`aisep:ActionStep`，`aisep:invokes` 五个基本动作之一（`aisep:BasicAddElement`、`aisep:BasicAddRelationship`、`aisep:BasicSetLabels`、`aisep:BasicSetAttributes`、`aisep:BasicRemove`，封闭集合，`skos:notation` 是对应 MCP 写工具名），每个入参一个 `aisep:binding` 空白节点（不写类型，按 `aisep:binding` 的值域是 `aisep:ActionBinding`，它是下面几个属性的定义域）：`aisep:argument` 加取值来源四选一（`aisep:constant`、`aisep:fromParameter`、`aisep:fromStep`、`aisep:modelOf`），列表型入参的一项另带 `aisep:attributePredicate`。
-- 校验：L3 `shapes.ttl` 的 EA1–EA10（结构；EA10 防止动作词汇被写到模型元素上）；执行器每次读目录再判同样的结构，另判 SHACL Core 说不了的 X2–X10（表良构、入参名、引用、guard 能执行、id 唯一、空白节点不共享、两步作用于同一目标）。
+- 校验：L3 `shapes.ttl` 的 EA1–EA11（结构；EA1 的动作形状封闭，动作上不能写 `rdfs:subClassOf` 等其他三元组；EA10 防止动作词汇被写到模型元素上；EA11 禁止动作个体另带领域类型）；执行器每次读目录再判同样的结构，另判 SHACL Core 说不了的 X2–X10（表良构、入参名、引用、guard 能执行、id 唯一、空白节点不共享、两步作用于同一目标）。
 - 不采纳：Foundry 的 Function rule、side effects、action log、「默认只能经动作编辑」。
 
 ## 7. 跨记法追溯
@@ -310,7 +310,7 @@ spike 里 AI 试验用的 7 元素标准答案，其实是无向的 3 跳邻域�
 | L1 | 闭世界：类型、必填项、禁用词汇、禁写直连三元组、禁手填 approvalState、悬空引用、记法混用、refines 层级、模块属性的定义域（§4） | pyoxigraph SPARQL | 每次写入 |
 | L2 | 枢纽关系表查表 + 派生捷径 Warning | pyoxigraph + Python | 每次写入 |
 | L3 | 完整 SHACL（含各记法自己的 shapes、闭合取值集） | pyshacl，跑在**构建后的图**上 | pre-commit 和 CI |
-| L4 | 发现项：追溯缺口（Must 级）、孤立元素、视点不符 | pyoxigraph | CI、关口评审 |
+| L4 | 发现项：追溯缺口（Must 级）、孤立元素、视点不符、ADR-024 恢复条件②的提示（同一模型声明了两个及以上能当批准人的干系人，指向追踪 issue #141） | pyoxigraph | CI、关口评审 |
 
 - 原型实测（采购例子，6 个文件）：L0–L2 用时 0.06–0.14 秒，L3 用时 4.7–5.6 秒，所以 **pre-commit 跑 L0–L3**。原型审计发现，有些错误只有一层能抓到（取值集只在 L3，直连三元组只在 L1），只跑其中一层就会漏。
 - L2 只查枢纽矩阵。BPMN、UML、DDD 自己的规则都在 L3，不另建快速表。
@@ -320,7 +320,7 @@ spike 里 AI 试验用的 7 元素标准答案，其实是无向的 3 跳邻域�
 ### 10.2 对齐公理和校验范围
 - **L3 跑 am4 shapes 时**，数据图里放入：枢纽和核心模块、`inheritsHubRules=true` 的 Language 模块、**所有 Extension 模块**（例如 `Deployable ⊑ Artifact` 必须常驻，否则 Deployable 会逃过矩阵）的对齐公理。不放入 `inheritsHubRules=false` 的 Language 对齐。
 - 其他每个模块的 shapes，在"源文件 + 构建出的直连三元组 + 本模块依赖"上单独运行。
-- ext-actions 的 shapes 另外还校验本模块 `aisep:loads` 的 `catalog.ttl`（动作目录），所以 `catalog.ttl` 写坏会让 L3 报 EA1–EA10（ADR-026）。
+- ext-actions 的 shapes 另外还校验本模块 `aisep:loads` 的 `catalog.ttl`（动作目录），所以 `catalog.ttl` 写坏会让 L3 报 EA1–EA11（ADR-026）。
 - 查询和影响分析加载全部对齐公理。
 
 ## 11. 版本与 vendoring
