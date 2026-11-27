@@ -83,10 +83,10 @@
   - `aisep:alignmentFile`：只包含子类/子属性公理。
   - `aisep:impactFile`：影响分析口径的覆盖，必须在清单里声明才会生效。
   - `aisep:inheritsHubRules`：只对 Language 模块有意义，见 §10.2。
-- 模块文件声明的每个属性都要有 `rdfs:domain`（§4「属性只能用在定义域上」）。关系类的直连谓词（`arch:unqualifiedForm`）的定义域取该关系类定义里写明的源端类型。
   - `aisep:notationLevel` ∈ {code, design, hub}，见 §7.2。
   - `aisep:ownsNamespace`。
   - `owl:versionInfo`（semver）。
+- 模块文件声明的每个属性都要有 `rdfs:domain`（§4「属性只能用在定义域上」）。关系类的直连谓词（`arch:unqualifiedForm`）的定义域取该关系类定义里写明的源端类型。
 - 对齐公理**只放在 AISEP 自己的图里**，不往第三方词汇文件里写。上游的 SKOS 映射文件原样保留，只当文档用。
 - 每个模块都带 `tests/valid` 和 `tests/invalid`。原型的 8 个模块共 83 个用例，每条规则至少各有一个正例和一个负例。ext-actions 的正例只有一个（`tests/valid/catalog-loads.ttl`：随清单加载的 `catalog.ttl` 必须满足 EA1–EA10），每条 EA 规则各有负例。
 
