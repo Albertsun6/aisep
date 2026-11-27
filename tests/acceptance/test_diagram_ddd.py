@@ -286,6 +286,15 @@ def main():
         svg, tree, boxes, edges, _, warnings = diagram(os.path.join(tmp, "o.svg"), "--viewpoint", "AggregateDiagram",
                                                        "--of", L + "orderingBC", *fs)
         legend_claims("legal AggregateDiagram orderingBC", tree, boxes)
+
+        # a context label carrying C0 control U+0001: both DDD views refuse it (XML 1.0 cannot carry it), write nothing
+        bad = os.path.join(tmp, "legal-ctl.ttl")
+        open(bad, "w", encoding="utf-8").write(txt.replace('"订单上下文"@zh', '"订单\\u0001上下文"@zh'))
+        for vp in (("--viewpoint", "ContextMap", "--model", "ddd-legal"), ("--viewpoint", "AggregateDiagram", "--of", L + "orderingBC")):
+            out = os.path.join(tmp, "ctl.svg")
+            rc, log = run("diagram", *vp, "-o", out, bad)
+            claim(f"{vp[1]}: a context label with C0 control U+0001: exit 1, [Violation] naming the character, nothing written",
+                  rc == 1 and "[Violation]" in log and "U+0001" in log and not os.path.exists(out), log.strip()[-120:])
         got = {(b["kind"], b["iri"], b["parent"]) for b in boxes}
         owned = ids("SELECT ?a WHERE { l:orderingBC ddd:owns ?a }", fs)
         members = set(rows("SELECT ?a ?x WHERE { l:orderingBC ddd:owns ?a . ?a ddd:contains|ddd:hasRoot ?x }", fs))

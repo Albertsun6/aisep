@@ -504,7 +504,7 @@ def _write_c4(sel, model, name, opts):
 
 
 def _write_ddd(sel, name, opts):
-    from aisep import diagram_ddd
+    from aisep import diagram, diagram_ddd
     title, sub, boxes, edges, warnings, model = sel
     for w in warnings:
         print(f"[Warning] diagram {w}")
@@ -512,7 +512,7 @@ def _write_ddd(sel, name, opts):
     out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".svg")
     try:
         svg = diagram_ddd.render(title, sub, boxes, edges)
-    except RuntimeError as e:
+    except (RuntimeError, diagram.TextNotXml) as e:  # no layout, or model text XML cannot carry
         print(f"[Violation] diagram: {e}"); return 1
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     with open(out, "w", encoding="utf-8", newline="\n") as fh:

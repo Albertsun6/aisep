@@ -25,7 +25,7 @@ from html import escape
 import pyoxigraph as ox
 
 from aisep.core import NS
-from aisep.diagram import MARGIN, elk_layout, f, local, tw, wrap
+from aisep.diagram import MARGIN, check_xml_text, elk_layout, f, local, tw, wrap
 
 DDD = "https://aisep.example/ont/ddd#"
 SKOS = NS["skos"]
@@ -410,6 +410,7 @@ def _leaf(b, x, y, w, h):
 
 
 def render(title, sub, boxes, edges):
+    check_xml_text(title, sub, boxes, edges)
     pos, routes, labs, gw, gh = layout(boxes, edges)
     top = MARGIN + 52
     flat = not any(b["compound"] for b in boxes.values())
