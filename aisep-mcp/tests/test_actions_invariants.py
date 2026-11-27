@@ -297,5 +297,23 @@ def test_executor_has_no_write_path_of_its_own():
     imports = {a.name.split(".")[0] for n in ast.walk(tree_) if isinstance(n, (ast.Import, ast.ImportFrom))
                for a in (n.names if isinstance(n, ast.Import) else [ast.alias(n.module or "")])}
     assert not imports & {"subprocess", "shutil", "tempfile", "pathlib"}, imports
+    # 上面对 querybox.run 的放行只按名字认；名字 querybox 只许由 `from aisep import querybox` 绑定一次（issue #140 ③），
+    # 堵住 `from aisep import gitio as querybox`、`querybox = __import__("subprocess")` 这类把别的模块绑成 querybox 的写法
+    binds = []
+    for n in ast.walk(tree_):
+        if isinstance(n, (ast.Import, ast.ImportFrom)):
+            binds += [(n.module if isinstance(n, ast.ImportFrom) else None, a.name, a.asname) for a in n.names
+                      if (a.asname or a.name.split(".")[0]) == "querybox"]
+        elif isinstance(n, ast.Name) and n.id == "querybox" and not isinstance(n.ctx, ast.Load):
+            binds.append(("assign", ast.unparse(n), None))
+        elif isinstance(n, ast.arg) and n.arg == "querybox":
+            binds.append(("arg", n.arg, None))
+        elif isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and n.name == "querybox":
+            binds.append(("def", n.name, None))
+        elif isinstance(n, ast.ExceptHandler) and n.name == "querybox":
+            binds.append(("except", n.name, None))
+        elif isinstance(n, (ast.Global, ast.Nonlocal)) and "querybox" in n.names:
+            binds.append(("global", "querybox", None))
+    assert binds == [("aisep", "querybox", None)], binds
     assert bad == [], bad
     assert "writer.transaction(" in ast.unparse(tree_)

@@ -338,6 +338,16 @@ DEPRECATED_GUARD = '[ a sh:SPARQLAskValidator ; dcterms:identifier "parent-is-no
 RM_STEP = '[ a aisep:ActionStep ; dcterms:identifier "remove" ;'
 
 
+def _to_iri_node(pattern, iri, body="{0}"):
+    """把目录里唯一匹配 pattern 的空白节点换成 <iri>，其内容（body 按捕获组填）原样写成该 IRI 的描述，追加在文件末尾。"""
+    def edit(t):
+        found = list(re.finditer(pattern, t))
+        assert len(found) == 1, (pattern, len(found))
+        m = found[0]
+        return t[:m.start()] + f"<{iri}>" + t[m.end():] + f"\n<{iri}> {body.format(*m.groups())} .\n"
+    return edit
+
+
 @pytest.mark.parametrize("defect, edit, expect", [
     # 每个缺陷都写在空白节点上（sh:nodeKind sh:BlankNode 满足），所以只有文件名所说的那条约束能报出这条规则：
     # ParameterShape 的 sh:xone / sh:closed、GuardShape 的 sh:message、sh:class sh:SPARQLAskValidator、EA5 成员形状的 sh:class。
@@ -349,6 +359,25 @@ RM_STEP = '[ a aisep:ActionStep ; dcterms:identifier "remove" ;'
     ("ea9-guard-not-a-validator",
      lambda t: t.replace(DEPRECATED_GUARD, '[ dcterms:identifier "parent-is-not-deprecated" ;'), "EA9:"),
     ("ea5-member-not-a-step", lambda t: t.replace(RM_STEP, '[ dcterms:identifier "remove" ;'), "EA5: every member"),
+    # issue #140 ②：内容原样、只把节点从空白节点改写成 IRI 节点，其余约束都满足，只有 sh:nodeKind sh:BlankNode 能报出这条规则
+    # （模型文件里的负例做不到：空白节点会先被 G7 拒绝）。五处 nodeKind 各一例。
+    ("nodekind-parameter-iri-node",
+     _to_iri_node(r'\[ (sh:path ap:iri ; sh:nodeKind sh:IRI ; sh:description "[^"]*"@zh) \]', "urn:x-test:parameter"),
+     "EA8:"),
+    ("nodekind-guard-iri-node",
+     _to_iri_node(r'\[ (a sh:SPARQLAskValidator ; dcterms:identifier "parent-is-not-deprecated" ;\s*sh:ask "[^"]*" ;'
+                  r'\s*sh:message "[^"]*"@zh) \]', "urn:x-test:guard"), "EA9:"),
+    ("nodekind-binding-iri-node",
+     _to_iri_node(r'\[ (aisep:argument "iri" ; aisep:fromParameter ap:iri) \]', "urn:x-test:binding"), "EA7:"),
+    ("nodekind-step-member-iri-node",
+     _to_iri_node(r'\[ (a aisep:ActionStep ; dcterms:identifier "remove" ; aisep:invokes aisep:BasicRemove ;'
+                  r'\s*aisep:binding \[ aisep:argument "iri" ; aisep:fromParameter ap:iri \]) \]', "urn:x-test:step"),
+     "EA5: every member"),
+    ("nodekind-steps-list-iri-node",
+     _to_iri_node(r'\( (_:criterion) (_:aggregation) \)', "urn:x-test:list",
+                  "<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> {0} ; "
+                  "<http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> ( {1} )"),
+     "EA5: an action type needs"),
 ])
 def test_gate_names_the_shape_of_each_catalogue_defect(mk, defect, edit, expect):
     """followups-20261126 第 8 项：tests/invalid 里同名负例只能写成 IRI 节点（模型文件里的空白节点会先被 G7 拒绝），
