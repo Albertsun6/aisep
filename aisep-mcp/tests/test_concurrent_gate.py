@@ -14,6 +14,8 @@ the same cold parse together, which fails nearly every time, and a filled barrie
 unserialised, so the test does not hinge on pyparsing actually mis-learning."""
 import json, subprocess, sys
 
+import pytest
+
 from conftest import ROOT
 
 ROUNDS = 2
@@ -55,17 +57,19 @@ print(json.dumps(out))
 """
 
 
-def test_concurrent_gate_and_findings_in_a_cold_process(repo):
-    for r in range(ROUNDS):
-        p = subprocess.run([sys.executable, "-c", SCRIPT, ROOT, str(repo)], capture_output=True, text=True)
-        assert p.returncode == 0, p.stderr[-2000:]
-        out = json.loads(p.stdout.strip().splitlines()[-1])
-        # the hook must actually see L3's SPARQL parses, or this test silently stops lining the threads up
-        assert out["parsers"] >= 1, f"round {r}: no SPARQL text went through rdflib's processor.parseQuery"
-        assert not out["errors"], (f"round {r}: {len(out['errors'])} of 4 concurrent calls raised "
-                                   f"(gate threads met at the first parse: {out['met']}): {out['errors'][:3]}")
-        # the race is timing-dependent, its cause is not: gate threads parsing SPARQL at the same moment means L3 is
-        # not serialised, even in a round where pyparsing happened to learn every arity right
-        assert not out["met"], f"round {r}: all gate threads were inside L3's first SPARQL parse at once (L3 not serialised)"
-        for key, findings in out["results"].items():
-            assert findings == out["sequential"][key.split(":")[1]], f"round {r}: concurrent {key} differs from sequential"
+# Each round is its own test case (a fresh interpreter either way), so the rounds can run on different workers and shards
+# instead of one ~60 s test in a single shard.
+@pytest.mark.parametrize("r", range(ROUNDS))
+def test_concurrent_gate_and_findings_in_a_cold_process(repo, r):
+    p = subprocess.run([sys.executable, "-c", SCRIPT, ROOT, str(repo)], capture_output=True, text=True)
+    assert p.returncode == 0, p.stderr[-2000:]
+    out = json.loads(p.stdout.strip().splitlines()[-1])
+    # the hook must actually see L3's SPARQL parses, or this test silently stops lining the threads up
+    assert out["parsers"] >= 1, f"round {r}: no SPARQL text went through rdflib's processor.parseQuery"
+    assert not out["errors"], (f"round {r}: {len(out['errors'])} of 4 concurrent calls raised "
+                               f"(gate threads met at the first parse: {out['met']}): {out['errors'][:3]}")
+    # the race is timing-dependent, its cause is not: gate threads parsing SPARQL at the same moment means L3 is
+    # not serialised, even in a round where pyparsing happened to learn every arity right
+    assert not out["met"], f"round {r}: all gate threads were inside L3's first SPARQL parse at once (L3 not serialised)"
+    for key, findings in out["results"].items():
+        assert findings == out["sequential"][key.split(":")[1]], f"round {r}: concurrent {key} differs from sequential"
