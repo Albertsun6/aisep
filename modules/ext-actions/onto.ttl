@@ -17,7 +17,7 @@
 
 <https://aisep.example/ont/aisep/ext-actions> a owl:Ontology ;
     rdfs:label "AISEP actions extension"@en ;
-    owl:versionInfo "0.1.0" .
+    owl:versionInfo "0.2.0" .
 
 ########## Classes ##########
 
@@ -30,6 +30,13 @@ aisep:ActionType a owl:Class ;
 aisep:ActionStep a owl:Class ;
     skos:prefLabel "动作步骤"@zh , "Action step"@en ;
     skos:definition "One step of an action: invokes one basic action and binds each of its arguments to a source."@en .
+
+# A binding node is written as an untyped blank node in catalog.ttl; the class exists to be the rdfs:domain of the
+# value-source properties below (every module property declares a domain). It is not asserted on the nodes, so the
+# definition digest of the shipped actions is unchanged; EA10 keeps these properties on objects of aisep:binding.
+aisep:ActionBinding a owl:Class ;
+    skos:prefLabel "参数绑定节点"@zh , "Action binding"@en ;
+    skos:definition "The value of one argument of a step's basic action: names the argument (aisep:argument) and gives exactly one value source (aisep:constant, aisep:fromParameter, aisep:fromStep or aisep:modelOf), plus aisep:attributePredicate for an item of a list argument. The object of aisep:binding."@en .
 
 aisep:BasicAction a owl:Class ;
     skos:prefLabel "基本动作"@zh , "Basic action"@en ;
@@ -55,35 +62,42 @@ aisep:invokes a owl:ObjectProperty ;
     skos:prefLabel "调用"@zh , "invokes"@en ;
     skos:definition "The basic action a step invokes."@en .
 
-# The object of aisep:binding is an untyped blank node (no aisep:Binding class is minted).
+# The object of aisep:binding is a blank node, written untyped (it is an aisep:ActionBinding by this range).
 aisep:binding a owl:ObjectProperty ;
     rdfs:domain aisep:ActionStep ;
+    rdfs:range aisep:ActionBinding ;
     skos:prefLabel "参数绑定"@zh , "binding"@en ;
     skos:definition "The value of one argument of the step's basic action."@en .
 
 aisep:argument a owl:DatatypeProperty ;
+    rdfs:domain aisep:ActionBinding ;
     rdfs:range xsd:string ;
     skos:prefLabel "入参名"@zh , "argument"@en ;
     skos:definition "Name of the basic action's argument a binding gives a value to (e.g. type, source, attributes). The legal names are listed in the executor."@en .
 
 aisep:constant a rdf:Property ;
+    rdfs:domain aisep:ActionBinding ;
     skos:prefLabel "常量"@zh , "constant"@en ;
     skos:definition "Value source: this constant term (IRI or literal)."@en .
 
 aisep:fromParameter a owl:ObjectProperty ;
+    rdfs:domain aisep:ActionBinding ;
     skos:prefLabel "取动作参数"@zh , "from parameter"@en ;
     skos:definition "Value source: the value of one of the action's parameters, named by that parameter's sh:path IRI."@en .
 
 aisep:fromStep a owl:ObjectProperty ;
+    rdfs:domain aisep:ActionBinding ;
     rdfs:range aisep:ActionStep ;
     skos:prefLabel "取前一步产出"@zh , "from step"@en ;
     skos:definition "Value source: the IRI produced by an earlier step of the same action."@en .
 
 aisep:modelOf a owl:ObjectProperty ;
+    rdfs:domain aisep:ActionBinding ;
     skos:prefLabel "取参数所属模型"@zh , "model of"@en ;
     skos:definition "Value source: the arch:inModel of the model member an IRI parameter (named by its sh:path IRI) points to."@en .
 
 aisep:attributePredicate a owl:ObjectProperty ;
+    rdfs:domain aisep:ActionBinding ;
     rdfs:range rdf:Property ;
     skos:prefLabel "属性谓词"@zh , "attribute predicate"@en ;
     skos:definition "For one item of a list argument (attributes, set): the predicate the bound value is given to."@en .

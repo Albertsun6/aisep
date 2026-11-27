@@ -228,7 +228,10 @@ aisepsh:ApprovalRecordShape a sh:NodeShape ;
 #      (Ctx.activity_problems) adds the agent type of prov:wasAssociatedWith, the xsd:dateTime lexical form (the same
 #      parser as approval records) and startedAtTime <= endedAtTime. ext-governance L3 states the same as EG17..EG26. ----
 # v0.4 review: the two element-link predicates are globally allowed (tools/aisep.py PREDICATE_ALLOW / ELEMENT_LINK_OK),
-# so their subject is checked here (rdfs:domain is not enforced): otherwise any element could link anything with them.
+# so their subject is checked here: otherwise any element could link anything with them. Since issue #67 L1 also
+# enforces the rdfs:domain module files declare (aisep:activity -> aisep:ApprovalRecord); prov:wasAssociatedWith is
+# not a module property (vendor domains are not enforced, ADR-028), so this shape is its only subject check, and it
+# keeps both checks in L3.
 aisepsh:ActivityLinkSubjectShape a sh:NodeShape ;
     sh:targetSubjectsOf prov:wasAssociatedWith , aisep:activity ;
     sh:sparql [
