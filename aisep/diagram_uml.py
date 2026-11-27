@@ -114,7 +114,7 @@ def _true(ctx, x, prop):
 
 def _bound(v, upper):
     """Lexical form of a multiplicity bound -> its display text, or None if it is not a legal bound.
-    UML 2.5.1 §7.5.4: "*" is the unlimited upper bound; the vocabulary writes it as a negative integer (-1)."""
+    UML 2.5.1 §7.5.4: "*" is the unlimited upper bound; the vocabulary writes it as -1. Any other negative is illegal."""
     v = v.strip()
     if upper and v == "*":
         return "*"
@@ -122,7 +122,7 @@ def _bound(v, upper):
         return None
     n = int(v)
     if n < 0:
-        return "*" if upper else None
+        return "*" if upper and n == -1 else None
     return str(n)
 
 

@@ -57,20 +57,22 @@ VIEW = """
 :assoc-quotation-supplier arch:inView :view-umlProbe .
 """
 MULT = """
-:Supplier arch:hasPart :p1 .
 :p1 a uml:Property ; arch:inModel :model ; skos:prefLabel "联系人"@zh ; uml:lower 0 ; uml:upper "*" .
 :p2 a uml:Property ; arch:inModel :model ; skos:prefLabel "电话"@zh ; uml:lower 1 ; uml:upper "many" .
 :p3 a uml:Property ; arch:inModel :model ; skos:prefLabel "地址"@zh ; uml:lower -2 ; uml:upper 3 .
 :rel-s-p1 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p1 .
 :rel-s-p2 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p2 .
 :rel-s-p3 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p3 .
-:Supplier arch:hasPart :p4 , :p5 , :p6 .
 :p4 a uml:Property ; arch:inModel :model ; skos:prefLabel "传真"@zh ; uml:lower 3 ; uml:upper 1 .
 :p5 a uml:Property ; arch:inModel :model ; skos:prefLabel "邮箱"@zh ; uml:lower 5 .
 :p6 a uml:Property ; arch:inModel :model ; skos:prefLabel "网址"@zh ; uml:lower 2 ; uml:upper 2 .
 :rel-s-p4 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p4 .
 :rel-s-p5 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p5 .
 :rel-s-p6 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p6 .
+:p7 a uml:Property ; arch:inModel :model ; skos:prefLabel "传呼"@zh ; uml:lower 0 ; uml:upper -3 .
+:p8 a uml:Property ; arch:inModel :model ; skos:prefLabel "编号"@zh ; uml:lower 0 ; uml:upper -1 ; uml:isStatic true .
+:rel-s-p7 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p7 .
+:rel-s-p8 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p8 .
 """
 VIEW_UC = """
 :view-uc a arch:Diagram ; arch:inModel :model ; skos:prefLabel "用例图探针"@zh ;
@@ -206,6 +208,12 @@ def main():
         rc, log = run("diagram", "--uml", "UseCaseDiagram", "--model", "uml-test", "-o", out, c0)
         claim("--uml UseCaseDiagram exits 1 with a Violation and writes nothing", rc == 1 and "[Violation]" in log
               and not os.path.exists(out), log.strip()[-100:])
+        rc1, log1 = run("diagram", "--uml", "ClassDiagram", "--model", "../x", "-o", out, c0)
+        rc2, log2 = run("diagram", "--uml", "ClassDiagram", "--model", "nosuch", "-o", out, c0)
+        claim("--model '../x' and an unknown --model each exit 1 with a Chinese Violation, write nothing",
+              rc1 == 1 and "[Violation]" in log1 and "必须是简单名称" in log1
+              and rc2 == 1 and "[Violation]" in log2 and "没有元素在这张图里" in log2 and not os.path.exists(out),
+              f"{log1.strip()[-80:]} | {log2.strip()[-80:]}")
 
         # C1
         c1 = os.path.join(tmp, "c1.ttl")
@@ -312,15 +320,22 @@ def main():
         open(mf, "w", encoding="utf-8").write(txt + MULT.replace(":model", f"<{T}>"))
         _, _, _, mfeats, mlog = diagram(os.path.join(tmp, "mult.svg"), "--uml", "ClassDiagram", "--model", "uml-test", mf)
         rowt = {i: t for i, _, t in mfeats.get("t:Supplier", [])}
+        rowc = {i: (c or "").split() for i, c, _ in mfeats.get("t:Supplier", [])}
         mws = [l for l in mlog.splitlines() if l.startswith("[Warning]")]
-        claim("uml:upper \"*\" shows [0..*]; [2..2] shows [2]; upper \"many\", lower -2, lower 3 > upper 1 and lower 5 > "
-              "the default upper 1 each give one warning and no multiplicity",
+        claim("uml:upper \"*\" and -1 show [0..*]; [2..2] shows [2]; upper \"many\", upper -3 (only -1 means unlimited), "
+              "lower -2, lower 3 > upper 1 and lower 5 > the default upper 1 each give one warning and no multiplicity",
               rowt.get("t:p1") == "联系人 [0..*]" and rowt.get("t:p2") == "电话" and rowt.get("t:p3") == "地址"
               and rowt.get("t:p4") == "传真" and rowt.get("t:p5") == "邮箱" and rowt.get("t:p6") == "网址 [2]"
-              and len(mws) == 4 and any(T + "p2" in w and "uml:upper 'many'" in w for w in mws)
+              and rowt.get("t:p7") == "传呼" and rowt.get("t:p8") == "编号 [0..*]"
+              and len(mws) == 5 and any(T + "p2" in w and "uml:upper 'many'" in w for w in mws)
+              and any(T + "p7" in w and "uml:upper '-3'" in w for w in mws)
               and any(T + "p3" in w and "uml:lower '-2'" in w for w in mws)
               and any(T + "p4" in w and "[3..1]" in w and "上界小于下界" in w for w in mws)
               and any(T + "p5" in w and "[5..1]" in w and "上界小于下界" in w for w in mws), f"rows={rowt} warnings={mws}")
+        claim("a uml:isStatic true feature row is underlined (class st, .st{text-decoration:underline}); others are not",
+              "st" in rowc.get("t:p8", []) and not any("st" in c for i, c in rowc.items() if i != "t:p8")
+              and ".st{text-decoration:underline}" in open(os.path.join(tmp, "mult.svg"), encoding="utf-8").read(),
+              f"classes={rowc}")
 
         # escaping: hostile label text is drawn as text, never as markup
         evil = os.path.join(tmp, "evil.ttl")

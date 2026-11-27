@@ -420,7 +420,7 @@ def _diagram_uml(opts, args):
         print(__doc__); return 2
     for k in ("--uml", "--model"):
         if k in opts and not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", opts[k]):
-            print(f"[Violation] diagram: {k} {opts[k]!r} must be a plain name (letters, digits, _ and -)"); return 1
+            print(f"[Violation] diagram: {k} {opts[k]!r} 必须是简单名称（字母、数字、_ 和 -）"); return 1
     if kind != "list" and kind not in diagram_uml.DIAGRAMS:
         print(f"[Violation] diagram: UML 图种 {kind} 暂不支持（首批只有 {', '.join(diagram_uml.DIAGRAMS)}）"); return 1
     files, read = model_files(args)
@@ -463,7 +463,7 @@ def _write_uml(ctx, model, name, opts, view=None, kind="ClassDiagram"):
     for w in warnings:
         print(f"[Warning] diagram {w}")
     if not nodes:
-        print(f"[Violation] diagram: no element of {model} is in this view (wrong --model or an empty view?)"); return 1
+        print(f"[Violation] diagram: {model} 没有元素在这张图里（--model 写错，或视图为空？）"); return 1
     slug = model.rstrip("/").rsplit("/", 1)[-1]
     out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".svg")
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
