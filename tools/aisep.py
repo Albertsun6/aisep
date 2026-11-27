@@ -27,6 +27,15 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
                                           parts (lanes, sub-processes, ...) are [Warning] lines, not drawn
   aisep.py diagram --list-processes [model files...]
                                        -> every bpmn:Process that --process can draw: IRI, model, label (tab-separated)
+  aisep.py diagram (--viewpoint ContextMap --model SLUG | --viewpoint AggregateDiagram --of <bounded context>)
+                   [-o OUT.svg] [model files...]
+                                       -> DDD view as SVG (aisep/diagram_ddd.py): the context map of a model (bounded
+                                          contexts, subdomains, Context Mapper notation) or the aggregates of one context
+                                          (AggregateDiagram takes its model from --of; a --model it is not in is a
+                                          usage error, exit 2)
+  aisep.py diagram --ddd list --model SLUG [model files...]
+                                       -> the DDD views that model can render, one `VIEW <args>` line each
+                                          (--view / --viewpoint / --of alongside it are a usage error)
   aisep.py adm [<阶段> --model <slug> [--check FILE.rq]... [--deliverable] [--out FILE]]
                                        -> ADM 向导（docs/specs/adm-wizard.md）：按阶段列出模型里已有的元素和缺口，
                                           --deliverable 生成交付物 Markdown；默认打印，--out 只写这一个文件；有缺口也返回 0；
@@ -321,11 +330,13 @@ def cmd_test(no_pytest=False):
 
 
 def cmd_diagram(args):
-    """ArchiMate 4 / C4 / UML view -> SVG, BPMN process -> .bpmn (aisep/diagram.py, diagram_c4.py, diagram_uml.py,
-    diagram_bpmn.py). Read-only; not part of gate."""
-    from aisep import diagram, diagram_c4, diagram_uml
+    """ArchiMate 4 / C4 / UML / DDD view -> SVG, BPMN process -> .bpmn (aisep/diagram.py, diagram_c4.py, diagram_uml.py,
+    diagram_ddd.py, diagram_bpmn.py). Read-only; not part of gate."""
+    from aisep import diagram, diagram_c4, diagram_ddd, diagram_uml
     if "--process" in args or "--list-processes" in args:
         return _diagram_bpmn(args)
+    if "--ddd" in args:
+        return _list_ddd(args)
     opts = {}
     for k in ("--view", "--viewpoint", "--model", "--of", "--uml", "-o"):
         if k in args:
@@ -336,8 +347,10 @@ def cmd_diagram(args):
     if "--uml" in opts:
         return _diagram_uml(opts, args)
     c4 = opts.get("--viewpoint") in diagram_c4.VIEWPOINTS
-    if ("--view" in opts) == ("--viewpoint" in opts) or ("--of" in opts) != c4 or \
-            ("--viewpoint" in opts and "--model" not in opts and not c4):
+    ddd = opts.get("--viewpoint") in diagram_ddd.VIEWPOINTS
+    scoped = c4 or opts.get("--viewpoint") == "AggregateDiagram"
+    if ("--view" in opts) == ("--viewpoint" in opts) or ("--of" in opts) != scoped or \
+            ("--viewpoint" in opts and "--model" not in opts and not scoped):
         print(__doc__); return 2
     for k in ("--viewpoint", "--model", "--of"):  # SPARQL text or a file name: plain names only
         if k in opts and (k != "--of" or opts.get("--viewpoint") == "C4Deployment") and \
@@ -369,6 +382,25 @@ def cmd_diagram(args):
                 print(f"[Violation] diagram: {opts['--view']} 的视点 umlvp:{kind} 暂不支持（首批只有 "
                       f"{', '.join('umlvp:' + k for k in diagram_uml.DIAGRAMS)}）"); return 1
             return _write_uml(ctx, model, name, opts, view=view, kind=kind)
+    elif ddd:
+        vp = opts["--viewpoint"]
+        if vp == "ContextMap":
+            scope, model = None, f"https://aisep.example/model/{opts['--model']}/"
+        else:
+            try:
+                scope, model = expand(ctx, opts["--of"]), None
+            except AisepError as e:
+                print(f"[Violation] diagram: --of {e.message}"); return 1
+            if "--model" in opts and not ctx.rows(f"SELECT ?m WHERE {{ <{scope}> arch:inModel "
+                                                  f"<https://aisep.example/model/{opts['--model']}/> }}"):
+                print(f"[Violation] diagram: --of {opts['--of']} is not in model {opts['--model']} "
+                      f"(AggregateDiagram takes its model from --of; drop --model or name the model --of is in)")
+                return 2
+        try:
+            sel = diagram_ddd.select(ctx, vp, scope, model=model)
+        except ValueError as e:
+            print(f"[Violation] diagram: {e}"); return 1
+        return _write_ddd(sel, vp if vp == "ContextMap" else f"{vp}-{diagram.local(scope)}", opts)
     elif c4:
         vp = opts["--viewpoint"]
         if vp == "C4Deployment":
@@ -476,6 +508,53 @@ def _write_c4(sel, model, name, opts):
         fh.write(svg)
     print(f"SUMMARY diagram model={slug} view={name} elements={n} relationships={len(edges)} "
           f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
+    return 0
+
+
+def _write_ddd(sel, name, opts):
+    from aisep import diagram, diagram_ddd
+    title, sub, boxes, edges, warnings, model = sel
+    for w in warnings:
+        print(f"[Warning] diagram {w}")
+    slug = model.rstrip("/").rsplit("/", 1)[-1]
+    out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".svg")
+    try:
+        svg = diagram_ddd.render(title, sub, boxes, edges)
+    except (RuntimeError, diagram.TextNotXml) as e:  # no layout, or model text XML cannot carry
+        print(f"[Violation] diagram: {e}"); return 1
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    with open(out, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(svg)
+    n_rel = len(edges) + sum(1 for b in boxes.values() if b.get("via"))
+    print(f"SUMMARY diagram model={slug} view={name} elements={sum(1 for b in boxes.values() if not (b["compound"] and b["kind"] == "bc"))} relationships={n_rel} "
+          f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
+    return 0
+
+
+def _list_ddd(args):
+    """diagram --ddd list --model SLUG: the DDD views the model can render."""
+    from aisep import diagram_ddd
+    i = args.index("--ddd")
+    if i + 1 >= len(args) or args[i + 1] != "list":
+        print("[Violation] diagram: --ddd takes only `list` (diagram --ddd list --model SLUG)"); return 2
+    args = args[:i] + args[i + 2:]
+    extra = [k for k in ("--view", "--viewpoint", "--of", "-o") if k in args]
+    if extra:
+        print(f"[Violation] diagram: --ddd list lists views and draws none; {', '.join(extra)} cannot go with it"); return 2
+    if "--model" not in args or args.index("--model") + 1 >= len(args):
+        print(__doc__); return 2
+    i = args.index("--model")
+    slug, args = args[i + 1], args[:i] + args[i + 2:]
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", slug):
+        print(f"[Violation] diagram: --model {slug!r} must be a plain name (letters, digits, _ and -)"); return 1
+    files, read = model_files(args)
+    ctx = Ctx(discover(), files, read=read)
+    if report(ctx, ("L0",))[0]:
+        return 1
+    found = diagram_ddd.views(ctx, f"https://aisep.example/model/{slug}/")
+    for vp, scope, title in found:
+        print(f"VIEW --viewpoint {vp} " + (f"--of {scope}" if scope else f"--model {slug}") + f"  # {title}")
+    print(f"SUMMARY diagram-list model={slug} views={len(found)}")
     return 0
 
 
