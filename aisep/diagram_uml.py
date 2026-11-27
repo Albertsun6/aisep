@@ -27,7 +27,7 @@ import re
 from html import escape
 
 from aisep.core import ARCH, NS
-from aisep.diagram import MARGIN, elk_layout, f, local, tw, wrap
+from aisep.diagram import MARGIN, check_xml_text, elk_layout, f, local, tw, wrap
 
 UML = "https://meta.linked.archi/uml/onto#"
 UMLVP = "https://meta.linked.archi/uml/viewpoints#"
@@ -372,6 +372,7 @@ def _class_box(iri, n, x, y, w, h):
 
 
 def render(title, sub, nodes, packages, edges):
+    check_xml_text(title, sub, nodes, packages, edges)
     pos, routes, labs, gw, gh = layout(nodes, packages, edges)
     top = MARGIN + 52
     etypes = sorted({e["type"] for e in edges}, key=EDGE_ORDER.index)

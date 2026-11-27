@@ -208,6 +208,11 @@ def main():
         rc, log = run("diagram", "--uml", "UseCaseDiagram", "--model", "uml-test", "-o", out, c0)
         claim("--uml UseCaseDiagram exits 1 with a Violation and writes nothing", rc == 1 and "[Violation]" in log
               and not os.path.exists(out), log.strip()[-100:])
+        bad = os.path.join(tmp, "c0-ctl.ttl")
+        open(bad, "w", encoding="utf-8").write(txt.replace('"报价单"@zh', '"报价\\u0001单"@zh'))
+        rc, log = run("diagram", "--uml", "ClassDiagram", "--model", "uml-test", "-o", out, bad)
+        claim("a class label with C0 control U+0001: exit 1, [Violation] naming the character, nothing written",
+              rc == 1 and "[Violation]" in log and "U+0001" in log and not os.path.exists(out), log.strip()[-120:])
         rc1, log1 = run("diagram", "--uml", "ClassDiagram", "--model", "../x", "-o", out, c0)
         rc2, log2 = run("diagram", "--uml", "ClassDiagram", "--model", "nosuch", "-o", out, c0)
         claim("--model '../x' and an unknown --model each exit 1 with a Chinese Violation, write nothing",

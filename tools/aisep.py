@@ -514,7 +514,7 @@ def _diagram_uml(opts, args):
 
 
 def _write_uml(ctx, model, name, opts, view=None, kind="ClassDiagram"):
-    from aisep import diagram_uml
+    from aisep import diagram, diagram_uml
     try:
         title, sub, nodes, packages, edges, warnings = diagram_uml.select(ctx, model, view=view, diagram=kind)
     except ValueError as e:
@@ -528,7 +528,7 @@ def _write_uml(ctx, model, name, opts, view=None, kind="ClassDiagram"):
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     try:
         svg = diagram_uml.render(title, sub, nodes, packages, edges)
-    except RuntimeError as e:
+    except (RuntimeError, diagram.TextNotXml) as e:  # no layout, or model text XML cannot carry
         print(f"[Violation] diagram: {e}"); return 1
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(svg)
