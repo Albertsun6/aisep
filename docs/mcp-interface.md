@@ -262,7 +262,7 @@
 | 字段 | 必填 | 说明 |
 |---|---|---|
 | `model` | ✔ | 模型 IRI 或 slug（`procurement`），口径见 §5.0 |
-| `type` | ✔ | 类 IRI 或前缀名；必须是已加载模块的具体类，或模型里的单父类特化（R1、G6）。批准记录、AI 活动（`aisep:ApprovalRecord`、`aisep:AgentActivity` 及其子类）→ `PROTECTED_RESOURCE` |
+| `type` | ✔ | 类 IRI 或前缀名；必须是已加载模块的具体类，或模型里的单父类特化（R1、G6）。批准记录、AI 活动、动作定义（`aisep:ApprovalRecord`、`aisep:AgentActivity`、`aisep:ActionType` 及其子类；动作定义只在 `modules/ext-actions/catalog.ttl` 里，ADR-026 补记 2026-11-27）→ `PROTECTED_RESOURCE` |
 | `prefLabel` | ✔ | 写成 `skos:prefLabel "…"@zh`。prefLabel/altLabel 不含控制字符、换行与 U+2028/2029，≤200 字符；definition 只允许 `\n`（`\r\n`、`\t` 都拒绝），≤4000 字符；违反 → `INVALID_ARGUMENT` |
 | `altLabel` | — | 写成 `skos:altLabel "…"@en` |
 | `slug` | 条件 | `^[A-Za-z][A-Za-z0-9]*$`（允许大写开头，例子里已有 UML 类 `QuotationEntity`）。不给时由 `altLabel` 转 camelCase；两者都没有 → `INVALID_ARGUMENT`（不自动拼音） |
@@ -282,7 +282,7 @@
 
 ### 5.3 `model_add_relationship`
 
-**输入**：`model?`（缺省取源端元素的模型）、`type`（限定关系类；为批准记录、AI 活动时 `PROTECTED_RESOURCE`）、`source`、`target`、`file?`、`dryRun?`。
+**输入**：`model?`（缺省取源端元素的模型）、`type`（限定关系类；为批准记录、AI 活动、动作定义时 `PROTECTED_RESOURCE`）、`source`、`target`、`file?`、`dryRun?`。
 
 **IRI（§3）**：`{model}rel-{源slug}-{直连谓词本地名}-{目标slug}`。
 - 直连谓词取该类最近的 `arch:unqualifiedForm`（同原型 `Ctx.nearest`）。
@@ -355,7 +355,7 @@
 | `dryRun` | `false` | 只返回计划 |
 | `planDigest` | — | 上次 `dryRun` 返回的计划哈希；不一致 → `PLAN_STALE`（不可重试，hint："先用 `dryRun: true` 取新计划"）。带 `planDigest` 且计划里的删除集已全部不在 → 成功，`changed: false, alreadyAbsent: true`（实删成功但响应丢失后的重放）。不带 `planDigest` 而目标不在 → `ELEMENT_NOT_FOUND`（多半是 IRI 写错） |
 
-**受保护的资源**：目标是 `aisep:ApprovalRecord`、`aisep:AgentActivity`、`arch:Model` → `PROTECTED_RESOURCE`。这是**本文新增的规则**（依据：ADR-009 批准记录是模型仓库里的治理实体、单一事实来源 + 原则五人工把关），不是 ADR-009 的直接推论；Q6=A 已拍板采纳（第④项）。
+**受保护的资源**：目标是 `aisep:ApprovalRecord`、`aisep:AgentActivity`、`aisep:ActionType`（ADR-026 补记 2026-11-27）、`arch:Model` → `PROTECTED_RESOURCE`。这是**本文新增的规则**（依据：ADR-009 批准记录是模型仓库里的治理实体、单一事实来源 + 原则五人工把关），不是 ADR-009 的直接推论；Q6=A 已拍板采纳（第④项）。
 
 **源图**：本节所有判据（闭包、外部引用、blockers 的 `file`）都在 `models/**/*.ttl` 解析出的**源图**上算，不加载本体、不构建。构建图里有派生直连三元组（`am4:assignedTo`、`arch:refines` 等），用它会让任何有关系的元素都落进"其他谓词 → 拒绝"（评审实测：指向 `quoteApproval` 的非端点三元组，构建图 6 条，源图只有 1 条）。
 
@@ -759,7 +759,7 @@ CI 设为受保护分支的必需检查，PR 每次更新都跑；合并前由�
 
 **前置检查**
 - `iri` 是本仓库某个模型的成员 → 否则 `ELEMENT_NOT_FOUND`（`details.candidates` 同 §5.7）。
-- 目标是 `aisep:ApprovalRecord` 或 `aisep:AgentActivity` → `PROTECTED_RESOURCE`：批准历史只追加不修改，改结论要写一条更晚的记录（§6.6、R3）。
+- 目标是 `aisep:ApprovalRecord` 或 `aisep:AgentActivity` → `PROTECTED_RESOURCE`：批准历史只追加不修改，改结论要写一条更晚的记录（§6.6、R3）。目标是 `aisep:ActionType` 同样 `PROTECTED_RESOURCE`（动作定义只在 `catalog.ttl` 里改，ADR-026 补记 2026-11-27）。
 - 要改的三元组在别的模型目录里 → `PROTECTED_RESOURCE`（写入方不改别人的模型，同 §5.5 第 4 步）。
 
 **执行**：走 §5.1 第 1–10 步。文本编辑用 §5.1 的主语块词法器，只重写含被替换三元组的那几个块；第 6 步的图等价断言照常生效。
@@ -819,7 +819,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 **前置检查**
 - 目标是 `arch:Model` → `PROTECTED_RESOURCE`（模型本身不经写工具修改，同 §5.5）。
 - `iri` 是本仓库某个模型的成员 → 否则 `ELEMENT_NOT_FOUND`（`details.candidates` 同 §5.7）。
-- 目标是 `aisep:ApprovalRecord` 或 `aisep:AgentActivity` → `PROTECTED_RESOURCE`：批准历史只追加不修改（§6.6、R3）。
+- 目标是 `aisep:ApprovalRecord` 或 `aisep:AgentActivity` → `PROTECTED_RESOURCE`：批准历史只追加不修改（§6.6、R3）。目标是 `aisep:ActionType` 同样 `PROTECTED_RESOURCE`（ADR-026 补记 2026-11-27）。
 - 该主语的三元组有一部分在别的模型目录里 → `PROTECTED_RESOURCE`（写入方不改别人的模型，同 §5.10）。
 
 参数错误先于目标检查报出。
@@ -842,11 +842,11 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 出处：Albert 2026-11-25 确认动作机制走「薄封装」方向，2026-11-26 放行阶段 C 时改选：动作定义建进元模型（新模块 `modules/ext-actions/`，参照 Palantir Foundry 的 Action type，只建定义、不建执行记录），目录从 RDF 读。本节与 §5.14 随之加入。字段名、错误码名、词汇细节是实现时的取舍，Albert 没有逐条定过。用法见 `docs/actions.md`「动作目录」一节。
 
-**动作是什么**：现有写工具的具名组合，写成元模型里的 `aisep:ActionType` 个体，放在扩展模块 `modules/ext-actions/` 的 `catalog.ttl`（词汇在 `onto.ttl`，L3 形状 EA1–EA10 在 `shapes.ttl`）。`catalog.ttl` 列在模块清单的 `aisep:loads` 里，所以 `gate` 会用 `shapes.ttl` 校验它，`model_query` 也能查到有哪些动作。动作有 IRI（形如 `aisep:Action<名>`），调用时用短 id（`dcterms:identifier`）。动作个体不是模型元素：不在 `arch:Element` 之下，没有 `arch:inModel`，也没有批准状态。动作是**推荐通道**，不是唯一通道：逐个调写工具、直接编辑 `.ttl` 照旧允许，`gate` 与合并核对不知道改动是否经动作做的。动作不产生审批项，不留执行记录，不写日志文件。
+**动作是什么**：现有写工具的具名组合，写成元模型里的 `aisep:ActionType` 个体，放在扩展模块 `modules/ext-actions/` 的 `catalog.ttl`（词汇在 `onto.ttl`，L3 形状 EA1–EA11 在 `shapes.ttl`）。`catalog.ttl` 列在模块清单的 `aisep:loads` 里，所以 `gate` 会用 `shapes.ttl` 校验它，`model_query` 也能查到有哪些动作。动作有 IRI（形如 `aisep:Action<名>`），调用时用短 id（`dcterms:identifier`）。动作个体不是模型元素：不在 `arch:Element` 之下，没有 `arch:inModel`，也没有批准状态。动作是**推荐通道**，不是唯一通道：逐个调写工具、直接编辑 `.ttl` 照旧允许，`gate` 与合并核对不知道改动是否经动作做的。动作不产生审批项，不留执行记录，不写日志文件。
 
 **两个工具的形状是固定的**：目录增删改动作，`tools/list` 都不变（参数 schema 由本工具返回，不进 `inputSchema`）。
 
-**输入**：无（`inputSchema` 为空对象）。读服务器所服务工作区（`--repo`，缺省为当前目录）里的 `modules/ext-actions/catalog.ttl`。
+**输入**：无（`inputSchema` 为空对象）。读服务器所服务工作区（`--repo`，缺省为当前目录）里的 `modules/ext-actions/catalog.ttl`。§5.14 执行时读的是同一份目录，不随调用的 `repo` 切换，所以列出的与执行的总是同一份定义。
 
 **输出**：`{ catalogVersion, operations, actions: [...] }`。`catalogVersion` 是模块清单的 `owl:versionInfo`。`operations` 是执行器认识的基本动作对应的写工具，固定为 `model_add_element`、`model_add_relationship`、`model_remove`、`model_set_attributes`、`model_set_labels`（按名称排序；用的是 §5.2、§5.3、§5.5、§5.12、§5.10 的计划函数）。`actions` 按动作 IRI 排序，每项：
 
@@ -859,7 +859,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 | 部分 | 写法 | 规则 |
 |---|---|---|
-| 动作 | `aisep:Action<名> a aisep:ActionType` | IRI 形如 `aisep:Action<驼峰名>`（EA1） |
+| 动作 | `aisep:Action<名> a aisep:ActionType` | IRI 形如 `aisep:Action<驼峰名>`；只带本表所列的谓词（`rdf:type` 与下面各行），不写 `rdfs:subClassOf` 等其他三元组（EA1，形状封闭）；`rdf:type` 只能是 `aisep:ActionType`，不另带领域类型（EA11） |
 | id | `dcterms:identifier` | 恰好一个，`^[a-z][a-z0-9-]{0,63}` 且到此为止（不放过结尾换行），目录内唯一（重复的都判无效）（EA2、X9） |
 | 标题、说明 | `skos:prefLabel`@zh 恰好一个、`skos:definition`@zh 至多一个 | EA3；列表输出里叫 `title`、`description` |
 | 版本 | `owl:versionInfo` | 恰好一个，形如 `1.0.0`（EA4）；历史靠 Git |
@@ -874,7 +874,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 **加载校验同时拒绝「两步作用于同一个目标」的定义**（X6，判 `valid: false`，原因写进 `problems`），因为这类动作重放会被拒（§5.14「幂等」）：改已有资源的步骤（`BasicSetLabels`、`BasicSetAttributes`、`BasicRemove`）的 `iri` 取自本动作前一步的产出（`aisep:fromStep`）；两个这类步骤的 `iri` 取自同一个参数或同一个常量；删除步骤的 `iri` 与某个 `BasicAddRelationship` 步骤的 `source` 或 `target` 取自同一个参数或常量（级联会删掉那条新关系）。这一校验只看绑定本身：两个**不同**参数在调用时被填成同一个 IRI、`add_element` 的 slug 恰好等于同一动作里被删的 IRI，取决于调用时的值，加载时判不出来。X6 只由执行器判，`gate` 不知道它；仓库里的目录靠 CI 的 pytest（「仓库目录每条定义都有效」）挡在合并前。
 
-`gate` 的 L3 用 `shapes.ttl` 判 EA1–EA10（SHACL Core 能说的结构）；执行器每次读目录都自己再判一遍同样的结构（X1，它不能假定 `gate` 跑过），再加 SHACL Core 说不了的 X2–X10。EA10 管模型文件：动作词汇（`aisep:steps`、`aisep:binding`、`aisep:argument` 等）写在模型元素上会在 L3 报 EA10。
+`gate` 的 L3 用 `shapes.ttl` 判 EA1–EA11（SHACL Core 能说的结构）；执行器每次读目录都自己再判一遍同样的结构（X1，它不能假定 `gate` 跑过），再加 SHACL Core 说不了的 X2–X10。EA10 管模型文件：动作词汇（`aisep:steps`、`aisep:binding`、`aisep:argument` 等）写在模型元素上会在 L3 报 EA10。
 
 **校验层**：无（只读目录，不读模型）。
 
@@ -896,7 +896,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 **执行顺序**
 
-1. 读目录（`repo` 所指工作区的 `modules/ext-actions/catalog.ttl`）。没有这个动作 → `INVALID_ARGUMENT`（`details.available` 列出可用的 id）；定义无效 → `INVALID_ARGUMENT`（`details.problems`）。
+1. 读目录：与 §5.13 同一份，即服务器所服务工作区（`--repo`）的 `modules/ext-actions/catalog.ttl`，**不是** `repo` 所指工作区里的那份；`repo` 只决定写哪个工作区的模型。未合并分支的 worktree 里改了目录，不经 PR 合进所服务的检出就不生效（ADR-026 补记 2026-11-27）。没有这个动作 → `INVALID_ARGUMENT`（`details.available` 列出可用的 id）；定义无效 → `INVALID_ARGUMENT`（`details.problems`）。
 2. 按 `params` schema 校验参数，再校验 IRI 参数（`iriParams`）的形状；不合规 → `INVALID_ARGUMENT`，`details.rejectedFields` 形如 `params.<名>`。参数只作为预绑定的项进入 guard 查询，不拼进查询文本。
 3. 进入一次 §5.1 写入（加锁、读工作区、基线）。依次跑各步的计划函数；后一步在前一步结果的内存叠加上规划，与第二次工具调用看到的相同。中间结果只检查能否解析，不能 → `EDIT_UNSAFE`。步骤自己的拒绝原样抛出（`ELEMENT_NOT_FOUND`、`IRI_EXISTS`、`UNKNOWN_TYPE`、`PROTECTED_RESOURCE`、`REFERENCED` 等），`details.step` 标出是哪一步。可选参数没给时，引用它的入参或列表项省略；某步的必填入参因此缺失 → `INVALID_ARGUMENT`。
 4. **判重放**：各步合并后的计划在当前工作区上无变化（每一步都无变化，或各步改动相互抵消、每个文件合并后的文本与工作区逐字节相同）→ 成功，`changed: false`，不重写文件，**不跑 guard**。只有部分文件相互抵消时，这些文件不计入改动。

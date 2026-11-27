@@ -22,7 +22,9 @@ _TEXT_CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u2028\u2029]")
 RDF_TYPE = core.A
 LABEL_LIMITS = {PREF: LABEL_MAX, ALT: LABEL_MAX, DEF: DEFINITION_MAX}
 UNSET = object()
-PROTECTED_TYPES = {core.AISEP + "ApprovalRecord", core.AISEP + "AgentActivity"}
+# approval records and AI activities are append-only governance records; action definitions live only in
+# modules/ext-actions/catalog.ttl (a model file typed aisep:ActionType is never an action, ADR-026 补记 2026-11-27)
+PROTECTED_TYPES = {core.AISEP + "ApprovalRecord", core.AISEP + "AgentActivity", core.AISEP + "ActionType"}
 
 
 # ---------------------------------------------------------------- helpers
@@ -235,7 +237,7 @@ def add_element_build(model, type, prefLabel, altLabel=None, slug=None, definiti
         mslug, model_iri = _model(ws, model)
         cls = _resolve_class(ctx, type)
         if PROTECTED_TYPES & set(ctx.ancestors(cls)):  # approval records and AI activities never come from a write tool
-            raise AisepError("PROTECTED_RESOURCE", f"{core.short(cls)} 是批准记录或 AI 活动，不能经写工具新增",
+            raise AisepError("PROTECTED_RESOURCE", f"{core.short(cls)} 是批准记录、AI 活动或动作定义，不能经写工具新增",
                              hint="批准只能由批准人经 governance_record_approval 记录", details={"rejectedFields": ["type"]})
         if core.ARCH + "QualifiedRelationship" in ctx.ancestors(cls):
             raise _bad("type", f"{core.short(cls)} 是关系类，请用 model_add_relationship")
@@ -302,7 +304,7 @@ def add_relationship_build(type, source, target, model=None, file=None):
         s_iri, t_iri = _member(ctx, st, source, "source"), _member(ctx, st, target, "target")
         cls = _resolve_class(ctx, type)
         if PROTECTED_TYPES & set(ctx.ancestors(cls)):
-            raise AisepError("PROTECTED_RESOURCE", f"{core.short(cls)} 是批准记录或 AI 活动，不能经写工具新增",
+            raise AisepError("PROTECTED_RESOURCE", f"{core.short(cls)} 是批准记录、AI 活动或动作定义，不能经写工具新增",
                              details={"rejectedFields": ["type"]})
         if core.ARCH + "QualifiedRelationship" not in ctx.ancestors(cls):
             raise _bad("type", f"{core.short(cls)} 不是限定关系类，元素请用 model_add_element")
@@ -364,7 +366,7 @@ def set_labels_build(iri, prefLabel=UNSET, altLabel=UNSET, definition=UNSET):
         x = _member(ctx, st, iri, "iri")
         types = {t.object.value for _, t in st[x] if t.predicate.value == core.A}
         if any(PROTECTED_TYPES & set(ctx.ancestors(c)) for c in types):
-            raise AisepError("PROTECTED_RESOURCE", f"{core.short(x)} 是批准记录或 AI 活动，只追加不修改",
+            raise AisepError("PROTECTED_RESOURCE", f"{core.short(x)} 是批准记录、AI 活动或动作定义，只追加不修改",
                              hint="改结论请写一条更晚的批准记录")
         mslug = next(t.object.value for _, t in st[x] if t.predicate.value == IN_MODEL)[len(core.MODEL_BASE):].strip("/")
         outside = sorted({f for f, _ in st[x] if not f.startswith(f"models/{mslug}/")})
@@ -507,7 +509,7 @@ def remove_build(iri, cascade=False, dryRun=False, planDigest=None, verify_diges
                              details={"candidates": _candidates(ctx, target)})
         types = {t.object.value for _, t in st[target] if t.predicate.value == core.A}
         if any((PROTECTED_TYPES | NOT_REMOVABLE) & set(ctx.ancestors(c)) for c in types):
-            raise AisepError("PROTECTED_RESOURCE", f"{core.short(target)} 是批准记录、AI 活动或模型本身，不能删除")
+            raise AisepError("PROTECTED_RESOURCE", f"{core.short(target)} 是批准记录、AI 活动、动作定义或模型本身，不能删除")
         if not any(t.predicate.value == IN_MODEL for _, t in st[target]):
             raise AisepError("ELEMENT_NOT_FOUND", f"{core.short(target)} 不是模型成员")
         plan, remove = remove_plan(ctx, st, target)
@@ -620,7 +622,7 @@ def _set_attributes_build(iri, new, drop):  # not set/unset: the body uses the b
             raise AisepError("PROTECTED_RESOURCE", f"{core.short(x)} 是模型本身，不经写工具修改")
         x = _member(ctx, st, iri, "iri")
         if any(PROTECTED_TYPES & set(ctx.ancestors(c)) for c in types):
-            raise AisepError("PROTECTED_RESOURCE", f"{core.short(x)} 是批准记录或 AI 活动，只追加不修改",
+            raise AisepError("PROTECTED_RESOURCE", f"{core.short(x)} 是批准记录、AI 活动或动作定义，只追加不修改",
                              hint="改结论请写一条更晚的批准记录")
         mslug = next(t.object.value for _, t in st[x] if t.predicate.value == IN_MODEL)[len(core.MODEL_BASE):].strip("/")
         outside = sorted({f for f, _ in st[x] if not f.startswith(f"models/{mslug}/")})

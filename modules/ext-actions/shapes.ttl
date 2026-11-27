@@ -7,7 +7,7 @@
 @prefix aisep:   <https://aisep.example/ont/aisep#> .
 @prefix :        <https://aisep.example/shapes/ext-actions#> .
 
-# L3 shapes for the actions extension. SHACL Core only. Each message starts with a rule id (EA1..EA10); every rule
+# L3 shapes for the actions extension. SHACL Core only. Each message starts with a rule id (EA1..EA11); every rule
 # has an invalid fixture in tests/, and tests/valid/catalog-loads.ttl passes only when the shipped catalog.ttl
 # (loaded by the manifest, so part of the L3 data graph) satisfies all of them.
 # The executor (aisep/actions.py) re-checks the same structure on every call (X1) and adds what SHACL Core cannot
@@ -21,7 +21,13 @@
     sh:targetClass aisep:ActionType ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https://aisep\\.example/ont/aisep#Action[A-Z][A-Za-z0-9]*$" ;
-    sh:message "EA1: an aisep:ActionType must be an IRI of the form aisep:Action<Name>." ;
+    sh:closed true ;
+    sh:message "EA1: an aisep:ActionType must be an IRI of the form aisep:Action<Name> and state nothing but rdf:type, dcterms:identifier, skos:prefLabel, skos:definition, owl:versionInfo, sh:parameter, aisep:guard and aisep:steps (no rdfs:subClassOf or other TBox triple on an action)." ;
+    sh:property [
+        sh:path rdf:type ;
+        sh:in ( aisep:ActionType ) ;
+        sh:message "EA11: an action type is typed aisep:ActionType only: no domain type (arch:Element, am4:Requirement, ...) on an action." ;
+    ] ;
     sh:property [
         sh:path dcterms:identifier ;
         sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;

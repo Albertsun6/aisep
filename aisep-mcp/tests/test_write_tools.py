@@ -104,6 +104,7 @@ REFUSALS = [
     ("add_element-iri-exists", "IRI_EXISTS", "model_add_element", ("procurement", "am4:BusinessObject", "别的名字"), {"slug": "supplier"}),
     ("add_element-rejected", "WRITE_REJECTED", "model_add_element", ("procurement", "am4:BusinessObject", "发票"),
      {"slug": "invoice", "attributes": [{"predicate": UNDECLARED, "value": {"value": "x"}}]}),
+    ("add_element-action-type", "PROTECTED_RESOURCE", "model_add_element", ("procurement", "aisep:ActionType", "伪造的动作"), {"slug": "forgedAction"}),
     ("add_element-ref", "INVALID_ARGUMENT", "model_add_element", ("procurement", "am4:BusinessObject", "发票"), {"slug": "invoice", "ref": "HEAD"}),
     ("add_relationship-endpoint", "ELEMENT_NOT_FOUND", "model_add_relationship", ("am4:Assignment", "procurement:supplier", "procurement:nosuch"), {}),
     ("add_relationship-mixing", "WRITE_REJECTED", "model_add_relationship", ("am4:Assignment", "procurement:bpmnReview", "procurement:quoteApproval"), {}),

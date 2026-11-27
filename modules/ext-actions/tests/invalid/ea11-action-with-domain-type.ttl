@@ -1,0 +1,17 @@
+# expect: EA11:
+# Invalid: an action type that is also typed am4:Requirement (an action is never a domain element).
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix am4:     <https://meta.linked.archi/archimate4/onto#> .
+@prefix aisep:   <https://aisep.example/ont/aisep#> .
+@prefix ap:      <https://aisep.example/ont/ext-actions#> .
+@prefix :        <https://aisep.example/model/ext-actions-test/> .
+
+aisep:ActionTestBad a aisep:ActionType , am4:Requirement ;
+    dcterms:identifier "bad" ;
+    skos:prefLabel "坏动作"@zh ;
+    owl:versionInfo "1.0.0" .
