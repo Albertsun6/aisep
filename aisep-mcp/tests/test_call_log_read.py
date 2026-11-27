@@ -152,12 +152,17 @@ def test_malformed_and_unknown_version_lines_are_counted(repo):
         f.write(json.dumps({"v": True, "measured": {}}).encode() + b"\n")   # true is not 1
         f.write(json.dumps({"v": 1, "measured": "x"}).encode() + b"\n")    # v1 without a measured object
         f.write(b'{"v": 1, "measured": {"durationMs": NaN}}\n')            # not JSON (NaN)
+        f.write(b'{"v": 1, "measured": {"x": ' + b"[" * 100000 + b"]" * 100000 + b"}}\n")  # json.loads: RecursionError
+        f.write(b'{"v": 1, "measured": {"tool": "\\ud800"}}\n')            # lone surrogate: not encodable as UTF-8
     refused(cfg, 1)
     with open(log_path(repo), "ab") as f:
         f.write(b'{"v": 1, "measured": {"tool"')  # a line still being written: no newline yet, not read
-    p = ok(cfg)
+    r = read(cfg)
+    assert not r.is_error, r.content[0].text
+    r.model_dump_json()  # the whole page must still go out on the wire
+    p = r.structured_content
     assert ids(p["items"]) == ["urn:x:0", "urn:x:0"]
-    assert p["skipped"] == {"malformed": 3, "unknownVersion": 2}
+    assert p["skipped"] == {"malformed": 5, "unknownVersion": 2}
 
 
 def test_unhashable_tool_field_does_not_break_a_filtered_read(repo):

@@ -277,7 +277,8 @@ def model_call_log(cfg, limit=PAGE_DEFAULT, cursor=None, tools=None, outcome=Non
         for off, raw in _newest_first(f, end):
             try:
                 obj = json.loads(raw, parse_constant=_reject_constant)
-            except ValueError:
+                json.dumps(obj, ensure_ascii=False).encode("utf-8")  # lone surrogates cannot leave as UTF-8
+            except (ValueError, RecursionError):
                 obj = None
             v = obj.get("v") if isinstance(obj, dict) else None
             if not isinstance(obj, dict) or (type(v) is int and v == VERSION and not isinstance(obj.get("measured"), dict)):
