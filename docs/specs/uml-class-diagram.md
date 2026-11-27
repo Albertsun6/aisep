@@ -74,7 +74,7 @@ SVG 元素带 `data-kind`（`element` / `package` / `relationship` / `feature`�
 5. 归属不唯一（按 IRI 序取第一个）或包嵌套成环；
 6. 声明视图里一端不在图中的关系（`关系在视图中，但有一端不在图中，未画`）；
 7. Generalization、InterfaceRealization 两端是同一个类元（写明 UML 不允许的原因）；
-8. 特性的 `uml:lower` 不是非负整数，或 `uml:upper` 不是非负整数、`*`、负整数（如 `"many"`）：报 warning，这一行不画多重性。
+8. 特性的 `uml:lower` 不是非负整数，或 `uml:upper` 不是非负整数、`*`、负整数（如 `"many"`）：报 warning，这一行不画多重性；上界不是 `*` 且小于下界（未写的界按 1 计，如只写 `uml:lower 5`）时同样处理（UML 2.5.1 的 upper_ge_lower）。
 
 warning 文案一律中文。
 

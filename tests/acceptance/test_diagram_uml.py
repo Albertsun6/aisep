@@ -64,6 +64,13 @@ MULT = """
 :rel-s-p1 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p1 .
 :rel-s-p2 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p2 .
 :rel-s-p3 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p3 .
+:Supplier arch:hasPart :p4 , :p5 , :p6 .
+:p4 a uml:Property ; arch:inModel :model ; skos:prefLabel "传真"@zh ; uml:lower 3 ; uml:upper 1 .
+:p5 a uml:Property ; arch:inModel :model ; skos:prefLabel "邮箱"@zh ; uml:lower 5 .
+:p6 a uml:Property ; arch:inModel :model ; skos:prefLabel "网址"@zh ; uml:lower 2 ; uml:upper 2 .
+:rel-s-p4 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p4 .
+:rel-s-p5 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p5 .
+:rel-s-p6 a arch:HasPart ; arch:inModel :model ; arch:source :Supplier ; arch:target :p6 .
 """
 VIEW_UC = """
 :view-uc a arch:Diagram ; arch:inModel :model ; skos:prefLabel "用例图探针"@zh ;
@@ -306,10 +313,14 @@ def main():
         _, _, _, mfeats, mlog = diagram(os.path.join(tmp, "mult.svg"), "--uml", "ClassDiagram", "--model", "uml-test", mf)
         rowt = {i: t for i, _, t in mfeats.get("t:Supplier", [])}
         mws = [l for l in mlog.splitlines() if l.startswith("[Warning]")]
-        claim("uml:upper \"*\" shows [0..*]; upper \"many\" and lower -2 each give one warning and no multiplicity",
+        claim("uml:upper \"*\" shows [0..*]; [2..2] shows [2]; upper \"many\", lower -2, lower 3 > upper 1 and lower 5 > "
+              "the default upper 1 each give one warning and no multiplicity",
               rowt.get("t:p1") == "联系人 [0..*]" and rowt.get("t:p2") == "电话" and rowt.get("t:p3") == "地址"
-              and len(mws) == 2 and any(T + "p2" in w and "uml:upper 'many'" in w for w in mws)
-              and any(T + "p3" in w and "uml:lower '-2'" in w for w in mws), f"rows={rowt} warnings={mws}")
+              and rowt.get("t:p4") == "传真" and rowt.get("t:p5") == "邮箱" and rowt.get("t:p6") == "网址 [2]"
+              and len(mws) == 4 and any(T + "p2" in w and "uml:upper 'many'" in w for w in mws)
+              and any(T + "p3" in w and "uml:lower '-2'" in w for w in mws)
+              and any(T + "p4" in w and "[3..1]" in w and "上界小于下界" in w for w in mws)
+              and any(T + "p5" in w and "[5..1]" in w and "上界小于下界" in w for w in mws), f"rows={rowt} warnings={mws}")
 
         # escaping: hostile label text is drawn as text, never as markup
         evil = os.path.join(tmp, "evil.ttl")

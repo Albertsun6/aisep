@@ -136,6 +136,9 @@ def _mult(ctx, x, warnings):
     if bad:
         warnings.append(f"{x}: 多重性 {', '.join(bad)} 不是合法的界（下界为非负整数，上界为非负整数、* 或 -1），多重性未画")
         return ""
+    if up_t != "*" and int(up_t) < int(lo_t):  # UML 2.5.1 §7.8.8 upper_ge_lower, also when a bound is the default 1
+        warnings.append(f"{x}: 多重性 [{lo_t}..{up_t}] 的上界小于下界（UML 2.5.1 upper_ge_lower；未写的界按 1 计），多重性未画")
+        return ""
     return f"[{lo_t}]" if lo_t == up_t else f"[{lo_t}..{up_t}]"
 
 
