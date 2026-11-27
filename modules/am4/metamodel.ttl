@@ -9,7 +9,7 @@
 <https://aisep.example/module/am4> a arch:Metamodel ;
     skos:prefLabel "ArchiMate 4.0（枢纽）"@zh , "ArchiMate 4.0 (hub)"@en ;
     aisep:moduleKind aisep:Language ;
-    owl:versionInfo "0.2.0" ;
+    owl:versionInfo "0.3.0" ;
     aisep:loads "vendor/meta.linked.archi/ttl/core.ttl" ,
                 "vendor/meta.linked.archi/ttl/archimate4_onto.ttl" ,
                 "vendor/meta.linked.archi/ttl/archimate4_viewpoints.ttl" ,
