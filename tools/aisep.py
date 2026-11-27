@@ -19,6 +19,12 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
                                           arch:Diagram, every element of the model the am4 viewpoint includes, or a C4 view
                                           (C4NAME: SystemContext|ContainerDiagram --of <system>, ComponentDiagram --of
                                           <container>, C4Deployment --of <environment> [--model SLUG])
+  aisep.py diagram --process IRI [-o OUT.bpmn] [model files...]
+                                       -> one bpmn:Process as BPMN 2.0 XML with BPMNDI (default build/views/<model>/<process>.bpmn;
+                                          layout by elkjs as above; open it with a BPMN viewer such as bpmn-js); unsupported
+                                          parts (lanes, sub-processes, ...) are [Warning] lines, not drawn
+  aisep.py diagram --list-processes [model files...]
+                                       -> every bpmn:Process that --process can draw: IRI, model, label (tab-separated)
   aisep.py adm [<阶段> --model <slug> [--check FILE.rq]... [--deliverable] [--out FILE]]
                                        -> ADM 向导（docs/specs/adm-wizard.md）：按阶段列出模型里已有的元素和缺口，
                                           --deliverable 生成交付物 Markdown；默认打印，--out 只写这一个文件；有缺口也返回 0；
@@ -307,6 +313,8 @@ def cmd_test(no_pytest=False):
 def cmd_diagram(args):
     """ArchiMate 4 view -> SVG (aisep/diagram.py). Read-only; not part of gate."""
     from aisep import diagram, diagram_c4
+    if "--process" in args or "--list-processes" in args:
+        return _diagram_bpmn(args)
     opts = {}
     for k in ("--view", "--viewpoint", "--model", "--of", "-o"):
         if k in args:
@@ -331,10 +339,10 @@ def cmd_diagram(args):
             view = expand(ctx, opts["--view"])
         except AisepError as e:
             print(f"[Violation] diagram: --view {e.message}"); return 1
-        ms = ctx.rows(f"SELECT ?m WHERE {{ <{view}> arch:inModel ?m }}")
+        ms = sorted(m for (m,) in ctx.rows(f"SELECT ?m WHERE {{ <{view}> arch:inModel ?m }}"))  # several: the first
         if not ms:
             print(f"[Violation] {opts['--view']}: no arch:inModel, not a view of any model"); return 1
-        model, name = ms[0][0], diagram.local(view)
+        model, name = ms[0], diagram.local(view)
         vps = sorted(v for (v,) in ctx.rows(f"SELECT ?v WHERE {{ <{view}> arch:viewConformsToViewpoint ?v }}"))
         if vps and vps[0].startswith(diagram_c4.C4VP):
             try:
@@ -371,7 +379,7 @@ def cmd_diagram(args):
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     try:
         svg = diagram.render(title, sub, elements, rels)
-    except RuntimeError as e:
+    except (RuntimeError, diagram.TextNotXml) as e:  # no layout, or model text XML cannot carry
         print(f"[Violation] diagram: {e}"); return 1
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(svg)
@@ -380,8 +388,58 @@ def cmd_diagram(args):
     return 0
 
 
+def _diagram_bpmn(args):
+    """bpmn:Process -> BPMN 2.0 XML with BPMNDI (aisep/diagram_bpmn.py). Read-only; not part of gate."""
+    from aisep import diagram_bpmn
+    listing, opts = "--list-processes" in args, {}
+    args = [a for a in args if a != "--list-processes"]
+    for k in ("--process", "-o"):
+        if k in args:
+            i = args.index(k)
+            if i + 1 >= len(args):
+                print(__doc__); return 2
+            opts[k] = args[i + 1]; args = args[:i] + args[i + 2:]
+    if listing == ("--process" in opts) or (listing and "-o" in opts) or any(a.startswith("--") for a in args):
+        print(__doc__); return 2
+    files, read = model_files(args)
+    ctx = Ctx(discover(), files, read=read)
+    if report(ctx, ("L0",))[0]:
+        return 1
+    if listing:
+        found = diagram_bpmn.processes(ctx)
+        for p, label, model in found:
+            print(f"{p}\t{model}\t{label}")
+        print(f"SUMMARY diagram processes={len(found)}")
+        return 0
+    try:
+        process = expand(ctx, opts["--process"])
+    except AisepError as e:
+        print(f"[Violation] diagram: --process {e.message}"); return 1
+    try:
+        sel, warnings = diagram_bpmn.select(ctx, process)
+    except ValueError as e:
+        print(f"[Violation] diagram: {e}"); return 1
+    for w in warnings:
+        print(f"[Warning] diagram {w}")
+    if not sel["nodes"]:
+        print(f"[Violation] diagram: {process} has no flow node that can be drawn"); return 1
+    slug = sel["model"].rstrip("/").rsplit("/", 1)[-1]
+    name = diagram_bpmn.local(process)
+    out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".bpmn")
+    try:
+        xml = diagram_bpmn.render(sel)
+    except (RuntimeError, ValueError) as e:
+        print(f"[Violation] diagram: {e}"); return 1
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    with open(out, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(xml)
+    print(f"SUMMARY diagram model={slug} process={name} nodes={len(sel['nodes'])} flows={len(sel['flows'])} "
+          f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
+    return 0
+
+
 def _write_c4(sel, model, name, opts):
-    from aisep import diagram_c4
+    from aisep import diagram, diagram_c4
     title, sub, boxes, edges, warnings = sel[:5]
     for w in warnings:
         print(f"[Warning] diagram {w}")
@@ -393,7 +451,7 @@ def _write_c4(sel, model, name, opts):
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     try:
         svg = diagram_c4.render(title, sub, boxes, edges)
-    except RuntimeError as e:
+    except (RuntimeError, diagram.TextNotXml) as e:  # no layout, or model text XML cannot carry
         print(f"[Violation] diagram: {e}"); return 1
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(svg)

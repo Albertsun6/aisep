@@ -1,5 +1,5 @@
 """Server-side call log (ADR-031 layer A; docs/mcp-interface.md §3.6 调用日志) and its read-only reader
-model_call_log (§5.15, workbench profile only).
+model_call_log (§5.17, workbench profile only).
 
 One JSON line per audited call (the write tools, model_apply_action, governance_record_approval; success and refusal
 alike) appended to <git-common-dir>/aisep/calls.jsonl. The location comes from the start-up parameters only: the first
@@ -175,7 +175,7 @@ def append(cfg, rec):
         warn(f"写入 {d} 失败：{e!r}")
 
 
-# ---------------------------------------------------------------- reader: model_call_log (§5.15)
+# ---------------------------------------------------------------- reader: model_call_log (§5.17)
 
 def _bad(field, message, **details):
     return AisepError("INVALID_ARGUMENT", message, hint="从第一页重新读（不带 cursor）" if field == "cursor" else None,

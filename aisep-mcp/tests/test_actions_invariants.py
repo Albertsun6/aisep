@@ -51,7 +51,7 @@ _:invProbeStep a aisep:ActionStep ; dcterms:identifier "el" ; aisep:invokes aise
 @pytest.fixture(scope="module")
 def wtemplate(tmp_path_factory):
     t = tmp_path_factory.mktemp("invtemplate")
-    ign = shutil.ignore_patterns("__pycache__")
+    ign = shutil.ignore_patterns("__pycache__", "node_modules")
     for d in ("models", "modules", "vendor", "tools", "aisep"):
         shutil.copytree(os.path.join(ROOT, d), t / d, ignore=ign)
     shutil.copy2(os.path.join(ROOT, ".gitignore"), t / ".gitignore")

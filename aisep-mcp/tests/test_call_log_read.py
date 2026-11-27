@@ -1,4 +1,4 @@
-"""model_call_log: the read-only reader of the call log (docs/mcp-interface.md §5.15; ADR-031 as amended by Albert's
+"""model_call_log: the read-only reader of the call log (docs/mcp-interface.md §5.17; ADR-031 as amended by Albert's
 decision 14 of 2026-11-27). Exits 1.5/1–8 of the workbench read-only contract: the profile split, page order and
 fidelity to disk, cursors that survive appends and refuse a replaced or truncated file, bad lines counted not returned,
 the sentinel label absent from log and output, every filter (one by one and combined), restart-stable results."""

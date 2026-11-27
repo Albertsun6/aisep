@@ -55,7 +55,7 @@ def _executor_reads_the_served_worktree():
 def wtemplate(tmp_path_factory):
     """被测检出的 models/（全部模型）、modules/、vendor/、tools/、aisep/ 与 .gitignore 的副本。"""
     t = tmp_path_factory.mktemp("wtemplate")
-    ign = shutil.ignore_patterns("__pycache__")
+    ign = shutil.ignore_patterns("__pycache__", "node_modules")
     for d in ("models", "modules", "vendor", "tools", "aisep"):
         shutil.copytree(os.path.join(ROOT, d), t / d, ignore=ign)
     shutil.copy2(os.path.join(ROOT, ".gitignore"), t / ".gitignore")

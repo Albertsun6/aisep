@@ -61,7 +61,7 @@ def commit_all(path, msg="c"):
 @pytest.fixture(scope="session")
 def template(tmp_path_factory):
     t = tmp_path_factory.mktemp("template")
-    ign = shutil.ignore_patterns("__pycache__")
+    ign = shutil.ignore_patterns("__pycache__", "node_modules")  # tools/elk/node_modules (elkjs, CI installs it) stays out
     for d in ("modules", "vendor", "tools", "aisep"):
         shutil.copytree(os.path.join(ROOT, d), t / d, ignore=ign)
     shutil.copytree(os.path.join(ROOT, "models", "procurement"), t / "models" / "procurement", ignore=ign)
