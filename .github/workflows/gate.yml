@@ -26,6 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # 诊断：同一套用例在不同 runner 上快慢差 2 倍多，打印核数与 CPU 型号以便对照耗时
+      - run: nproc && lscpu | grep -E '^(Model name|CPU\(s\)|Thread|Core|Socket|L3)' || true
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -42,19 +44,21 @@ jobs:
       # tests/acceptance/test_diagram_bpmn.py 用 bpmn-moddle 读入校验 BPMN 输出（只用于测试），按 tools/bpmn-check/package-lock.json 安装
       - run: npm ci --prefix tools/bpmn-check --ignore-scripts --no-audit --no-fund
       - run: python tools/aisep.py test --no-pytest
-  # aisep-mcp/tests 分 3 片并行（负例除外，见下面的 negatives）。分片由 conftest.py 按用例 nodeid 的 crc32 取模，
-  # 新增测试自动归片；3 片的用例数之和等于不分片时的总数。
+  # aisep-mcp/tests 分 5 片并行（负例除外，见下面的 negatives）。分片由 conftest.py 按用例 nodeid 的 crc32 取模，
+  # 新增测试自动归片；5 片的用例数之和等于不分片时的总数。
   pytest-shard:
-    name: pytest-shard (${{ matrix.shard }}/3)
+    name: pytest-shard (${{ matrix.shard }}/5)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2]
+        shard: [0, 1, 2, 3, 4]
     env:
-      AISEP_SHARD: ${{ matrix.shard }}/3
+      AISEP_SHARD: ${{ matrix.shard }}/5
     steps:
+      # 诊断：同一套用例在不同 runner 上快慢差 2 倍多，打印核数与 CPU 型号以便对照耗时
+      - run: nproc && lscpu | grep -E '^(Model name|CPU\(s\)|Thread|Core|Socket|L3)' || true
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -86,10 +90,20 @@ jobs:
   # 合并检查负例（Albert 2026-11-21 定：进 CI，但不是必需检查）。涉及 mergecheck 的 PR 合并前核对 PR 头上本 job 的结论，
   # 合并后核对 push 到 main 的那次（ADR-022，AGENTS.md「分支与合并」）；PR 改了 .github/workflows/** 或 CI 不可用时才在本地跑。
   # PR 和 push 到 main 都跑、不加路径过滤，以后升为必需检查时每个 PR 都有它的结果。--durations 留实测耗时。
-  negatives:
+  # 负例按同一 AISEP_SHARD 机制分 3 片跑；分片 job 不能叫 negatives：AGENTS.md 按 check_name=negatives 取结论，要求恰好一条。
+  negatives-shard:
+    name: negatives-shard (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
+    env:
+      AISEP_SHARD: ${{ matrix.shard }}/3
     steps:
+      # 诊断：同一套用例在不同 runner 上快慢差 2 倍多，打印核数与 CPU 型号以便对照耗时
+      - run: nproc && lscpu | grep -E '^(Model name|CPU\(s\)|Thread|Core|Socket|L3)' || true
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -99,6 +113,18 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - run: python -m pytest -q -p no:cacheprovider --durations=30 aisep-mcp/tests/test_merge_check_negatives.py
+  # 检查名 negatives 由这个汇总 job 产生（每个 sha 恰好一条）。同 pytest：if: always() 并判 success，三片全过才 success。
+  negatives:
+    if: always()
+    needs: [negatives-shard]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          SHARDS: ${{ needs.negatives-shard.result }}
+        run: |
+          echo "negatives-shard=$SHARDS"
+          test "$SHARDS" = success
   # §5.9 合并时校验（切片 S6）。单独一个 job，与 gate、pytest 同为 main 的必需检查。
   # 口径：H = pull_request.head.sha（不用 GITHUB_SHA）；T = 刚 fetch 的远端主分支；M 在 T 上本地合并生成。
   mergecheck:

@@ -51,6 +51,7 @@ with open(pyrun.__file__, encoding="utf-8") as _f:
 ROOT = pyrun.ROOT
 
 import glob, re, subprocess, tempfile, time  # noqa: E402
+from concurrent.futures import ProcessPoolExecutor  # noqa: E402
 from xml.etree import ElementTree  # noqa: E402
 
 import pyoxigraph as ox  # noqa: E402
@@ -284,6 +285,7 @@ def cmd_test(no_pytest=False):
     results = []
     t0 = time.time()
     names = {m.name for m in mods}
+    rows, jobs = [], []  # rows: a finished result, or the index of the job whose result goes there (keeps the order)
     for m in mods:
         for kind in ("valid", "invalid"):
             for fx in sorted(glob.glob(os.path.join(m.dir, "tests", kind, "*.ttl"))):
@@ -292,11 +294,17 @@ def cmd_test(no_pytest=False):
                 # '# modules: a b' adds those modules (and their dependencies) to the fixture's environment
                 extra = [n for l in head if l.startswith("# modules:") for n in l.split(":", 1)[1].split()]
                 if set(extra) - names:
-                    results.append((m.name, os.path.basename(fx), kind, False, f"unknown module(s) {sorted(set(extra) - names)}"))
+                    rows.append((m.name, os.path.basename(fx), kind, False, f"unknown module(s) {sorted(set(extra) - names)}"))
                     continue
                 want = {d.name for n in [m.name] + extra for d in dependencies(mods, n)}
-                ok, detail = run_fixture(mods if uses_all else [d for d in mods if d.name in want], fx)
-                results.append((m.name, os.path.basename(fx), kind, ok, detail))
+                rows.append(len(jobs))
+                jobs.append((m.name, fx, kind, mods if uses_all else [d for d in mods if d.name in want]))
+    # Fixtures are independent (each builds its own Ctx; the caches are per process), so they run in a process pool;
+    # map() yields in submission order, so the report reads the same as a serial run.
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as pool:
+        done = list(pool.map(run_fixture, [j[3] for j in jobs], [j[1] for j in jobs]))
+    results += [r if isinstance(r, tuple) else (jobs[r][0], os.path.basename(jobs[r][1]), jobs[r][2], *done[r])
+                for r in rows]
     for py in sorted(glob.glob(os.path.join(ROOT, "tests", "acceptance", "*.py"))):
         p = subprocess.run([sys.executable, py], cwd=ROOT, capture_output=True, text=True, timeout=900)
         tail = (p.stdout + p.stderr).strip().splitlines()
