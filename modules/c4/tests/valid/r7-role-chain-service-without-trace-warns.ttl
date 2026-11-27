@@ -1,0 +1,29 @@
+# expect-warning: 应能追溯到 Capability 或 Requirement
+# expect-no-warning: 应至少 assignedTo
+# R7 (level 2): a service realized through a two-Role chain still falls in R7 scope and traces to nothing.
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
+@prefix c4:    <https://meta.linked.archi/c4/onto#> .
+@prefix : <https://aisep.example/model/t/> .
+
+:t a arch:Model ; skos:prefLabel "测试模型"@zh .
+
+# component -> Role -> Role -> Function (Role -> Role is a direct Assignment in the upstream am4 4.0 tables)
+:orderComp a am4:ApplicationComponent ; arch:inModel :t ; skos:prefLabel "订单管理"@zh .
+:orderRole a am4:Role ; arch:inModel :t ; skos:prefLabel "订单处理角色"@zh .
+:checkRole a am4:Role ; arch:inModel :t ; skos:prefLabel "订单校验角色"@zh .
+:orderFn a am4:Function ; arch:inModel :t ; skos:prefLabel "订单校验"@zh .
+:orderSvc a am4:Service ; arch:inModel :t ; skos:prefLabel "下单服务"@zh .
+:rel-orderComp-assigned-orderRole a am4:Assignment ; arch:inModel :t ; arch:source :orderComp ; arch:target :orderRole .
+:rel-orderRole-assigned-checkRole a am4:Assignment ; arch:inModel :t ; arch:source :orderRole ; arch:target :checkRole .
+:rel-checkRole-assigned-orderFn a am4:Assignment ; arch:inModel :t ; arch:source :checkRole ; arch:target :orderFn .
+:rel-orderFn-realizes-orderSvc a am4:Realization ; arch:inModel :t ; arch:source :orderFn ; arch:target :orderSvc .
+
+# C4 side: the system refines the am4 component
+:orderSys a c4:SoftwareSystem ; arch:inModel :t ; skos:prefLabel "订单管理系统"@zh .
+:orderApi a c4:Container ; arch:inModel :t ; skos:prefLabel "订单 API"@zh ; c4:technology "Spring Boot" .
+:rel-orderSys-has-orderApi a c4:ContainerContainment ; arch:inModel :t ; arch:source :orderSys ; arch:target :orderApi .
+:rel-orderSys-refines-orderComp a arch:Refines ; arch:inModel :t ; arch:source :orderSys ; arch:target :orderComp .

@@ -36,8 +36,8 @@
 | R3 每个 `c4:Database` 至少关联一个 `am4:DataObject` | 第一级 | `c4ash:DatabaseRefinesDataObjectShape`；“至多一个”由已有的 §7.2 主锚唯一规则保证（关口 A） | `r3-database-without-dataobject`、`r3-database-refines-two-dataobjects` | `dual-model-ok`（数据库 refines 聚合后的 DataObject） |
 | R4 每条关系同时有直接谓词和限定资源，且端点一致 | 第一级 | 不另写 shape，见 §4 偏离 2 | `r4-direct-uses-triple` | 所有 valid 样例 |
 | R5 跨容器的 `c4:Using` 必须有 `c4:technology` | 第一级 | `c4ash:CrossContainerUsingTechnologyShape`；组件按它所在的容器计 | `r5-cross-container-no-technology`、`r5-cross-container-component-no-technology` | `r5-same-container-no-technology-ok`、`dual-model-ok` |
-| R6 每个 `am4:ApplicationComponent` 至少执行一个 Function 或 Process | 第二级（Warning） | `c4ash:ComponentPerformsBehaviourShape`；可直接执行，也可经一个 Role 执行（§4 偏离 6）；范围见 §4 偏离 3 | `r6-component-without-behaviour-warns`（期望出现 Warning） | `dual-model-ok`（期望无 C4 Warning） |
-| R7 每个 `am4:Service` 至少被一个行为实现，并能追溯到 Capability 或 Requirement | 第二级 | `c4ash:ServiceTraceShape`，只检查追溯这一半（§4 偏离 4）；范围见 §4 偏离 3 | `r7-service-without-trace-warns` | `dual-model-ok` |
+| R6 每个 `am4:ApplicationComponent` 至少执行一个 Function 或 Process | 第二级（Warning） | `c4ash:ComponentPerformsBehaviourShape`；可直接执行，也可经一个或多个 Role 执行（§4 偏离 6）；范围见 §4 偏离 3 | `r6-component-without-behaviour-warns`（期望出现 Warning） | `dual-model-ok`、`r6-component-role-chain-ok`（期望无 C4 Warning） |
+| R7 每个 `am4:Service` 至少被一个行为实现，并能追溯到 Capability 或 Requirement | 第二级 | `c4ash:ServiceTraceShape`，只检查追溯这一半（§4 偏离 4）；范围见 §4 偏离 3 | `r7-service-without-trace-warns`、`r7-role-chain-service-without-trace-warns` | `dual-model-ok` |
 | R8 每个 `am4:DataObject` 至多一个权威来源（Assignment） | 第二级 | `c4ash:DataObjectOneSourceShape`，作用于全部数据对象 | `r8-dataobject-two-sources-warns` | `dual-model-ok` |
 
 另外三个样例：
@@ -66,13 +66,15 @@
 6. **规范 §5 与上游冲突，以上游为准**：
    - 规范 §5 写的是 `am4:ApplicationComponent am4:assignedTo am4:Function / am4:Process`。
    - 上游 `archimate4_relationship-tables` 中，组件只对 `am4:Role` 和 `am4:DataObject` 有 `permitsDirectAssignment`；组件 → Function/Process 只有 `permitsAssignment`，也就是只能派生，直接写会得到 L2 的 derived-only 告警。
-   - 因此 R6、R7 同时接受直接 Assignment 和经一个 Role 的 Assignment（`am4:assignedTo/am4:assignedTo?`）。正例 `dual-model-ok` 按上游写成“组件 → Role → Function”，并期望没有 derived-only 告警。
+   - 因此 R6、R7 同时接受直接 Assignment 和经 Role 链的 Assignment：组件 → Role（→ Role）* → 行为，链上第一个和最后一个中间节点必须是 `am4:Role`（上游表里 Role → Role 也是直接 Assignment）。正例 `dual-model-ok` 按上游写成“组件 → Role → Function”，`r6-component-role-chain-ok` 写成“组件 → Role → Role → Function”，都期望没有 derived-only 告警。（issue #121 之前只追一层 `am4:assignedTo/am4:assignedTo?`，也不检查中间节点类型。）
    - 这一条应补进核实报告 §8 的不一致表；规范原文未改。
 
 ## 4.1 已知局限（后续事项）
 
 - **组件归属没有检查**：组件不属于任何容器、或同时属于两个容器，都不报错；R5 对这类组件也会漏报。规范第 7 节没有要求这一条，上游同样不检查（核实报告 §5）。
 - **独立治理的数据库**：规范 §6 允许独立治理的容器 refines 一个 am4 组件。但数据库按 R3 必须 refines 一个 DataObject，而 §7.2 的主锚唯一规则又不允许它再 refines 第二个 am4 节点，所以数据库无法同时对应两边。这是关口 A 方案 (a) 带来的副作用。
+- **R6、R7 的 Role 链只检查首尾**：只要求链上第一个和最后一个中间节点是 Role；三个及以上 Role 的链中间那些 Role 不检查类型（SPARQL 属性路径不能逐个节点检查类型）。非 Role 的中间节点在上游关系表里多半不能直接 Assignment，会由 L2 报出。
+- **R5 只管容器之间的 Using**：容器 → 外部系统、人 → 系统、系统 → 系统等不涉及两个容器的 `c4:Using`，不要求 `c4:technology`。这与规范第 7 节 R5 原文一致；C4 惯例是这些连线也写上技术，是否升级为 Warning 待定（issue #121）。
 - ~~**impact 不沿 C4 关系遍历**~~：已由 `modules/c4/impact.ttl` 补上（方向见规范 §9）。
 
 ## 5. 新铸 IRI 清单（一经创建不改，请 Albert 过目）

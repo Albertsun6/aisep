@@ -1,4 +1,4 @@
-# expect-warning: 应至少 assignedTo（可经一个 Role）一个 Function 或 Process
+# expect-warning: 应至少 assignedTo（可经一个或多个 Role）一个 Function 或 Process
 # R6 (level 2): an am4 component a C4 container refines performs no behaviour; a Warning, not a Violation.
 @prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .

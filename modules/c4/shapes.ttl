@@ -111,26 +111,33 @@ c4ash:CrossContainerUsingTechnologyShape a sh:NodeShape ;
 # R6 (level 2): an am4 Application Component that a C4 element refines performs at least one Function or Process.
 # Upstream am4 4.0 relationship tables permit a component's direct Assignment only to a Role (or a Data Object);
 # component -> Function/Process is derivation-only. Upstream wins over spec §5 (step-4 notes §4), so the behaviour
-# may be assigned directly or through one Role: path am4:assignedTo/am4:assignedTo?
+# may be assigned directly or through a chain of Roles (Role -> Role assignment is direct in the upstream tables):
+# component -> Role (-> Role)* -> behaviour. The first and last hop must be a Role; Roles in between are not
+# type-checked (SPARQL paths cannot test each node; step-4 notes §4.1).
 c4ash:ComponentPerformsBehaviourShape a sh:NodeShape ;
     sh:severity sh:Warning ;
     sh:targetClass am4:ApplicationComponent ;
     sh:sparql [
         a sh:SPARQLConstraint ;
         sh:prefixes c4ash:prefixes ;
-        sh:message "C4：被 C4 元素 refines 的 am4:ApplicationComponent 应至少 assignedTo（可经一个 Role）一个 Function 或 Process，否则无法向业务追溯"@zh ;
+        sh:message "C4：被 C4 元素 refines 的 am4:ApplicationComponent 应至少 assignedTo（可经一个或多个 Role）一个 Function 或 Process，否则无法向业务追溯"@zh ;
         sh:select """
             SELECT $this WHERE {
                 ?x arch:refines $this . ?x rdf:type/rdfs:subClassOf* ?c4c .
                 FILTER (?c4c IN (c4:SoftwareSystem, c4:Container))
                 FILTER NOT EXISTS {
-                    $this am4:assignedTo/am4:assignedTo? ?b . ?b rdf:type/rdfs:subClassOf* ?bc .
+                    { $this am4:assignedTo ?b }
+                    UNION {
+                        $this am4:assignedTo ?r . ?r rdf:type/rdfs:subClassOf* am4:Role .
+                        ?r am4:assignedTo* ?rn . ?rn rdf:type/rdfs:subClassOf* am4:Role . ?rn am4:assignedTo ?b
+                    }
+                    ?b rdf:type/rdfs:subClassOf* ?bc .
                     FILTER (?bc IN (am4:Function, am4:Process))
                 }
             }""" ;
     ] .
 
-# R7 (level 2): a Service realized by such a component's behaviour (directly or through one Role, as R6) traces
+# R7 (level 2): a Service realized by such a component's behaviour (directly or through a Role chain, as R6) traces
 # to a Capability or Requirement (the service, or a behaviour realizing it, realizes one). The other half of spec
 # §7 R7 ("realized by at least one behaviour") cannot be scoped to C4-described systems: a service nothing realizes
 # has no path to a C4 element. It is recorded as not implemented (step-4 notes §4).
@@ -145,7 +152,12 @@ c4ash:ServiceTraceShape a sh:NodeShape ;
             SELECT $this WHERE {
                 ?x arch:refines ?comp . ?x rdf:type/rdfs:subClassOf* ?c4c .
                 FILTER (?c4c IN (c4:SoftwareSystem, c4:Container))
-                ?comp am4:assignedTo/am4:assignedTo? ?b . ?b am4:realizes $this .
+                { ?comp am4:assignedTo ?b }
+                UNION {
+                    ?comp am4:assignedTo ?r . ?r rdf:type/rdfs:subClassOf* am4:Role .
+                    ?r am4:assignedTo* ?rn . ?rn rdf:type/rdfs:subClassOf* am4:Role . ?rn am4:assignedTo ?b
+                }
+                ?b am4:realizes $this .
                 FILTER NOT EXISTS {
                     { $this am4:realizes ?goal } UNION { ?b2 am4:realizes $this . ?b2 am4:realizes ?goal }
                     ?goal rdf:type/rdfs:subClassOf* ?gc .
