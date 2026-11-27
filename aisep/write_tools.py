@@ -211,6 +211,22 @@ def _lit(v, lang):
 
 # ---------------------------------------------------------------- §5.2
 
+# Predicates no attribute argument may write, with the one reason both model_add_element (`attributes`) and
+# model_set_attributes (`set`/`unset`) give (issue #164). The server writes the type and model; endpoints belong to
+# model_add_relationship; view membership belongs to view tools, which are not in this version (§1).
+_NEW_REL = "关系端点只由 model_add_relationship 写入，建成后不能改（改端点 = 删掉旧关系、新建一个）"
+RESERVED = {RDF_TYPE: "类型只由 model_add_element 的 type 参数给出，建成后不能改（改类型不在本版）",
+            IN_MODEL: "所属模型由写工具按 model 参数写入，不能另写或改", SOURCE: _NEW_REL, TARGET: _NEW_REL,
+            core.ARCH + "inView": "视图成员关系归视图，视图写工具不在本版"}
+_USE_LABELS = "名称、英文名、定义请用 model_set_labels"
+NOT_SETTABLE = {**RESERVED, PREF: _USE_LABELS, ALT: _USE_LABELS, DEF: _USE_LABELS}  # add_element takes labels (SEC-7)
+
+
+def _refuse(table, p, field):
+    if p in table:
+        raise _bad(field, f"{field} 不能含 {core.short(p)}：{table[p]}")
+
+
 def add_element_build(model, type, prefLabel, altLabel=None, slug=None, definition=None, attributes=None, file=None):
     """The plan function of model_add_element (argument checks here, the rest in build(ws, ctx)); aisep.actions
     composes it with other plan functions inside one writer.transaction."""
@@ -261,10 +277,7 @@ def add_element_build(model, type, prefLabel, altLabel=None, slug=None, definiti
                 if "rejectedFields" in e.details:
                     raise
                 raise _bad("attributes", f"attributes 里有不合法的 IRI 或前缀名：{e.message}") from None
-            if p.value == RDF_TYPE:  # one element, one type (hard rule 3); the type is the `type` argument
-                raise _bad("attributes", "attributes 不能写 rdf:type，类型只由 type 参数给出")
-            if p.value == core.ARCH + "inView":  # as in model_set_attributes (NOT_SETTABLE): view tools are not in this version
-                raise _bad("attributes", "attributes 不能写 arch:inView：视图成员关系归视图，视图写工具不在本版")
+            _refuse(RESERVED, p.value, "attributes")  # same stand as model_set_attributes (issue #164)
             if p.value in LABEL_LIMITS and isinstance(o, ox.Literal):  # same rules as the named arguments (SEC-7)
                 _check_text("attributes", o.value, LABEL_LIMITS[p.value], allow_newline=p.value == DEF)
             triples.append(ox.Triple(s, p, o))
@@ -541,11 +554,6 @@ def model_remove(cfg, iri, cascade=False, dryRun=False, planDigest=None, repo=No
 
 # ---------------------------------------------------------------- §5.12
 
-_USE_LABELS = "名称、英文名、定义请用 model_set_labels"
-_NEW_REL = "关系端点不能改（改端点 = 删掉旧关系、新建一个）"
-NOT_SETTABLE = {RDF_TYPE: "类型不能改（改类型不在本版）", IN_MODEL: "所属模型不能改", SOURCE: _NEW_REL, TARGET: _NEW_REL,
-                PREF: _USE_LABELS, ALT: _USE_LABELS, DEF: _USE_LABELS,
-                core.ARCH + "inView": "视图成员关系不能改（视图写工具不在本版）"}
 XSD_STRING = core.NS["xsd"] + "string"
 
 
@@ -571,8 +579,7 @@ def _settable(ctx, name, field):
         if "rejectedFields" in e.details:
             raise
         raise _bad(field, f"{field} 里有不合法的 IRI 或前缀名：{e.message}") from None
-    if p in NOT_SETTABLE:
-        raise _bad(field, f"{field} 不能含 {core.short(p)}：{NOT_SETTABLE[p]}")
+    _refuse(NOT_SETTABLE, p, field)
     return p
 
 
