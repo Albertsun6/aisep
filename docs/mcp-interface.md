@@ -164,15 +164,15 @@
 - **字段**：每行 `{"v": 1, "measured": {…}, "declared": {…}}`。行格式是对外契约（`model_call_log` 原样返回日志行）：改格式就升 `v`，读工具同时认新旧版本。
   - `measured`（服务端测得或收到）：
     - `time`（UTC，RFC 3339，毫秒，带 `Z`）、`durationMs`、`server`（`pid`、`profile`、`transport`、`allowRoots`、`repo`，即启动参数）、`tool`、`outcome`（`ok`、§7.2 的错误码或 `UNKNOWN_TOOL`）。
-    - `request`：服务端**收到**的结构性参数（Albert 2026-11-27 第 14 条：结构性参数放这里，不算调用方声明）。`argsSha256`（参数按键排序的紧凑 UTF-8 JSON 的 sha256，`sha256:` 前缀）；`model`（参数 `model`：slug 或 IRI，没有为 `null`）；`iris`（参数 `iri`、`source`、`target`、`approvedBy`、`approves` 的值，`model_apply_action` 再加动作 `iriParams` 列出的参数值，新增元素、关系成功时再加生成的 IRI）；`actionId`、`actionVersion`、`definitionDigest`（该动作的 `owl:versionInfo` 与单个动作的 `definitionDigest`，§5.13；找到定义后才有，不记整份 `catalog.ttl` 的哈希）；`dryRun`、`planDigestGiven`（只记有没有带 `planDigest`）——工具没有这个参数时为 `null`；`repoArg`（调用方传的 `repo`，供排查 `PATH_OUTSIDE_ROOT`）。这些都是调用方给的值，被拒的调用也照记，所以**只有通过形状校验且不超长的才记原值**，否则只记 `{"sha256": "sha256:<该字符串 UTF-8 的哈希>"}`（拍板第 14 条「只返回哈希与标识符」）：IRI（含 `iris` 每一项、`model` 的 IRI 形式）须是不含空白的 ASCII IRI 或 CURIE（`scheme:` 开头），不超过 512 字符；`model` 的 slug 形式按模型 slug 规则；`actionId` 按动作 id 规则（`[a-z][a-z0-9-]{0,63}`）；`repoArg` 须是只含 `A–Z a–z 0–9 . _ ~ @ + / -` 的绝对路径，不超过 1024 字符。值不是字符串时记 `null`。`slug` 参数不记。标签、定义、gherkin 这类正文一律不记。**注意**：`model_add_element` 不给 `slug` 时，服务端用 `altLabel` 的 camelCase 生成 IRI（§5.2），这个 IRI 通过 IRI 校验、会作为生成的 IRI 原样进 `iris`，于是英文名的字母数字部分会以 camelCase 形式出现在日志里；不希望如此时显式给 `slug`。结果为 `UNKNOWN_TOOL` 的行不解读参数：只有 `argsSha256`，其余为 `null`，`iris` 为 `[]`。
+    - `request`：服务端**收到**的结构性参数（Albert 2026-11-27 第 14 条：结构性参数放这里，不算调用方声明）。`argsSha256`（参数按键排序的紧凑 UTF-8 JSON 的 sha256，`sha256:` 前缀）；`model`（参数 `model`：slug 或 IRI，没有为 `null`）；`iris`（参数 `iri`、`source`、`target`、`approvedBy`、`approves` 的值，`model_apply_action` 再加动作 `iriParams` 列出的参数值，新增元素、关系成功时再加生成的 IRI；**只记前 50 项**，另有 `irisCount`（总项数）与 `irisSha256`（整个列表按键排序的紧凑 UTF-8 JSON 的 sha256，同 `argsSha256` 的算法），所以 `approves` 等列表再长，一行的长度也有上限）；`actionId`、`actionVersion`、`definitionDigest`（该动作的 `owl:versionInfo` 与单个动作的 `definitionDigest`，§5.13；找到定义后才有，不记整份 `catalog.ttl` 的哈希）；`dryRun`、`planDigestGiven`（只记有没有带 `planDigest`）——工具没有这个参数时为 `null`；`repoArg`（调用方传的 `repo`，供排查 `PATH_OUTSIDE_ROOT`）。这些都是调用方给的值，被拒的调用也照记，所以**只有通过形状校验且不超长的才记原值**，否则只记 `{"sha256": "sha256:<该字符串 UTF-8 的哈希>"}`（拍板第 14 条「只返回哈希与标识符」）：IRI（含 `iris` 每一项、`model` 的 IRI 形式）须是不含空白的 ASCII IRI 或 CURIE（`scheme:` 开头），不超过 512 字符；`model` 的 slug 形式按模型 slug 规则；`actionId` 按动作 id 规则（`[a-z][a-z0-9-]{0,63}`）；`repoArg` 须是只含 `A–Z a–z 0–9 . _ ~ @ + / -` 的绝对路径，不超过 1024 字符。值不是字符串时记 `null`。各字符串在算哈希前按 UTF-8 编码，孤立代理项按 `surrogatepass` 原样编码（`argsSha256`、`irisSha256` 与 `{"sha256": …}` 同一口径）。`slug` 参数不记。标签、定义、gherkin 这类正文一律不记。**注意**：`model_add_element` 不给 `slug` 时，服务端用 `altLabel` 的 camelCase 生成 IRI（§5.2），这个 IRI 通过 IRI 校验、会作为生成的 IRI 原样进 `iris`，于是英文名的字母数字部分会以 camelCase 形式出现在日志里；不希望如此时显式给 `slug`。结果为 `UNKNOWN_TOOL` 的行不解读参数：只有 `argsSha256`，其余为 `null`（含 `irisCount`、`irisSha256`），`iris` 为 `[]`。
     - `outcome` 只记错误码，不记错误的 `message`、`details`、`hint`（拒绝原因写在 `details` 里，可能带调用方原值）。
-    - `target`：目标工作区 `{worktree, branch, head}`，还没定位到工作区就被拒时为 `null`。
-    - `files`：每个被写文件 `{path, before, after}`（相对工作区的路径，改前、改后的 `sha256:` 哈希；新建文件的 `before` 为 `null`），列出本次调用写下、调用结束时仍留在磁盘上的文件：成功时是全部写入；`governance_record_approval` 回滚时，记录文件被删掉（或已被别人删掉）就不列，因别人改过而保留在磁盘上（`details.fileKept`）或被别的提交带走时照列，`after` 是本次写下的内容的哈希。没写文件时为空。
+    - `target`：目标工作区 `{worktree, branch, head}`，还没定位到工作区就被拒时为 `null`。`worktree` 按 `repoArg` 的规则校验，不合规只记 `{"sha256": …}`。
+    - `files`：每个被写文件 `{path, before, after}`（相对工作区的路径，改前、改后的 `sha256:` 哈希；新建文件的 `before` 为 `null`）。`path` 可能来自调用方的 `file` 参数，所以按 `repoArg` 的字符规则校验（相对路径，只含 `A–Z a–z 0–9 . _ ~ @ + / -`，不超过 1024 字符），不合规（如中文文件名）只记 `{"sha256": …}`。**统一口径**：列出本次调用写下、调用结束时仍留在磁盘上的文件，`after` 一律是本次写下的内容的哈希（不是调用结束时的现状）。成功时是全部写入；回滚时，已恢复或删掉（或已被别人删掉）的不列，因别人改过而保留在磁盘上的照列——写工具是 `details.keptFiles` 里的文件，`governance_record_approval` 是 `details.fileKept` 的记录文件，或被别的提交带走的记录文件。没写文件时为空。
     - `approval`：`{commit, activity}`，只出现在成功的 `governance_record_approval` 行里，只用来关联。
   - `declared`（调用方声明）：`clientInfo`（stdio 取 `initialize` 的；HTTP 取每次请求 `params._meta` 的，§3.2），只保留字符串字段 `name`、`version`、`title`，各截到 128 字符，其余字段与非字符串值丢弃；`governance_record_approval` 行另有 `activity`（`{agent, sessionRef}`；`UNKNOWN_TOOL` 行不记）。`activity` 是调用方给的值，被拒的调用也照记，所以与 `request` 同样**只有通过形状校验的才记原值**，否则只记 `{"sha256": …}`：`agent` 按上面的 IRI 规则（不超过 512 字符），`sessionRef` 按 `governance_record_approval` 自己的规则（可见 ASCII 字符，不含空白，1–200 字符）；值不是字符串时记 `null`。声明字段只用来关联，任何判定都不能用；`declared` 组的字段不出现在 `measured` 下。
 - **读取**：`workbench` 画像经只读工具 `model_call_log` 读（§5.17）；`agent` 画像不列出它。
 - **失败策略**：fail-open。日志写不进去（目录只读、磁盘满等）时工具结果逐字节不变，只在 stderr 警告。
-- **威胁模型**：只保证服务进程按仓库里经过评审的代码诚实运行时，它经手的每次被审计调用都留一行。**不防代理篡改**：同一 macOS 用户下的代理能改服务端代码、换解释器、直接删改日志或绕过 MCP 改文件；不做哈希链（没有外部锚点挡不住重算）。日志不证明调用方身份，不代替 AgentActivity、`AISEP-Session` trailer 或批准记录。服务端写完文件、还没写日志时进程崩溃，这一行会丢。防篡改的 B 层及其触发条件见 ADR-031 决策第 7 款。
+- **威胁模型**：只保证服务进程按仓库里经过评审的代码诚实运行时，它经手的每次被审计调用都留一行。**不防代理篡改**：同一 macOS 用户下的代理能改服务端代码、换解释器、直接删改日志或绕过 MCP 改文件；不做哈希链（没有外部锚点挡不住重算）。日志不证明调用方身份，不代替 AgentActivity、`AISEP-Session` trailer 或批准记录。服务端写完文件、还没写日志时进程崩溃，这一行会丢。`argsSha256`、`irisSha256` 与 `{"sha256": …}` **不加盐，不是保密手段**：它们只让行里不出现原文，能读日志的人对候选值（短标签、常见文件名、猜得到的 IRI）逐个算哈希就能确认原值。通过形状校验原样记下的 IRI 可以含百分号编码（`%E4%B8%AD` 等），解码后可还原中文等内容，所以「只记标识符」不等于「不含可读内容」；不希望进日志的内容不要放进 IRI。防篡改的 B 层及其触发条件见 ADR-031 决策第 7 款。
 
 ---
 
@@ -1008,7 +1008,7 @@ C4 范围：每个内部软件系统（`c4:SoftwareSystem`，不含外部系统�
 | `model` | 字符串 | 按 `measured.request.model` 精确匹配 |
 | `actionId` | 字符串 | 按 `measured.request.actionId` 精确匹配 |
 | `branch` | 字符串 | 按 `measured.target.branch` 精确匹配 |
-| `since` / `until` | 带时区的 RFC 3339 时间 | 按 `measured.time` 过滤，左闭右开 |
+| `since` / `until` | 带时区的 RFC 3339 时间（`2026-11-27T08:00:00Z`、`…+08:00`；不接受 `20261127T080000Z` 这类 ISO 8601 基本格式，也不接受不带时区的） | 按 `measured.time` 过滤，左闭右开 |
 
 多个过滤条件同时给出时取交集。
 
@@ -1019,7 +1019,7 @@ C4 范围：每个内部软件系统（`c4:SoftwareSystem`，不含外部系统�
 - `skipped`：`{malformed, unknownVersion}`，本次扫描跳过的行数。`malformed`：不是 JSON 对象（含 `NaN` 这类非标准 JSON，以及 `1e999` 这类超出有限浮点范围的数），或 `v` 为 1 但 `measured` 不是对象；`unknownVersion`：其余 `v` 不是整数 1 的行（含没有 `v` 的行）。日志不防篡改，坏行只计数，不让整页报错，所以不会出现 `PARSE_FAILED`。文件末尾没有换行的半行可能正在写入，既不返回也不计数。
 - `nextCursor`：这一页满了 `limit` 条、且它最旧的一条之前还有内容时，给一个不透明字符串，否则 `null`。令牌里编的是文件的 inode、文件首行（含换行）的 sha256 与这一页最旧一行的偏移；续页只读这个偏移之前的行。日志只在文件尾追加，所以续页不会因为新写入而错位。服务端不保存任何游标（§3.5）。
 
-**错误**：`INVALID_ARGUMENT`：参数不合规（`details.rejectedFields`）；或游标无效，此时 `rejectedFields: ["cursor"]`，提示「从第一页重新读」。游标对应的文件已被换掉（inode 变了、首行哈希变了（删掉重建后复用了 inode）或文件不存在）时 `details.reason: "log-replaced"`，被截短到游标偏移之前时为 `"log-truncated"`。不新增错误码。
+**错误**：`INVALID_ARGUMENT`：参数不合规（`details.rejectedFields`）；或游标无效，此时 `rejectedFields: ["cursor"]`，提示「从第一页重新读」。游标对应的文件已被换掉（inode 变了、首行哈希变了（删掉重建后复用了 inode；新文件只有半行时也算）或文件不存在）时 `details.reason: "log-replaced"`，被截短到游标偏移之前时为 `"log-truncated"`。不新增错误码。
 
 **幂等**：调用本身不改任何东西；结果随日志文件增长而变化，不随 Git 内容变化。两次调用之间重启服务器、中间没有被审计调用，结果相同（T4）。
 
@@ -1264,9 +1264,12 @@ export interface ApprovalResult {
 /** model_call_log 结果（§5.17）。items 是日志行（§3.6）原样解析出的对象外加 offset，只含 v 为 1 的行。 */
 export type AuditedTool = "model_add_element" | "model_add_relationship" | "model_set_labels" | "model_set_attributes"
 	| "model_remove" | "model_apply_action" | "governance_record_approval";
-export type Hashed = { sha256: string }; // 调用方的值没通过形状校验（或超长）时只记它的哈希
+export type Hashed = { sha256: string }; // 调用方的值没通过形状校验（或超长）时只记它的哈希（不加盐，§3.6）
 export interface CallLogRequest {
-	argsSha256: string; model: string | Hashed | null; iris: (Iri | Hashed)[]; actionId: string | Hashed | null; actionVersion: string | null;
+	argsSha256: string; model: string | Hashed | null;
+	iris: (string | Hashed)[]; // 最多 50 项（前 50 项）；全部项数与整个列表的哈希见下两项
+	irisCount: number | null; irisSha256: string | null; // UNKNOWN_TOOL 行为 null
+	actionId: string | Hashed | null; actionVersion: string | null;
 	definitionDigest: string | null; dryRun: boolean | null; planDigestGiven: boolean | null; repoArg: string | Hashed | null;
 }
 export interface CallLogLine {
@@ -1276,11 +1279,11 @@ export interface CallLogLine {
 		time: string; durationMs: number; tool: string; outcome: string; // outcome：ok、§7.2 错误码或 UNKNOWN_TOOL
 		server: { pid: number; profile: string; transport: string; allowRoots: string[]; repo: string | null };
 		request: CallLogRequest;
-		target: { worktree: string; branch: string | null; head: Sha | null } | null;
-		files: { path: string; before: string | null; after: string }[];
+		target: { worktree: string | Hashed; branch: string | null; head: Sha | null } | null;
+		files: { path: string | Hashed; before: string | null; after: string }[]; // 本次写下、仍在磁盘上的文件；after 是写下的内容的哈希
 		approval?: { commit: Sha; activity: Iri | null };
 	};
-	declared: { clientInfo: Record<string, unknown> | null; activity?: { agent: Iri | Hashed | null; sessionRef: string | Hashed | null } }; // 调用方自报，只用来关联
+	declared: { clientInfo: Record<string, unknown> | null; activity?: { agent: string | Hashed | null; sessionRef: string | Hashed | null } }; // 调用方自报，只用来关联
 }
 export interface CallLogResult {
 	log: { path: string | null; present: boolean; sizeBytes: number | null; resolvedFrom: "allow-root" | "repo" | null };

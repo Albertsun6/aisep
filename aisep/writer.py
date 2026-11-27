@@ -404,7 +404,9 @@ def write_files(root, edits, before):
                         fh.flush()
                         os.fsync(fh.fileno())
                     os.rename(f".{name}.aisep-restore", name, src_dir_fd=dfd, dst_dir_fd=dfd)
-            if kept:
+            if kept:  # ADR-031: what this call wrote and left on disk, as approval's "kept" exits do
+                calllog.note(files=[{"path": f, "sha256Before": sha(before.get(f)), "sha256After": sha(data)}
+                                    for f, _, _, data in done if f in kept])
                 raise AisepError("CONFLICT", f"回滚时发现 {', '.join(kept)} 又被改动，保留现场（其余文件已回滚）",
                                  details={"file": kept[0], "kept": True, "keptFiles": kept}, retryable=False)
             raise

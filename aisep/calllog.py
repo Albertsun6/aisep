@@ -26,10 +26,13 @@ LOG, LOCK = "calls.jsonl", "calls.lock"
 PAGE_MAX, PAGE_DEFAULT = 200, 50
 CURSOR_PREFIX = "cl1."
 IRI_MAX, PATH_MAX, TEXT_MAX, SESSION_REF_MAX = 512, 1024, 128, 200
+IRIS_MAX = 50  # measured.request.iris keeps the first IRIS_MAX items; irisCount and irisSha256 cover the whole list
 # Shape rules for the caller's structural values kept verbatim in measured.request (decision 14: identifiers and
 # hashes only). A value outside its rule, or longer than its limit, is kept as {"sha256": "sha256:<hex>"} only.
 _IRI = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*:[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%-]+")  # ASCII IRI or CURIE, no spaces
 _PATH = re.compile(r"/[A-Za-z0-9._~@+/-]*")                                          # absolute, plain characters
+_REL = re.compile(r"[A-Za-z0-9._~@+-][A-Za-z0-9._~@+/-]*")                           # relative, the same characters
+_RFC3339 = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt][0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?([Zz]|[+-][0-9]{2}:[0-9]{2})")
 
 _local = threading.local()  # the notes of the call running on this thread (tools run one per worker thread)
 
@@ -69,13 +72,15 @@ def _sha(h):
 
 
 def _sha_json(v):
-    return _sha(hashlib.sha256(json.dumps(v, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest())
+    text = json.dumps(v, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return _sha(hashlib.sha256(text.encode("utf-8", "surrogatepass")).hexdigest())  # lone surrogates as in _shaped
 
 
 def _target(path):
     rc, branch, _ = gitio.git(path, "symbolic-ref", "-q", "--short", "HEAD")
     rc2, head, _ = gitio.git(path, "rev-parse", "--verify", "-q", "HEAD")
-    return {"worktree": path, "branch": branch.strip() if rc == 0 else None, "head": head.strip() if rc2 == 0 else None}
+    return {"worktree": _shaped(path, _PATH.fullmatch, PATH_MAX), "branch": branch.strip() if rc == 0 else None,
+            "head": head.strip() if rc2 == 0 else None}
 
 
 def _shaped(v, ok, limit):
@@ -109,7 +114,8 @@ def _request(name, args, notes, result, known):
     only; labels, definitions, gherkin and other free text are never copied). A name outside the profile is not
     interpreted: only its hash is kept."""
     if not known:
-        return {"argsSha256": _sha_json(args), "model": None, "iris": [], "actionId": None, "actionVersion": None,
+        return {"argsSha256": _sha_json(args), "model": None, "iris": [], "irisCount": None, "irisSha256": None,
+                "actionId": None, "actionVersion": None,
                 "definitionDigest": None, "dryRun": None, "planDigestGiven": None, "repoArg": None}
     from aisep import actions, core  # late: aisep.actions imports this module
     iris = [args[k] for k in IRI_ARGS if isinstance(args.get(k), str)]
@@ -119,7 +125,8 @@ def _request(name, args, notes, result, known):
     if made and made not in iris:                                   # the IRI an add tool minted
         iris.append(made)
     act = notes.get("action") or {}
-    return {"argsSha256": _sha_json(args), "iris": [_iri(x) for x in iris],
+    return {"argsSha256": _sha_json(args), "iris": [_iri(x) for x in iris[:IRIS_MAX]], "irisCount": len(iris),
+            "irisSha256": _sha_json(iris),
             "model": _shaped(args.get("model"), lambda v: core.MODEL_SLUG_RE.fullmatch(v) or _IRI.fullmatch(v), IRI_MAX),
             "actionId": _shaped(args.get("action"), actions.ID_RE.match, IRI_MAX) if name == "model_apply_action" else None,
             "actionVersion": act.get("version"), "definitionDigest": act.get("definitionDigest"),
@@ -138,8 +145,8 @@ def record(run, name, args, t0, outcome, result=None, client_info=None):
          "durationMs": round((time.monotonic() - t0) * 1000), "server": run, "tool": name,
          "request": _request(name, args, notes, result if ok else None, known), "outcome": outcome,
          "target": _target(notes["worktree"]) if notes.get("worktree") else None,
-         "files": [{"path": f["path"], "before": _sha(f["sha256Before"]), "after": _sha(f["sha256After"])}
-                   for f in notes.get("files", [])]}
+         "files": [{"path": _shaped(f["path"], _REL.fullmatch, PATH_MAX), "before": _sha(f["sha256Before"]),
+                    "after": _sha(f["sha256After"])} for f in notes.get("files", [])]}
     d = {"clientInfo": _client(client_info)}
     if name == "governance_record_approval":
         if ok:
@@ -201,7 +208,7 @@ def _cursor_decode(c):
 
 def _time(s, field):
     try:
-        t = datetime.fromisoformat(s)
+        t = datetime.fromisoformat(s.upper()) if _RFC3339.fullmatch(s) else None  # alone it takes ISO basic forms
     except (TypeError, ValueError):
         t = None
     if t is None or t.tzinfo is None:
@@ -322,7 +329,7 @@ def model_call_log(cfg, limit=PAGE_DEFAULT, cursor=None, tools=None, outcome=Non
         log.update(present=True, sizeBytes=st.st_size)
         end = _complete_end(f, st.st_size)
         if want is not None:
-            if want[0] != st.st_ino or (end > 0 and _first_line_sha(f) != want[2]):
+            if want[0] != st.st_ino or _first_line_sha(f) != want[2]:  # a half first line differs too
                 raise _bad("cursor", "调用日志文件已被替换，续页令牌失效", reason="log-replaced")
             if want[1] > end or (want[1] > 0 and _byte_at(f, want[1] - 1) != b"\n"):
                 raise _bad("cursor", "调用日志文件已被截短，续页令牌失效", reason="log-truncated")
