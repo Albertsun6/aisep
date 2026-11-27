@@ -8,7 +8,7 @@
 @prefix ap:      <https://aisep.example/ont/ext-actions#> .
 
 # The action catalogue read by aisep/actions.py (model_list_actions / model_apply_action, docs/mcp-interface.md
-# §5.13, §5.14). Checked by shapes.ttl at L3 (EA1-EA10) and, on every call, by the executor (X1-X10).
+# §5.13, §5.14). Checked by shapes.ttl at L3 (EA1-EA11) and, on every call, by the executor (X1-X10).
 # A blank node belongs to the description of exactly one action (X10): definitionDigest covers it.
 # Guards: ASK true = pass; a parameter appears as $name and is pre-bound, never spliced into the query text.
 

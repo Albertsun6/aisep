@@ -18,7 +18,7 @@ import pytest
 from mcp import Client, StdioServerParameters
 
 from conftest import ROOT, commit_all, git, init_repo
-from aisep import actions, server, tools
+from aisep import actions, core, server, tools
 
 PY = sys.executable
 WB = "https://aisep.example/model/workbench/"
@@ -326,6 +326,74 @@ def test_repository_catalogue_every_definition_is_valid(mk):
     assert res["catalogVersion"] == next(x.object.value for x in mf if x.predicate.value == "http://www.w3.org/2002/07/owl#versionInfo")
 
 
+def catalogue_reference_problems(root):
+    """G4：目录里每个 aisep:constant、aisep:attributePredicate 引用的 IRI 都要在当前元模型（全部模块清单 aisep:loads
+    的文件，含 vendor，不含 catalog.ttl 自己）里有 rdf:type 声明，且没有 owl:deprecated true。返回 [(IRI, 原因)]。"""
+    mods = core.discover(str(root))
+    cat = os.path.realpath(os.path.join(str(root), CAT))
+    meta = []
+    for f in core.onto_files(mods, "all"):
+        if os.path.realpath(f) != cat:
+            meta += _rdf(f)
+    rdf_type, dep = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://www.w3.org/2002/07/owl#deprecated"
+    declared = {q.subject.value for q in meta if q.predicate.value == rdf_type and isinstance(q.subject, ox.NamedNode)}
+    deprecated = {q.subject.value for q in meta if q.predicate.value == dep and q.object.value == "true"}
+    refs = sorted({q.object.value for q in _rdf(os.path.join(str(root), CAT))
+                   if q.predicate.value in (AISEP + "constant", AISEP + "attributePredicate")
+                   and isinstance(q.object, ox.NamedNode)})
+    out = [(i, "undeclared") for i in refs if i not in declared]
+    return out + [(i, "deprecated") for i in refs if i in deprecated]
+
+
+def test_catalogue_references_are_declared_and_not_deprecated(mk):
+    """元模型改名、删除、弃用了目录引用的类或属性时，这条 pytest 变红（gate 与执行器都不查这一点）。"""
+    r = mk()
+    refs = {q.object.value for q in _rdf(os.path.join(str(r), CAT))
+            if q.predicate.value in (AISEP + "constant", AISEP + "attributePredicate")}
+    assert {AISEP + "AcceptanceCriterion", AISEP + "gherkin", "https://meta.linked.archi/archimate4/onto#Aggregation"} <= refs
+    assert catalogue_reference_problems(r) == []
+
+
+def test_catalogue_reference_check_catches_undeclared_and_deprecated_terms(mk):
+    """上一条的变异对照：引用一个不存在的类、弃用目录引用的属性，各自被点名。"""
+    r = mk()
+    write(r, CAT, read(r, CAT).replace("aisep:constant am4:Aggregation", "aisep:constant am4:AggregationGone"))
+    append(r, "modules/ext-verification/onto.ttl", "\naisep:gherkin owl:deprecated true .\n")
+    assert catalogue_reference_problems(r) == [
+        ("https://meta.linked.archi/archimate4/onto#AggregationGone", "undeclared"), (AISEP + "gherkin", "deprecated")]
+
+
+def triples_outside_action_closures(path):
+    """G7：catalog.ttl 里主语不在任何 aisep:ActionType 闭包（动作 IRI 及沿宾语可达的空白节点）里的三元组。"""
+    qs = _rdf(path)
+    rdf_type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+    out = {}
+    for q in qs:
+        out.setdefault(q.subject, []).append(q.object)
+    seen = set()
+    todo = [q.subject for q in qs if q.predicate.value == rdf_type and q.object.value == AISEP + "ActionType"]
+    while todo:
+        n = todo.pop()
+        if n not in seen:
+            seen.add(n)
+            todo += [o for o in out.get(n, ()) if isinstance(o, ox.BlankNode)]
+    return [q for q in qs if q.subject not in seen]
+
+
+def test_catalogue_has_no_triples_outside_action_closures():
+    """目录文件只放动作定义：类声明、子类公理、游离的步骤或绑定片段都不许出现（ADR-026 补记 2026-11-27）。"""
+    assert triples_outside_action_closures(os.path.join(ROOT, CAT)) == []
+
+
+def test_catalogue_closure_check_catches_tbox_and_orphan_triples(mk):
+    """上一条的变异对照：一条子类公理、一个游离的步骤片段，都被点名。"""
+    r = mk()
+    append(r, CAT, "\nam4:Requirement <http://www.w3.org/2000/01/rdf-schema#subClassOf> aisep:ActionType .\n"
+                   '_:orphan a aisep:ActionStep ; dcterms:identifier "orphan" .\n')
+    found = triples_outside_action_closures(os.path.join(str(r), CAT))
+    assert sorted(q.predicate.value.rsplit("#", 1)[-1].rsplit("/", 1)[-1] for q in found) == ["identifier", "subClassOf", "type"]
+
+
 def test_gate_checks_the_catalogue_with_the_module_shapes(mk):
     """catalog.ttl 在 aisep:loads 里，gate 的 L3 用 EA 形状校验它：未知基本动作写进目录，gate FAIL 且点名 EA6。"""
     r = mk()
@@ -380,6 +448,35 @@ def _to_iri_node(pattern, iri, body="{0}"):
                   "<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> {0} ; "
                   "<http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> ( {1} )"),
      "EA5: an action type needs"),
+    # G5：EA2、EA3、EA4、EA7、EA10 在真实目录副本上也要被 gate 点名（此前只有模型文件负例与执行器一侧的 pytest）
+    ("ea2-identifier-uppercase", lambda t: t.replace('"remove-element"', '"Remove-element"'), "EA2:"),
+    ("ea3-preflabel-not-zh", lambda t: t.replace('"删除元素"@zh', '"删除元素"@en'), "EA3:"),
+    ("ea4-version-not-semver",
+     lambda t: re.sub(r'(dcterms:identifier "remove-element" ;[^.]*?owl:versionInfo )"1\.0\.0"', r'\1"1.0"', t), "EA4:"),
+    ("ea7-binding-two-sources",
+     lambda t: t.replace('[ aisep:argument "iri" ; aisep:fromParameter ap:iri ]',
+                         '[ aisep:argument "iri" ; aisep:fromParameter ap:iri ; aisep:modelOf ap:iri ]'), "EA7:"),
+    ("ea10-steps-on-a-step",
+     lambda t: t.replace('dcterms:identifier "remove" ; aisep:invokes aisep:BasicRemove ;',
+                         'dcterms:identifier "remove" ; aisep:invokes aisep:BasicRemove ; aisep:guard [] ;'),
+     "EA10: aisep:steps / aisep:guard"),
+    ("ea10-invokes-on-an-action",
+     lambda t: t.replace('owl:versionInfo "1.0.0" ;\n    sh:parameter [ sh:path ap:iri',
+                         'owl:versionInfo "1.0.0" ; aisep:invokes aisep:BasicRemove ;\n    sh:parameter [ sh:path ap:iri'),
+     "EA10: aisep:invokes / aisep:binding"),
+    ("ea10-argument-outside-a-binding",
+     lambda t: t.replace('dcterms:identifier "remove" ; aisep:invokes aisep:BasicRemove ;',
+                         'dcterms:identifier "remove" ; aisep:invokes aisep:BasicRemove ; aisep:argument "iri" ;'),
+     "EA10: aisep:argument"),
+    # G7：动作个体另带领域类型（EA11）；动作上写 TBox 三元组（ActionTypeShape 封闭，报 EA1）
+    ("ea11-action-with-domain-type",
+     lambda t: t.replace("aisep:ActionRemoveElement a aisep:ActionType ;", "aisep:ActionRemoveElement a aisep:ActionType , am4:Requirement ;"),
+     "EA11:"),
+    ("ea1-action-subclass-of-element",
+     lambda t: t.replace("aisep:ActionRemoveElement a aisep:ActionType ;",
+                         "aisep:ActionRemoveElement a aisep:ActionType ;\n    "
+                         "<http://www.w3.org/2000/01/rdf-schema#subClassOf> <https://meta.linked.archi/core#Element> ;"),
+     "EA1:"),
 ])
 def test_gate_names_the_shape_of_each_catalogue_defect(mk, defect, edit, expect):
     """followups-20261126 第 8 项：tests/invalid 里同名负例只能写成 IRI 节点（模型文件里的空白节点会先被 G7 拒绝），
@@ -439,7 +536,7 @@ def test_module_fixtures_exist(module_fixture_results):
     kinds = [r["kind"] for r in module_fixture_results]
     assert kinds.count("valid") >= 1 and kinds.count("invalid") >= 10
     rules = {re.match(r"(ea\d+)-", r["file"]).group(1) for r in module_fixture_results if r["kind"] == "invalid"}
-    assert rules == {f"ea{i}" for i in range(1, 11)}, rules     # EA1–EA10 每条都有负例
+    assert rules == {f"ea{i}" for i in range(1, 12)}, rules     # EA1–EA11 每条都有负例
 
 
 def test_module_valid_fixtures_pass(module_fixture_results):
@@ -469,6 +566,12 @@ BAD_DEFS = {
     # 未知基本动作（封闭集合之外）
     "unknown-basic-action": act("ActionTestBadOp", "test-bad-op", [("s", "BasicRename", [b("iri", "fromParameter", "ap:iri")])],
                                 params=[sp("iri", iri=True)]),
+    # 动作个体另带领域类型（EA11）、动作上写 TBox 三元组（EA1 封闭）
+    "action-with-domain-type": act("ActionTestBadDomainType", "test-bad-domain-type", [new_criterion_step(slug_const="acDt1")],
+                                   params=[sp("label")], extra="a am4:Requirement"),
+    "action-subclass-of-element": act("ActionTestBadSubclass", "test-bad-subclass", [new_criterion_step(slug_const="acSc1")],
+                                      params=[sp("label")],
+                                      extra="<http://www.w3.org/2000/01/rdf-schema#subClassOf> <https://meta.linked.archi/core#Element>"),
     # 标识符带结尾换行：动作 id、步骤 id、guard id
     "action-id-trailing-newline": act("ActionTestBadIdNl", "test-bad-nl\n", [new_criterion_step(slug_const="acNl1")],
                                       params=[sp("label")]),
@@ -735,6 +838,60 @@ def test_catalogue_is_reread_on_every_call(mk):
     assert listing(r)[AISEP + "ActionTestGood"]["id"] == "test-good-renamed"
 
 
+# ------------------------------------------------------------------ 目录只读所服务的工作区，不随 repo 参数切换
+
+def feature_worktree(r, tmp_path):
+    """r 的一个 linked worktree（未合并的特性分支），放在 cfg(r) 的 allow-root 之下。"""
+    w = tmp_path / "feature"
+    git(r, "worktree", "add", "-q", "-b", "feature", str(w))
+    return w
+
+
+def call_in(served, repo, name, **args):
+    """服务器服务 served（--repo），调用方用 repo 参数指向另一个工作区。"""
+    r = server.call(cfg(served), name, dict(args, repo=str(repo)))
+    return r.is_error, r.structured_content
+
+
+def test_action_added_in_an_unmerged_worktree_does_not_run_there(mk, tmp_path):
+    """特性分支 worktree 的目录副本里新增的动作：调用方带 repo 指向那个 worktree 也执行不了，与 model_list_actions 一致。"""
+    r = mk()
+    w = feature_worktree(r, tmp_path)
+    append(w, CAT, "\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n" + GOOD_EXTRA)
+    assert AISEP + "ActionTestGood" not in listing(r)
+    is_err, res = call_in(r, w, "model_apply_action", action="test-good", params={"label": "未合并的动作"})
+    assert is_err and res["error"]["code"] == "INVALID_ARGUMENT", res
+    assert "test-good" not in res["error"]["details"]["available"]
+    assert git(w, "status", "--porcelain", "--", "models") == ""
+
+
+def test_guard_removed_in_an_unmerged_worktree_still_applies(mk, tmp_path):
+    """worktree 副本里删掉动作的 guard：带 repo 指向它执行，仍按所服务工作区里的定义判 guard。"""
+    r = mk()
+    w = feature_worktree(r, tmp_path)
+    text = read(w, CAT)
+    cut = re.sub(r"aisep:guard\s*\[.*?\]\s*,\s*\[.*?\]\s*;", "", text, count=1, flags=re.S)
+    assert cut != text and "parent-is-not-a-criterion" not in cut
+    write(w, CAT, cut)
+    is_err, res = call_in(r, w, "model_apply_action", action=REGISTER, params=dict(P0, requirement=AC))
+    assert is_err and res["error"]["code"] == "PRECONDITION_FAILED", res
+    assert [g["id"] for g in res["error"]["details"]["failedGuards"]] == ["parent-is-not-a-criterion"]
+    assert git(w, "status", "--porcelain", "--", "models") == ""
+
+
+def test_served_catalogue_runs_against_the_callers_worktree(mk, tmp_path):
+    """反方向：动作只在所服务工作区的目录里（worktree 副本没有它），带 repo 指向 worktree 照样执行，写进那个 worktree。"""
+    r = mk()
+    w = feature_worktree(r, tmp_path)
+    append(r, CAT, "\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n" + GOOD_EXTRA)
+    assert "ActionTestGood" not in read(w, CAT)
+    is_err, res = call_in(r, w, "model_apply_action", action="test-good", params={"label": "所服务目录里的动作"})
+    assert not is_err, res
+    assert res["changed"] is True and res["iris"]["el"] == WB + "acGoodOne"
+    assert git(w, "status", "--porcelain", "--", "models") != ""
+    assert git(r, "status", "--porcelain", "--", "models") == ""
+
+
 # ================================================================== B1 结果等价
 
 B1_CASES = {
@@ -990,7 +1147,7 @@ def test_B4_violation_in_a_later_step_rolls_back_earlier_steps(mk):
     assert snap(a) == before
 
 
-@pytest.mark.parametrize("ptype", ["aisep:ApprovalRecord", "aisep:AgentActivity"])
+@pytest.mark.parametrize("ptype", ["aisep:ApprovalRecord", "aisep:AgentActivity", "aisep:ActionType"])
 def test_B4_step_adding_protected_type_is_refused(mk, ptype):
     a, b_ = mk("action"), mk("control")
     add_actions(a, act("ActionTestProtected", "test-protected",
