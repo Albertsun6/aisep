@@ -79,7 +79,16 @@ EXPECTED_ANNOTATIONS = {  # §4 table: (readOnly, destructive, idempotent, openW
 EXPECTED_PROFILES = {"agent": set(EXPECTED_ANNOTATIONS) - {"governance_record_approval", "model_branches", "model_call_log"},
                      "workbench": {"model_query", "model_findings", "model_gate", "model_impact", "model_diff",
                                    "model_branches", "model_call_log", "governance_record_approval", "model_list_views",
-                                   "model_render_view"}}
+                                   "model_render_view", "model_list_actions"}}
+
+
+def test_workbench_lists_read_only_action_catalogue_but_not_apply():
+    """Albert 2026-11-27 第 15 条：工作台画像列 model_list_actions（只读），不列 model_apply_action；agent 画像两者都列。"""
+    wb, agent = set(S.listed("workbench")), set(S.listed("agent"))
+    assert "model_list_actions" in wb and "model_apply_action" not in wb
+    assert {"model_list_actions", "model_apply_action"} <= agent
+    assert agent == set(EXPECTED_ANNOTATIONS) - {"governance_record_approval", "model_branches", "model_call_log"}
+    assert S.TOOLS["model_list_actions"][4]["read_only_hint"] is True
 
 
 def test_T2_annotations_profiles_and_readonly_really_reads_only(repo):

@@ -116,7 +116,7 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
                      out("target", "planDigest"), ANN_DESTRUCTIVE, {"agent"}),
     # the two tools are fixed; what the catalogue (modules/ext-actions/catalog.ttl) holds never changes tools/list
     "model_list_actions": (actions.model_list_actions, "动作目录（只读）：每个动作的参数 schema、步骤、前置检查提示",
-                           obj({}), out("actions"), ANN_READ, {"agent"}),
+                           obj({}), out("actions"), ANN_READ, {"agent", "workbench"}),
     "model_apply_action": (actions.model_apply_action,
                            "执行目录里的一个动作（一次写入，全有或全无，不提交）；含删除步骤的动作须先 dryRun 再带 planDigest",
                            obj({"action": S(), "params": {"type": "object"}, "dryRun": B, "planDigest": S(),

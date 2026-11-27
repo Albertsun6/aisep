@@ -53,6 +53,8 @@
 | 提交前统一结论 | — | ✔ | `model_gate` | 新增 |
 | 调用日志：被审计的写调用与动作调用（诊断用、不防篡改） | ✔ | ✘ 不列出 | `model_call_log`（§5.17） | 无（规范外，ADR-031） |
 | 看自己分支改了什么（含未提交） | — | ✔ | `model_diff`（worktree 模式） | `model.diff` |
+| 查看动作目录（参数 schema、步骤、前置检查提示） | ✔ 只读 | ✔ | `model_list_actions`（§5.13） | 无（规范外） |
+| 执行动作 | ✘ 不列出 | ✔ | `model_apply_action`（§5.14） | 无（规范外） |
 
 **工作台：只读 + 1 个写操作。编码代理：读写模型，不碰治理。**
 
@@ -209,7 +211,7 @@
 | 画像 | 列出 |
 |---|---|
 | `agent` | 除 `governance_record_approval`、`model_branches`、`model_call_log` 外全部 |
-| `workbench` | `model_query`、`model_findings`、`model_gate`、`model_impact`、`model_diff`、`model_branches`、`model_call_log`、`governance_record_approval`、`model_list_views`、`model_render_view` |
+| `workbench` | `model_query`、`model_findings`、`model_gate`、`model_impact`、`model_diff`、`model_branches`、`model_call_log`、`governance_record_approval`、`model_list_views`、`model_render_view`、`model_list_actions`（只读；不列 `model_apply_action`，Albert 2026-11-27 定） |
 | `all` | 全部（测试用） |
 
 画像**不是安全边界**：代理可以直接手写 Turtle 伪造批准记录，真正的约束是代码评审和分支保护。画像只防"顺手调用"。
