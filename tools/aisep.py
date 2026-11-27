@@ -12,13 +12,30 @@ Usage (run with $PY = main checkout .venv/bin/python, see AGENTS.md):
   aisep.py query  FILE.rq|'SPARQL' [model files...]   -> over build graph + all ontologies + all alignments
   aisep.py impact <element IRI or prefixed name> [--mode depends|ripple] [--depth N] [--allow-invalid] [model files...]
                                           (spec §9; runs L1+L2 first and refuses an invalid model unless --allow-invalid)
-  aisep.py diagram (--view IRI | --viewpoint NAME --model SLUG | --viewpoint C4NAME --of SCOPE)
-                   [-o OUT.svg] [model files...]
-                                       -> ArchiMate 4 or C4 view as SVG (default build/views/<model>/<view>.svg; layout by elkjs,
+  aisep.py diagram (--view IRI | --viewpoint NAME --model SLUG | --viewpoint C4NAME --of SCOPE |
+                    --uml ClassDiagram --model SLUG | --uml list) [-o OUT.svg] [model files...]
+                                       -> ArchiMate 4, C4 or UML view as SVG (default build/views/<model>/<view>.svg; layout by elkjs,
                                           needs Node and `npm ci --prefix tools/elk --ignore-scripts`); a declared
                                           arch:Diagram, every element of the model the am4 viewpoint includes, or a C4 view
                                           (C4NAME: SystemContext|ContainerDiagram --of <system>, ComponentDiagram --of
-                                          <container>, C4Deployment --of <environment> [--model SLUG])
+                                          <container>, C4Deployment --of <environment> [--model SLUG]); --uml: a UML class
+                                          diagram of every classifier of the model (build/views/<model>/uml-ClassDiagram.svg),
+                                          --view of an arch:Diagram with a umlvp: viewpoint, `--uml list` lists them
+  aisep.py diagram --process IRI [-o OUT.bpmn] [model files...]
+                                       -> one bpmn:Process as BPMN 2.0 XML with BPMNDI (default build/views/<model>/<process>.bpmn;
+                                          layout by elkjs as above; open it with a BPMN viewer such as bpmn-js); unsupported
+                                          parts (lanes, sub-processes, ...) are [Warning] lines, not drawn
+  aisep.py diagram --list-processes [model files...]
+                                       -> every bpmn:Process that --process can draw: IRI, model, label (tab-separated)
+  aisep.py diagram (--viewpoint ContextMap --model SLUG | --viewpoint AggregateDiagram --of <bounded context>)
+                   [-o OUT.svg] [model files...]
+                                       -> DDD view as SVG (aisep/diagram_ddd.py): the context map of a model (bounded
+                                          contexts, subdomains, Context Mapper notation) or the aggregates of one context
+                                          (AggregateDiagram takes its model from --of; a --model it is not in is a
+                                          usage error, exit 2)
+  aisep.py diagram --ddd list --model SLUG [model files...]
+                                       -> the DDD views that model can render, one `VIEW <args>` line each
+                                          (--view / --viewpoint / --of alongside it are a usage error)
   aisep.py adm [<阶段> --model <slug> [--check FILE.rq]... [--deliverable] [--out FILE]]
                                        -> ADM 向导（docs/specs/adm-wizard.md）：按阶段列出模型里已有的元素和缺口，
                                           --deliverable 生成交付物 Markdown；默认打印，--out 只写这一个文件；有缺口也返回 0；
@@ -43,12 +60,13 @@ with open(pyrun.__file__, encoding="utf-8") as _f:
 ROOT = pyrun.ROOT
 
 import glob, re, subprocess, tempfile, time  # noqa: E402
+from concurrent.futures import ProcessPoolExecutor  # noqa: E402
 from xml.etree import ElementTree  # noqa: E402
 
 import pyoxigraph as ox  # noqa: E402
 
 from aisep.core import (AISEP, ARCH, Ctx, dependencies, discover, expand, impact, l3, l4, rel,  # noqa: E402
-                        run_check, short, shown)
+                        model_slug, run_check, short, shown)
 from aisep import adm, gitio  # noqa: E402
 from aisep.errors import AisepError  # noqa: E402
 
@@ -276,6 +294,7 @@ def cmd_test(no_pytest=False):
     results = []
     t0 = time.time()
     names = {m.name for m in mods}
+    rows, jobs = [], []  # rows: a finished result, or the index of the job whose result goes there (keeps the order)
     for m in mods:
         for kind in ("valid", "invalid"):
             for fx in sorted(glob.glob(os.path.join(m.dir, "tests", kind, "*.ttl"))):
@@ -284,11 +303,19 @@ def cmd_test(no_pytest=False):
                 # '# modules: a b' adds those modules (and their dependencies) to the fixture's environment
                 extra = [n for l in head if l.startswith("# modules:") for n in l.split(":", 1)[1].split()]
                 if set(extra) - names:
-                    results.append((m.name, os.path.basename(fx), kind, False, f"unknown module(s) {sorted(set(extra) - names)}"))
+                    rows.append((m.name, os.path.basename(fx), kind, False, f"unknown module(s) {sorted(set(extra) - names)}"))
                     continue
                 want = {d.name for n in [m.name] + extra for d in dependencies(mods, n)}
-                ok, detail = run_fixture(mods if uses_all else [d for d in mods if d.name in want], fx)
-                results.append((m.name, os.path.basename(fx), kind, ok, detail))
+                rows.append(len(jobs))
+                jobs.append((m.name, fx, kind, mods if uses_all else [d for d in mods if d.name in want]))
+    # Fixtures are independent (each builds its own Ctx; the caches are per process), so they run in a process pool;
+    # map() yields in submission order, so the report reads the same as a serial run.
+    # the CPUs this process may run on (a container or taskset can allow fewer than the machine has); no affinity on macOS
+    cpus = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count()
+    with ProcessPoolExecutor(max_workers=cpus) as pool:
+        done = list(pool.map(run_fixture, [j[3] for j in jobs], [j[1] for j in jobs]))
+    results += [r if isinstance(r, tuple) else (jobs[r][0], os.path.basename(jobs[r][1]), jobs[r][2], *done[r])
+                for r in rows]
     for py in sorted(glob.glob(os.path.join(ROOT, "tests", "acceptance", "*.py"))):
         p = subprocess.run([sys.executable, py], cwd=ROOT, capture_output=True, text=True, timeout=900)
         tail = (p.stdout + p.stderr).strip().splitlines()
@@ -305,18 +332,27 @@ def cmd_test(no_pytest=False):
 
 
 def cmd_diagram(args):
-    """ArchiMate 4 view -> SVG (aisep/diagram.py). Read-only; not part of gate."""
-    from aisep import diagram, diagram_c4
+    """ArchiMate 4 / C4 / UML / DDD view -> SVG, BPMN process -> .bpmn (aisep/diagram.py, diagram_c4.py, diagram_uml.py,
+    diagram_ddd.py, diagram_bpmn.py). Read-only; not part of gate."""
+    from aisep import diagram, diagram_c4, diagram_ddd, diagram_uml
+    if "--process" in args or "--list-processes" in args:
+        return _diagram_bpmn(args)
+    if "--ddd" in args:
+        return _list_ddd(args)
     opts = {}
-    for k in ("--view", "--viewpoint", "--model", "--of", "-o"):
+    for k in ("--view", "--viewpoint", "--model", "--of", "--uml", "-o"):
         if k in args:
             i = args.index(k)
             if i + 1 >= len(args):
                 print(__doc__); return 2
             opts[k] = args[i + 1]; args = args[:i] + args[i + 2:]
+    if "--uml" in opts:
+        return _diagram_uml(opts, args)
     c4 = opts.get("--viewpoint") in diagram_c4.VIEWPOINTS
-    if ("--view" in opts) == ("--viewpoint" in opts) or ("--of" in opts) != c4 or \
-            ("--viewpoint" in opts and "--model" not in opts and not c4):
+    ddd = opts.get("--viewpoint") in diagram_ddd.VIEWPOINTS
+    scoped = c4 or opts.get("--viewpoint") == "AggregateDiagram"
+    if ("--view" in opts) == ("--viewpoint" in opts) or ("--of" in opts) != scoped or \
+            ("--viewpoint" in opts and "--model" not in opts and not scoped):
         print(__doc__); return 2
     for k in ("--viewpoint", "--model", "--of"):  # SPARQL text or a file name: plain names only
         if k in opts and (k != "--of" or opts.get("--viewpoint") == "C4Deployment") and \
@@ -331,10 +367,10 @@ def cmd_diagram(args):
             view = expand(ctx, opts["--view"])
         except AisepError as e:
             print(f"[Violation] diagram: --view {e.message}"); return 1
-        ms = ctx.rows(f"SELECT ?m WHERE {{ <{view}> arch:inModel ?m }}")
+        ms = sorted(m for (m,) in ctx.rows(f"SELECT ?m WHERE {{ <{view}> arch:inModel ?m }}"))  # several: the first
         if not ms:
             print(f"[Violation] {opts['--view']}: no arch:inModel, not a view of any model"); return 1
-        model, name = ms[0][0], diagram.local(view)
+        model, name = ms[0], diagram.local(view)
         vps = sorted(v for (v,) in ctx.rows(f"SELECT ?v WHERE {{ <{view}> arch:viewConformsToViewpoint ?v }}"))
         if vps and vps[0].startswith(diagram_c4.C4VP):
             try:
@@ -342,6 +378,31 @@ def cmd_diagram(args):
             except ValueError as e:
                 print(f"[Violation] diagram: {e}"); return 1
             return _write_c4(sel, model, name, opts)
+        if vps and vps[0].startswith(diagram_uml.UMLVP):
+            kind = vps[0][len(diagram_uml.UMLVP):]
+            if kind not in diagram_uml.DIAGRAMS:
+                print(f"[Violation] diagram: {opts['--view']} 的视点 umlvp:{kind} 暂不支持（首批只有 "
+                      f"{', '.join('umlvp:' + k for k in diagram_uml.DIAGRAMS)}）"); return 1
+            return _write_uml(ctx, model, name, opts, view=view, kind=kind)
+    elif ddd:
+        vp = opts["--viewpoint"]
+        if vp == "ContextMap":
+            scope, model = None, f"https://aisep.example/model/{opts['--model']}/"
+        else:
+            try:
+                scope, model = expand(ctx, opts["--of"]), None
+            except AisepError as e:
+                print(f"[Violation] diagram: --of {e.message}"); return 1
+            if "--model" in opts and not ctx.rows(f"SELECT ?m WHERE {{ <{scope}> arch:inModel "
+                                                  f"<https://aisep.example/model/{opts['--model']}/> }}"):
+                print(f"[Violation] diagram: --of {opts['--of']} is not in model {opts['--model']} "
+                      f"(AggregateDiagram takes its model from --of; drop --model or name the model --of is in)")
+                return 2
+        try:
+            sel = diagram_ddd.select(ctx, vp, scope, model=model)
+        except ValueError as e:
+            print(f"[Violation] diagram: {e}"); return 1
+        return _write_ddd(sel, vp if vp == "ContextMap" else f"{vp}-{diagram.local(scope)}", opts)
     elif c4:
         vp = opts["--viewpoint"]
         if vp == "C4Deployment":
@@ -371,7 +432,7 @@ def cmd_diagram(args):
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     try:
         svg = diagram.render(title, sub, elements, rels)
-    except RuntimeError as e:
+    except (RuntimeError, diagram.TextNotXml) as e:  # no layout, or model text XML cannot carry
         print(f"[Violation] diagram: {e}"); return 1
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(svg)
@@ -380,8 +441,58 @@ def cmd_diagram(args):
     return 0
 
 
+def _diagram_bpmn(args):
+    """bpmn:Process -> BPMN 2.0 XML with BPMNDI (aisep/diagram_bpmn.py). Read-only; not part of gate."""
+    from aisep import diagram_bpmn
+    listing, opts = "--list-processes" in args, {}
+    args = [a for a in args if a != "--list-processes"]
+    for k in ("--process", "-o"):
+        if k in args:
+            i = args.index(k)
+            if i + 1 >= len(args):
+                print(__doc__); return 2
+            opts[k] = args[i + 1]; args = args[:i] + args[i + 2:]
+    if listing == ("--process" in opts) or (listing and "-o" in opts) or any(a.startswith("--") for a in args):
+        print(__doc__); return 2
+    files, read = model_files(args)
+    ctx = Ctx(discover(), files, read=read)
+    if report(ctx, ("L0",))[0]:
+        return 1
+    if listing:
+        found = diagram_bpmn.processes(ctx)
+        for p, label, model in found:
+            print(f"{p}\t{model}\t{label}")
+        print(f"SUMMARY diagram processes={len(found)}")
+        return 0
+    try:
+        process = expand(ctx, opts["--process"])
+    except AisepError as e:
+        print(f"[Violation] diagram: --process {e.message}"); return 1
+    try:
+        sel, warnings = diagram_bpmn.select(ctx, process)
+    except ValueError as e:
+        print(f"[Violation] diagram: {e}"); return 1
+    for w in warnings:
+        print(f"[Warning] diagram {w}")
+    if not sel["nodes"]:
+        print(f"[Violation] diagram: {process} has no flow node that can be drawn"); return 1
+    slug = sel["model"].rstrip("/").rsplit("/", 1)[-1]
+    name = diagram_bpmn.local(process)
+    out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".bpmn")
+    try:
+        xml = diagram_bpmn.render(sel)
+    except (RuntimeError, ValueError) as e:
+        print(f"[Violation] diagram: {e}"); return 1
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    with open(out, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(xml)
+    print(f"SUMMARY diagram model={slug} process={name} nodes={len(sel['nodes'])} flows={len(sel['flows'])} "
+          f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
+    return 0
+
+
 def _write_c4(sel, model, name, opts):
-    from aisep import diagram_c4
+    from aisep import diagram, diagram_c4
     title, sub, boxes, edges, warnings = sel[:5]
     for w in warnings:
         print(f"[Warning] diagram {w}")
@@ -393,11 +504,124 @@ def _write_c4(sel, model, name, opts):
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     try:
         svg = diagram_c4.render(title, sub, boxes, edges)
-    except RuntimeError as e:
+    except (RuntimeError, diagram.TextNotXml) as e:  # no layout, or model text XML cannot carry
         print(f"[Violation] diagram: {e}"); return 1
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(svg)
     print(f"SUMMARY diagram model={slug} view={name} elements={n} relationships={len(edges)} "
+          f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
+    return 0
+
+
+def _write_ddd(sel, name, opts):
+    from aisep import diagram, diagram_ddd
+    title, sub, boxes, edges, warnings, model = sel
+    for w in warnings:
+        print(f"[Warning] diagram {w}")
+    slug = model.rstrip("/").rsplit("/", 1)[-1]
+    out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".svg")
+    try:
+        svg = diagram_ddd.render(title, sub, boxes, edges)
+    except (RuntimeError, diagram.TextNotXml) as e:  # no layout, or model text XML cannot carry
+        print(f"[Violation] diagram: {e}"); return 1
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    with open(out, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(svg)
+    n_el, n_rel = diagram_ddd.counts(boxes, edges)
+    print(f"SUMMARY diagram model={slug} view={name} elements={n_el} relationships={n_rel} "
+          f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
+    return 0
+
+
+def _list_ddd(args):
+    """diagram --ddd list --model SLUG: the DDD views the model can render."""
+    from aisep import diagram_ddd
+    i = args.index("--ddd")
+    if i + 1 >= len(args) or args[i + 1] != "list":
+        print("[Violation] diagram: --ddd takes only `list` (diagram --ddd list --model SLUG)"); return 2
+    args = args[:i] + args[i + 2:]
+    extra = [k for k in ("--view", "--viewpoint", "--of", "-o") if k in args]
+    if extra:
+        print(f"[Violation] diagram: --ddd list lists views and draws none; {', '.join(extra)} cannot go with it"); return 2
+    if "--model" not in args or args.index("--model") + 1 >= len(args):
+        print(__doc__); return 2
+    i = args.index("--model")
+    slug, args = args[i + 1], args[:i] + args[i + 2:]
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", slug):
+        print(f"[Violation] diagram: --model {slug!r} must be a plain name (letters, digits, _ and -)"); return 1
+    files, read = model_files(args)
+    ctx = Ctx(discover(), files, read=read)
+    if report(ctx, ("L0",))[0]:
+        return 1
+    found = diagram_ddd.views(ctx, f"https://aisep.example/model/{slug}/")
+    for vp, scope, title in found:
+        print(f"VIEW --viewpoint {vp} " + (f"--of {scope}" if scope else f"--model {slug}") + f"  # {title}")
+    print(f"SUMMARY diagram-list model={slug} views={len(found)}")
+    return 0
+
+
+def _diagram_uml(opts, args):
+    """--uml NAME --model SLUG, or --uml list."""
+    from aisep import diagram_uml
+    kind = opts["--uml"]
+    if {"--view", "--viewpoint", "--of"} & set(opts) or (kind != "list" and "--model" not in opts):
+        print(__doc__); return 2
+    for k in ("--uml", "--model"):
+        if k in opts and not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", opts[k]):
+            print(f"[Violation] diagram: {k} {opts[k]!r} 必须是简单名称（字母、数字、_ 和 -）"); return 1
+    if kind != "list" and kind not in diagram_uml.DIAGRAMS:
+        print(f"[Violation] diagram: UML 图种 {kind} 暂不支持（首批只有 {', '.join(diagram_uml.DIAGRAMS)}）"); return 1
+    files, read = model_files(args)
+    ctx = Ctx(discover(), files, read=read)
+    if report(ctx, ("L0",))[0]:
+        return 1
+    if kind != "list":
+        return _write_uml(ctx, f"https://aisep.example/model/{opts['--model']}/", f"uml-{kind}", opts, kind=kind)
+    models = sorted(m for (m,) in ctx.rows("SELECT DISTINCT ?m WHERE { ?m a arch:Model }"))
+    if "--model" in opts:
+        models = [m for m in models if m == f"https://aisep.example/model/{opts['--model']}/"]
+    n = 0
+    for m in models:
+        try:
+            slug = model_slug(m)
+        except AisepError:  # not https://aisep.example/model/<slug>/: --model cannot name it
+            slug = None
+        for k in diagram_uml.DIAGRAMS:
+            nodes = diagram_uml.select(ctx, m, diagram=k)[2]
+            if nodes and slug is None:
+                print(f"[Warning] diagram {m}: 模型 IRI 不是 https://aisep.example/model/<slug>/ 形式，"
+                      f"不能用 --model 出 {k}（{len(nodes)} 个类元）")
+            elif nodes:
+                n += 1
+                print(f"--uml {k} --model {slug}  elements={len(nodes)}")
+        for v, vp in sorted(ctx.rows(f"""SELECT ?v ?vp WHERE {{ ?v a arch:Diagram ; arch:inModel <{m}> ;
+                                         arch:viewConformsToViewpoint ?vp FILTER(STRSTARTS(STR(?vp), "{diagram_uml.UMLVP}")) }}""")):
+            n += 1
+            print(f"--view {v}  viewpoint=umlvp:{vp[len(diagram_uml.UMLVP):]}")
+    print(f"SUMMARY diagram uml-list views={n}")
+    return 0
+
+
+def _write_uml(ctx, model, name, opts, view=None, kind="ClassDiagram"):
+    from aisep import diagram, diagram_uml
+    try:
+        title, sub, nodes, packages, edges, warnings = diagram_uml.select(ctx, model, view=view, diagram=kind)
+    except ValueError as e:
+        print(f"[Violation] diagram: {e}"); return 1
+    for w in warnings:
+        print(f"[Warning] diagram {w}")
+    if not nodes:
+        print(f"[Violation] diagram: {model} 没有元素在这张图里（--model 写错，或视图为空？）"); return 1
+    slug = model.rstrip("/").rsplit("/", 1)[-1]
+    out = opts.get("-o") or os.path.join(ROOT, "build", "views", slug, name + ".svg")
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    try:
+        svg = diagram_uml.render(title, sub, nodes, packages, edges)
+    except (RuntimeError, diagram.TextNotXml) as e:  # no layout, or model text XML cannot carry
+        print(f"[Violation] diagram: {e}"); return 1
+    with open(out, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(svg)
+    print(f"SUMMARY diagram model={slug} view={name} elements={len(nodes)} relationships={len(edges)} "
           f"warnings={len(warnings)} -> {rel(os.path.abspath(out))}")
     return 0
 

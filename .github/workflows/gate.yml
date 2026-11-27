@@ -26,6 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # 诊断：同一套用例在不同 runner 上快慢差 2 倍多，打印核数与 CPU 型号以便对照耗时
+      - run: nproc && lscpu | grep -E '^(Model name|CPU\(s\)|Thread|Core|Socket|L3)' || true
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -39,20 +41,96 @@ jobs:
         with:
           node-version: "24.12.0"
       - run: npm ci --prefix tools/elk --ignore-scripts --no-audit --no-fund
+      # tests/acceptance/test_diagram_bpmn.py 用 bpmn-moddle 读入校验 BPMN 输出（只用于测试），按 tools/bpmn-check/package-lock.json 安装
+      - run: npm ci --prefix tools/bpmn-check --ignore-scripts --no-audit --no-fund
       - run: python tools/aisep.py test --no-pytest
-  # aisep-mcp/tests 分 3 片并行（负例除外，见下面的 negatives）。分片由 conftest.py 按用例 nodeid 的 crc32 取模，
-  # 新增测试自动归片；3 片的用例数之和等于不分片时的总数。
+  # aisep-mcp/tests 分 5 片并行（负例除外，见下面的 negatives）。分片由 conftest.py 按 aisep-mcp/tests/.test_durations
+  # 里的用例耗时做 LPT 贪心装箱（最重的先放进当前最轻的片），文件里没有的新用例按平均耗时计；各片之并等于全集、互不相交。
+  # 每片上传 JUnit（artifact junit-*），用 tools/update_test_durations.py 刷新耗时文件。
+  # 防漏测：每片把分配前收集到的全集（排序 nodeid 的 sha256 与清单）和本片分到的用例写进 shard-manifest.json
+  # （AISEP_SHARD_MANIFEST，conftest.py），上传为 shard-pytest-<i>；汇总 job 用 tools/check_shards.py 比对。
   pytest-shard:
-    name: pytest-shard (${{ matrix.shard }}/3)
+    name: pytest-shard (${{ matrix.shard }}/5)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4]
+    env:
+      AISEP_SHARD: ${{ matrix.shard }}/5
+      AISEP_SHARD_MANIFEST: ${{ github.workspace }}/shard-manifest.json
+    steps:
+      # 诊断：同一套用例在不同 runner 上快慢差 2 倍多，打印核数与 CPU 型号以便对照耗时
+      - run: nproc && lscpu | grep -E '^(Model name|CPU\(s\)|Thread|Core|Socket|L3)' || true
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      # aisep-mcp/tests/test_views.py 出图要 elkjs（同 fixtures job，版本钉在 tools/elk/package-lock.json）
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.12.0"
+      - run: npm ci --prefix tools/elk --ignore-scripts --no-audit --no-fund
+      - run: python -m pytest -q -p no:cacheprovider --durations=15 --junitxml=junit.xml aisep-mcp/tests --ignore=aisep-mcp/tests/test_merge_check_negatives.py
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: junit-pytest-${{ matrix.shard }}
+          path: junit.xml
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: shard-pytest-${{ matrix.shard }}
+          path: shard-manifest.json
+          retention-days: 30
+  # 必需检查 `pytest`（分支保护里的名字不变）：汇总夹具和各分片。必须 if: !cancelled() 并逐个判 success：
+  # 只靠默认的 success()，依赖失败时本 job 会被跳过，而被跳过的必需检查 GitHub 当作通过；用 !cancelled() 而不是 always()，
+  # 运行被取消（concurrency 换新提交）时本 job 记 cancelled，而不是跑起来判出 failure。
+  # 另比对各片清单：全集 sha256 必须相同、各片用例数之和等于全集且恰好分完（tools/check_shards.py），否则 failure。
+  pytest:
+    if: ${{ !cancelled() }}
+    needs: [fixtures, pytest-shard]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      # 缺片（某片没跑到收集）时可能下载不到全部清单，由下一步的比对判 failure
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: shard-pytest-*
+          path: manifests
+      - env:
+          FIXTURES: ${{ needs.fixtures.result }}
+          SHARDS: ${{ needs.pytest-shard.result }}
+        run: |
+          echo "fixtures=$FIXTURES pytest-shard=$SHARDS"
+          ok=0; python3 tools/check_shards.py 5 manifests || ok=$?
+          test "$FIXTURES" = success && test "$SHARDS" = success && test "$ok" = 0
+  # 合并检查负例（Albert 2026-11-21 定：进 CI，但不是必需检查）。涉及 mergecheck 的 PR 合并前核对 PR 头上本 job 的结论，
+  # 合并后核对 push 到 main 的那次（ADR-022，AGENTS.md「分支与合并」）；PR 改了 .github/workflows/** 或 CI 不可用时才在本地跑。
+  # PR 和 push 到 main 都跑、不加路径过滤，以后升为必需检查时每个 PR 都有它的结果。--durations 留实测耗时。
+  # 负例按同一 AISEP_SHARD 机制分 3 片跑；分片 job 不能叫 negatives：AGENTS.md 按 check_name=negatives 取结论，要求恰好一条。
+  negatives-shard:
+    name: negatives-shard (${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         shard: [0, 1, 2]
     env:
       AISEP_SHARD: ${{ matrix.shard }}/3
+      AISEP_SHARD_MANIFEST: ${{ github.workspace }}/shard-manifest.json
     steps:
+      # 诊断：同一套用例在不同 runner 上快慢差 2 倍多，打印核数与 CPU 型号以便对照耗时
+      - run: nproc && lscpu | grep -E '^(Model name|CPU\(s\)|Thread|Core|Socket|L3)' || true
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -61,37 +139,39 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: python -m pytest -q -p no:cacheprovider --durations=15 aisep-mcp/tests --ignore=aisep-mcp/tests/test_merge_check_negatives.py
-  # 必需检查 `pytest`（分支保护里的名字不变）：汇总夹具和各分片。必须 if: always() 并逐个判 success：
-  # 不这样写，依赖失败时本 job 会被跳过，而被跳过的必需检查 GitHub 当作通过。
-  pytest:
-    if: always()
-    needs: [fixtures, pytest-shard]
+      - run: python -m pytest -q -p no:cacheprovider --durations=30 --junitxml=junit.xml aisep-mcp/tests/test_merge_check_negatives.py
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: junit-negatives-${{ matrix.shard }}
+          path: junit.xml
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: shard-negatives-${{ matrix.shard }}
+          path: shard-manifest.json
+          retention-days: 30
+  # 检查名 negatives 由这个汇总 job 产生（每个 sha 恰好一条）。同 pytest：if: !cancelled() 并判 success，三片全过、
+  # 清单比对通过才 success。
+  negatives:
+    if: ${{ !cancelled() }}
+    needs: [negatives-shard]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - env:
-          FIXTURES: ${{ needs.fixtures.result }}
-          SHARDS: ${{ needs.pytest-shard.result }}
-        run: |
-          echo "fixtures=$FIXTURES pytest-shard=$SHARDS"
-          test "$FIXTURES" = success && test "$SHARDS" = success
-  # 合并检查负例（Albert 2026-11-21 定：进 CI，但不是必需检查）。涉及 mergecheck 的 PR 合并前核对 PR 头上本 job 的结论，
-  # 合并后核对 push 到 main 的那次（ADR-022，AGENTS.md「分支与合并」）；PR 改了 .github/workflows/** 或 CI 不可用时才在本地跑。
-  # PR 和 push 到 main 都跑、不加路径过滤，以后升为必需检查时每个 PR 都有它的结果。--durations 留实测耗时。
-  negatives:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      - run: pip install -r requirements.txt
-      - run: python -m pytest -q -p no:cacheprovider --durations=30 aisep-mcp/tests/test_merge_check_negatives.py
+          pattern: shard-negatives-*
+          path: manifests
+      - env:
+          SHARDS: ${{ needs.negatives-shard.result }}
+        run: |
+          echo "negatives-shard=$SHARDS"
+          ok=0; python3 tools/check_shards.py 3 manifests || ok=$?
+          test "$SHARDS" = success && test "$ok" = 0
   # §5.9 合并时校验（切片 S6）。单独一个 job，与 gate、pytest 同为 main 的必需检查。
   # 口径：H = pull_request.head.sha（不用 GITHUB_SHA）；T = 刚 fetch 的远端主分支；M 在 T 上本地合并生成。
   mergecheck:

@@ -922,6 +922,26 @@ def test_view_as_target(repo):
     assert violations(repo) == 0
 
 
+def test_adr032_view_facts_today(repo):
+    """ADR-032 背景所述现状（PR #179 评审 B1、B2、B4）：① 视图缺 arch:inModel 已是 L1 Violation；② ArchiMate 视图的
+    视点不符已由 L3 给 Warning；③ model_set_attributes 现在就能改视图的视点（arch:viewConformsToViewpoint 不在不接受表）。"""
+    vp = "<https://meta.linked.archi/archimate4/viewpoints#ApplicationCooperationViewpoint>"
+    append(repo, AM4, f"\n:v1 a arch:Diagram ;\n    skos:prefLabel \"视图\"@zh ;\n"
+                      f"    arch:viewConformsToViewpoint {vp} .\n:supplier arch:inView :v1 .\n")
+    fs = T.model_check(cfg(repo), repo=str(repo))["findings"]
+    assert any(f["severity"] == "Violation" and f["layer"] == "L1" and "no arch:inModel" in f["message"] for f in fs), fs
+    git(repo, "checkout", "--", AM4)
+    append(repo, AM4, f"\n:v1 a arch:Diagram ;\n    arch:inModel <{M}> ;\n    skos:prefLabel \"视图\"@zh ;\n"
+                      f"    arch:viewConformsToViewpoint {vp} .\n:supplier arch:inView :v1 .\n")
+    fs = T.model_validate(cfg(repo), repo=str(repo))["findings"]
+    assert any(f["severity"] == "Warning" and "not allowed in viewpoint" in f["message"] for f in fs), fs
+    commit_all(repo, "a view")
+    vp2 = "https://meta.linked.archi/archimate4/viewpoints#ApplicationUsageViewpoint"
+    applied(repo, "procurement:v1", set=one("arch:viewConformsToViewpoint", {"iri": vp2}),
+            minus=[tr(M + "v1", ARCH + "viewConformsToViewpoint", n(vp[1:-1]))],
+            plus=[tr(M + "v1", ARCH + "viewConformsToViewpoint", n(vp2))])
+
+
 # ------------------------------------------------------------------ followup 6: one value口径 with model_add_element
 
 BAD_VALUES = {

@@ -3782,8 +3782,10 @@
    "versionInfo": [
     "0.1.0"
    ],
-   "loaded": false,
-   "loadedBy": []
+   "loaded": true,
+   "loadedBy": [
+    "modules/uml/metamodel.ttl"
+   ]
   },
   {
    "path": "meta.linked.archi/ttl/zachman_deliverable-templates.ttl",

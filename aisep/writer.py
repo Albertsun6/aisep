@@ -8,7 +8,7 @@ import contextlib, fcntl, hashlib, os, re
 
 import pyoxigraph as ox
 
-from aisep import core, gitio
+from aisep import calllog, core, gitio
 from aisep.errors import AisepError
 
 TTL = ox.RdfFormat.TURTLE
@@ -404,7 +404,9 @@ def write_files(root, edits, before):
                         fh.flush()
                         os.fsync(fh.fileno())
                     os.rename(f".{name}.aisep-restore", name, src_dir_fd=dfd, dst_dir_fd=dfd)
-            if kept:
+            if kept:  # ADR-031: what this call wrote and left on disk, as approval's "kept" exits do
+                calllog.note(files=[{"path": f, "sha256Before": sha(before.get(f)), "sha256After": sha(data)}
+                                    for f, _, _, data in done if f in kept])
                 raise AisepError("CONFLICT", f"回滚时发现 {', '.join(kept)} 又被改动，保留现场（其余文件已回滚）",
                                  details={"file": kept[0], "kept": True, "keptFiles": kept}, retryable=False)
             raise
@@ -459,6 +461,7 @@ def transaction(cfg, repo, build, dry_run=False):
     """Run one write. build(ws, base_ctx) -> dict(result=…, edits={rel: text}, removed={rel: {(s,p,o)}},
     added={rel: [Triple]}) or dict(result=…, edits={}) for a no-op (changed:false)."""
     root = locate_worktree_root(cfg, repo)
+    calllog.note(worktree=root)
     with lock(root):
         ws = Workspace(root)
         base_ctx = ws.ctx()
@@ -487,5 +490,6 @@ def transaction(cfg, repo, build, dry_run=False):
                          for f, t in sorted(plan["edits"].items())]
         if not dry_run:
             write_files(root, plan["edits"], {f: ws.data.get(f) for f in plan["edits"]})
+            calllog.note(files=files_changed)  # the bytes before and after of every file written (ADR-031)
         return dict(result, changed=True, dryRun=bool(dry_run), filesChanged=files_changed, findings=findings,
                     preexistingViolations=pre)

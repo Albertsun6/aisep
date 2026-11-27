@@ -73,10 +73,13 @@ EXPECTED_ANNOTATIONS = {  # §4 table: (readOnly, destructive, idempotent, openW
     "model_add_relationship": (False, False, True, False), "model_remove": (False, True, True, False),
     "model_set_labels": (False, True, True, False), "model_set_attributes": (False, True, True, False),
     "governance_record_approval": (False, False, True, True),
-    "model_list_actions": (True, None, True, False), "model_apply_action": (False, True, True, False)}
-EXPECTED_PROFILES = {"agent": set(EXPECTED_ANNOTATIONS) - {"governance_record_approval", "model_branches"},
+    "model_list_actions": (True, None, True, False), "model_apply_action": (False, True, True, False),
+    "model_list_views": (True, None, True, False), "model_render_view": (True, None, True, False),
+    "model_call_log": (True, None, True, False)}
+EXPECTED_PROFILES = {"agent": set(EXPECTED_ANNOTATIONS) - {"governance_record_approval", "model_branches", "model_call_log"},
                      "workbench": {"model_query", "model_findings", "model_gate", "model_impact", "model_diff",
-                                   "model_branches", "model_list_actions", "governance_record_approval"}}
+                                   "model_branches", "model_call_log", "governance_record_approval", "model_list_views",
+                                   "model_render_view", "model_list_actions"}}
 
 
 def test_workbench_lists_read_only_action_catalogue_but_not_apply():
@@ -84,7 +87,7 @@ def test_workbench_lists_read_only_action_catalogue_but_not_apply():
     wb, agent = set(S.listed("workbench")), set(S.listed("agent"))
     assert "model_list_actions" in wb and "model_apply_action" not in wb
     assert {"model_list_actions", "model_apply_action"} <= agent
-    assert agent == set(EXPECTED_ANNOTATIONS) - {"governance_record_approval", "model_branches"}
+    assert agent == set(EXPECTED_ANNOTATIONS) - {"governance_record_approval", "model_branches", "model_call_log"}
     assert S.TOOLS["model_list_actions"][4]["read_only_hint"] is True
 
 

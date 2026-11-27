@@ -11,11 +11,11 @@
 - 定稿 ADR-013 留下的三处：`model.diff`、`governance.record_approval` 的活动参数、`aisep:AgentActivity`。
 - 工作台 `client.ts` 的正式接口，以及 `FixtureClient` 的替换路径。
 
-**已决前提（本文不推翻）**
+**已决前提（本文不推翻；P1 由 ADR-031 修订）**
 
 | # | 前提 | 出处 |
 |---|---|---|
-| P1 | MCP 不保存任何文件外状态；写操作 = 改 Turtle 文件，进 Git | §8.3、ADR-008 |
+| P1 | MCP 不保存任何文件外状态；写操作 = 改 Turtle 文件，进 Git。唯一例外是服务端调用日志（§3.6）：本机运维记录，不是模型或治理状态，不参与任何判定 | §8.3、ADR-008、ADR-031 |
 | P2 | 不提供上报"进行中"状态的写工具；运行态读编排器；改动元素由 `model.diff` 算 | ADR-013、§8.3 |
 | P3 | `model.diff` base 缺省取 merge-base；前提是模型与代码同仓、同分支。~~v1 只比较已提交内容~~：设计会话 2026-11-20 拍板 Q6 时撤销这条限制（条件一），改为 head 也可以是某分支检出的工作区（§5.8）；规范 §8.3、附录 C 与 ADR-013 的对应文字见 §9 | §8.3、附录 C、ADR-013 |
 | P4 | approvalState 只由合法批准记录推导，手填是 L1 违规 | §6.6、R3、G1 |
@@ -28,7 +28,7 @@
 
 **一条隐含前提，写明**：MCP 写工具**不是唯一写入途径**。人和代理照样可以直接编辑 `.ttl`，最后都由 pre-commit 和 CI 的 `gate` 兜底。写工具的价值只有三点：生成 IRI、拒绝不合法的写入、级联删除。所以服务器不能假设文件只被自己改过。
 
-**不在本版**：视图与布局的写工具；改元素类型；diff 比较任意目录或 index（暂存区）内容（worktree 模式只按分支名定位工作区，见 §5.8）；跨仓库的模型差异；多仓库 AO 项目（`kind=workspace`）。
+**不在本版**：视图与布局的写工具（看视图的两个只读工具 `model_list_views`、`model_render_view` 已加入，§5.15、§5.16；写视图仍不在本版）；改元素类型；diff 比较任意目录或 index（暂存区）内容（worktree 模式只按分支名定位工作区，见 §5.8）；跨仓库的模型差异；多仓库 AO 项目（`kind=workspace`）。
 
 ---
 
@@ -51,6 +51,7 @@
 | L3、L4 单层诊断 | — | ✔ | `model_validate`、`model_findings` | `model.validate`、`model.findings` |
 | 遗留违规清单（写前判定放过的旧违规） | ✔ "架构全景"违规计数徽标 | ✔ | `model_findings` 的 `openViolations`（§5.4） | `model.findings` |
 | 提交前统一结论 | — | ✔ | `model_gate` | 新增 |
+| 调用日志：被审计的写调用与动作调用（诊断用、不防篡改） | ✔ | ✘ 不列出 | `model_call_log`（§5.17） | 无（规范外，ADR-031） |
 | 看自己分支改了什么（含未提交） | — | ✔ | `model_diff`（worktree 模式） | `model.diff` |
 | 查看动作目录（参数 schema、步骤、前置检查提示） | ✔ 只读 | ✔ | `model_list_actions`（§5.13） | 无（规范外） |
 | 执行动作 | ✘ 不列出 | ✔ | `model_apply_action`（§5.14） | 无（规范外） |
@@ -93,7 +94,7 @@
 
 - 同一个程序：`aisep-mcp --transport stdio|http`。
 - 选 HTTP 的唯一理由是 P10：stdio 要在 Electron 主进程起子进程，再经 preload 暴露给 renderer，要改上游的 `main.ts`、`preload.ts`。HTTP 由 renderer 直接 `fetch`，代码全部留在 `aisep/data/`。renderer 已经在用 `http://127.0.0.1` 访问 AO（`lib/api-client.ts`），注释说明 CSP 的 `connect-src` 放行了 http 127.0.0.1。
-- **协议没有会话**（2026-07-28）：没有 `initialize`，没有 `Mcp-Session-Id`；每个 POST 自带 `_meta` 里的协议版本和客户端能力，独立处理，返回 `application/json`。这就是 P1 在传输层的落实。对 2025-11-25 客户端（如部分代理），SDK 的 `stateless_http` 模式照常服务。
+- **协议没有会话**（2026-07-28）：没有 `initialize`，没有 `Mcp-Session-Id`；每个 POST 自带 `_meta` 里的协议版本和客户端能力（客户端还可以带 clientInfo，键为 MCP Python SDK 的 `CLIENT_INFO_META_KEY`，即 `io.modelcontextprotocol/clientInfo`；调用日志把它记为调用方声明，§3.6），独立处理，返回 `application/json`。这就是 P1 在传输层的落实。调用日志不构成会话：写入只追加；唯一读它的是只读工具 `model_call_log`（§5.17），它不保存游标，结果也不参与任何判定。对 2025-11-25 客户端（如部分代理），SDK 的 `stateless_http` 模式照常服务。
 - **安全面**：
 
 | 项 | 做法 | 出处 |
@@ -110,6 +111,7 @@
 - **每个工具都收可选参数 `repo`**：仓库内任意路径（主 checkout 或某个 worktree）。服务器用 `git -C <repo> rev-parse --show-toplevel` 规范化。
 - `repo` 必须落在启动参数 `--allow-root`（可重复）之下，否则 `PATH_OUTSIDE_ROOT`。不依赖 MCP roots（客户端是否声明 roots 未核实，靠启动参数更可验证）。
 - 不传 `repo`：取服务器的 `--repo`，再缺省取 cwd 所在仓库。编码代理一般不传；**工作台也不传**：v1 只支持单仓库项目（§1"不在本版"），工作台的服务器进程由开发脚本带 `--repo` 起。这样工作台不依赖 AO 的 `GET /api/v1/projects`，P10 的上游接触面不扩大。
+- **调用日志写到哪里**（§3.6）只看启动参数，不看调用方传的 `repo`：第一个 `--allow-root` 在某个 Git 仓库里时取该仓库的 common dir，否则取 `--repo` 的 common dir；都取不到就不写、在 stderr 报警告。所以还没定位到仓库就被拒的调用（如 `PATH_OUTSIDE_ROOT`）也有地方记。
 - 主分支：每次调用可传 `mainRef`；不传取启动参数 `--main-branch`，再缺省 `main`。不引入配置文件。
 - **主分支解析顺序**：给的是短名 `<b>` 时，先找 `refs/remotes/<upstream>/<b>`（`upstream` 取 `<b>` 的跟踪远端，没有就 `origin`），有就用；没有才退回 `refs/heads/<b>`。理由：会话分支通常从 `origin/main` 切出，本地 `main` 落后时 merge-base 会落在更老的提交上，diff 会把队友已合入的改动算进本会话（评审实测复现）。AO 读 base 用的也是远端跟踪引用（`workspace.ts` 的 `baseRef`，如 `"origin/main"`）。输出的 `base.mainRef` 给出实际用的完整 ref 名。
 - **读哪份内容**：
@@ -135,7 +137,8 @@
   1. `flock` 锁**被写入的那个 worktree** 的 `$(git -C <worktree> rev-parse --git-dir)/aisep-write.lock`。`model_*` 写工具的目标就是 `repo`；`record_approval` 的目标是 `branch` 检出所在的 worktree（§5.9 第 7 步），**不是**调用方传的 `repo`。这样工作台对 worktree A 批准时，与 A 里代理的写入抢的是同一把锁。拿不到立即返回 `LOCKED`（可重试），不排队。不同 worktree 互不阻塞。进程死了锁自动释放。
   2. 写前哈希核对：读入时记下目标文件 sha256；rename 前再算一次，不等就 `CONFLICT`（可重试）。**这不是真正的比较并交换**（R2-3）：外部编辑器、普通 `git` 命令不遵守 `aisep-write.lock`，在"核对哈希"与 `rename` 之间写入的内容会被静默覆盖。这个窗口只有毫秒级，v1 接受，列为已知限制（§9 附录 C）；不采用原子交换（Linux `renameat2(RENAME_EXCHANGE)`、macOS `renamex_np(RENAME_SWAP)`）再核对换出旧文件的做法：平台相关，换回时还有同样的窗口。T13 加一例：在核对之后、rename 之前注入外部写入，断言结果如上所述（被覆盖），证明文档如实。
   3. 替换：写临时文件 → `fsync` → `rename`。多个文件先全部写成临时文件，再依次 rename；进程内中途失败用内存里的原字节恢复，恢复前先比对文件仍等于本次写入后的哈希，不等就跳过（保留现场），其余文件照常回滚完，最后报 `CONFLICT`，**不可重试**，`details.kept: true`，`details.keptFiles` 列出所有因此未回滚、停在半写入状态的文件，`details.file` 为其中第一个（PR #34；`aisep/writer.py` 回滚处）。
-  4. **不是崩溃原子的**：进程在两次 rename 之间被杀（SIGKILL、宿主断开时杀子进程、断电），工作区会停在部分写入。服务器无状态，不做恢复日志；兜底是 pre-commit 的 gate（部分写入通常留下悬空引用，L1 报错）和 `git diff` 人工恢复。验收 T13 注入 SIGKILL 证明 gate 能拦住。
+  4. **不是崩溃原子的**：进程在两次 rename 之间被杀（SIGKILL、宿主断开时杀子进程、断电），工作区会停在部分写入。服务器无状态，不做恢复日志（调用日志 §3.6 不用于恢复）；兜底是 pre-commit 的 gate（部分写入通常留下悬空引用，L1 报错）和 `git diff` 人工恢复。验收 T13 注入 SIGKILL 证明 gate 能拦住。
+- 调用日志（§3.6）用仓库级锁 `<git-common-dir>/aisep/calls.lock`，与上面按 worktree 加的写锁分开：各 worktree 的服务器进程写同一个文件，拿锁后串行追加，阻塞等待而不报 `LOCKED`。
 - `record_approval` 的提交另受 Git 自己的 `index.lock` 保护，拿不到报 `COMMIT_FAILED`；只在回滚完成、且输出含 `index.lock` 时可重试，回滚未完成（`orphanApproval`）不可重试（§7.2）。`git add --intent-to-add` 失败时记录若已被别的提交带走（taken），不报 `COMMIT_FAILED`，报 `CONFLICT`（`taken-by-other-commit`），不可重试。
 
 ### 3.5 无状态的落实
@@ -145,12 +148,33 @@
 | 每次调用重新解析文件或 Git 对象，构建 `Ctx` | 不是 |
 | 快照临时目录 | 不是：调用结束即删 |
 | 写锁文件 | 不是：只在一次写调用期间存在，在 `.git` 内，不进版本库 |
+| 调用日志 `<git-common-dir>/aisep/calls.jsonl`（§3.6） | 是跨调用存在的本机文件，但不是模型或治理状态：在 `.git` 内，不进版本库，不参与任何判定；只有只读工具 `model_call_log`（§5.17）读它，读取时不保存任何游标（ADR-031） |
 | 会话、游标、草稿、订阅、"进行中"标记 | **不存在** |
 
 - v1 **不做跨调用缓存**。L0–L2 只要 0.07 秒（F1）；gate 要 5 秒（F2），关口页每次进入等一次，可接受。以后要加缓存，键只能是不可变的 Git 对象 ID，不改接口。
-- 列表结果有硬上限，超了截断并返回 `truncated: true`：`model_query` 用 `limit`；`model_impact` 的 `items` 最多 500 条；`model_diff` 的 `items` 最多 2000 条（计数 `counts` 永远完整）。v1 不做续页。续页令牌可以把 commit 和偏移编码进去而保持无状态，等真有大仓库再加，不改现有字段。
+- 列表结果有硬上限，超了截断并返回 `truncated: true`：`model_query` 用 `limit`；`model_impact` 的 `items` 最多 500 条；`model_diff` 的 `items` 最多 2000 条（计数 `counts` 永远完整）。v1 不做续页，唯一例外是 `model_call_log`（§5.17，按 Albert 2026-11-27 第 14 条带无状态游标）。续页令牌可以把 commit 和偏移编码进去而保持无状态，等真有大仓库再加，不改现有字段。
 - 输出体量参照 Claude Code 的阈值：结果文本超过 50,000 字符会被落盘，错误文本超过约 11,000 字符会被截成首尾各 5,000。`content` 摘要里的发现项行最多 200 行，其余只在 `structuredContent` 里。
 - 可证伪断言：两次调用之间杀掉重启服务器，所有只读工具的结果**规范化后**相同（T4）：去掉 `summary.seconds` 等耗时字段；无序集合先排序；`model_query` 只在 SPARQL 带 `ORDER BY` 时承诺行序。
+
+### 3.6 调用日志（ADR-031，A 层）
+
+服务器对**被审计的调用**各追加一行 JSON 到本机文件，供事后排查诚实代理的误调用与被拒情况。它是 P1 的唯一例外（ADR-031），只是本机运维记录。
+
+- **挂钩点**：`aisep/server.py` 的 `on_call_tool`。被审计的工具：五个 `model_*` 写工具、`model_apply_action`（`dryRun` 也记）、`governance_record_approval`。成功与被拒都记：参数校验（`INVALID_ARGUMENT`）、guard（`PRECONDITION_FAILED`）、删除两段式（`PLAN_REQUIRED`、`PLAN_STALE`）、`PATH_OUTSIDE_ROOT` 等，结果值即 §7.2 的错误码。调用名属于审计集合、但当前画像没有列出的（如 `agent` 画像调用 `governance_record_approval`），`on_call_tool` 仍以 JSON-RPC「Unknown tool」拒绝，日志结果记 `UNKNOWN_TOOL`：这是日志专用值，不是错误码，不进 §7.2。只读工具不记，既不在审计集合、也不在画像里的未知工具名也不记，所以 T4 照样成立。
+- **位置**：`<git-common-dir>/aisep/calls.jsonl`，按 §3.3 所述只由启动参数决定（第一个 `--allow-root` 所在仓库 → `--repo` → 都没有则不写、启动时与每次被审计调用时在 stderr 警告）；不用 cwd 兜底。不进工作区、不进模型图（`model_query` 查不到）、不推远端，不做轮转。
+- **并发**：追加前拿仓库级 `flock`（`<git-common-dir>/aisep/calls.lock`），再用 `O_APPEND` 一次写入一整行。
+- **字段**：每行 `{"v": 1, "measured": {…}, "declared": {…}}`。行格式是对外契约（`model_call_log` 原样返回日志行）：改格式就升 `v`，读工具同时认新旧版本。
+  - `measured`（服务端测得或收到）：
+    - `time`（UTC，RFC 3339，毫秒，带 `Z`）、`durationMs`、`server`（`pid`、`profile`、`transport`、`allowRoots`、`repo`，即启动参数）、`tool`、`outcome`（`ok`、§7.2 的错误码或 `UNKNOWN_TOOL`）。
+    - `request`：服务端**收到**的结构性参数（Albert 2026-11-27 第 14 条：结构性参数放这里，不算调用方声明）。`argsSha256`（参数按键排序的紧凑 UTF-8 JSON 的 sha256，`sha256:` 前缀）；`model`（参数 `model`：slug 或 IRI，没有为 `null`）；`iris`（参数 `iri`、`source`、`target`、`approvedBy`、`approves` 的值，`model_apply_action` 再加动作 `iriParams` 列出的参数值，新增元素、关系成功时再加生成的 IRI；**只记前 50 项**，另有 `irisCount`（总项数）与 `irisSha256`（整个列表按键排序的紧凑 UTF-8 JSON 的 sha256，同 `argsSha256` 的算法），所以 `approves` 等列表再长，一行的长度也有上限）；`actionId`、`actionVersion`、`definitionDigest`（该动作的 `owl:versionInfo` 与单个动作的 `definitionDigest`，§5.13；找到定义后才有，不记整份 `catalog.ttl` 的哈希）；`dryRun`、`planDigestGiven`（只记有没有带 `planDigest`）——工具没有这个参数时为 `null`；`repoArg`（调用方传的 `repo`，供排查 `PATH_OUTSIDE_ROOT`）。这些都是调用方给的值，被拒的调用也照记，所以**只有通过形状校验且不超长的才记原值**，否则只记 `{"sha256": "sha256:<该字符串 UTF-8 的哈希>"}`（拍板第 14 条「只返回哈希与标识符」）：IRI（含 `iris` 每一项、`model` 的 IRI 形式）须是不含空白的 ASCII IRI 或 CURIE（`scheme:` 开头），不超过 512 字符；`model` 的 slug 形式按模型 slug 规则；`actionId` 按动作 id 规则（`[a-z][a-z0-9-]{0,63}`）；`repoArg` 须是只含 `A–Z a–z 0–9 . _ ~ @ + / -` 的绝对路径，不超过 1024 字符。值不是字符串时记 `null`。各字符串在算哈希前按 UTF-8 编码，孤立代理项按 `surrogatepass` 原样编码（`argsSha256`、`irisSha256` 与 `{"sha256": …}` 同一口径）。`slug` 参数不记。标签、定义、gherkin 这类正文一律不记。**注意**：`model_add_element` 不给 `slug` 时，服务端用 `altLabel` 的 camelCase 生成 IRI（§5.2），这个 IRI 通过 IRI 校验、会作为生成的 IRI 原样进 `iris`，于是英文名的字母数字部分会以 camelCase 形式出现在日志里；不希望如此时显式给 `slug`。结果为 `UNKNOWN_TOOL` 的行不解读参数：只有 `argsSha256`，其余为 `null`（含 `irisCount`、`irisSha256`），`iris` 为 `[]`。
+    - `outcome` 只记错误码，不记错误的 `message`、`details`、`hint`（拒绝原因写在 `details` 里，可能带调用方原值）。
+    - `target`：目标工作区 `{worktree, branch, head}`，还没定位到工作区就被拒时为 `null`。`worktree` 按 `repoArg` 的规则校验，不合规只记 `{"sha256": …}`。
+    - `files`：每个被写文件 `{path, before, after}`（相对工作区的路径，改前、改后的 `sha256:` 哈希；新建文件的 `before` 为 `null`）。`path` 可能来自调用方的 `file` 参数，所以按 `repoArg` 的字符规则校验（相对路径，只含 `A–Z a–z 0–9 . _ ~ @ + / -`，不超过 1024 字符），不合规（如中文文件名）只记 `{"sha256": …}`。**统一口径**：列出本次调用写下、调用结束时仍留在磁盘上的文件，`after` 一律是本次写下的内容的哈希（不是调用结束时的现状）。成功时是全部写入；回滚时，已恢复或删掉（或已被别人删掉）的不列，因别人改过而保留在磁盘上的照列——写工具是 `details.keptFiles` 里的文件，`governance_record_approval` 是 `details.fileKept` 的记录文件，或被别的提交带走的记录文件。没写文件时为空。
+    - `approval`：`{commit, activity}`，只出现在成功的 `governance_record_approval` 行里，只用来关联。
+  - `declared`（调用方声明）：`clientInfo`（stdio 取 `initialize` 的；HTTP 取每次请求 `params._meta` 的，§3.2），只保留字符串字段 `name`、`version`、`title`，各截到 128 字符，其余字段与非字符串值丢弃；`governance_record_approval` 行另有 `activity`（`{agent, sessionRef}`；`UNKNOWN_TOOL` 行不记）。`activity` 是调用方给的值，被拒的调用也照记，所以与 `request` 同样**只有通过形状校验的才记原值**，否则只记 `{"sha256": …}`：`agent` 按上面的 IRI 规则（不超过 512 字符），`sessionRef` 按 `governance_record_approval` 自己的规则（可见 ASCII 字符，不含空白，1–200 字符）；值不是字符串时记 `null`。声明字段只用来关联，任何判定都不能用；`declared` 组的字段不出现在 `measured` 下。
+- **读取**：`workbench` 画像经只读工具 `model_call_log` 读（§5.17）；`agent` 画像不列出它。
+- **失败策略**：fail-open。日志写不进去（目录只读、磁盘满等）时工具结果逐字节不变，只在 stderr 警告。
+- **威胁模型**：只保证服务进程按仓库里经过评审的代码诚实运行时，它经手的每次被审计调用都留一行。**不防代理篡改**：同一 macOS 用户下的代理能改服务端代码、换解释器、直接删改日志或绕过 MCP 改文件；不做哈希链（没有外部锚点挡不住重算）。日志不证明调用方身份，不代替 AgentActivity、`AISEP-Session` trailer 或批准记录。服务端写完文件、还没写日志时进程崩溃，这一行会丢。`argsSha256`、`irisSha256` 与 `{"sha256": …}` **不加盐，不是保密手段**：它们只让行里不出现原文，能读日志的人对候选值（短标签、常见文件名、猜得到的 IRI）逐个算哈希就能确认原值。通过形状校验原样记下的 IRI 可以含百分号编码（`%E4%B8%AD` 等），解码后可还原中文等内容，所以「只记标识符」不等于「不含可读内容」；不希望进日志的内容不要放进 IRI。防篡改的 B 层及其触发条件见 ADR-031 决策第 7 款。
 
 ---
 
@@ -177,19 +201,22 @@
 | `model_set_attributes` | `model.set_attributes`（**新增**） | false | **true**（按谓词整体替换原值；原值留在 Git 历史里） | true（同参数重放 = 无变化） | 无 | **新实现**（校验复用 `check`，§5.12） |
 | `model_list_actions` | 无（规范外） | true | — | true | 无 | **新实现**：列动作目录（§5.13） |
 | `model_apply_action` | 无（规范外） | false | **true**（目录里有含删除步骤的动作；按目录内容逐个变就会让 `tools/list` 随数据变，所以固定按最坏情形标） | true（各步互不覆盖的动作同参数重放 = 无变化，边界见 §5.14） | 无 | **新实现**：把现有写工具的计划函数按目录组合，交给一次 §5.1 写入（§5.14） |
+| `model_list_views` | 无（规范外） | true | — | true | `diagram`（选视图部分） | **新实现**：列声明视图与可出图的投影（ArchiMate、C4、BPMN、UML、DDD），每项带出图参数（§5.15） |
+| `model_render_view` | 无（规范外） | true | — | true（同一模型字节相同） | `diagram` | 复用 `aisep/diagram.py`、`diagram_c4.py`、`diagram_uml.py`、`diagram_ddd.py` 出 SVG，`diagram_bpmn.py` 出 BPMN 2.0 XML（§5.16） |
+| `model_call_log` | 无（规范外，ADR-031） | true | — | true（结果随日志文件增长而变；调用本身不改任何东西，也不记日志） | 无 | **新实现**：分页读调用日志（§5.17） |
 | `governance_record_approval` | `governance.record_approval` | false | false | true（完全重复的请求不写；去重键含调用方给的 `headCommit`，重放稳定） | 无 | **新实现**（gate 复用） |
 
 **画像**：启动参数 `--profile agent|workbench|all`，决定 `tools/list` 列出哪些工具。按进程定，不按连接变（满足 2026-07-28"`tools/list` 不得随连接变化"）。
 
 | 画像 | 列出 |
 |---|---|
-| `agent` | 除 `governance_record_approval`、`model_branches` 外全部 |
-| `workbench` | `model_query`、`model_findings`、`model_gate`、`model_impact`、`model_diff`、`model_branches`、`model_list_actions`（只读；不列 `model_apply_action`，Albert 2026-11-27 定）、`governance_record_approval` |
+| `agent` | 除 `governance_record_approval`、`model_branches`、`model_call_log` 外全部 |
+| `workbench` | `model_query`、`model_findings`、`model_gate`、`model_impact`、`model_diff`、`model_branches`、`model_call_log`、`governance_record_approval`、`model_list_views`、`model_render_view`、`model_list_actions`（只读；不列 `model_apply_action`，Albert 2026-11-27 定） |
 | `all` | 全部（测试用） |
 
 画像**不是安全边界**：代理可以直接手写 Turtle 伪造批准记录，真正的约束是代码评审和分支保护。画像只防"顺手调用"。
 
-**加了五个规范外的工具**：`model_gate`、`model_set_labels`、`model_set_attributes`、`model_list_actions`、`model_apply_action`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。`model_set_attributes`：补上非标签属性的修改入口（Albert 2026-11-25 放行阶段 A 时随之加入，§5.12）。`model_list_actions`、`model_apply_action`：动作目录的两个固定入口，把几次写工具调用合成一次写入（§5.13、§5.14）。
+**加了八个规范外的工具**：`model_gate`、`model_set_labels`、`model_set_attributes`、`model_list_actions`、`model_apply_action`、`model_list_views`、`model_render_view`、`model_call_log`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。`model_set_attributes`：补上非标签属性的修改入口（Albert 2026-11-25 放行阶段 A 时随之加入，§5.12）。`model_list_actions`、`model_apply_action`：动作目录的两个固定入口，把几次写工具调用合成一次写入（§5.13、§5.14）。`model_list_views`、`model_render_view`：工作台「能看视图」的第一阶段（2026-11-27），只读；视图写工具仍不在本版（§1）（§5.15、§5.16）。`model_call_log`：只读，给工作台读服务端调用日志（ADR-031，Albert 2026-11-27 拍板第 14 条，§3.6、§5.17）。
 
 ---
 
@@ -640,7 +667,7 @@
    - 记录 IRI `{model}approval-{yyyymmddHHMMSS}-{slug}`（§3）；活动 IRI `{model}activity-{yyyymmddHHMMSS}-{headCommit 前 7 位}`（§3 新增行，Q6=A 第⑥项）；时间取 `prov:generatedAtTime` 的 UTC 年月日时分秒；重名加 `-2`。`-2` 只看得到本分支：两条分支对同一提交、同一关口批准时，跨分支不重名靠秒级时间；同一秒内并发仍会撞名，合并时 add/add 冲突，登记为残余风险（第四轮 R4-7，用户拍板只加秒级时间）。
    - `prov:generatedAtTime` = 服务器当前时间，UTC，`Z` 结尾（测试注入时钟）。
    - **新建一个记录文件**（U2）`models/<slug>/governance/<记录本地名>.ttl`，记录本地名即记录 IRI 去掉 `{model}` 前缀的部分（如 `approval-20261120093015-architecture-9c41e07.ttl`；重名加 `-2` 时文件名同步）。内容 = 标准前缀头 + 活动块（本次新建活动时）+ 记录块，记录用 `aisep:activity` 指向活动。`governance/` 目录不存在时先建。
-   - 已有 `governance.ttl` 不动：其中的记录与人员不搬迁（IRI 不变），它仍是 `arch:Stakeholder` 等 governance 类元素的缺省写入文件（§5.1）。理由：两条分支各往 `governance.ttl` 末尾追加记录，合并必冲突；托管平台的服务端合并大概率不遵守 `.gitattributes` 的 `merge=union`（第三轮 git-1，平台事实见文末"第三轮"）。每条记录一个新文件，两条分支各批准一次后都能干净合入（T43）。
+   - 已有 `governance.ttl` 不动：其中的记录与人员不搬迁（IRI 不变），它仍是 `arch:Stakeholder` 等 governance 类元素的缺省写入文件（§5.1）。理由：两条分支各往 `governance.ttl` 末尾追加记录，合并必冲突；托管平台的服务端合并大概率不遵守 `.gitattributes` 的 `merge=union`（第三轮 git-1，平台事实见 [`docs/history/mcp-interface-records.md`](history/mcp-interface-records.md) 的「第三轮」）。每条记录一个新文件，两条分支各批准一次后都能干净合入（T43）。
 6. **校验**：候选图跑 L0–L2，走 §5.1 的新违规判定；另外 `Ctx.approval_problems` 和 `activity_problems` 对新记录、新活动必须为空（G1：与推导用同一个函数）。不合法的记录不参与推导，写入一条注定被忽略的记录没有意义。
 7. **Git 落地**（只碰一个路径）：
    - 用 `git worktree list --porcelain` 找 `branch` 检出在哪个 worktree（下称 W）。没有检出 → `BRANCH_NOT_CHECKED_OUT`（v1 不做无检出的底层提交：底层提交不跑钩子，"不跳过 pre-commit"就做不到）。
@@ -701,7 +728,7 @@ CI 设为受保护分支的必需检查，PR 每次更新都跑；合并前由�
 
 **合并前重算**（U3）
 
-不开"要求分支最新"，不用合并队列（个人账号的 private 仓库用不了合并队列，平台事实见文末"第三轮"）。不开"要求分支最新"时，目标分支前进不会让必需检查自动重跑，CI 的通过结论可能只对旧的 T 成立。所以：执行合并的人（按 AGENTS.md「分支与合并」第 2 条，目前由协调会话代合并）在 `gh pr merge` 之前，先 fetch，取当前 `refs/heads/<主分支>` 为 T，用同一个检查脚本重跑上面全部检查项（含合并结果 gate），不过不合。脚本已实现（`aisep/mergecheck.py`，附录 D）；重算、复核目标分支、合并后核验的具体命令写在 AGENTS.md 合并条款（ADR-017）。残余风险：绕过脚本直接点网页合并按钮时，合并结果 gate 可能只对旧主线有效（§9 附录 C）。
+不开"要求分支最新"，不用合并队列（仓库属于个人账号，GitHub 合并队列只对组织名下的仓库开放；仓库现为公开仓库，ADR-020 第 4 款）。不开"要求分支最新"时，目标分支前进不会让必需检查自动重跑，CI 的通过结论可能只对旧的 T 成立。所以：执行合并的人（按 AGENTS.md「分支与合并」第 2 条，目前由协调会话代合并）在 `gh pr merge` 之前，先 fetch，取当前 `refs/heads/<主分支>` 为 T，用同一个检查脚本重跑上面全部检查项（含合并结果 gate），不过不合。脚本已实现（`aisep/mergecheck.py`，附录 D）；重算、复核目标分支、合并后核验的具体命令写在 AGENTS.md 合并条款（ADR-017）。残余风险：绕过脚本直接点网页合并按钮时，合并结果 gate 可能只对旧主线有效（§9 附录 C）。
 
 重算与合并之间没有原子绑定（第四轮 R4-11）：平台的合并接口只能锁 PR 头（`gh pr merge --match-head-commit H`），锁不了目标分支头，重算通过后、合并执行前目标分支仍可能前进。按以下流程把窗口压到最小，余下的登记为残余风险（§9 附录 C）：① 合并串行，同一时刻只有一个执行合并的会话；② 合并命令带 `--match-head-commit H`，执行前再 `git ls-remote` 一次目标分支，不等于重算用的 T 就重来；③ 合并后核验：取新的主线头 M'，确认其第一父等于 T、第二父等于 H；不等则对 M' 重跑合并结果 gate 与检查项 6、7、8、9（第 8、9 项只扫 M'），不过就立即开 revert PR 并报告。
 
@@ -844,7 +871,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 出处：Albert 2026-11-25 确认动作机制走「薄封装」方向，2026-11-26 放行阶段 C 时改选：动作定义建进元模型（新模块 `modules/ext-actions/`，参照 Palantir Foundry 的 Action type，只建定义、不建执行记录），目录从 RDF 读。本节与 §5.14 随之加入。字段名、错误码名、词汇细节是实现时的取舍，Albert 没有逐条定过。用法见 `docs/actions.md`「动作目录」一节。
 
-**动作是什么**：现有写工具的具名组合，写成元模型里的 `aisep:ActionType` 个体，放在扩展模块 `modules/ext-actions/` 的 `catalog.ttl`（词汇在 `onto.ttl`，L3 形状 EA1–EA11 在 `shapes.ttl`）。`catalog.ttl` 列在模块清单的 `aisep:loads` 里，所以 `gate` 会用 `shapes.ttl` 校验它，`model_query` 也能查到有哪些动作。动作有 IRI（形如 `aisep:Action<名>`），调用时用短 id（`dcterms:identifier`）。动作个体不是模型元素：不在 `arch:Element` 之下，没有 `arch:inModel`，也没有批准状态。动作是**推荐通道**，不是唯一通道：逐个调写工具、直接编辑 `.ttl` 照旧允许，`gate` 与合并核对不知道改动是否经动作做的。动作不产生审批项，不留执行记录，不写日志文件。
+**动作是什么**：现有写工具的具名组合，写成元模型里的 `aisep:ActionType` 个体，放在扩展模块 `modules/ext-actions/` 的 `catalog.ttl`（词汇在 `onto.ttl`，L3 形状 EA1–EA11 在 `shapes.ttl`）。`catalog.ttl` 列在模块清单的 `aisep:loads` 里，所以 `gate` 会用 `shapes.ttl` 校验它，`model_query` 也能查到有哪些动作。动作有 IRI（形如 `aisep:Action<名>`），调用时用短 id（`dcterms:identifier`）。动作个体不是模型元素：不在 `arch:Element` 之下，没有 `arch:inModel`，也没有批准状态。动作是**推荐通道**，不是唯一通道：逐个调写工具、直接编辑 `.ttl` 照旧允许，`gate` 与合并核对不知道改动是否经动作做的。动作不产生审批项，不在模型里留执行记录；`model_apply_action` 的每次调用（含 `dryRun` 与被拒）由服务端调用日志记一行（§3.6，ADR-031），那不是模型对象；`workbench` 画像可用只读工具 `model_call_log` 读取（§5.17）。
 
 **两个工具的形状是固定的**：目录增删改动作，`tools/list` 都不变（参数 schema 由本工具返回，不进 `inputSchema`）。
 
@@ -920,6 +947,92 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 **校验层**：候选图 L0–L2（只判最终状态）。
 
+### 5.15 `model_list_views`（列视图，规范外）
+
+2026-11-27 加入：工作台要先「能看视图」。**只读；视图写工具仍不在本版（§1）**。实现在 `aisep/views.py`，契约测试 `aisep-mcp/tests/test_views.py`。
+
+视图有两种，出图规则都是 `tools/aisep.py diagram` 的（不存坐标，ELK 自动布局）：**声明视图**是模型里的 `arch:Diagram`（成员经 `arch:inView`）；**投影**由出图器从模型里选元素：ArchiMate 视点按 vendor `archimate4_viewpoints.ttl` 的 `arch:includesConcept`，C4 视点按 `aisep/diagram_c4.py` 的四个（系统上下文、容器、组件、部署），各有一个范围；BPMN 每个 `bpmn:Process` 一张（`aisep/diagram_bpmn.py`，`docs/specs/bpmn-view.md`）；UML 类图每个模型一张（`aisep/diagram_uml.py`，`docs/specs/uml-class-diagram.md`）；DDD 每个模型一张上下文映射图、每个拥有聚合的限界上下文一张聚合图（`aisep/diagram_ddd.py`，`docs/specs/ddd-views.md`）。2026-11-27 第二次扩充加入 BPMN、UML、DDD。
+
+**输入**：`model`（可选，口径同 §5.0；不给就列全仓）、`repo`、`ref`（§5.0）。
+
+**输出**：`{ models: [{model, slug, label, views, projections}], source }`，`models` 按模型 IRI 排序。
+
+| 字段 | 说明 |
+|---|---|
+| `views[]` | 声明视图，按 IRI 排序：`{iri, label, notation: "archimate"\|"c4"\|"uml", viewpoint, viewpointLabel, memberCount, render: {view}}`。`viewpoint` 是 `arch:viewConformsToViewpoint`（多个取排序第一个，没有为 `null`）；视点是 `c4vp:` 下的就是 C4 视图，`umlvp:` 下的就是 UML 视图（首批只能画 `umlvp:ClassDiagram`，`viewpointLabel` 为「UML 类图」；别的 `umlvp:` 视图照样列出，出图时报 `INVALID_ARGUMENT`）。`memberCount` 是 `arch:inView` 指向它、且属于本模型的主语个数（元素与关系都算），不是画出来的个数 |
+| `projections[]` | 本模型里至少能画出一个元素的视点投影：先 ArchiMate（按视点名），再 C4（系统上下文、容器、组件、部署，同类按范围）。ArchiMate 项 `{notation: "archimate", viewpoint: <视点本地名>, label, elementCount, relationshipCount, render: {viewpoint, model}}`；C4 项 `{notation: "c4", viewpoint, label, scope, scopeLabel, elementCount, relationshipCount, render: {c4viewpoint, of[, model]}}`；之后依次是 BPMN、UML、DDD：BPMN 项 `{notation: "bpmn", viewpoint: "Process", label: "BPMN 流程", scope: <流程 IRI>, scopeLabel, elementCount: <流程节点数>, relationshipCount: <顺序流数>, render: {process}}`（按流程 IRI 排序）；UML 项 `{notation: "uml", viewpoint: "ClassDiagram", label: "UML 类图", elementCount: <类元数>, relationshipCount, render: {umldiagram, model}}`；DDD 项先上下文映射图 `{notation: "ddd", viewpoint: "ContextMap", label: "上下文映射图", elementCount, relationshipCount, render: {dddviewpoint: "ContextMap", model}}`，再按限界上下文 IRI 排序的聚合图 `{notation: "ddd", viewpoint: "AggregateDiagram", label: "聚合图", scope, scopeLabel, elementCount, relationshipCount, render: {dddviewpoint: "AggregateDiagram", of}}`。DDD 的计数与 CLI 的 `SUMMARY` 相同（`aisep/diagram_ddd.py` 的 `counts`：元素不含限界上下文外框，关系含画在上下文里的归属） |
+| `render` | 原样传给 `model_render_view` 就能画出这一项；`elementCount`、`relationshipCount` 与那次出图的结果相同（同一个选择函数算的） |
+
+BPMN 流程的选择被出图器拒绝时（标签含 XML 1.0 不能承载的字符、本地名不是 bpmn-js 能读入的 id、id 重名等），这个流程不列，`tools/aisep.py diagram --process` 会说明原因；其余记法在选择阶段不核对文本，列出后出图时才报 `text-not-xml`（§5.16）。
+
+C4 范围：每个内部软件系统（`c4:SoftwareSystem`，不含外部系统）一张系统上下文图；含容器的软件系统一张容器图；含组件的容器一张组件图；每个部署环境（`structurizr:environment`）一张部署图，`render` 带 `model`（同名环境可能在几个模型里）。环境名不是「字母开头、只含字母数字 `_` `-`」的不列（出图器把它拼进查询文本，§5.16）。
+
+**错误**：`INVALID_ARGUMENT`、`MODEL_NOT_FOUND`、`PARSE_FAILED`（有模型文件解析失败，`details.files`、`details.findings`），以及定位的 `NOT_A_GIT_REPO`、`PATH_OUTSIDE_ROOT`、`REF_NOT_FOUND`、`MODULES_NOT_IN_REF`。
+
+**校验层**：只要求 L0 能解析；L1–L4 的违规不影响看图。
+
+### 5.16 `model_render_view`（画一个视图，规范外）
+
+出处同 §5.15。**只读；视图写工具仍不在本版（§1）**。
+
+**输入**：六选一（下表七种形式，`dddviewpoint` 有两种），外加可选的 `repo`、`ref`（§5.0）。不是这些组合之一 → `INVALID_ARGUMENT`（`details.rejectedFields` 点名多给或缺的字段）。不用 `oneOf` 写进 `inputSchema`：部分客户端不接受顶层组合关键字，组合由服务器校验。
+
+| 形式 | 字段 | 说明 |
+|---|---|---|
+| 声明视图 | `view` | 视图 IRI 或 `slug:local`（至多 2048 字符，`of`、`process` 同）；视点是 `c4vp:` 下的按 C4 画，`umlvp:` 下的按 UML 画（只支持 `umlvp:ClassDiagram`，别的 `INVALID_ARGUMENT`，同 CLI），否则按 ArchiMate 画。不接受 `model`、`of` |
+| ArchiMate 视点投影 | `viewpoint` + `model` | `viewpoint` 是视点本地名（如 `LayeredViewpoint`，`^[A-Za-z][A-Za-z0-9_-]*$`）；没有这个视点 → `INVALID_ARGUMENT`，`details.candidates` 列出全部视点名 |
+| C4 视点投影 | `c4viewpoint` + `of`（+ `model`） | `c4viewpoint` ∈ `SystemContext`、`ContainerDiagram`、`ComponentDiagram`、`C4Deployment`。前三个的 `of` 是软件系统或容器的 IRI（模型由它决定，不接受 `model`）；`C4Deployment` 的 `of` 是环境名（同上的纯名字规则），`model` 可选，用来区分同名环境 |
+| UML 类图投影 | `umldiagram` + `model` | `umldiagram` ∈ `ClassDiagram`（首批只有这一种）；画模型里全部类元，同 `diagram --uml ClassDiagram --model` |
+| DDD 上下文映射图 | `dddviewpoint: "ContextMap"` + `model` | 不接受 `of`；模型里没有限界上下文 → `INVALID_ARGUMENT` |
+| DDD 聚合图 | `dddviewpoint: "AggregateDiagram"` + `of` | `of` 是限界上下文的 IRI（模型由它决定，不接受 `model`）；不是限界上下文、或它不拥有聚合 → `INVALID_ARGUMENT` |
+| BPMN 流程 | `process` | `bpmn:Process` 的 IRI 或 `slug:local`，同 `diagram --process`；不接受 `model`、`of`；不是 `bpmn:Process`、本地名不能作 id 等 → `INVALID_ARGUMENT` |
+
+**输出**：`{ format, svg | content, title, notation, elementCount, relationshipCount, warnings, source }`。`format` 为 `"svg"` 时图在 `svg` 字段（第一版就有的字段，ArchiMate、C4 照旧，UML、DDD 同样）；BPMN 流程的 `format` 为 `"bpmn-xml"`，图是 BPMN 2.0 XML（语义部分 + BPMNDI 坐标），在 `content` 字段，没有 `svg` 字段（`docs/specs/bpmn-view.md`：交给 bpmn-js 等标准查看器显示）。旧客户端只读 `svg` 的，对原有三种入口不受影响。但它请求 BPMN 流程（`process`）时读不到图：结果里没有 `svg` 字段，须先看 `format`，为 `"bpmn-xml"` 时改读 `content`。`notation` ∈ `archimate`、`c4`、`uml`、`ddd`、`bpmn`。BPMN 的 `title` 是流程标签（没有标签时为本地名），`elementCount` 是流程节点数、`relationshipCount` 是顺序流数。视图里至少有一个元素时，`svg` / `content` 与 `tools/aisep.py diagram` 对同一输入写出的文件逐字节相同（每种入口都如此，`aisep-mcp/tests/test_views.py` 逐一核对）；同一模型两次调用逐字节相同。视图或范围属于几个模型（`arch:inModel` 不止一个）时，两边都取模型 IRI 排序后的第一个。除 BPMN 外，`elementCount` 是画出的元素个数（C4 不含边界与部署节点这类外框），`relationshipCount` 是画出的连线数。`warnings` 是出图器的提示（如「在视图里但另一端不在，不画」；原文为英文），视图里一个元素都没有时加一条「视图里没有元素」，仍返回只有标题与图例的 SVG；这时 CLI 不写文件、报 `[Violation]`（退出码 1），两边在这一种情况下不同，所以上面的逐字节相同限于有元素时。`content[0].text` 只放一句摘要，不放 SVG。
+
+**SVG 只含模型文本的转义**：标签、定义、技术、IRI 进 SVG 前一律经 `html.escape`（`< > & " '` 都转义），只作为元素文本或带引号的属性值；输出里没有 `<script>`、`on*` 属性、`href`、`foreignObject`。测试用含 `<script>`、`" onload=`、`' onmouseover=` 等的标签核对（`test_views.py::test_hostile_labels_are_inert_text`）。BPMN XML 里模型文本同样只作为转义后的属性值或元素文本。模型文本里有 XML 1.0 不能承载的字符（制表、换行、回车以外的 C0 控制字符、U+FFFE、U+FFFF 等，任何转义都写不进 XML）时**拒绝出图**，五种记法一致：`INVALID_ARGUMENT`，`details.reason` 为 `text-not-xml`，`details.rejectedFields` 为本次的 `view`、`viewpoint`、`of`、`umldiagram`、`dddviewpoint` 或 `process`（有 `of` 时为 `of`），message 写出字符码位；CLI 同样报 `[Violation]`。不剔除后照画：与写工具拒绝控制字符的口径一致，也不会悄悄画出和模型不一样的文字（`aisep/diagram.py` 的 `check_xml_text`，出图前、布局前核对）。BPMN 在选择阶段核对（`aisep/diagram_bpmn.py` 抛 `diagram.TextNotXml`，CLI 行为不变），其余在出图前。嵌入建议：BPMN XML 交给 bpmn-js 的只读查看器（`NavigatedViewer`）；SVG 用 `<img src="data:image/svg+xml,…">` 或 iframe，不直接 `innerHTML`：SVG 自带的 `<style>` 与 `<marker id>` 直接内联时会作用到整页、与别的图重名。
+
+**出图器不可用**：布局用 elkjs（Node ≥ 20，`npm ci --prefix tools/elk --ignore-scripts`）。没装 elkjs、PATH 上没有 `node`、ELK 超时（120 秒）、ELK 运行失败或输出不是 JSON → `RENDERER_UNAVAILABLE`（不可重试，`details.reason` 依次为 `elkjs-missing`、`node-missing`、`layout-timeout`、`layout-failed`、`layout-failed`），不返回半成品。
+
+**错误**：`INVALID_ARGUMENT`（含范围类型不对，如 `SystemContext` 的 `of` 是容器、`AggregateDiagram` 的 `of` 不是限界上下文；部署环境不存在；声明的部署视图暂不支持；不支持的 `umlvp:` 视点；`process` 不是 `bpmn:Process`）、`ELEMENT_NOT_FOUND`（`view`、`of` 或 `process` 不是任何模型的成员）、`MODEL_NOT_FOUND`、`PARSE_FAILED`、`RENDERER_UNAVAILABLE`，以及定位的 `NOT_A_GIT_REPO`、`PATH_OUTSIDE_ROOT`、`REF_NOT_FOUND`、`MODULES_NOT_IN_REF`。
+
+**校验层**：同 §5.15。
+
+### 5.17 `model_call_log`（读调用日志，规范外）
+
+出处：ADR-031 规定服务端调用日志（§3.6）；Albert 2026-11-27 拍板第 14 条：新增本工具，只列在 `workbench` 画像（以及测试用的 `all`），只返回哈希与标识符，和写日志同一个 PR。参照 AWS CloudTrail `LookupEvents`（只读、按属性与时间过滤、不透明续页令牌）与 GitHub 审计日志 API（倒序、游标续页、新事件不让旧页错位）。
+
+**画像**：不列在 `agent`：代理一旦能读跨调用存在的日志，就可能拿它当跨会话的「进行中状态」用（ADR-013）。画像不是安全边界（§4），代理照样能直接读文件；不列入只防顺手调用。
+
+**读哪个文件**：和写入同一套规则，只看启动参数（§3.3、§3.6）。**不接受 `repo` 参数**。不读模型、不跑校验层。本工具不在审计集合里，调用它不写日志。
+
+**入参**（全部可选，`additionalProperties: false`）：
+
+| 参数 | 类型 | 含义 |
+|---|---|---|
+| `limit` | 整数 1–200，缺省 50 | 单页条数上限 |
+| `cursor` | 字符串 | 上一页返回的 `nextCursor`，原样传回；续页时其他参数应与第一页相同 |
+| `tools` | 字符串数组，取值限于七个被审计的工具名 | 按 `measured.tool` 过滤 |
+| `outcome` | `"ok"`、`"rejected"`（结果不是 `ok` 的都算）、§7.2 的某个错误码或 `"UNKNOWN_TOOL"` | 按 `measured.outcome` 过滤 |
+| `model` | 字符串 | 按 `measured.request.model` 精确匹配 |
+| `actionId` | 字符串 | 按 `measured.request.actionId` 精确匹配 |
+| `branch` | 字符串 | 按 `measured.target.branch` 精确匹配 |
+| `since` / `until` | 带时区的 RFC 3339 时间（`2026-11-27T08:00:00Z`、`…+08:00`；不接受 `20261127T080000Z` 这类 ISO 8601 基本格式，也不接受不带时区的） | 按 `measured.time` 过滤，左闭右开 |
+
+多个过滤条件同时给出时取交集。
+
+**出参**：`{log, items, skipped, nextCursor}`。
+
+- `log`：`{path, present, sizeBytes, resolvedFrom}`。`resolvedFrom` 为 `"allow-root"`、`"repo"` 或 `null`；取不到位置时 `path: null`。文件不存在时 `present: false`、`sizeBytes: null`、`items: []`，不报错。
+- `items`：按文件里的顺序**倒序**（新的在前）。每项是日志里那一行原样解析出的对象，外加 `offset`（这一行在文件里的起始字节偏移，可当行键）。只返回 `v` 为 `1` 的行。
+- `skipped`：`{malformed, unknownVersion}`，本次扫描跳过的行数。`malformed`：不是 JSON 对象（含 `NaN` 这类非标准 JSON，以及 `1e999` 这类超出有限浮点范围的数），或 `v` 为 1 但 `measured` 不是对象；`unknownVersion`：其余 `v` 不是整数 1 的行（含没有 `v` 的行）。日志不防篡改，坏行只计数，不让整页报错，所以不会出现 `PARSE_FAILED`。文件末尾没有换行的半行可能正在写入，既不返回也不计数。
+- `nextCursor`：这一页满了 `limit` 条、且它最旧的一条之前还有内容时，给一个不透明字符串，否则 `null`。令牌里编的是文件的 inode、文件首行（含换行）的 sha256 与这一页最旧一行的偏移；续页只读这个偏移之前的行。日志只在文件尾追加，所以续页不会因为新写入而错位。服务端不保存任何游标（§3.5）。
+
+**错误**：`INVALID_ARGUMENT`：参数不合规（`details.rejectedFields`）；或游标无效，此时 `rejectedFields: ["cursor"]`，提示「从第一页重新读」。游标对应的文件已被换掉（inode 变了、首行哈希变了（删掉重建后复用了 inode；新文件只有半行时也算）或文件不存在）时 `details.reason: "log-replaced"`，被截短到游标偏移之前时为 `"log-truncated"`。不新增错误码。
+
+**幂等**：调用本身不改任何东西；结果随日志文件增长而变化，不随 Git 内容变化。两次调用之间重启服务器、中间没有被审计调用，结果相同（T4）。
+
+**说明**：这是诊断视图，不防篡改（§3.6 威胁模型）；它返回的 `declared` 组是调用方自报，仅供关联。
+
 ---
 
 ## 6. `aisep:AgentActivity` 定稿与 PROV-O
@@ -994,9 +1107,10 @@ C 的附带决定（同在 Q4，已拍板收紧）：`aisep:approvedBy` **只接
 | Git | `NO_MERGE_BASE`、`AMBIGUOUS_MERGE_BASE`、`DETACHED_HEAD`、`DIRTY_WORKTREE`、`COMMIT_FAILED` | `COMMIT_FAILED` 只在 `index.lock` 被占用、且已回滚时是；回滚未完成（`orphanApproval`）为否；`git add --intent-to-add` 失败遇到 taken 时不报 `COMMIT_FAILED`，报 `CONFLICT`（不可重试），见本表下 `COMMIT_FAILED` 一段 |
 | 并发 | `LOCKED`、`CONFLICT`、`WORKTREE_CHANGED` | `LOCKED`、`WORKTREE_CHANGED` 是；`CONFLICT` 见表下 |
 | 解析 | `PARSE_FAILED`、`EDIT_UNSAFE`、`DIFF_PARSE_FAILED`、`DIFF_BNODE_UNSUPPORTED`、`QUERY_FAILED`、`QUERY_NOT_READONLY`、`QUERY_TIMEOUT` | 只有超时是 |
+| 出图 | `RENDERER_UNAVAILABLE`（§5.16） | 否 |
 | 其他 | `INTERNAL`（带 stderr 摘要） | 否 |
 
-各工具 `outputSchema` 里 `error.code` 的枚举是上表全部错误码，只有 `PLAN_REQUIRED`、`PRECONDITION_FAILED` 例外：它们只由 `model_apply_action` 返回，只出现在它的枚举里（`aisep/errors.py` 的 `ACTION_CODES`），所以加入动作工具后，其余工具在 `tools/list` 里的条目与加入前相同。
+各工具 `outputSchema` 里 `error.code` 的枚举是上表全部错误码，只有 `PLAN_REQUIRED`、`PRECONDITION_FAILED` 例外：它们只由 `model_apply_action` 返回，只出现在它的枚举里（`aisep/errors.py` 的 `ACTION_CODES`），所以加入动作工具后，其余工具在 `tools/list` 里的条目与加入前相同。`RENDERER_UNAVAILABLE` 同理，只由 `model_render_view` 返回，只在它的枚举里（`VIEW_CODES`）。
 
 **`CONFLICT` 的 retryable**：缺省为 true（`aisep/errors.py` 的 `RETRYABLE`）。三类为 false（已拍板）：**回滚时保留了文件**（kept：文件被钩子或编辑器改过而保留，原样重试会先撞上 `DIRTY_WORKTREE`，没有意义，§5.9 第 8 步）；**记录已被别的提交带走**（taken：带走它的提交还含代理的改动，要人判断，§5.9 第 7 步"风险"）；**撤回失败**（提交或 index 条目留在原处，要人处理）。kept 出口 `details` 带 `fileKept: true` 和 `recover`；taken 出口 `details` 带 `takenByCommit`（带走记录的提交），`details.commit` 只在已有本次批准提交 A 时给出 A。`record_approval`（`aisep/approval.py`）逐项：
 
@@ -1155,7 +1269,42 @@ export interface ApprovalResult {
 	findings: Finding[];
 }
 
-/** 工作台用到的 6 个工具；写模型的 5 个工具（model_add_element、model_add_relationship、model_remove、
+/** model_call_log 结果（§5.17）。items 是日志行（§3.6）原样解析出的对象外加 offset，只含 v 为 1 的行。 */
+export type AuditedTool = "model_add_element" | "model_add_relationship" | "model_set_labels" | "model_set_attributes"
+	| "model_remove" | "model_apply_action" | "governance_record_approval";
+export type Hashed = { sha256: string }; // 调用方的值没通过形状校验（或超长）时只记它的哈希（不加盐，§3.6）
+export interface CallLogRequest {
+	argsSha256: string; model: string | Hashed | null;
+	iris: (string | Hashed)[]; // 最多 50 项（前 50 项）；全部项数与整个列表的哈希见下两项
+	irisCount: number | null; irisSha256: string | null; // UNKNOWN_TOOL 行为 null
+	actionId: string | Hashed | null; actionVersion: string | null;
+	definitionDigest: string | null; dryRun: boolean | null; planDigestGiven: boolean | null; repoArg: string | Hashed | null;
+}
+export interface CallLogLine {
+	offset: number; // 这一行在文件里的起始字节偏移
+	v: 1;
+	measured: {
+		time: string; durationMs: number; tool: string; outcome: string; // outcome：ok、§7.2 错误码或 UNKNOWN_TOOL
+		server: { pid: number; profile: string; transport: string; allowRoots: string[]; repo: string | null };
+		request: CallLogRequest;
+		target: { worktree: string | Hashed; branch: string | null; head: Sha | null } | null;
+		files: { path: string | Hashed; before: string | null; after: string }[]; // 本次写下、仍在磁盘上的文件；after 是写下的内容的哈希
+		approval?: { commit: Sha; activity: Iri | null };
+	};
+	declared: { clientInfo: Record<string, unknown> | null; activity?: { agent: string | Hashed | null; sessionRef: string | Hashed | null } }; // 调用方自报，只用来关联
+}
+export interface CallLogResult {
+	log: { path: string | null; present: boolean; sizeBytes: number | null; resolvedFrom: "allow-root" | "repo" | null };
+	items: CallLogLine[]; // 新的在前
+	skipped: { malformed: number; unknownVersion: number };
+	nextCursor: string | null; // 不透明，原样传回
+}
+export interface CallLogInput {
+	limit?: number; cursor?: string; tools?: AuditedTool[]; outcome?: string; // outcome："ok"、"rejected"、§7.2 错误码或 "UNKNOWN_TOOL"
+	model?: string; actionId?: string; branch?: string; since?: string; until?: string; // 不接受 repo（§5.17）
+}
+
+/** 工作台用到的 7 个工具；写模型的 5 个工具（model_add_element、model_add_relationship、model_remove、
  *  model_set_labels、model_set_attributes）不进工作台（一期），所以这里没有对应方法。 */
 export interface AisepModelClient {
 	query(sparql: string, target?: Target & { limit?: number }): Promise<QueryResult>;
@@ -1165,6 +1314,7 @@ export interface AisepModelClient {
 	diff(input: { repo?: string; head: string | { worktree: string }; base?: string; mainRef?: string; model?: string;
 	              detail?: "summary" | "items" | "triples" }): Promise<DiffResult>;
 	recordApproval(input: ApprovalInput): Promise<ApprovalResult>;
+	callLog(input?: CallLogInput): Promise<CallLogResult>; // 只读调用日志（§5.17）
 }
 
 /** isError: true 的工具结果统一抛成它；code 取 §7.2。 */

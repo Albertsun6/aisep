@@ -14,7 +14,7 @@
 1. `AGENTS.md`：仓库硬规则。
 2. `docs/principles.md` 原则五：自动执行，人工把关。
 3. `docs/metamodel-spec.md` §6.6（批准记录字段）、§7.1（三类跨记法连接）、§8.3（MCP 工具）、§9（影响分析）、§10（gate）。
-4. `docs/decisions.md` 的 ADR-009、ADR-013。
+4. `docs/adr/009-approval-records-in-repo.md`（ADR-009）、`docs/adr/013-ai-in-progress-from-git.md`（ADR-013）。
 5. `docs/adm/governance/template.md`：评审单结构和各关口专项检查。
 6. 本关口对应阶段的模板（例如需求确认看 `docs/adm/requirements/template.md`）及其已填写的文档。
 7. 范例：`models/procurement/governance.ttl`。

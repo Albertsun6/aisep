@@ -10,7 +10,7 @@ model_add_relationship / model_set_labels / model_remove / model_impact）在对
 C1、C2 是只对本 PR 有意义的分支级验收（相对 origin/main 比较），已在 PR #113 上核对，不放进常驻测试：
 合入后它们在 main 上必然失败，后续改到 models/ 或新增工具的 PR 也会被误判。
 """
-import hashlib, json, os, re, shutil, subprocess, sys
+import fcntl, hashlib, json, os, re, shutil, subprocess, sys
 
 import anyio
 import pyoxigraph as ox
@@ -55,7 +55,7 @@ def _executor_reads_the_served_worktree():
 def wtemplate(tmp_path_factory):
     """被测检出的 models/（全部模型）、modules/、vendor/、tools/、aisep/ 与 .gitignore 的副本。"""
     t = tmp_path_factory.mktemp("wtemplate")
-    ign = shutil.ignore_patterns("__pycache__")
+    ign = shutil.ignore_patterns("__pycache__", "node_modules")
     for d in ("models", "modules", "vendor", "tools", "aisep"):
         shutil.copytree(os.path.join(ROOT, d), t / d, ignore=ign)
     shutil.copy2(os.path.join(ROOT, ".gitignore"), t / ".gitignore")
@@ -522,16 +522,32 @@ print(json.dumps(out, ensure_ascii=False))
 """
 
 
+# 这个 session 夹具起一个子进程跑全部模块夹具（CI 上约 45–95 s）。session 夹具在每个 xdist worker 各建一次、每个分片各建一次，
+# 三个用户分散时这笔钱要付好几遍：xdist_group 标记让 conftest.assign_shards 把它们分进同一片；片内各 worker 经文件锁共用
+# 第一个算出的结果（pytest-xdist 文档 "Making session-scoped fixtures execute only once" 的做法）。不用 --dist loadgroup：
+# 本仓钉的 pytest 9.2 + xdist 3.8 下它给 nodeid 加组名后缀不生效，同组用例照样分到不同 worker。
+FIXTURE_GROUP = pytest.mark.xdist_group("module_fixture_results")
+
+
 @pytest.fixture(scope="session")
 def module_fixture_results(wtemplate, tmp_path_factory):
-    script = tmp_path_factory.mktemp("fxscript") / "run_fixtures.py"
-    script.write_text(FIXTURE_SCRIPT, encoding="utf-8")
-    p = subprocess.run([PY, str(script), str(wtemplate / "tools" / "aisep.py")], cwd=str(wtemplate), capture_output=True,
-                       text=True, timeout=600, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
-    assert p.returncode == 0, p.stderr[-3000:]
-    return json.loads(p.stdout.strip().splitlines()[-1])
+    base = tmp_path_factory.getbasetemp()
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        base = base.parent                  # 各 worker 的 basetemp 同在本次会话的 basetemp 下
+    out = base / "module_fixture_results.json"
+    with open(base / "module_fixture_results.lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)    # 进程退出即释放；先到的 worker 算，其余等它写完再读
+        if not out.exists():
+            script = tmp_path_factory.mktemp("fxscript") / "run_fixtures.py"
+            script.write_text(FIXTURE_SCRIPT, encoding="utf-8")
+            p = subprocess.run([PY, str(script), str(wtemplate / "tools" / "aisep.py")], cwd=str(wtemplate),
+                               capture_output=True, text=True, timeout=600, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
+            assert p.returncode == 0, p.stderr[-3000:]
+            out.write_text(p.stdout.strip().splitlines()[-1], encoding="utf-8")
+    return json.loads(out.read_text(encoding="utf-8"))
 
 
+@FIXTURE_GROUP
 def test_module_fixtures_exist(module_fixture_results):
     kinds = [r["kind"] for r in module_fixture_results]
     assert kinds.count("valid") >= 1 and kinds.count("invalid") >= 10
@@ -539,6 +555,7 @@ def test_module_fixtures_exist(module_fixture_results):
     assert rules == {f"ea{i}" for i in range(1, 12)}, rules     # EA1–EA11 每条都有负例
 
 
+@FIXTURE_GROUP
 def test_module_valid_fixtures_pass(module_fixture_results):
     for r in module_fixture_results:
         if r["kind"] == "valid":
@@ -546,6 +563,7 @@ def test_module_valid_fixtures_pass(module_fixture_results):
             assert r["all"] == [], r
 
 
+@FIXTURE_GROUP
 def test_module_invalid_fixtures_are_violations_of_the_ext_actions_shapes(module_fixture_results):
     for r in module_fixture_results:
         if r["kind"] != "invalid":

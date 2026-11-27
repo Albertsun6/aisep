@@ -5,7 +5,8 @@
 
 Every tool is a plain function of aisep.tools / aisep.diff / aisep.write_tools; this module only lists them, validates
 the arguments against their inputSchema (additionalProperties: false), runs them and turns AisepError into a tool
-execution error (isError + structuredContent.error, §7.1). The server keeps no state between calls (§3.5)."""
+execution error (isError + structuredContent.error, §7.1). The server keeps no state between calls (§3.5); the only
+record outside the files is the call log of the audited tools (aisep.calllog, ADR-031), written from on_call_tool."""
 import argparse, io, json, os, re, sys, traceback
 
 import anyio
@@ -15,10 +16,11 @@ from mcp.server.lowlevel import Server
 from mcp.server.stdio import stdio_server
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import MCPError
+from mcp_types import CLIENT_INFO_META_KEY
 from mcp_types.jsonrpc import INVALID_PARAMS
 
-from aisep import actions, approval, branches, diff, tools, write_tools
-from aisep.errors import ACTION_CODES, CODES, AisepError
+from aisep import actions, approval, branches, calllog, diagram_c4, diagram_ddd, diagram_uml, diff, tools, views, write_tools
+from aisep.errors import ACTION_CODES, CODES, VIEW_CODES, AisepError
 
 MAX_TEXT_LINES = 200
 QUERY_TIMEOUT_MAX = 60000  # ms; a query thread that times out is not killed, so the wait is bounded here
@@ -48,9 +50,13 @@ def error_out(codes):
                               "details": {"type": "object"}}, ["code", "message", "retryable"])}, ["error"])
 
 
-def out(*required, codes=CODES - ACTION_CODES):
+BASE_CODES = CODES - ACTION_CODES - VIEW_CODES
+
+
+def out(*required, codes=BASE_CODES):
     """outputSchema = success ∪ error (§5.0): a success result has these keys (an error result has only `error`).
-    The codes only model_apply_action raises (errors.ACTION_CODES) are in its enum alone."""
+    The codes only model_apply_action raises (errors.ACTION_CODES) are in its enum alone, likewise model_render_view's
+    (errors.VIEW_CODES)."""
     return {"type": "object", "oneOf": [{"type": "object", "required": list(required)}, error_out(codes)]}
 
 
@@ -115,7 +121,40 @@ TOOLS = {  # name: (function, description, inputSchema, outputSchema, annotation
                            "执行目录里的一个动作（一次写入，全有或全无，不提交）；含删除步骤的动作须先 dryRun 再带 planDigest",
                            obj({"action": S(), "params": {"type": "object"}, "dryRun": B, "planDigest": S(),
                                 "repo": REPO}, ["action"]),
-                           out("action", "changed", codes=CODES), ANN_DESTRUCTIVE, {"agent"}),
+                           out("action", "changed", codes=BASE_CODES | ACTION_CODES), ANN_DESTRUCTIVE, {"agent"}),
+    # views (§5.15, §5.16): read-only; writing views is still out of scope (§1)
+    "model_list_views": (views.model_list_views,
+                         "列出视图（只读）：每个模型的声明视图（arch:Diagram）与可出图的投影（ArchiMate 视点、C4 视点及其范围、"
+                         "BPMN 流程、UML 类图、DDD 上下文映射图与聚合图），每项带 notation 与 model_render_view 的参数 render", READ_IN, out("models", "source"), ANN_READ,
+                         {"agent", "workbench"}),
+    "model_render_view": (views.model_render_view,
+                          "把一个视图画出来（只读，与 tools/aisep.py diagram 同一出图器，同一模型字节相同）：BPMN 流程返回 "
+                          "format=bpmn-xml 的 content（BPMN 2.0 XML），其余返回 format=svg 的 svg；六选一：{view} | "
+                          "{viewpoint, model} | {c4viewpoint, of}（C4Deployment 可加 model） | {umldiagram, model} | "
+                          "{dddviewpoint: ContextMap, model} | {dddviewpoint: AggregateDiagram, of} | {process}",
+                          obj({"view": S(maxLength=2048, description="视图 IRI 或 slug:local"),
+                               "viewpoint": S(pattern="^[A-Za-z][A-Za-z0-9_-]*$", maxLength=128,
+                                              description="ArchiMate 4 视点本地名，如 OrganizationViewpoint；须同时给 model"),
+                               "model": MODEL, "c4viewpoint": S(enum=sorted(diagram_c4.VIEWPOINTS)),
+                               "of": S(maxLength=2048,
+                                      description="c4viewpoint 的范围：软件系统或容器的 IRI；C4Deployment 时为部署环境名；"
+                                                  "dddviewpoint=AggregateDiagram 时为限界上下文的 IRI"),
+                               "umldiagram": S(enum=sorted(diagram_uml.DIAGRAMS), description="UML 图种；须同时给 model"),
+                               "dddviewpoint": S(enum=sorted(diagram_ddd.VIEWPOINTS),
+                                                 description="DDD 视图：ContextMap 须同时给 model，AggregateDiagram 须同时给 of"),
+                               "process": S(maxLength=2048, description="BPMN 流程（bpmn:Process）的 IRI 或 slug:local"),
+                               "repo": REPO, "ref": REF}),
+                          out("format", "title", "notation", "elementCount", "relationshipCount", "warnings", "source",
+                              codes=BASE_CODES | VIEW_CODES), ANN_READ, {"agent", "workbench"}),
+    # ADR-031 as amended: the call log, read-only, workbench only (the profile is no security boundary, §4)
+    "model_call_log": (calllog.model_call_log,
+                       "读本机服务端调用日志（只读，新的在前；只含哈希与标识符；诊断用、不防篡改）",
+                       obj({"limit": {"type": "integer", "minimum": 1, "maximum": calllog.PAGE_MAX}, "cursor": S(),
+                            "tools": {"type": "array", "items": S(enum=sorted(calllog.AUDITED))},
+                            "outcome": S(enum=sorted({"ok", "rejected", calllog.UNKNOWN_TOOL} | CODES)),
+                            "model": S(), "actionId": S(), "branch": S(),
+                            "since": S(description="RFC 3339，含"), "until": S(description="RFC 3339，不含")}),
+                       out("log", "items", "skipped", "nextCursor"), ANN_READ, {"workbench"}),
     "governance_record_approval": (
         approval.governance_record_approval,
         "记录一次关口批准：在 branch 检出的工作区新建一个记录文件并提交一次（evidence=headCommit，时间与 baseCommit 由服务器给）",
@@ -184,6 +223,13 @@ def summary_text(name, res):
                                     + ("，部分文件解析失败" if r.get("incomplete") else ""),
             "model_impact": lambda r: f"影响面 {len(r['items'])} 个元素" + ("（模型不合法）" if r.get("invalidModel") else ""),
             "model_query": lambda r: f"查询结果：{r['kind']}",
+            "model_list_views": lambda r: f"模型 {len(r['models'])} 个：声明视图 {sum(len(m['views']) for m in r['models'])} 个，"
+                                          f"视点投影 {sum(len(m['projections']) for m in r['models'])} 个",
+            "model_render_view": lambda r: f"视图「{r['title']}」：元素 {r['elementCount']}，关系 {r['relationshipCount']}"
+                                           + (f"，警告 {len(r['warnings'])}" if r["warnings"] else ""),
+            "model_call_log": lambda r: f"调用日志 {len(r['items'])} 条" + ("，还有更早的" if r["nextCursor"] else "")
+                                        + (f"，跳过坏行 {r['skipped']['malformed']}、未知版本 {r['skipped']['unknownVersion']}"
+                                           if any(r["skipped"].values()) else ""),
             "model_branches": lambda r: f"分支 {len(r['branches'])} 个，改了模型且未合入 "
                                         f"{sum(b['hasModelChanges'] and not b['mergedIntoMain'] for b in r['branches'])} 个"}.get(name)
     if head is None:
@@ -221,10 +267,48 @@ def call(cfg, name, args):
         return error_result(AisepError("INTERNAL", f"服务器内部错误：{type(e).__name__}: {str(e)[:300]}"))
 
 
+def logged_call(cfg, run, name, args, client_info=None):
+    """call() plus one call-log line for an audited tool (ADR-031); the log never changes the result."""
+    if name not in calllog.AUDITED:
+        return call(cfg, name, args)
+    t0 = calllog.begin()
+    res = call(cfg, name, args)
+    _log(cfg, run, name, args, t0, res.structured_content["error"]["code"] if res.is_error else "ok",
+         res.structured_content, client_info)
+    return res
+
+
+def _log(cfg, run, name, args, t0, outcome, result, client_info):
+    try:
+        rec = calllog.record(run, name, args, t0, outcome, result, client_info)
+    except Exception as e:  # noqa: BLE001 — fail-open (ADR-031 decision 5)
+        return calllog.warn(f"组装记录失败：{e!r}")
+    calllog.append(cfg, rec)
+
+
+def _unknown(cfg, run, name, args, client_info):
+    _log(cfg, run, name, args, calllog.begin(), calllog.UNKNOWN_TOOL, None, client_info)
+
+
+def _client_info(ctx, params):
+    """Caller-declared clientInfo: from `initialize` (stdio), else from the request's params._meta (HTTP has no
+    initialize; MCP SDK CLIENT_INFO_META_KEY). Best effort: a declared field never decides anything."""
+    try:
+        cp = ctx.session.client_params
+        if cp is not None and cp.client_info is not None:
+            return cp.client_info.model_dump(mode="json", by_alias=True, exclude_none=True)
+        meta = params.meta
+        return meta.get(CLIENT_INFO_META_KEY) if isinstance(meta, dict) else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 # ---------------------------------------------------------------- the MCP server
 
-def build_server(cfg, profile="all"):
+def build_server(cfg, profile="all", transport="stdio"):
     names = listed(profile)
+    run = {"pid": os.getpid(), "profile": profile, "transport": transport, "allowRoots": list(cfg.allow_roots),
+           "repo": cfg.repo}
     tool_list = [types.Tool(name=n, description=TOOLS[n][1], input_schema=TOOLS[n][2], output_schema=TOOLS[n][3],
                             annotations=types.ToolAnnotations(**TOOLS[n][4])) for n in names]
 
@@ -232,9 +316,12 @@ def build_server(cfg, profile="all"):
         return types.ListToolsResult(tools=tool_list)
 
     async def on_call_tool(ctx, params):
-        if params.name not in names:
-            raise MCPError(INVALID_PARAMS, f"Unknown tool: {params.name}")
-        return await anyio.to_thread.run_sync(call, cfg, params.name, dict(params.arguments or {}))
+        args, name = dict(params.arguments or {}), params.name
+        if name not in names:
+            if name in calllog.AUDITED:  # an audited name outside this profile: logged as UNKNOWN_TOOL
+                await anyio.to_thread.run_sync(_unknown, cfg, run, name, args, _client_info(ctx, params))
+            raise MCPError(INVALID_PARAMS, f"Unknown tool: {name}")
+        return await anyio.to_thread.run_sync(logged_call, cfg, run, name, args, _client_info(ctx, params))
 
     return Server("aisep", version="0.1.0", instructions="AISEP 架构模型仓库的 MCP 服务器（docs/mcp-interface.md）",
                   on_list_tools=on_list_tools, on_call_tool=on_call_tool)
@@ -322,7 +409,9 @@ def main(argv=None):
     a = parse_args(sys.argv[1:] if argv is None else argv)
     cfg = tools.Config(allow_roots=tuple(os.path.realpath(r) for r in a.allow_root), repo=a.repo,
                        main_branch=a.main_branch)
-    server = build_server(cfg, a.profile)
+    server = build_server(cfg, a.profile, a.transport)
+    if calllog.log_dir(cfg) is None:
+        calllog.warn("--allow-root 与 --repo 都不在 Git 仓库里，被审计的调用不会记录")
     if a.transport == "stdio":
         run_stdio(server)
     else:
