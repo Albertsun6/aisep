@@ -66,3 +66,27 @@
        - B-ff 快进链：验证批的合并后树比对在 ≥ 2 批里失败；或者 Albert 要求「测过的就是合进去的」。届时要放开「不直接推 main」并改合并判据，先问是否要跨模型评审。
        - 一个合并提交合进一批：设计提案不推荐、未设触发条件；它破坏一 PR 一合并提交与 H 判据，要做须先改判据，请 Albert 定。
      - `docs/mcp-interface.md` §5.9 两处「平台事实见文末"第三轮"」已失效（文末的评审记录已移到 `docs/history/mcp-interface-records.md`）：合并队列一处删去这个指引（同句已引 ADR-020 第 4 款）；`merge=union` 一处改指 `docs/history/mcp-interface-records.md` 的「第三轮」。只改指引，§5.9 的规则不变。
+- **修订（2026-11-28，拍板第 31 条）：同模块的 PR 先同步 main 再合。** 收紧第 6 款「有条件地不更新分支」与补记第 2 项的就绪条件 ⑦：语义依赖里「两边改到同一个模块」一条改为下面可机械核对的影响域规则，命中即必须先更新分支；其余语义依赖（编号依赖、改了对方要过的检查或测试、负例清单等）的判定与「拿不准就更新」照旧。本修订不改合并判据（`mergecheck` 检查项、三步合并、`--match-head-commit`、合并后核验），不改分支保护，不触及 ADR-019 第 2 款冻结范围；按第 3 款经 agent 双路独立评审合入。
+  1. **起因。** #183（改 `modules/uml/**`、`vendor/MANIFEST.json`，加载 UML 视点）与 #193（改 `aisep/views.py` 等视图代码）各自的必需检查都全绿；#183 先合入后，`main` 上 `aisep-mcp/tests/test_views.py::test_list_views_declared_and_projections` 失败约 1 小时，直到 #193 合并时才恢复。原因是分支保护不要求分支最新（`strict=false`），PR 的 CI 跑在 GitHub 当时生成的合并引用上，之后 `main` 再前进，两者的组合没有被测过；按第 6 款这本该算「改到同一模块」而先更新，但这条靠人判，漏判了。
+  2. **触发条件。** 设 H 为 PR 头，X 为 H 上最近一次必需检查（`gate.yml` 的 `pull_request` 运行）当时测的 `main` 提交，T 为合并时的 `origin/main`。取 PR 的改动文件（`git diff --no-renames --name-only $(git merge-base H T) H`）与 `main` 在 X 之后的改动文件（`git diff --no-renames --name-only X T`），按下表各自映射到影响域；两边存在一对**重叠**的影响域，就必须先更新分支，不得直接合并。
+     - **X 怎么取**：那次运行检出的是合并引用 `refs/pull/N/merge`，其第一父就是当时的 `main` 头、第二父是 H。取法：查 H 上 `gate.yml` 最新的 `pull_request` 运行，从其 job 日志里 `actions/checkout` 抓取的 `+<合并提交>:refs/remotes/pull/N/merge` 得到合并提交，`git fetch origin <合并提交>` 后读父提交（核对第二父等于 H），日志里的 `Merge H into X` 作交叉核对。运行记录的 `pull_requests[]` 字段对已关闭的 PR 为空，不用它。拿不到 X（运行或日志不在、父提交对不上）时退回 `git merge-base H T`：它不晚于真实的 X，只会多算 `main` 的改动、多触发，不会漏。实测：#193 在头 `85a064b` 的运行测的是 `176f886`（#183 合入前），#183 在头 `94e9fe7` 的运行测的是 `3ea0b13`（晚于其合并基 `4150f45`）。
+  3. **影响域表**（按路径前缀，先匹配先得）：
+
+     | 路径 | 影响域 |
+     |---|---|
+     | `docs/**`、仓库根目录的 `*.md` | 无（不触发） |
+     | `.github/**`、`aisep-mcp/tests/conftest.py` | `ci` |
+     | `modules/<m>/**` | `onto:<m>` |
+     | `vendor/**` | `onto:*` |
+     | `models/<x>/**` | `model:<x>` |
+     | `aisep/**`、`aisep-mcp/**`、`tools/**`、`tests/**` 及其余一切路径 | `code` |
+
+  4. **重叠规则**（对称）：同名的域重叠；`code` 与 `code`、`ci`、任一 `onto:`、任一 `model:` 都重叠；`onto:*` 与任一 `onto:`、`model:` 重叠；`onto:<m>` 与任一 `model:<x>` 重叠；`ci` 与 `code` 重叠。其余不重叠：例如不同的 `onto:<m>` 之间、不同的 `model:<x>` 之间、`ci` 与 `onto:`/`model:` 之间。「无」与任何域都不重叠，所以只改文档的 PR 不触发，`main` 上只多了文档也不触发任何 PR。
+  5. **处理流程。** 协调会话的合并脚本在 `negatives` 核对之后、`mergecheck` 合并前重算之前做这项检查，命中时输出 `STOP-SYNC`（列出触发的域对与文件），不合并；检查本身出错时输出 `STOP-SYNC-ERR`，同样不合并。命中后：
+     - ① `gh pr update-branch <PR>`（merge 方式，不 rebase），把 `main` 合进 PR 分支，得到新头；
+     - ② 等必需检查在新头上全绿；
+     - ③ 新头按补记第 3 项的轻量复核边界（H0..H 只含来自 `main` 的内容）派一路轻量复核；超出边界的按完整评审；
+     - ④ 再按现行规则合并（需要时三步合并）。新头的 CI 测的就是新的 `main`，X 随之前移，检查不再命中，除非期间 `main` 又改到了重叠的域。
+     不设跳过这项检查的开关。
+  6. **代价。** 被触发的 PR 多一轮「更新分支 → 必需检查」，按第 6 款背景的实测约 8 分钟，外加一次轻量复核；只改文档、或与 `main` 新改动不在重叠域的 PR 不受影响。
+  7. **为什么不改分支保护为 `strict=true`。** GitHub 分支保护的「要求分支在合并前是最新的」对所有 PR 一律生效：`main` 每前进一次，所有开着的 PR（包括只改文档的）都要更新并重跑整套 CI，正是第 6 款要省掉的等待。本规则按影响域只在两边可能相互影响时同步，其余照旧不更新；漏网的组合问题仍由批末核对（第 6 款）兜底。参考对象：GitHub 的「要求分支最新」与 Prow Tide「每个 PR 都在最新 base 上测过」都是一律同步；本修订借「合并前在最新 base 上重测」这一保证，差别是只对重叠影响域施加，用路径映射代替全量同步。
