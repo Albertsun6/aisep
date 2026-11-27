@@ -665,7 +665,7 @@
    - 记录 IRI `{model}approval-{yyyymmddHHMMSS}-{slug}`（§3）；活动 IRI `{model}activity-{yyyymmddHHMMSS}-{headCommit 前 7 位}`（§3 新增行，Q6=A 第⑥项）；时间取 `prov:generatedAtTime` 的 UTC 年月日时分秒；重名加 `-2`。`-2` 只看得到本分支：两条分支对同一提交、同一关口批准时，跨分支不重名靠秒级时间；同一秒内并发仍会撞名，合并时 add/add 冲突，登记为残余风险（第四轮 R4-7，用户拍板只加秒级时间）。
    - `prov:generatedAtTime` = 服务器当前时间，UTC，`Z` 结尾（测试注入时钟）。
    - **新建一个记录文件**（U2）`models/<slug>/governance/<记录本地名>.ttl`，记录本地名即记录 IRI 去掉 `{model}` 前缀的部分（如 `approval-20261120093015-architecture-9c41e07.ttl`；重名加 `-2` 时文件名同步）。内容 = 标准前缀头 + 活动块（本次新建活动时）+ 记录块，记录用 `aisep:activity` 指向活动。`governance/` 目录不存在时先建。
-   - 已有 `governance.ttl` 不动：其中的记录与人员不搬迁（IRI 不变），它仍是 `arch:Stakeholder` 等 governance 类元素的缺省写入文件（§5.1）。理由：两条分支各往 `governance.ttl` 末尾追加记录，合并必冲突；托管平台的服务端合并大概率不遵守 `.gitattributes` 的 `merge=union`（第三轮 git-1，平台事实见文末"第三轮"）。每条记录一个新文件，两条分支各批准一次后都能干净合入（T43）。
+   - 已有 `governance.ttl` 不动：其中的记录与人员不搬迁（IRI 不变），它仍是 `arch:Stakeholder` 等 governance 类元素的缺省写入文件（§5.1）。理由：两条分支各往 `governance.ttl` 末尾追加记录，合并必冲突；托管平台的服务端合并大概率不遵守 `.gitattributes` 的 `merge=union`（第三轮 git-1，平台事实见 [`docs/history/mcp-interface-records.md`](history/mcp-interface-records.md) 的「第三轮」）。每条记录一个新文件，两条分支各批准一次后都能干净合入（T43）。
 6. **校验**：候选图跑 L0–L2，走 §5.1 的新违规判定；另外 `Ctx.approval_problems` 和 `activity_problems` 对新记录、新活动必须为空（G1：与推导用同一个函数）。不合法的记录不参与推导，写入一条注定被忽略的记录没有意义。
 7. **Git 落地**（只碰一个路径）：
    - 用 `git worktree list --porcelain` 找 `branch` 检出在哪个 worktree（下称 W）。没有检出 → `BRANCH_NOT_CHECKED_OUT`（v1 不做无检出的底层提交：底层提交不跑钩子，"不跳过 pre-commit"就做不到）。
@@ -726,7 +726,7 @@ CI 设为受保护分支的必需检查，PR 每次更新都跑；合并前由�
 
 **合并前重算**（U3）
 
-不开"要求分支最新"，不用合并队列（仓库属于个人账号，GitHub 合并队列只对组织名下的仓库开放，平台事实见文末"第三轮"；仓库现为公开仓库，ADR-020 第 4 款）。不开"要求分支最新"时，目标分支前进不会让必需检查自动重跑，CI 的通过结论可能只对旧的 T 成立。所以：执行合并的人（按 AGENTS.md「分支与合并」第 2 条，目前由协调会话代合并）在 `gh pr merge` 之前，先 fetch，取当前 `refs/heads/<主分支>` 为 T，用同一个检查脚本重跑上面全部检查项（含合并结果 gate），不过不合。脚本已实现（`aisep/mergecheck.py`，附录 D）；重算、复核目标分支、合并后核验的具体命令写在 AGENTS.md 合并条款（ADR-017）。残余风险：绕过脚本直接点网页合并按钮时，合并结果 gate 可能只对旧主线有效（§9 附录 C）。
+不开"要求分支最新"，不用合并队列（仓库属于个人账号，GitHub 合并队列只对组织名下的仓库开放；仓库现为公开仓库，ADR-020 第 4 款）。不开"要求分支最新"时，目标分支前进不会让必需检查自动重跑，CI 的通过结论可能只对旧的 T 成立。所以：执行合并的人（按 AGENTS.md「分支与合并」第 2 条，目前由协调会话代合并）在 `gh pr merge` 之前，先 fetch，取当前 `refs/heads/<主分支>` 为 T，用同一个检查脚本重跑上面全部检查项（含合并结果 gate），不过不合。脚本已实现（`aisep/mergecheck.py`，附录 D）；重算、复核目标分支、合并后核验的具体命令写在 AGENTS.md 合并条款（ADR-017）。残余风险：绕过脚本直接点网页合并按钮时，合并结果 gate 可能只对旧主线有效（§9 附录 C）。
 
 重算与合并之间没有原子绑定（第四轮 R4-11）：平台的合并接口只能锁 PR 头（`gh pr merge --match-head-commit H`），锁不了目标分支头，重算通过后、合并执行前目标分支仍可能前进。按以下流程把窗口压到最小，余下的登记为残余风险（§9 附录 C）：① 合并串行，同一时刻只有一个执行合并的会话；② 合并命令带 `--match-head-commit H`，执行前再 `git ls-remote` 一次目标分支，不等于重算用的 T 就重来；③ 合并后核验：取新的主线头 M'，确认其第一父等于 T、第二父等于 H；不等则对 M' 重跑合并结果 gate 与检查项 6、7、8、9（第 8、9 项只扫 M'），不过就立即开 revert PR 并报告。
 
