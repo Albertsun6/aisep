@@ -16,7 +16,7 @@
     skos:prefLabel   "治理、决策与质量扩展"@zh ;
     skos:altLabel    "Governance, decision and quality extension"@en ;
     aisep:moduleKind aisep:Extension ;
-    owl:versionInfo  "0.3.0" ;
+    owl:versionInfo  "0.3.1" ;
     aisep:loads      "vendor/meta.linked.archi/ttl/core.ttl" ,
                      "vendor/meta.linked.archi/ttl/archimate4_onto.ttl" ,
                      "vendor/meta.linked.archi/ttl/arch-decision.ttl" ,

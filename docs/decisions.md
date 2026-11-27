@@ -311,3 +311,123 @@
   - 本次补齐的定义域：DDD 关系类的直连谓词取关系类定义写明的源端（`ddd:upstreamOf`、`supplierOf`、`partnerOf`、`sharesKernelWith`、`owns`、`implements` → `ddd:BoundedContext`；`ddd:contains`、`hasRoot` → `ddd:Aggregate`；`ddd:triggers` → `owl:unionOf(ddd:DomainService ddd:Policy)`），DDD 升 0.2.1；ext-actions 新增类 `aisep:ActionBinding` 作参数绑定节点的定义域（`aisep:argument`、`constant`、`fromParameter`、`fromStep`、`modelOf`、`attributePredicate`），并作 `aisep:binding` 的值域，`catalog.ttl` 里的绑定节点仍不写类型，已有动作的定义摘要不变，ext-actions 升 0.2.0。声明这个类会让它在 L1 成为合法类型，所以 EA10 的绑定形状同时以 `aisep:ActionBinding` 为目标：类型写成它的节点必须是 `aisep:binding` 的宾语，否则 L3 报 EA10（负例 `ea10-action-binding-type-on-model-element.ttl`）；未铸新 IRI。
   - 直连谓词的定义域只在源文件里读到，而源文件里写直连三元组本身就是 L1 违规；限定关系的 `arch:source` 目前不按直连谓词的定义域核对（ext-code 的 EC5、ext-verification 的 EV2 已有同类核对，DDD 没有）。
   - 重新考虑 vendor 定义域的触发条件：模型里出现借用上游属性造成的实际问题，或升级上游（规范 §11）时上游改了定义域的写法。
+
+## ADR-030 · 2026-11-27 · 工具区与领域区分区
+
+- **状态**：已采纳（Albert 2026-11-27 拍板「全部按推荐」，G3 第 1–4 条，经协调会话转达；修订稿为 G3 修订方案 2026-11-27）。修订 ADR-026 第 3 款、理由段、「与已有 ADR 的关系·ADR-019」条、后果「撤销」条，各自原文不改，以本条为准；ADR-026 第 1 款与「与已有 ADR 的关系·ADR-016」条不变。实现见 issue #169。按 ADR-019 第 5 款，规范、接口文档与 `AGENTS.md` 的条文在实现合入 `main` 前保持原口径，改写随实现 PR 一起做（见后果「文档同步」）。
+- **背景**：
+  - ADR-026 第 3 款把 ext-actions 的 `onto.ttl`、`catalog.ttl` 列进 `aisep:loads`。它们因此装进 `urn:aisep:onto:` 命名图，`model_query`、`gate`、写工具、影响分析都用 `use_default_graph_as_union=True` 或 `GRAPH ?g` 加 onto 前缀过滤，把这些文件当成领域元模型读（`aisep/core.py` 的 `Ctx.rows`、`onto_graph_filter`；`aisep/querybox.py`）。
+  - 实测：领域 SPARQL 的结果里混进了 ext-actions 的两个文件（按 `main` 7d77392 直接数 `onto.ttl` + `catalog.ttl`：38 个 `skos:prefLabel` 三元组，分属 20 个主语；3 个 `owl:Class`）。动作词汇进了 `ctx.supers`、G7 的已声明谓词集和写工具的可实例化类表。模型文件里写的伪动作只有 EA 形状在 L3 碰巧拦住（探针：L1=0、L3=4）。
+  - 只改默认图（`FROM`、`default_graph`）管不到 `GRAPH ?g`：它遍历的是数据集的命名图集合，与默认图怎么组成无关（SPARQL 1.1 Query §13.3）。core、写工具、mergecheck 里十余处（`main` 7d77392 上 core 10 处、写工具 3 处、mergecheck 1 处）的 `GRAPH ?g … FILTER(STRSTARTS(STR(?g),"urn:aisep:onto:"))` 判定，以及不经 SPARQL、按文件列表拼数据图的 L3，都不受默认图影响。
+- **决策**：
+  1. **新增模块清单属性 `aisep:toolingLoads "<相对路径>"`**，可出现多次，与 `aisep:loads` 并列。它声明的文件属于**工具区**：照常解析（解析失败照旧 `PARSE_FAILED`），由本模块的 `aisep:shapesFile` 在 L3 校验，但不进领域查询库，不参与领域判定。ext-actions 的 `onto.ttl`、`catalog.ttl` 从 `aisep:loads` 改列在这里。`aisep:moduleKind` 不变，ext-actions 仍是 Extension。哪些文件属于工具区由清单声明，不在代码里写死路径，也不按命名空间或内容推断。
+  2. **工具区文件装进单独的 `ctx.tool_store`**，图名前缀 `urn:aisep:tool:`，不进 `ctx.store`。所有查询面默认只读领域区（默认拒绝），新增的查询面也一样。需要读工具区的只有三处，都显式处理：mergecheck 检查项 9、第 4 款的 L1 新规则、声明了 `toolingLoads` 的模块的 L3 那一轮。执行器与 `model_list_actions` 照旧直接读 `catalog.ttl`。各查询面读哪一区见下表。
+  3. **L3 按区选数据图。** 领域各轮（am4+core、各非枢纽模块）的数据图不含工具文件；声明了 `toolingLoads` 的模块那一轮，数据图是领域区文件 + 本模块工具文件 + 模型。EA 形状照旧也扫模型文件，EA 形状（现为 EA1–EA11，ADR-026 补记新增 EA11）行为不变，现有负例照常通过。
+  4. **新增 L1 规则：模型源图不得引用工具区术语。** 工具区文件里作主语、且领域区没有声明的 IRI，出现在 `urn:aisep:src:` 图的主语、谓词、`rdf:type` 宾语或 `aisep:approves` 宾语位置 → Violation。`aisep:approves` 宾语单列：工具文件移出 `ctx.store` 后，现有「`approves` 目标是元模型术语」判定在 onto 图里查不到动作，按「目标不是任何源图主语」直接跳过（`aisep/core.py` 现有注释：交给合并时核对），不点名会让 L1 对 `:rec aisep:approves aisep:ActionXxx` 从报错变成放行。普通宾语不一般化：G6 调用日志等持久化记录以后可能要引用动作 IRI，那是第 6 款的迁移触发条件，到时另定。写工具的可实例化类表只读领域区，`aisep:ActionType` 解析不到，按现有「未知类型」拒绝。写法与 mergecheck 检查项 9 对称：治理类型只能写在 `models/`，工具术语不能写进 `models/`。
+  5. **`model_query` 不再暴露工具区，动作只经 `model_list_actions` 列出**（参照 Palantir Foundry：对象检索不返回 action type，动作走专门的 Action 接口）。`model_query` 的默认图恒为领域区并集，查询里的 `FROM` 不生效；`FROM NAMED` 只能在领域区的命名图里收窄 `GRAPH ?g` 遍历的范围，取不到工具区（依据：`querybox` 以 `use_default_graph_as_union=True` 调 pyoxigraph，0.5.13 实测 `FROM <g1>` 仍返回全部命名图的并集，`FROM NAMED <g1>` 只遍历 g1；工具区不在库里，点名也取不到）；这一点写进接口文档。
+  6. **不迁命名空间。** 动作 IRI 留在 `aisep#`。按 `AGENTS.md` 硬规则 5、元模型规范 §3 与 ADR-026 后果「撤销」条，已铸 IRI 不删不改，「迁移」只能做成旧 IRI 退役加新铸一套，术语翻倍且撤不回；查询隔离靠图，不靠命名空间。迁移作为推迟项，任一出现即启动：① ext-actions 之外的模块、模型或持久化记录（含 G6 的调用日志）开始引用动作 IRI 之前；② 需要给 ext-actions 声明 `aisep:ownsNamespace`；③ 根命名空间统一替换时并入一起做。届时新铸 IRI，旧 IRI 加 `owl:deprecated true` 与 `dcterms:isReplacedBy`，写明并存期间执行器 `ACTION_IRI_RE`/OPS 与 EA1 的 pattern 接受哪一套，并报 Albert。
+  7. **批准记录与 AI 活动属于领域区，本条不动。** 它们是 `arch:Element` 的子类，带 `arch:inModel`，存在 `models/<slug>/governance/`，作为源图加载（元模型规范 §6.6、§6.7）。
+  8. **评审路径**：合并前独立 agent 评审；不做跨模型评审（ADR-021 第 2 款问过 Albert，2026-11-27 定不做）；新铸 IRI 只有 `aisep:toolingLoads` 一个，Albert 2026-11-27 已过目同意（ADR-026 第 5 款的做法）。
+- **查询面 → 读哪一区**（位置以本条合入时的 `main` 为准）：
+
+  | 查询面 | 位置 | 读哪一区 | 说明 |
+  |---|---|---|---|
+  | `model_query` | `tools.py` → `querybox.py` | 领域区 | 动作改由 `model_list_actions` 提供 |
+  | `Ctx.rows`（supers、uf、label、types、L1、L2、L4、构建、relationships） | `core.py` | 领域区 | 动作类层次不再进 `ctx.supers` |
+  | `shape_hits`（aisep-core 的 SPARQL 形状） | `core.py` | 领域区 | |
+  | L1：Gates、R1 主语/方案/抽象类、G7 已声明谓词、属性定义域、`assertedShortcut` | `core.py` | 领域区 | G7 不再把 `aisep:steps`、`aisep:invokes` 等算作已声明谓词，模型文件用了就报未声明 |
+  | L1：`approves` 目标是元模型术语 | `core.py` | 领域区 | 工具区术语在这里查不到类型，按「目标不是源图主语」跳过；改由第 4 款新规则的 `aisep:approves` 宾语位置报错（失败关闭） |
+  | **L1 新规则：模型引用工具区术语** | 新增 | 工具区术语集 × 源图 | 第 4 款 |
+  | L3 领域各轮 | `core.py` `_l3` | 领域区文件 + 模型 | |
+  | L3 声明了 `toolingLoads` 的模块那一轮 | 同上 | 领域区文件 + 本模块工具文件 + 模型 | EA 形状（现为 EA1–EA11）不变 |
+  | 影响分析 `aisep:dependency` | `core.py` | 领域区 | |
+  | 写工具的类表、抽象类、类所在图 | `write_tools.py` | 领域区 | |
+  | guard | `actions.py` | 领域区 | guard 判的是领域前提 |
+  | ADM 向导、CLI query、出图 | `adm.py`、`tools/aisep.py`、`diagram*.py` | 领域区 | |
+  | mergecheck 检查项 9 | `mergecheck.py` | 领域区 + 工具区 | 失败关闭：工具文件里声明治理类型照样拒绝 |
+  | 执行器、`model_list_actions` | `actions.py` | 直接读 `catalog.ttl` | 不变 |
+
+- **理由**：
+  - 分区要落到「哪些图进查询库」这一层。参照 Apache Jena Fuseki 用多个数据集（`ja:RDFDataset`）把不同用途的数据分开，而不是放进一个库再靠查询过滤；与它的差别是不另开端点，只在进程内分两个库。工具区不进 `ctx.store`，现有几十处查询入口和 `querybox` 子进程协议一行不改，读到的自动只有领域区；新增查询也默认看不到工具区。
+  - 归区由清单声明，参照 Gradle/Maven 的依赖作用域（`implementation` 与 `testImplementation`）：构件进不进主 classpath 由声明决定，不按路径或内容推断。
+  - L3 按区选数据图，参照 W3C SHACL 的 shapes graph / data graph 分离：验证时显式指定数据图。EA 形状不收窄到只看工具区：那样 EA1、EA10 对模型文件的拦截会悄悄失效；领域形状不扫工具节点才是分区的目标，EA 扫领域数据无害，还多一层防线。
+  - 两个方向都要防：领域查询看不到工具节点（第 2、3 款），模型写不进工具术语（第 4 款）。后者不依赖 EA 碰巧兜住。
+  - 外部参考的更正：TDB 的 `unionDefaultGraph`、Stardog 的 `query.all.graphs` 都只是布尔开关，不能配置默认图由哪些命名图组成；Foundry 的 action type 与 object type 同属一个 Ontology 的 schema，它不支持「迁出命名空间」，这里只借鉴「动作走专门接口列出」。
+- **替代方案（不采纳）**：
+  - A. 只改默认图（`FROM` / `default_graph`）：管不到 `GRAPH ?g` 判定和 L3，只隔离了一半。
+  - B. 同一个库里逐个查询传 `default_graph` / `named_graphs`：可行，但入口多、容易漏，默认放开；还要改 `querybox` 子进程协议。
+  - C. 在 core 里写死 `modules/ext-actions/` 路径：违背模块契约的通用清单（ADR-026 理由段「不改 `core.py` 新模块即可加载」），以后新增的工具文件默认落进领域区。
+  - D. 新增 `moduleKind`（如 `aisep:Tooling`）：牵动 Extension 语义的现有用法，粒度也不如文件级声明。
+  - E. 把 `catalog.ttl` 移出 `aisep:loads` 且不另行声明：`gate` 失去对目录的 L3 校验，ADR-026 第 3 款的核心能力丢失。
+  - F. 维持并集，只在文档里约束「领域查询按 `inModel` 限定」：只靠约定，写工具和 G7 的词表仍混入动作，留下隐患。
+  - G. 迁到独立命名空间：违反硬规则 5，或只能退役加重铸，术语翻倍，对分区没有贡献（见第 6 款）。
+- **与已有 ADR 的关系**：
+  - ADR-026：第 3 款改为「`catalog.ttl`（连同 `onto.ttl`）列进 `aisep:toolingLoads`：`gate` 的 L3 用 `shapes.ttl` 校验它；要查有哪些动作用 `model_list_actions`，`model_query` 查不到」。理由段删掉「`model_query` 查不到」这项动机，「查询和工作台能按 RDF 读到动作及其中文标签」一句也作废（工作台要列动作走 `model_list_actions`），目录写坏 `gate` 失败的动机仍成立。「与已有 ADR 的关系·ADR-019」条的依据改为「`catalog.ttl` 在 `aisep:toolingLoads` 里，仍属 `modules/**`，按元模型改动做合并前评审」。后果「撤销」条里的「从 `aisep:loads` 移除 `catalog.ttl`」改为「从 `aisep:toolingLoads` 移除」。第 1 款（共用 `aisep#`）与「ADR-016」关系条不变。
+  - ADR-016、硬规则 5：不迁命名空间，不改已铸 IRI，见第 6 款。
+  - ADR-019、ADR-027 第 1 款：清单改动仍属 `modules/**`；`modules/ext-actions/**` 与 `aisep/**` 都在合并前评审范围内，实现 PR 走合并前评审与三步合并（ADR-024 第 2、5 款）。
+  - ADR-019 第 2 款（治理加固冻结，含 `mergecheck`）：检查项 9 改为同时读工具区，改的是冻结范围内的合并判据。这不是新的加固：工具文件移出 `ctx.store` 后，检查项 9 若照旧只读 `ctx.store` 就看不到它们，本改动只为保住原有覆盖；它列在 G3 修订稿的查询面表与实施出口里，在 Albert 2026-11-27 G3 拍板（以修订稿为准）范围内。
+  - ADR-019 第 5 款（规范 PR 只写已合入 `main` 的行为）：本条只落 ADR 文本，不改规范与接口文档，相应改写列进后果「文档同步」，由实现 PR 与代码一起做。
+  - ADR-021 第 2 款：跨模型评审已问过 Albert，定为不做（第 8 款）。
+  - ADR-027 理由段引用的 mergecheck 检查项 9（#105 评审、#115）、ADR-027 后果③：检查项 9 改为同时读工具区，归区不新开「把治理记录藏进模块」的口子。
+- **后果**：
+  - 正面：领域判定、写工具、guard、ADM、出图、CLI 统一只看领域区，现有调用点不用改，新增查询默认安全；`catalog.ttl` 里夹带的 TBox 不再影响领域判定，残余只剩 EA 规则在 `gate` 与执行器两侧是两份实现、没有差分测试（ADR-026 补记，#160 已收紧其余结构残余）；两个方向都有测试覆盖并做对照证伪。
+  - 代价：新增 1 个清单 IRI 和 1 条 L1 规则；`model_query` 失去列动作的能力，推翻 ADR-026 理由段的一项动机（工作台等消费方有没有用 `model_query` 读动作，由实现 PR 核实：在工作台仓库与本仓库 `git grep -n "ActionType\|aisep:Action"`，有命中就改走 `model_list_actions`，结果写进实现 PR 描述）；读工具区的三处要显式处理。
+  - 文档同步（按 ADR-019 第 5 款，实现合入 `main` 前保持原口径，由实现 PR 与代码一起改，列入 issue #169 的实现范围）：`docs/mcp-interface.md` §5.4 的 `PARSE_FAILED` 条（补 `aisep:toolingLoads` 的文件）、§5.6「图」（`model_query` 只读领域区，`FROM` 不生效、`FROM NAMED` 只在领域区内收窄）、§5.9 检查项 9（含工具区文件）、§5.13「动作是什么」（目录在工具区，列动作走 `model_list_actions`）、§5.14 第 5 步（guard 只看领域区）；`docs/metamodel-spec.md` §5（清单属性 `aisep:toolingLoads`）、§6.9（L1 新规则）、§8.3（`model.query` 行）、§10.2（`catalog.ttl` 归工具区），以及 §5 模块测试条里 `tests/valid/catalog-loads.ttl`「随清单加载」的一句；`docs/module-contract.md` 清单段注释与动作词汇条；`docs/actions.md`「动作目录」一节的 `model_query` 示例改为 `model_list_actions`；`modules/ext-actions/metamodel.ttl` 头部注释（现写 `catalog.ttl` 在 `aisep:loads`、`model_query can list the actions`）与 `modules/ext-actions/tests/valid/catalog-loads.ttl` 头部注释；`AGENTS.md` 有相关条文时一并改。ADR 原文不改。
+  - 撤销：代码可以 revert；`aisep:toolingLoads` 铸出后按硬规则 5 只能退役，不能删。
+  - 仍推迟的（各带触发条件）：动作词汇迁出 `aisep#`（第 6 款）；`model_query` 遇到 `FROM` 直接报错（现在只在文档里说明 `FROM` 不生效、`FROM NAMED` 只在领域区内收窄；触发：出现照 `FROM` 写查询而得出错误结论的实例，或 `model_query` 要开放按图选数据集）；给 SPARQL 公开稳定的工具区逻辑图 IRI（触发：消费方确实要用 SPARQL 读动作定义而 `model_list_actions` 不够用）。
+  - **实施（入口 / 出口标准）**：
+    1. 契约与清单。入口：本条合入。出口：在 `modules/aisep-core/onto.ttl` 里与 `aisep:loads` 并列铸 `aisep:toolingLoads`；ext-actions 清单完成迁移，`modules/ext-actions/metamodel.ttl` 与 `tests/valid/catalog-loads.ttl` 的头部注释改为工具区口径；`Module` 能解析新属性。这一步单独不保证测试全绿（`catalog.ttl` 要等第 2 步接上工具区那一轮才回到 L3），所以第 1–3 步放在同一个 PR，测试在第 2 步出口统一判。
+    2. 装载与判定。入口：第 1 步完成。出口：`ctx.tool_store` 落地；`onto_files` 排除工具文件；L3 按区选数据文件；L1 新规则落地；检查项 9 读工具区；issue #169 列出的回归测试 1–6 全部通过，第 5 项（把工具文件放回 `ctx.store`、注掉 L1 新规则）确实让第 1–3 项各自变红；在 `main` 快照上 `gate` 结论与基线一致：与实现 PR 的 merge-base 上的 `gate` 输出逐项比较，结论同为 PASS，L0–L4 各层违规计数逐项相等（基线为 0）。
+    3. 文档同步。入口：第 2 步完成。出口：后果「文档同步」列出的条文已在实现 PR 中改写；`git grep -n "也能查到有哪些动作\|model_query can list\|也可以用 \`model_query\`" -- docs AGENTS.md modules ':!docs/decisions.md'` 无命中（ADR 原文不改，排除 `decisions.md`）。
+    第 1–3 步放在同一个 PR 里，走合并前独立评审。
+
+## ADR-031 · 2026-11-27 · 服务端调用日志（P1 与规范 §8.3 的唯一例外），以及防篡改审计的触发条件
+
+- **状态**：已采纳（Albert 2026-11-27 拍板「全部按推荐」，经协调会话转达；依据是他对 ext-actions 对照报告 G6 的答复「正规如何做」「不要留隐患」）。第 3、6 款、出口标准与推迟项按 Albert 2026-11-27 第三批拍板（第 14 条，「全部按推荐」）修订：新增只读 MCP 工具 `model_call_log`；日志行带版本号 `v: 1` 作为契约；记单个动作的 `definitionDigest`；结构性参数放在 `measured.request` 下。本条合入前直接改正文，不另立补记。本条是 ADR-024「可追溯、可审计、可复现三个质量目标的校验与留痕在 MVP 期间放宽」的**例外**：ADR-024 放宽的是「可以不做」，没有禁止新增，本条按 Albert 的指示在放宽期间先做 A 层。本条不改 `mergecheck`，也不改批准提交形状，不在 ADR-019 第 2 款的冻结范围内。修订下列条文的适用范围。ADR 条文原文不改，按本条理解：ADR-013；ADR-024 第 7 款「不放宽的：硬规则 1–5、7」中的硬规则 7（见「与已有 ADR 的关系·ADR-024」）；ADR-026 第 1 款「不建执行记录」、它理由段里的「不建 action log」、「与已有 ADR 的关系·ADR-013」条「不建执行记录，不写日志」。规范、接口文档与 `AGENTS.md` 的下列条文在实现合入 `main` 前保持原口径，合入时按「后果」的清单改写：元模型规范 §6.9「只建定义，不建执行记录」、§8.3 的 `model.apply_action` 行「不留执行记录」、§8.3 末段「MCP 不保存任何不在文件里的状态」与「不记录『执行过哪个动作』」；接口文档 P1、§3.2、§3.3、§3.4 第 4 点、§3.5、§5.13「不留执行记录，不写日志文件」；`docs/actions.md` 第 9 行与「动作目录」一节；`AGENTS.md` 硬规则 7（原文在实施 PR 改写前按本条理解）。按 ADR-019 第 5 款，这些文档的改写和实现代码放在同一个 PR。
+- **决策**：
+  1. **威胁模型。** 攻击者假设与 #120 的批准人签名方案相同：同一台 Mac、同一个 macOS 账号下的 AI 代理，能改自己 worktree 里的服务端代码、换解释器（`$AISEP_PY`）、直接改文件或用 `git update-ref`、绕过 MCP 直接编辑 `.ttl`，还持有所有者级的 `gh` 令牌。本条只保证一件事：**服务进程按仓库里经过评审的代码诚实运行时**，它经手的每一次被审计调用（成功与被拒）都留下一行记录。本条不证明调用方身份，不防代理删改日志，也不覆盖不经 MCP 的改动，**不防代理篡改**。
+  2. **记录范围。** 挂在 `aisep/server.py` 的 `on_call_tool`，不只挂在 `call()` 上：参数校验（`validate_args`）在 `call()` 里面，挂在哪里都能记到；画像外工具名在进入 `call()` 之前就被 `on_call_tool` 自己以 JSON-RPC `INVALID_PARAMS`「Unknown tool」拒绝（`aisep/server.py` 的 `on_call_tool` 第一行判断），只有挂在 `on_call_tool` 才记得到。被审计的工具：五个 `model_*` 写工具、`model_apply_action`（`dryRun` 也记）、`governance_record_approval`；调用名属于这个集合、但当前画像里没有的，也记一条，结果写 `UNKNOWN_TOOL`（日志专用的结果值，不是接口错误码，不进 `aisep/errors.py`；只为排查诚实代理的误调用，不作安全留痕）。只读工具不记，既不在审计集合里、也不在画像里的未知工具名也不记。
+  3. **字段。** 每行一个 JSON 对象，顶层三个键：`v`、`measured`、`declared`。`v` 是行格式版本，现为 `1`。行格式是对外契约（`model_call_log` 原样返回日志行，见第 6 款），字段的增删、改名或含义变化都升 `v`；读方遇到不认识的 `v` 跳过该行并计数，不报错。只记动作 id，不记动作 IRI（ADR-030 第 6 款①：持久化记录引用动作 IRI 是命名空间迁移的触发条件；迁移只能按该款新铸 IRI 并退役旧 IRI，已铸 IRI 不删不改，硬规则 5）。`measured`（服务端测得或收到）：UTC 时间、耗时；服务进程 pid 与启动参数（`--profile`、`--transport`、`--allow-root`、`--repo`）；工具名；`request`：参数规范化 JSON（键排序、无空白、UTF-8）的 sha256，加结构性参数——模型 slug、目标 IRI（`model_apply_action` 只取动作定义 `iriParams` 列出的参数值）、动作 id、`dryRun`、是否带了 `planDigest`（只记有无）、调用方传的 `repo` 原值（供排查 `PATH_OUTSIDE_ROOT`），以及服务端按动作 id 从目录解析出的 `owl:versionInfo` 与**该动作**的 `definitionDigest`（接口文档 §5.13 已定义的单个动作摘要，能与 `model_list_actions` 逐条对上；不记整份 `catalog.ttl` 的摘要）；标签、定义、gherkin 这类正文一律不记；画像外的调用不解读参数，结构性参数为空，只记 sha256；结果（`ok` 或错误码）；目标 worktree 路径、分支、HEAD（还没定位到仓库就被拒时为空）；每个被写文件改动前后的 sha256；`governance_record_approval` 另记它产生的提交号与 AgentActivity 的 IRI，只用来关联。`declared`（调用方对自己身份与会话的声明）：`clientInfo`（stdio 取 `initialize` 里的；HTTP 传输没有 `initialize`，取每次请求 `params._meta` 里的，依据是 MCP Python SDK 的 `CLIENT_INFO_META_KEY`；接口文档 §3.2 现在只写了 `_meta` 带协议版本和客户端能力，实施 PR 在 §3.2 补上 clientInfo），`record_approval` 的 `activity.agent`、`activity.sessionRef`。分组按字段语义划分，不按值从哪里来：结构性参数是服务端收到的请求值，照实记在 `measured.request` 下（对应 Kubernetes 审计的 `objectRef`、CloudTrail 的 `requestParameters`），只说明「服务端收到了什么」；`declared` 组的字段只出现在 `declared` 下，不进 `measured`。声明字段只用来关联，任何判定都不能用它。
+  4. **存放与并发。** 文件为 `<git-common-dir>/aisep/calls.jsonl`（`git rev-parse --git-common-dir`，先例是接口文档 §3.5 把写锁放在 `.git` 内）。位置由启动参数决定，调用方传的 `repo` 不参与，所以还没定位到仓库就被拒的调用（`PATH_OUTSIDE_ROOT`）也有地方写。按顺序取：① 第一个 `--allow-root`，它本身在某个 Git 仓库里时取该仓库的 common dir；② 否则（没带 `--allow-root`，或它是外层的非仓库目录）取启动参数 `--repo` 的 common dir；③ 都取不到时不写日志，启动时与每次被审计调用时在 stderr 报警告（按第 5 款 fail-open）。不用 cwd 兜底，免得日志落到意料之外的仓库。追加前拿仓库级 `flock`（`<git-common-dir>/aisep/calls.lock`，与按 worktree 加的写锁分开，因为各 worktree 写同一个文件），再用 `O_APPEND` 一次写入一整行。不进工作区，不进模型图，不推远端，不做哈希链（没有外部锚点的链挡不住重算，反而让人误以为日志防篡改），不做轮转。
+  5. **失败策略。** 日志写不进去时，工具返回结果不变，只在 stderr 报警告（fail-open）。A 层是排障记录，不能因为日志写不进去挡住建模；B 层改为 fail-closed。
+  6. **与已有记录的关系。** 调用日志是唯一的文件外记录，不是 ADR-013 所说的「进行中状态」，不参与 gate、guard、approvalState 推导或任何合并判据。它也不是 ADR-026 所说的「执行记录」：不进模型；B 层那份签发的执行记录到时另行命名。它可经只读 MCP 工具 `model_call_log` 查询：只列在 `workbench` 画像（以及测试用的 `all`），不列在 `agent` 画像；不收 `repo` 参数，按第 4 款的取位规则由启动参数定位日志文件，读的就是写的那一份；只返回日志行原样解析的内容（只有哈希与标识符，不含模型正文），另附该行的字节偏移作行键，不聚合、不改写；annotations 为 `readOnlyHint: true`、`idempotentHint: true`、`openWorldHint: false`，结果随日志增长变化、不随 Git 内容变化；它自己是只读工具，调用不记日志行（第 2 款）。不列入 `agent` 画像，是免得代理把跨调用存在的日志当成跨会话的进行中状态来用（ADR-013）；画像不是安全边界（接口文档 §4），代理照样能直接读这个文件，这一点不防。它不能代替 AgentActivity、`AISEP-Session` trailer 或批准记录，那两者都不动；它不作身份证据；批准是否出自本人，计划由 #120 的签名方案负责（未落地，方案待 Albert 决定）。
+  7. **B 层（防代理篡改的审计）推迟，触发条件。** 下列任一出现即启动：① 动作改为唯一写入途径；② guard 升为硬门槛；③ 代理改用另一个 macOS 用户（#120 的后续项）；④ ADR-024 恢复条件②（第二个批准人或使用者）或③（外部数据或受监管数据进入模型）；⑤ HTTP 服务不再只绑本机。届时与 `mergecheck` 文件级对账一起做：记录方放到代理的信任边界之外（服务以另一个 OS 用户运行，代理经带令牌的 HTTP 调用，令牌方案即 ADR-014 Q1 打包前要定的那个），身份字段绑定到令牌，记录 fail-closed，链头 checkpoint 用代理读不到的密钥签名（#120 落地后可复用它的签名与信任根；#120 未落地，方案待 Albert 决定），远端锚点用**受规则集保护的普通分支**（禁止删除、禁止非快进、限定推送者）或 CI 产物，不用自定义 ref。文件级对账另以「已决定禁止直接编辑」为前提（要先修订 ADR-026 第 1 款与接口文档「MCP 写工具不是唯一写入途径」一段，并补视图、布局类写工具）。
+- **理由**：被拒的写调用和动作调用（guard 拒绝、删除两段式被拒、参数校验拒绝）现在事后查不到（对照报告 G6/R2），这是 Albert 点名的隐患。原提案「服务端写入所以不是自报，`refs/aisep/audit` 加哈希链，远端禁止强推」的前提核实后不成立：编码代理的 MCP 服务端是代理按 `.mcp.json` 自己拉起的 stdio 子进程（`tools/aisep-mcp`），跑的是代理 worktree 里的代码（`tools/pyrun.py`），系统用户与代理相同；哈希链没有密钥和外部锚点，代理能整条重算；`refs/aisep/*` 不记 reflog；GitHub 的规则集与分支保护只管分支和标签，管不了自定义 ref，克隆与 CI 默认也取不到它；「会话、代理」字段服务端拿不到可信来源。所以照实降级为 A 层，把防篡改写成有触发条件的 B 层：直接编辑还允许时，旁路照样能改模型，给可绕过的路径做防篡改日志没有落点。参照与差别：
+  - Kubernetes 审计、AWS CloudTrail、OWASP Logging Cheat Sheet：被拒的请求也记，审计后端与状态存储分开，区分系统产生的字段与来自用户输入的字段。本条照做（成功与拒绝都记；日志不进模型图；`measured` / `declared` 分组）。差别：它们的记录方（apiserver、AWS）不在调用方控制之下，AISEP 的 stdio 服务端由调用方拉起，没有可信记录方，所以 A 层不宣称防篡改。
+  - CloudTrail digest 签名、Certificate Transparency（RFC 6962）：防篡改靠记录方持有的密钥加外部保存的历史，不靠哈希链本身。B 层沿用这一做法。
+  - CloudTrail `LookupEvents`、GitHub 组织审计日志 REST API：只读查询接口，按时间倒序，用不透明游标续页，服务端不存游标。`model_call_log` 照做（游标编码文件身份与字节偏移，符合接口文档 §3.5 的无状态要求）。差别：它们按账号权限开放查询，这里只列在工作台画像，因为代理读日志的风险是把它当进行中状态（ADR-013），不是越权。
+  - Gerrit NoteDb：专用 ref 可信是因为服务器是唯一写入方、由服务端 ACL 把关。AISEP 本机写入与代理同权，所以不用自定义 ref；「唯一写入方」到 B 层靠「代理换用另一个 OS 用户」实现。
+  - Palantir Foundry action log（作对照，不作依据）：只记成功的提交，且做成模型里可查询的对象。本条相反：被拒也记，不进模型图，因为 AISEP 的模型图同时是 gate、approvalState 推导与批准的对象，运行记录混进去会污染这些判定的输入。
+- **未采纳的方案**：
+  - A. 原提案 `refs/aisep/audit` + 哈希链 + 远端禁止强推：理由见上；多个 worktree 并发写这个 ref 还需要比较并交换。
+  - B. 维持现状，只在 ADR-026 写触发条件：最省事，但留下被拒调用不留痕的隐患。
+  - C. 写进提交 trailer：调用方自报，且只覆盖已提交的成功写入，被拒调用没地方写。
+  - D. 像 Foundry 那样把执行记录做成模型对象：违背 ADR-013，也与 G3「领域区与工具区分开」的方向相反。
+  - E. 现在就做 B 层：要另一个 OS 用户、令牌、签名与远端锚点；直接编辑还允许时防篡改没有落点。
+- **与已有 ADR 的关系**：
+  - ADR-013：原文不改。按本条理解，服务端调用日志是唯一的文件外记录，是本机运维记录，不是进行中状态，不参与任何判定；ADR-013 理由里引的「MCP 不保存文件外状态」同样按本条理解。
+  - ADR-014：Q1（打包前定令牌）不变，B 层复用它。
+  - ADR-019：第 2 款，本条不改冻结范围内的判据；第 5 款，规范与接口文档的改写随实现 PR 落地。
+  - ADR-024：本条是 MVP 放宽期间的例外（见状态）；B 层的触发条件④直接引用它的恢复条件②③。第 7 款「硬规则 7 不放宽」原文不改，按本条理解（依据：Albert 2026-11-27 拍板「全部按推荐」所采纳的 G6 修订方案，其中列明改写硬规则 7 后半句）：调用日志是本机运维记录，不是模型或治理状态；硬规则 7 的其余约束不变——不存在任何「上报进行中状态」的写入（ADR-013），模型与治理状态只在 Git 里的文件中。
+  - ADR-026：第 1 款「不建执行记录」、理由段「不建 action log」、「与已有 ADR 的关系·ADR-013」条「不写日志」原文不改，按本条理解：调用日志不是那里所说的执行记录；动作仍是推荐通道，直接编辑照旧允许（B 层触发前不变）。
+- **后果**：
+  - 新增一个跨调用存在的本机文件、一把仓库级锁和一个只读工具 `model_call_log`（工作台画像）；接口文档 §3.5「会话、游标、草稿、订阅、进行中标记不存在」仍然成立，调用日志不构成会话。
+  - 能排查诚实代理的反复试探与被拒情况；防不住恶意代理。已知限制：服务端写完文件、还没写日志时进程崩溃，这条记录会丢；不经 MCP 的改动不留记录；代理可以改服务端代码让它不记，或直接删改日志。
+  - 不新铸 IRI，不改 `modules/` 与 `models/`。
+  - **实施（issue #170）**，一个 PR 内含写日志、读工具 `model_call_log`、测试与下列文档改写，`aisep/**` 改动走合并前独立评审，负例由不参与实现的评审人构造。入口：本条合入 `main`。出口（可证伪的测试，全部通过）：
+    1. 每个被审计工具成功调用一次，日志恰好多一行，`outcome=ok`，改前、改后哈希与磁盘上的真实文件一致（`governance_record_approval` 只在测试夹具的临时仓库里用 `workbench` 画像（或 `all`）跑，不碰 `models/` 下的真实模型，不产生真实批准记录）；
+    2. 下列拒绝各一条用例，各多一行且结果值正确（`UNKNOWN_TOOL` 是日志专用值，见决策第 2 款；其余按接口文档 §5.14 的错误码）：参数校验 `INVALID_ARGUMENT`、guard 拒绝 `PRECONDITION_FAILED`、删除两段式被拒（不带 `planDigest` 为 `PLAN_REQUIRED`，带旧的为 `PLAN_STALE`，各一条）、`PATH_OUTSIDE_ROOT`、agent 画像调用 `governance_record_approval`（`UNKNOWN_TOOL`）；
+    3. 两个 worktree 里各起 4 个服务进程，每个进程同时追加 50 次被审计调用，最后恰好 400 行，每行都能解析；
+    3a. 只带 `--repo`、不带 `--allow-root` 启动时，日志写到 `--repo` 的 common dir；两者都没有时不写日志、stderr 有警告，工具结果不变；
+    3b. 同时带 `--allow-root`（在仓库 X 内）和 `--repo`（仓库 Y），调用方在参数里传另一个仓库 Z 时，日志写到 X 的 common dir，Y、Z 下都没有新行；
+    4. 日志文件不出现在任何 worktree 的 `git status` 里，`model_query` 查全部图查不到日志内容；
+    5. 只读工具、以及审计集合外的未知工具名都不产生日志行，T4 仍然全绿；
+    6. 日志目录设为只读后，工具返回结果与原来逐字节相同，stderr 有警告；
+    7. `declared` 组字段（`clientInfo`、`activity.agent`、`activity.sessionRef`）只出现在 `declared` 下，不进 `measured`；结构性参数只出现在 `measured.request` 下；
+    8. 去掉挂钩后第 1、2 条测试失败（证明测试能抓到缺失）；
+    9. 每行 `v` 为 `1`；`model_apply_action` 行的 `definitionDigest` 等于同一目录下 `model_list_actions` 里该动作的 `definitionDigest`，改动该动作定义后新行的值随之变化；
+    10. `model_call_log`：`workbench` 与 `all` 画像的 `tools/list` 有它，`agent` 画像没有；输入模式里没有 `repo`；连续调 N 次被审计工具后，第一页条数为 min(N, limit)、按时间倒序、与磁盘上的日志行逐字段一致；拿到游标后再追加若干行，续页结果不变；日志被截短或换掉后旧游标返回 `INVALID_ARGUMENT`；手工插入一行非 JSON 和一行 `v: 99`，两行都不出现在结果里，分别计入跳过数；每个过滤条件各一条用例（至少一条组合过滤），去掉某个过滤条件的实现，对应用例失败；调用 `model_call_log` 本身不产生日志行；
+    11. 哨兵检查：用一个哨兵标签调一次 `model_add_element`，`calls.jsonl` 与 `model_call_log` 的整份输出里都搜不到这个标签。
+  - 实施 PR 同步改写的文档：元模型规范四处加例外并引用本条：§6.9「只建定义，不建执行记录」、§8.3 的 `model.apply_action` 行「不留执行记录」、§8.3 末段「MCP 不保存任何不在文件里的状态」、§8.3 末段「不记录『执行过哪个动作』」（改为：不在模型里记录执行过哪个动作，服务端调用日志按本条另记）；接口文档 P1 加例外（表头注明「P1 由 ADR-031 修订」），§3.2「协议没有会话」补一句「调用日志不构成会话」，§3.3 写明还没定位到仓库就被拒的调用写到哪里，§3.4 第 4 点补「调用日志不用于恢复」与「调用日志用仓库级锁，跨 worktree 串行追加」，§3.5 表加一行「调用日志：在 `.git` 内，跨调用存在，不进版本库，不参与判定」（T4 原文已是「所有只读工具的结果」，不用改），§5.13 中「不留执行记录，不写日志文件」改写，新增一节「调用日志」（字段、来源分组、行格式版本 `v`、挂钩点、失败策略、威胁模型）；§2 操作表加一行「调用日志」（工作台 ✔，编码代理 —）；§4 工具总表加 `model_call_log` 一行，画像表 `workbench` 加它、`agent` 的排除项加它，「规范外的工具」一句补上它；§5 新增 `model_call_log` 一节（入参、出参、游标、错误）；§8 `client.ts` 草图补对应方法；`docs/actions.md` 中「动作不产生审批项，也不留执行记录」与「动作目录」一节（配方一、三的一次调用版）里的「不建执行记录」改写对用户的说法；`AGENTS.md` 硬规则 7 只替换后半句：前半句「不存在任何『上报进行中状态』的写入（ADR-013）」保留，「所有状态都在 Git 里的文件中」改为「模型与治理状态都在 Git 里的文件中；服务端调用日志是本机运维记录，不是模型状态（ADR-031）」（走合并前评审）。
+  - 回滚：去掉挂钩，文档恢复原口径。已写的 `calls.jsonl` 保留；删不删由 Albert 决定，它不进版本库，删掉后无法恢复。
+  - 推迟项及触发条件：B 层与 `mergecheck` 文件级对账见决策第 7 款；日志轮转与保留期，在单个文件超过 64 MiB 或出现分享日志的需求时做（按大小轮转，分享前先界定能外发哪些字段，aisep 是公开仓库）；调用日志的聚合、统计、全文搜索与导出，在出现实际需求时做（`model_call_log` 只按条件列行）。
