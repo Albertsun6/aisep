@@ -1,0 +1,33 @@
+# expect-no-warning: arch:viewConformsToViewpoint
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix arch:  <https://meta.linked.archi/core#> .
+@prefix uml:   <https://meta.linked.archi/uml/onto#> .
+@prefix umlvp: <https://meta.linked.archi/uml/viewpoints#> .
+@prefix :      <https://aisep.example/model/uml-test/> .
+
+# A view declaring umlvp:ClassDiagram (issue: decision 19, 2026-11-27). The uml module loads uml_viewpoints.ttl,
+# so the viewpoint is a known arch:Viewpoint and L3 reports no Warning for it. Ownership of a property by its
+# class is arch:HasPart (uml:namespace is not a qualified relationship and fails G7).
+
+:model a arch:Model ;
+    skos:prefLabel "UML 视图测试模型"@zh .
+
+:Order a uml:Class ;
+    arch:inModel :model ;
+    arch:inView :view-order-classes ;
+    skos:prefLabel "订单"@zh .
+
+:Order-amount a uml:Property ;
+    arch:inModel :model ;
+    arch:inView :view-order-classes ;
+    skos:prefLabel "金额"@zh .
+
+:has-order-amount a arch:HasPart ;
+    arch:inModel :model ;
+    arch:source :Order ;
+    arch:target :Order-amount .
+
+:view-order-classes a arch:Diagram ;
+    arch:inModel :model ;
+    skos:prefLabel "订单类图"@zh ;
+    arch:viewConformsToViewpoint umlvp:ClassDiagram .
