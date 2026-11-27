@@ -10,7 +10,7 @@ Layout is ELK layered (elkjs, pinned in tools/elk/package-lock.json, run with No
 each ArchiMate domain band is an ELK partition, so bands stack top to bottom. Shapes, icons and colours follow the `amnode` renderer
 of the AISEP architecture document. The output is a pure function of the model: same model, same bytes.
 """
-import json, os, subprocess
+import json, os, re, subprocess
 from html import escape
 
 from aisep.core import ARCH, NS
@@ -237,18 +237,62 @@ ELK_OPTIONS = {
 }
 
 
+class RendererUnavailable(RuntimeError):
+    """No layout, so no SVG: elkjs not installed (`elkjs-missing`), node not on PATH (`node-missing`), ELK ran out of
+    time (`layout-timeout`) or failed or printed no JSON (`layout-failed`). A RuntimeError, so the CLI's handling is
+    unchanged; the MCP view tool maps it to one error code."""
+
+    def __init__(self, reason, message):
+        super().__init__(message)
+        self.reason = reason
+
+
+ELK_TIMEOUT = 120  # seconds
+
+
 def elk_layout(graph):
     """Run tools/elk/layout.cjs (elkjs, pinned in tools/elk/package-lock.json) on an ELK JSON graph."""
     if not os.path.isdir(os.path.join(ELK_DIR, "node_modules", "elkjs")):
-        raise RuntimeError("elkjs is not installed: run `npm ci --prefix tools/elk --ignore-scripts`")
+        raise RendererUnavailable("elkjs-missing", "elkjs is not installed: run `npm ci --prefix tools/elk --ignore-scripts`")
     try:
         p = subprocess.run(["node", os.path.join(ELK_DIR, "layout.cjs")], input=json.dumps(graph), cwd=ELK_DIR,
-                           capture_output=True, text=True, timeout=120)
+                           capture_output=True, text=True, timeout=ELK_TIMEOUT)
     except FileNotFoundError:
-        raise RuntimeError("node is not on PATH (needed by elkjs; Node >= 20)") from None
+        raise RendererUnavailable("node-missing", "node is not on PATH (needed by elkjs; Node >= 20)") from None
+    except subprocess.TimeoutExpired:
+        raise RendererUnavailable("layout-timeout", f"ELK layout did not finish in {ELK_TIMEOUT} s") from None
     if p.returncode != 0:
-        raise RuntimeError(f"ELK layout failed: {p.stderr.strip()[-400:]}")
-    return json.loads(p.stdout)
+        raise RendererUnavailable("layout-failed", f"ELK layout failed: {p.stderr.strip()[-400:]}")
+    try:  # a JSONDecodeError is a ValueError, which callers read as "bad input": it is the layout that failed
+        return json.loads(p.stdout)
+    except ValueError:
+        raise RendererUnavailable("layout-failed", f"ELK layout printed no JSON: {p.stdout.strip()[:200]!r}") from None
+
+
+# XML 1.0 Char (production [2]); anything else (C0 controls but tab/LF/CR, U+FFFE/FFFF, lone surrogates) makes the
+# document not well-formed, and no escape can carry it. The SVG renderers refuse such text rather than drop it silently.
+NOT_XML_CHAR = re.compile("[^\t\n\r\u0020-\ud7ff\ue000-\ufffd\U00010000-\U0010ffff]")
+
+
+class TextNotXml(ValueError):
+    """Model text has a character XML 1.0 cannot carry. Its own class, so callers map only this refusal to
+    `text-not-xml` and any other ValueError from a renderer stays an internal error."""
+
+
+def check_xml_text(*values):
+    """Raise TextNotXml if a string anywhere in values (dicts, lists, tuples, sets walked) has a character XML 1.0
+    cannot carry. Run before layout, so a refused view costs no node process."""
+    stack = list(values)
+    while stack:
+        v = stack.pop()
+        if isinstance(v, str):
+            c = NOT_XML_CHAR.search(v)
+            if c:
+                raise TextNotXml(f"model text contains U+{ord(c.group()):04X}, a character XML 1.0 cannot carry: {v[:80]!r}")
+        elif isinstance(v, dict):
+            stack.extend(v.keys()); stack.extend(v.values())
+        elif isinstance(v, (list, tuple, set, frozenset)):
+            stack.extend(v)
 
 
 def layout(elements, rels, lines):
@@ -314,6 +358,7 @@ def _icon(name, ox, oy):
 
 
 def render(title, sub, elements, rels):
+    check_xml_text(title, sub, elements, rels)
     by = {e["iri"]: e for e in elements}
     lines = {e["iri"]: wrap(e["label"], NODE_W - 48, 12) for e in elements}
     box, route, gw, gh = layout(elements, rels, lines) if elements else ({}, {}, 0, 0)

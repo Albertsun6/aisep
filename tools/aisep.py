@@ -331,10 +331,10 @@ def cmd_diagram(args):
             view = expand(ctx, opts["--view"])
         except AisepError as e:
             print(f"[Violation] diagram: --view {e.message}"); return 1
-        ms = ctx.rows(f"SELECT ?m WHERE {{ <{view}> arch:inModel ?m }}")
+        ms = sorted(m for (m,) in ctx.rows(f"SELECT ?m WHERE {{ <{view}> arch:inModel ?m }}"))  # several: the first
         if not ms:
             print(f"[Violation] {opts['--view']}: no arch:inModel, not a view of any model"); return 1
-        model, name = ms[0][0], diagram.local(view)
+        model, name = ms[0], diagram.local(view)
         vps = sorted(v for (v,) in ctx.rows(f"SELECT ?v WHERE {{ <{view}> arch:viewConformsToViewpoint ?v }}"))
         if vps and vps[0].startswith(diagram_c4.C4VP):
             try:
@@ -371,7 +371,7 @@ def cmd_diagram(args):
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     try:
         svg = diagram.render(title, sub, elements, rels)
-    except RuntimeError as e:
+    except (RuntimeError, diagram.TextNotXml) as e:  # no layout, or model text XML cannot carry
         print(f"[Violation] diagram: {e}"); return 1
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(svg)
@@ -381,7 +381,7 @@ def cmd_diagram(args):
 
 
 def _write_c4(sel, model, name, opts):
-    from aisep import diagram_c4
+    from aisep import diagram, diagram_c4
     title, sub, boxes, edges, warnings = sel[:5]
     for w in warnings:
         print(f"[Warning] diagram {w}")
@@ -393,7 +393,7 @@ def _write_c4(sel, model, name, opts):
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     try:
         svg = diagram_c4.render(title, sub, boxes, edges)
-    except RuntimeError as e:
+    except (RuntimeError, diagram.TextNotXml) as e:  # no layout, or model text XML cannot carry
         print(f"[Violation] diagram: {e}"); return 1
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(svg)

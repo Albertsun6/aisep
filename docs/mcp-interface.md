@@ -28,7 +28,7 @@
 
 **一条隐含前提，写明**：MCP 写工具**不是唯一写入途径**。人和代理照样可以直接编辑 `.ttl`，最后都由 pre-commit 和 CI 的 `gate` 兜底。写工具的价值只有三点：生成 IRI、拒绝不合法的写入、级联删除。所以服务器不能假设文件只被自己改过。
 
-**不在本版**：视图与布局的写工具；改元素类型；diff 比较任意目录或 index（暂存区）内容（worktree 模式只按分支名定位工作区，见 §5.8）；跨仓库的模型差异；多仓库 AO 项目（`kind=workspace`）。
+**不在本版**：视图与布局的写工具（看视图的两个只读工具 `model_list_views`、`model_render_view` 已加入，§5.15、§5.16；写视图仍不在本版）；改元素类型；diff 比较任意目录或 index（暂存区）内容（worktree 模式只按分支名定位工作区，见 §5.8）；跨仓库的模型差异；多仓库 AO 项目（`kind=workspace`）。
 
 ---
 
@@ -175,6 +175,8 @@
 | `model_set_attributes` | `model.set_attributes`（**新增**） | false | **true**（按谓词整体替换原值；原值留在 Git 历史里） | true（同参数重放 = 无变化） | 无 | **新实现**（校验复用 `check`，§5.12） |
 | `model_list_actions` | 无（规范外） | true | — | true | 无 | **新实现**：列动作目录（§5.13） |
 | `model_apply_action` | 无（规范外） | false | **true**（目录里有含删除步骤的动作；按目录内容逐个变就会让 `tools/list` 随数据变，所以固定按最坏情形标） | true（各步互不覆盖的动作同参数重放 = 无变化，边界见 §5.14） | 无 | **新实现**：把现有写工具的计划函数按目录组合，交给一次 §5.1 写入（§5.14） |
+| `model_list_views` | 无（规范外） | true | — | true | `diagram`（选视图部分） | **新实现**：列声明视图与可出图的视点投影，每项带出图参数（§5.15） |
+| `model_render_view` | 无（规范外） | true | — | true（同一模型字节相同） | `diagram` | 复用 `aisep/diagram.py`、`aisep/diagram_c4.py` 出 SVG（§5.16） |
 | `governance_record_approval` | `governance.record_approval` | false | false | true（完全重复的请求不写；去重键含调用方给的 `headCommit`，重放稳定） | 无 | **新实现**（gate 复用） |
 
 **画像**：启动参数 `--profile agent|workbench|all`，决定 `tools/list` 列出哪些工具。按进程定，不按连接变（满足 2026-07-28"`tools/list` 不得随连接变化"）。
@@ -182,12 +184,12 @@
 | 画像 | 列出 |
 |---|---|
 | `agent` | 除 `governance_record_approval`、`model_branches` 外全部 |
-| `workbench` | `model_query`、`model_findings`、`model_gate`、`model_impact`、`model_diff`、`model_branches`、`governance_record_approval` |
+| `workbench` | `model_query`、`model_findings`、`model_gate`、`model_impact`、`model_diff`、`model_branches`、`governance_record_approval`、`model_list_views`、`model_render_view` |
 | `all` | 全部（测试用） |
 
 画像**不是安全边界**：代理可以直接手写 Turtle 伪造批准记录，真正的约束是代码评审和分支保护。画像只防"顺手调用"。
 
-**加了五个规范外的工具**：`model_gate`、`model_set_labels`、`model_set_attributes`、`model_list_actions`、`model_apply_action`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。`model_set_attributes`：补上非标签属性的修改入口（Albert 2026-11-25 放行阶段 A 时随之加入，§5.12）。`model_list_actions`、`model_apply_action`：动作目录的两个固定入口，把几次写工具调用合成一次写入（§5.13、§5.14）。
+**加了七个规范外的工具**：`model_gate`、`model_set_labels`、`model_set_attributes`、`model_list_actions`、`model_apply_action`、`model_list_views`、`model_render_view`。`model_gate` 的理由：G10 规定提交和 CI 只认 gate，关口页和代理提交前自检都要这个结论；§8.3 漏列了它。`model_set_labels`：规范 §3 规定"改名只改标签"，§8.3 却没有对应的写工具；用户在另一会话拍板加入（2026-11-20，合并时并入，§5.10）。其他辅助工具（列元素、查词汇）一期不加，见 D4。`model_set_attributes`：补上非标签属性的修改入口（Albert 2026-11-25 放行阶段 A 时随之加入，§5.12）。`model_list_actions`、`model_apply_action`：动作目录的两个固定入口，把几次写工具调用合成一次写入（§5.13、§5.14）。`model_list_views`、`model_render_view`：工作台「能看视图」的第一阶段（2026-11-27），只读；视图写工具仍不在本版（§1）（§5.15、§5.16）。
 
 ---
 
@@ -918,6 +920,50 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 **校验层**：候选图 L0–L2（只判最终状态）。
 
+### 5.15 `model_list_views`（列视图，规范外）
+
+2026-11-27 加入：工作台要先「能看视图」。**只读；视图写工具仍不在本版（§1）**。实现在 `aisep/views.py`，契约测试 `aisep-mcp/tests/test_views.py`。
+
+视图有两种，出图规则都是 `tools/aisep.py diagram` 的（不存坐标，ELK 自动布局）：**声明视图**是模型里的 `arch:Diagram`（成员经 `arch:inView`）；**视点投影**由视点从模型里选元素：ArchiMate 视点按 vendor `archimate4_viewpoints.ttl` 的 `arch:includesConcept`，C4 视点按 `aisep/diagram_c4.py` 的四个（系统上下文、容器、组件、部署），各有一个范围。
+
+**输入**：`model`（可选，口径同 §5.0；不给就列全仓）、`repo`、`ref`（§5.0）。
+
+**输出**：`{ models: [{model, slug, label, views, projections}], source }`，`models` 按模型 IRI 排序。
+
+| 字段 | 说明 |
+|---|---|
+| `views[]` | 声明视图，按 IRI 排序：`{iri, label, notation: "archimate"\|"c4", viewpoint, viewpointLabel, memberCount, render: {view}}`。`viewpoint` 是 `arch:viewConformsToViewpoint`（多个取排序第一个，没有为 `null`）；视点是 `c4vp:` 下的就是 C4 视图。`memberCount` 是 `arch:inView` 指向它、且属于本模型的主语个数（元素与关系都算），不是画出来的个数 |
+| `projections[]` | 本模型里至少能画出一个元素的视点投影：先 ArchiMate（按视点名），再 C4（系统上下文、容器、组件、部署，同类按范围）。ArchiMate 项 `{notation: "archimate", viewpoint: <视点本地名>, label, elementCount, relationshipCount, render: {viewpoint, model}}`；C4 项 `{notation: "c4", viewpoint, label, scope, scopeLabel, elementCount, relationshipCount, render: {c4viewpoint, of[, model]}}` |
+| `render` | 原样传给 `model_render_view` 就能画出这一项；`elementCount`、`relationshipCount` 与那次出图的结果相同（同一个选择函数算的） |
+
+C4 范围：每个内部软件系统（`c4:SoftwareSystem`，不含外部系统）一张系统上下文图；含容器的软件系统一张容器图；含组件的容器一张组件图；每个部署环境（`structurizr:environment`）一张部署图，`render` 带 `model`（同名环境可能在几个模型里）。环境名不是「字母开头、只含字母数字 `_` `-`」的不列（出图器把它拼进查询文本，§5.16）。
+
+**错误**：`INVALID_ARGUMENT`、`MODEL_NOT_FOUND`、`PARSE_FAILED`（有模型文件解析失败，`details.files`、`details.findings`），以及定位的 `NOT_A_GIT_REPO`、`PATH_OUTSIDE_ROOT`、`REF_NOT_FOUND`、`MODULES_NOT_IN_REF`。
+
+**校验层**：只要求 L0 能解析；L1–L4 的违规不影响看图。
+
+### 5.16 `model_render_view`（画一个视图，规范外）
+
+出处同 §5.15。**只读；视图写工具仍不在本版（§1）**。
+
+**输入**：三选一，外加可选的 `repo`、`ref`（§5.0）。不是这三种组合之一 → `INVALID_ARGUMENT`（`details.rejectedFields` 点名多给或缺的字段）。不用 `oneOf` 写进 `inputSchema`：部分客户端不接受顶层组合关键字，组合由服务器校验。
+
+| 形式 | 字段 | 说明 |
+|---|---|---|
+| 声明视图 | `view` | 视图 IRI 或 `slug:local`（至多 2048 字符，`of` 同）；视点是 `c4vp:` 下的按 C4 画，否则按 ArchiMate 画。不接受 `model`、`of` |
+| ArchiMate 视点投影 | `viewpoint` + `model` | `viewpoint` 是视点本地名（如 `LayeredViewpoint`，`^[A-Za-z][A-Za-z0-9_-]*$`）；没有这个视点 → `INVALID_ARGUMENT`，`details.candidates` 列出全部视点名 |
+| C4 视点投影 | `c4viewpoint` + `of`（+ `model`） | `c4viewpoint` ∈ `SystemContext`、`ContainerDiagram`、`ComponentDiagram`、`C4Deployment`。前三个的 `of` 是软件系统或容器的 IRI（模型由它决定，不接受 `model`）；`C4Deployment` 的 `of` 是环境名（同上的纯名字规则），`model` 可选，用来区分同名环境 |
+
+**输出**：`{ svg, title, notation, elementCount, relationshipCount, warnings, source }`。视图里至少有一个元素时，`svg` 与 `tools/aisep.py diagram` 对同一输入写出的文件逐字节相同（声明视图、ArchiMate 视点投影、C4 视点投影都如此）；同一模型两次调用逐字节相同。视图或范围属于几个模型（`arch:inModel` 不止一个）时，两边都取模型 IRI 排序后的第一个。`elementCount` 是画出的元素个数（C4 不含边界与部署节点这类外框），`relationshipCount` 是画出的连线数。`warnings` 是出图器的提示（如「在视图里但另一端不在，不画」；原文为英文），视图里一个元素都没有时加一条「视图里没有元素」，仍返回只有标题与图例的 SVG；这时 CLI 不写文件、报 `[Violation]`（退出码 1），两边在这一种情况下不同，所以上面的逐字节相同限于有元素时。`content[0].text` 只放一句摘要，不放 SVG。
+
+**SVG 只含模型文本的转义**：标签、定义、技术、IRI 进 SVG 前一律经 `html.escape`（`< > & " '` 都转义），只作为元素文本或带引号的属性值；输出里没有 `<script>`、`on*` 属性、`href`、`foreignObject`。测试用含 `<script>`、`" onload=`、`' onmouseover=` 等的标签核对（`test_views.py::test_hostile_labels_are_inert_text`）。模型文本里有 XML 1.0 不能承载的字符（制表、换行、回车以外的 C0 控制字符、U+FFFE、U+FFFF 等，任何转义都写不进 XML）时**拒绝出图**：`INVALID_ARGUMENT`，`details.reason` 为 `text-not-xml`，`details.rejectedFields` 为本次的 `view`、`viewpoint` 或 `of`，message 写出字符码位；CLI 同样报 `[Violation]`。不剔除后照画：与写工具拒绝控制字符的口径一致，也不会悄悄画出和模型不一样的文字（`aisep/diagram.py` 的 `check_xml_text`，出图前、布局前核对）。嵌入建议：用 `<img src="data:image/svg+xml,…">` 或 iframe，不直接 `innerHTML`：SVG 自带的 `<style>` 与 `<marker id>` 直接内联时会作用到整页、与别的图重名。
+
+**出图器不可用**：布局用 elkjs（Node ≥ 20，`npm ci --prefix tools/elk --ignore-scripts`）。没装 elkjs、PATH 上没有 `node`、ELK 超时（120 秒）、ELK 运行失败或输出不是 JSON → `RENDERER_UNAVAILABLE`（不可重试，`details.reason` 依次为 `elkjs-missing`、`node-missing`、`layout-timeout`、`layout-failed`、`layout-failed`），不返回半成品。
+
+**错误**：`INVALID_ARGUMENT`（含范围类型不对，如 `SystemContext` 的 `of` 是容器；部署环境不存在；声明的部署视图暂不支持）、`ELEMENT_NOT_FOUND`（`view` 或 `of` 不是任何模型的成员）、`MODEL_NOT_FOUND`、`PARSE_FAILED`、`RENDERER_UNAVAILABLE`，以及定位的 `NOT_A_GIT_REPO`、`PATH_OUTSIDE_ROOT`、`REF_NOT_FOUND`、`MODULES_NOT_IN_REF`。
+
+**校验层**：同 §5.15。
+
 ---
 
 ## 6. `aisep:AgentActivity` 定稿与 PROV-O
@@ -992,9 +1038,10 @@ C 的附带决定（同在 Q4，已拍板收紧）：`aisep:approvedBy` **只接
 | Git | `NO_MERGE_BASE`、`AMBIGUOUS_MERGE_BASE`、`DETACHED_HEAD`、`DIRTY_WORKTREE`、`COMMIT_FAILED` | `COMMIT_FAILED` 只在 `index.lock` 被占用、且已回滚时是；回滚未完成（`orphanApproval`）为否；`git add --intent-to-add` 失败遇到 taken 时不报 `COMMIT_FAILED`，报 `CONFLICT`（不可重试），见本表下 `COMMIT_FAILED` 一段 |
 | 并发 | `LOCKED`、`CONFLICT`、`WORKTREE_CHANGED` | `LOCKED`、`WORKTREE_CHANGED` 是；`CONFLICT` 见表下 |
 | 解析 | `PARSE_FAILED`、`EDIT_UNSAFE`、`DIFF_PARSE_FAILED`、`DIFF_BNODE_UNSUPPORTED`、`QUERY_FAILED`、`QUERY_NOT_READONLY`、`QUERY_TIMEOUT` | 只有超时是 |
+| 出图 | `RENDERER_UNAVAILABLE`（§5.16） | 否 |
 | 其他 | `INTERNAL`（带 stderr 摘要） | 否 |
 
-各工具 `outputSchema` 里 `error.code` 的枚举是上表全部错误码，只有 `PLAN_REQUIRED`、`PRECONDITION_FAILED` 例外：它们只由 `model_apply_action` 返回，只出现在它的枚举里（`aisep/errors.py` 的 `ACTION_CODES`），所以加入动作工具后，其余工具在 `tools/list` 里的条目与加入前相同。
+各工具 `outputSchema` 里 `error.code` 的枚举是上表全部错误码，只有 `PLAN_REQUIRED`、`PRECONDITION_FAILED` 例外：它们只由 `model_apply_action` 返回，只出现在它的枚举里（`aisep/errors.py` 的 `ACTION_CODES`），所以加入动作工具后，其余工具在 `tools/list` 里的条目与加入前相同。`RENDERER_UNAVAILABLE` 同理，只由 `model_render_view` 返回，只在它的枚举里（`VIEW_CODES`）。
 
 **`CONFLICT` 的 retryable**：缺省为 true（`aisep/errors.py` 的 `RETRYABLE`）。三类为 false（已拍板）：**回滚时保留了文件**（kept：文件被钩子或编辑器改过而保留，原样重试会先撞上 `DIRTY_WORKTREE`，没有意义，§5.9 第 8 步）；**记录已被别的提交带走**（taken：带走它的提交还含代理的改动，要人判断，§5.9 第 7 步"风险"）；**撤回失败**（提交或 index 条目留在原处，要人处理）。kept 出口 `details` 带 `fileKept: true` 和 `recover`；taken 出口 `details` 带 `takenByCommit`（带走记录的提交），`details.commit` 只在已有本次批准提交 A 时给出 A。`record_approval`（`aisep/approval.py`）逐项：
 
