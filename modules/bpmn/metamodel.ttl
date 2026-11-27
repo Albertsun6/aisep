@@ -18,7 +18,7 @@
     a                      arch:Metamodel ;
     skos:prefLabel         "BPMN 2.0.2"@zh ;
     aisep:moduleKind       aisep:Language ;
-    owl:versionInfo        "0.2.0" ;
+    owl:versionInfo        "0.3.0" ;
     aisep:loads            "vendor/meta.linked.archi/ttl/core.ttl" ,
                            "vendor/meta.linked.archi/ttl/bpmn_infra.ttl" ,
                            "vendor/meta.linked.archi/ttl/bpmn_onto.ttl" ;

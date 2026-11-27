@@ -8,7 +8,7 @@
 ddd:metamodel a arch:Metamodel ;
     skos:prefLabel "领域驱动设计"@zh ; skos:altLabel "DDD"@en ;
     aisep:moduleKind aisep:Language ;
-    owl:versionInfo "0.2.0" ;
+    owl:versionInfo "0.3.0" ;
     aisep:loads "vendor/meta.linked.archi/ttl/core.ttl" ,
                 "vendor/meta.linked.archi/ttl/archimate4_onto.ttl" ,
                 "modules/ddd/onto.ttl" ,

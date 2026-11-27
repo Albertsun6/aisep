@@ -229,6 +229,7 @@
 - **理由**：Albert 原话「把可追溯，可审计，可复现这三个质量目标先搁置，后期再做，先做 mvp，不然太慢了」。放宽的都是事后可以补做的校验与留痕（批准记录、三步合并的留痕、本地约 48 分钟的全量测试、阶段关口）；IRI、限定关系、vendor 哈希、批准只能由本人做出这些事后补不回来或属于安全约束的不动。根目录文件、`aisep/**`、`aisep-mcp/**`、`tests/**`、`tools/**` 不放宽，因为 ADR-019 的评审实测过在这些位置放文件可以让 `mergecheck` 空跑通过；`modules/**` 与 `vendor/**` 不放宽的原因见第 1 款。分支保护不要求分支与 `main` 同步（`strict:false`），CI 的结论是对开 PR 时的 `main` 算的，所以会改变 gate 结论的 `modules/**`、`vendor/**` 仍走三步。
 - **后果**：评审方面实际省下的只有「新增 IRI 的模型 PR」；`modules/**`、`vendor/**` 的 PR 仍要等合并前评审，直到第 1 款的漏洞修掉。不改模型、模块、vendor 与负例清单的 PR 不再有合并前重算，靠 CI 的 `mergecheck` 必需检查兜底。第 1 款的漏洞在 `main` 上现已存在（不是本条引入），按 ADR-019 第 2 款的漏洞例外另开修复 PR。**恢复条件**（任一出现即逐条恢复，由 Albert 定）：① MVP 走通第一条含 C4 的端到端链路；② 出现第二个批准人或使用者；③ 有外部数据或受监管数据进入模型；④ 合并后评审在同一类路径上连续两次查出阻塞问题。
   - 补记（Albert 2026-11-26 定）：`models/<slug>/governance/**` 与 `models/<slug>/governance.ttl` 的改动只要不新增 IRI，就不在第 1 款的排除范围内，走合并后评审，删除或修改已有批准记录也在其中。这类改动会直接改变 approvalState 的推导结果，由必需检查 `mergecheck` 兜底：目标分支上已有的批准记录或 AI 活动被删除、被修改时，check 1 拒绝合并（`governance-record-removed` / `governance-record-modified`），与 gate 结论无关，负例覆盖记录写在 `governance/` 单独文件里与写在 `governance.ttl` 里两种情形；改动 `arch:Stakeholder` 等其他治理元素（例如改掉或删除批准人）也能让已有记录失效、改变推导结果，这类改动 check 1 不管，原先只靠 check 5（合并结果上的 gate）拦截（PR #132 独立评审实测）；Albert 2026-11-26 同意加一道不依赖 gate 的防线（ADR-019 第 2 款治理加固冻结的例外，由 Albert 批准）：T 上已有记录引用的批准人在 M 上被删除，或推导判定它能否当批准人的结论（按类型及其子类链）改变时，`mergecheck` 拒绝合并（`governance-approver-removed` / `governance-approver-retyped`，`docs/mcp-interface.md` §5.9 检查项 10），负例覆盖改成 `aisep:AIAgent`、去掉类型、删除干系人、在模块里加类型、给其类加父类 `aisep:AIAgent` 五种。
+  - 补记（Albert 2026-11-27 定，issue #124 第④项）：第 1 款的两个排除项 `models/<slug>/governance/**` 与 `models/<slug>/governance.ttl` 中的 `governance` 按不区分大小写比较（如 `models/<slug>/Governance/` 下的文件、`models/<slug>/GOVERNANCE.ttl` 同样排除，留在合并前评审），与 ADR-019 第 1 款白名单①的文档排除项、ADR-027 第 1 款的三个排除目录同一口径，也与写入层拒写 `models/<slug>/governance/` 时按不区分大小写比较（`aisep/writer.py` 的 `check_paths`）一致。这是收紧，只让更多路径留在合并前评审；`AGENTS.md`「分支与合并」第 2 条按此表述。
 
 ## ADR-025 · 2026-11-26
 
@@ -266,6 +267,12 @@
   - 撤销：报告阶段 D 的「反向出口：撤回只是一次代码 revert」在铸了 IRI 之后不再成立。将来撤销动作机制时，代码可以 revert，已铸的 IRI 按硬规则 5 不删不改，按 `owl:deprecated true` 退役（模块清单从 `aisep:loads` 移除 `catalog.ttl` 前先标退役）。
   - 新铸 IRI 39 个（模块与本体 2、类 3、属性 10、基本动作 5、动作 2、参数键 9、shape 节点 8；设计稿写的「40」是加法错误），新开命名空间 `ont/ext-actions#`（参数键）、`shapes/ext-actions#`。Albert 2026-11-26 已过目并同意。
   - 已知限制：模块测试的负例是模型文件，L1 的 G7 会拒绝空白节点上的 `sh:`、`dcterms:`、`rdf:first` 谓词且没有 focus，因此 EA8、EA9 的负例把参数和 guard 写成 IRI 节点，EA5–EA7 的负例不用 `( … )` 表。后果：`ea8-parameter-two-types`、`ea8-parameter-unsupported-key`、`ea9-guard-without-message`、`ea9-guard-not-a-validator`、`ea5-member-not-a-step` 这几个负例实际命中的是 `sh:nodeKind sh:BlankNode` 那一条或第一条 EA5 形状，去掉文件名所说的缺陷后仍然命中，**只证伪 nodeKind**，证伪不了它们声称的缺陷。ParameterShape、GuardShape、EA5 成员形状本身有效（独立评审直接改 `catalog.ttl` 后 `gate` 都 FAIL），但目前只有 EA6 有 pytest 覆盖（`test_gate_checks_the_catalogue_with_the_module_shapes`）；补「改副本 `catalog.ttl` 跑 `gate`、断言 EA5/EA8/EA9 被点名」的用例留作后续。这几条规则在执行器一侧另由 pytest 覆盖。（2026-11-26 更新：这组用例已由 PR #133 补上，即 `test_gate_names_the_shape_of_each_catalogue_defect`，在真实目录副本的空白节点上分别写入上述缺陷；同一测试另有五例把节点原样改写成 IRI 节点，分别单独证伪 EA5（列表、成员）、EA7、EA8、EA9 的 `sh:nodeKind sh:BlankNode`，issue #140。）
+- **补记（2026-11-27，issue #160）**：
+  - **合并规则（Albert 2026-11-27 定，经协调会话转达）**：`modules/ext-actions/**` 的改动照旧合并前评审，经独立评审人（agent）评审通过即可合并，不需要 Albert 批准；合并后由协调会话告知 Albert（PR 号与改动要点），必要时请他看。这一条明文接受「动作定义的修改由 agent 评审把关」，不加 CODEOWNERS 或分支保护上的人工批准；新铸 IRI 合并前报 Albert 过目（本 ADR 决策第 5 条）不变。
+  - **执行与列出读同一份受信目录**：`model_apply_action` 不再读调用参数 `repo` 所指工作区里的 `catalog.ttl`，改为与 `model_list_actions` 一样只读服务器所服务工作区（`--repo`）里的那份；`repo` 只决定写哪个工作区的模型。此前在未合并分支的 worktree 里改目录，带 `repo` 指向它就能立即执行，绕过「动作定义经 PR 修改」。已知边界：所服务检出本身有未提交的目录改动时仍会生效（决策第 3 条「每次调用重读、改动立即生效」）；触发条件：所服务的检出不再是只跟随 `main` 的检出（例如有人在里面改 `catalog.ttl`），届时改为从 `main` 的提交读目录。
+  - **结构残余收紧**：`ActionTypeShape` 加 `sh:closed true`（报 EA1），动作上只能写 `rdf:type` 与目录写法表里的谓词，`aisep:ActionX rdfs:subClassOf arch:Element` 这类 TBox 三元组 `gate` 会拒；新增 EA11：动作个体的 `rdf:type` 只能是 `aisep:ActionType`，不另带领域类型。执行器 X1 同步判 EA11（封闭性原本就判，记为 EA1）。上文「执行器只校验 `aisep:ActionType` 闭包内的三元组，不限制其中出现其他 TBox 三元组」改为：目录文件里闭包以外的三元组由 CI 的 pytest（`test_catalogue_has_no_triples_outside_action_closures`）拒绝，执行器仍只读闭包内的三元组。`aisep:ActionType` 加进写工具的受保护类型（`write_tools.PROTECTED_TYPES`），写工具不能在 `models/` 下新建或修改动作个体。未铸新 IRI（EA11 与封闭约束写在 `ActionTypeShape` 的空白节点上）。形状与目录改了，ext-actions 升 0.3.0（0.2.0 已由 ADR-029 的 `aisep:ActionBinding` 占用）。
+  - **目录引用失效检测**：新增 pytest，断言目录里每个 `aisep:constant`、`aisep:attributePredicate` 引用的 IRI 在当前元模型（全部模块清单 `aisep:loads` 的文件，不含 `catalog.ttl`）里有声明、没有 `owl:deprecated true`；不放进 `gate`。
+  - **「补用例留作后续」的补记**：上文已知限制里 EA5/EA8/EA9 的用例已由 PR #133 补上；EA2、EA3、EA4、EA7、EA10（三条形状各一例）、EA11 与 EA1 的封闭约束现在也在 `test_gate_names_the_shape_of_each_catalogue_defect` 里各有「改真实目录副本、跑 `gate`、断言点名」的用例，并逐条做过停用对应约束后变红的对照。EA 规则在 `gate` 与执行器两侧仍是两份实现，没有差分测试。
 
 ## ADR-027 · 2026-11-26
 
@@ -277,6 +284,34 @@
 - **理由**：ADR-024 不放宽 `modules/**` 的原因是 #105（模块声明的 `aisep:ApprovalRecord` 子类做类型的记录被推导认可、却绕过 `mergecheck`），合并前评审是唯一拦截点。现在两层防线都不依赖评审：#110 让 `mergecheck` 按 T 与 M 上下文的子类闭包识别记录与活动，与推导同口径；#115 把类型写在模块或 vendor 文件里的记录与活动一律拒绝（`docs/mcp-interface.md` §5.9 检查项 9），两者都有负例，且做过去掉修复的对照证伪。三个排除的模块直接定义批准记录与活动、判定记录是否合法、决定 AI 能写什么，留在合并前评审。
 - **后果**：其余模块（am4、bpmn、c4、ddd、uml、ext-code、ext-verification，以及新增的模块目录）的元模型改动必需检查通过即可合并，合并后派独立评审人。残余风险，靠合并后评审事后发现：① 这些模块仍能写入影响治理判定的三元组，例如往 `aisep:Gates` 方案里加关口（`approval_problems` 从全部本体图取关口）；② am4 是枢纽模块，它的形状与 aisep-core 的形状在 L3 同图校验，能用 `sh:deactivated` 停用 aisep-core 的 L3 形状，L1 的 `approval_problems` 与 ext-governance 的 L3 校验不受影响（#118 评审实跑）；③ 新增模块能经清单加载 `vendor/`、`modules/`、`models/` 下的任意文件，但改不了 vendor，把治理记录当本体加载会被 `mergecheck` 检查项 9 拒绝。恢复条件同 ADR-024。
 
+## ADR-028 · 2026-11-27
+
+- **状态**：已采纳（补记。`model_set_attributes` 由 PR #102 加入，Albert 2026-11-25 放行动作机制阶段 A 时随之加入；下面的接口取舍是动作机制调研报告的推荐，Albert 2026-11-27 已认可；2026-11-27 Albert 同意把这些取舍补记成本条，issue #124 第⑤项）。接口契约以 `docs/mcp-interface.md` §5.12 为准，本条只记取舍与理由。
+- **决策**：
+  1. **新增独立写工具，不扩展 `model_set_labels`。** 改已存在元素或关系的非标签属性（如 `aisep:priority`、`aisep:gherkin`、`aisep:path`）走 `model_set_attributes`；名称、英文名、定义仍只走 `model_set_labels`，那里有语言与长度约束。没采纳的两个方案：给 `model_set_labels` 加 `attributes` 参数（改了已评审工具的契约，工具名也名不副实）；不加工具、继续「删了重加」（已批准元素的非标签属性没有修改路径，`docs/methodology.md`「改已批准元素」）。
+  2. **`set` 按谓词整体替换，`unset` 删除该谓词的全部值。** 写入后主语在该谓词上的值恰好是 `set` 给出的那几项；没出现的谓词不变。参照 JSON Merge Patch（RFC 7396）对成员值、包括数组的整体替换，以及 SPARQL 1.1 Update 的 `DELETE/INSERT … WHERE`：一次调用就是一个「删该谓词旧值、插新值」的替换。没采纳逐值的「追加一个 / 移除一个」（JSON Patch 式）：整体替换的请求本身就是结果，同参数重放天然幂等（`changed: false`、文件不变），与其他写工具的重放语义一致。
+  3. **谓词合法性不另写白名单。** 只按名拒绝写入层自有或另有入口的谓词（`rdf:type`、`arch:inModel`、`arch:source`、`arch:target`、三个标签谓词、`arch:inView`），其余由候选图上的 L1 规则判定，与 `model_add_element` 的 `attributes` 同一口径（闭世界 G7、手写 `arch:approvalState` 都表现为 `WRITE_REJECTED`）。元模型加谓词时不用同步改工具。
+  4. **不接受 `file`，落点由已有三元组决定。** 新值写进被替换的三元组所在的文件；跨多个文件时写进按仓库相对路径排在最前的那个（PR #157）；原来没有值时写进 `rdf:type` 所在的文件。写入方不选文件，避免同一主语的三元组被随意打散。
+  5. **对已批准元素不拦，把关在合并。** 与 `model_set_labels` 相同：`gate` 照常 PASS，`mergecheck` 按图差异报 `unapproved-change-to-approved`；不改任何合并判据，不进 ADR-019 第 2 款的冻结范围。
+  6. **不做跨模型评审，走合并前独立评审。** 它是已评审过的 `model_set_labels` 模式的平移，不涉及批准与合并判据（调研报告的 Q3 推荐，PR #102 按此执行）。
+- **理由**：这是「改属性」唯一缺的写入口（`docs/methodology.md` 第三条链路实跑时没有它，只能删了重加），也是动作目录首批动作需要的基本动作（ADR-026 的五个 `aisep:BasicAction` 之一）。照现成工具的模式平移，校验、事务、主语块改写都复用 `model_set_labels` 的路径，不新增写入机制。
+- **后果**：
+  - 多值谓词的调用方必须一次给全集：只给一个值，就只剩一个。`docs/actions.md` 写明了这一点。
+  - **丢失更新**：整体替换是「读后写」，调用方先读到旧值集合再拼出全集，两次调用之间别的会话给同一谓词加的值会被覆盖。写入层的写锁与写前哈希核对只管单次调用之内，管不到调用方的读和写之间。业界的做法是乐观并发控制（HTTP 的 `If-Match`/ETag，RFC 9110 §13.1.1）：调用时附上期望的旧值或其摘要，不一致就拒绝。现在不做：目前的用例（`docs/actions.md` 的配方与动作目录）改的是 `aisep:priority`、`aisep:path` 这类单值属性，还没有两个会话并发维护同一多值谓词的场景。**触发条件**：出现两个会话并发写同一模型目录，或需要经它维护多值的成员属性（如 BPMN 的 `bpmn:flowElements`）时，加一个可选的期望旧值参数（不一致报 `CONFLICT`），或补逐值增删的入参，二者择一另立 ADR。
+  - 改类型、所属模型、关系端点、视图成员关系仍没有写工具（`docs/mcp-interface.md` §1），不由本条放开。
+
+## ADR-029 · 2026-11-27
+
+- **状态**：已采纳（Albert 2026-11-27 定：模块属性必须声明定义域；vendor 定义域暂不强制）。承接 issue #67 与 PR #153。
+- **决策**：
+  1. **模块属性必须声明定义域。** `modules/**` 声明的每个 `owl:ObjectProperty`、`owl:DatatypeProperty`、`rdf:Property` 至少有一条写在模块文件里的 `rdfs:domain`，取值是 IRI 或 `owl:unionOf` 的 IRI 列表；`owl:AnnotationProperty` 是元模型注解，不在此列。这是模块合约，由 pytest `aisep-mcp/tests/test_module_property_domains.py` 检查（CI 必需检查 `pytest`）。L1 定义域检查（PR #153）对 `owl:unionOf` 定义域按「主语是其中任一类」判定。
+  2. **`vendor/` 上游本体声明的 `rdfs:domain` 暂不强制。** L1 只读模块文件里的定义域；上游属性被借用到别的类型上，`gate` 照旧不拦。
+- **理由**：PR #153 只强制已声明的定义域，没声明定义域的模块属性仍可借用到任意元素上，等于留了一个口子；补齐定义域并把「必须声明」做成常驻检查，口子才算堵上。vendor 暂不强制，是因为上游的写法与 RDFS 语义不完全一致：`ad:appliedInOption` 声明了三个 `rdfs:domain`（ReferenceArchitecture、Pattern、Tactic），按 RDFS 是交集，上游大概率想要并集；ArchiMate 4 的关系谓词用的是不蕴含的 `arch:domainIncludes`。强制之前要先定口径，又不能改上游文件（硬规则 6）。实测当前仓库模型没有违反 vendor 定义域的写法。
+- **后果**：
+  - 本次补齐的定义域：DDD 关系类的直连谓词取关系类定义写明的源端（`ddd:upstreamOf`、`supplierOf`、`partnerOf`、`sharesKernelWith`、`owns`、`implements` → `ddd:BoundedContext`；`ddd:contains`、`hasRoot` → `ddd:Aggregate`；`ddd:triggers` → `owl:unionOf(ddd:DomainService ddd:Policy)`），DDD 升 0.2.1；ext-actions 新增类 `aisep:ActionBinding` 作参数绑定节点的定义域（`aisep:argument`、`constant`、`fromParameter`、`fromStep`、`modelOf`、`attributePredicate`），并作 `aisep:binding` 的值域，`catalog.ttl` 里的绑定节点仍不写类型，已有动作的定义摘要不变，ext-actions 升 0.2.0。声明这个类会让它在 L1 成为合法类型，所以 EA10 的绑定形状同时以 `aisep:ActionBinding` 为目标：类型写成它的节点必须是 `aisep:binding` 的宾语，否则 L3 报 EA10（负例 `ea10-action-binding-type-on-model-element.ttl`）；未铸新 IRI。
+  - 直连谓词的定义域只在源文件里读到，而源文件里写直连三元组本身就是 L1 违规；限定关系的 `arch:source` 目前不按直连谓词的定义域核对（ext-code 的 EC5、ext-verification 的 EV2 已有同类核对，DDD 没有）。
+  - 重新考虑 vendor 定义域的触发条件：模型里出现借用上游属性造成的实际问题，或升级上游（规范 §11）时上游改了定义域的写法。
+
 ## ADR-030 · 2026-11-27 · 工具区与领域区分区
 
 - **状态**：已采纳（Albert 2026-11-27 拍板「全部按推荐」，G3 第 1–4 条，经协调会话转达；修订稿为 G3 修订方案 2026-11-27）。修订 ADR-026 第 3 款、理由段、「与已有 ADR 的关系·ADR-019」条、后果「撤销」条，各自原文不改，以本条为准；ADR-026 第 1 款与「与已有 ADR 的关系·ADR-016」条不变。实现见 issue #169。按 ADR-019 第 5 款，规范、接口文档与 `AGENTS.md` 的条文在实现合入 `main` 前保持原口径，改写随实现 PR 一起做（见后果「文档同步」）。
@@ -287,7 +322,7 @@
 - **决策**：
   1. **新增模块清单属性 `aisep:toolingLoads "<相对路径>"`**，可出现多次，与 `aisep:loads` 并列。它声明的文件属于**工具区**：照常解析（解析失败照旧 `PARSE_FAILED`），由本模块的 `aisep:shapesFile` 在 L3 校验，但不进领域查询库，不参与领域判定。ext-actions 的 `onto.ttl`、`catalog.ttl` 从 `aisep:loads` 改列在这里。`aisep:moduleKind` 不变，ext-actions 仍是 Extension。哪些文件属于工具区由清单声明，不在代码里写死路径，也不按命名空间或内容推断。
   2. **工具区文件装进单独的 `ctx.tool_store`**，图名前缀 `urn:aisep:tool:`，不进 `ctx.store`。所有查询面默认只读领域区（默认拒绝），新增的查询面也一样。需要读工具区的只有三处，都显式处理：mergecheck 检查项 9、第 4 款的 L1 新规则、声明了 `toolingLoads` 的模块的 L3 那一轮。执行器与 `model_list_actions` 照旧直接读 `catalog.ttl`。各查询面读哪一区见下表。
-  3. **L3 按区选数据图。** 领域各轮（am4+core、各非枢纽模块）的数据图不含工具文件；声明了 `toolingLoads` 的模块那一轮，数据图是领域区文件 + 本模块工具文件 + 模型。EA 形状照旧也扫模型文件，EA 形状（现为 EA1–EA10）行为不变，现有负例照常通过。
+  3. **L3 按区选数据图。** 领域各轮（am4+core、各非枢纽模块）的数据图不含工具文件；声明了 `toolingLoads` 的模块那一轮，数据图是领域区文件 + 本模块工具文件 + 模型。EA 形状照旧也扫模型文件，EA 形状（现为 EA1–EA11，ADR-026 补记新增 EA11）行为不变，现有负例照常通过。
   4. **新增 L1 规则：模型源图不得引用工具区术语。** 工具区文件里作主语、且领域区没有声明的 IRI，出现在 `urn:aisep:src:` 图的主语、谓词、`rdf:type` 宾语或 `aisep:approves` 宾语位置 → Violation。`aisep:approves` 宾语单列：工具文件移出 `ctx.store` 后，现有「`approves` 目标是元模型术语」判定在 onto 图里查不到动作，按「目标不是任何源图主语」直接跳过（`aisep/core.py` 现有注释：交给合并时核对），不点名会让 L1 对 `:rec aisep:approves aisep:ActionXxx` 从报错变成放行。普通宾语不一般化：G6 调用日志等持久化记录以后可能要引用动作 IRI，那是第 6 款的迁移触发条件，到时另定。写工具的可实例化类表只读领域区，`aisep:ActionType` 解析不到，按现有「未知类型」拒绝。写法与 mergecheck 检查项 9 对称：治理类型只能写在 `models/`，工具术语不能写进 `models/`。
   5. **`model_query` 不再暴露工具区，动作只经 `model_list_actions` 列出**（参照 Palantir Foundry：对象检索不返回 action type，动作走专门的 Action 接口）。`model_query` 的默认图恒为领域区并集，查询里的 `FROM` 不生效；`FROM NAMED` 只能在领域区的命名图里收窄 `GRAPH ?g` 遍历的范围，取不到工具区（依据：`querybox` 以 `use_default_graph_as_union=True` 调 pyoxigraph，0.5.13 实测 `FROM <g1>` 仍返回全部命名图的并集，`FROM NAMED <g1>` 只遍历 g1；工具区不在库里，点名也取不到）；这一点写进接口文档。
   6. **不迁命名空间。** 动作 IRI 留在 `aisep#`。按 `AGENTS.md` 硬规则 5、元模型规范 §3 与 ADR-026 后果「撤销」条，已铸 IRI 不删不改，「迁移」只能做成旧 IRI 退役加新铸一套，术语翻倍且撤不回；查询隔离靠图，不靠命名空间。迁移作为推迟项，任一出现即启动：① ext-actions 之外的模块、模型或持久化记录（含 G6 的调用日志）开始引用动作 IRI 之前；② 需要给 ext-actions 声明 `aisep:ownsNamespace`；③ 根命名空间统一替换时并入一起做。届时新铸 IRI，旧 IRI 加 `owl:deprecated true` 与 `dcterms:isReplacedBy`，写明并存期间执行器 `ACTION_IRI_RE`/OPS 与 EA1 的 pattern 接受哪一套，并报 Albert。
@@ -304,7 +339,7 @@
   | L1：`approves` 目标是元模型术语 | `core.py` | 领域区 | 工具区术语在这里查不到类型，按「目标不是源图主语」跳过；改由第 4 款新规则的 `aisep:approves` 宾语位置报错（失败关闭） |
   | **L1 新规则：模型引用工具区术语** | 新增 | 工具区术语集 × 源图 | 第 4 款 |
   | L3 领域各轮 | `core.py` `_l3` | 领域区文件 + 模型 | |
-  | L3 声明了 `toolingLoads` 的模块那一轮 | 同上 | 领域区文件 + 本模块工具文件 + 模型 | EA 形状（现为 EA1–EA10）不变 |
+  | L3 声明了 `toolingLoads` 的模块那一轮 | 同上 | 领域区文件 + 本模块工具文件 + 模型 | EA 形状（现为 EA1–EA11）不变 |
   | 影响分析 `aisep:dependency` | `core.py` | 领域区 | |
   | 写工具的类表、抽象类、类所在图 | `write_tools.py` | 领域区 | |
   | guard | `actions.py` | 领域区 | guard 判的是领域前提 |
@@ -335,7 +370,7 @@
   - ADR-021 第 2 款：跨模型评审已问过 Albert，定为不做（第 8 款）。
   - ADR-027 理由段引用的 mergecheck 检查项 9（#105 评审、#115）、ADR-027 后果③：检查项 9 改为同时读工具区，归区不新开「把治理记录藏进模块」的口子。
 - **后果**：
-  - 正面：领域判定、写工具、guard、ADM、出图、CLI 统一只看领域区，现有调用点不用改，新增查询默认安全；`catalog.ttl` 里夹带的 TBox 不再影响领域判定，残余只剩执行器与 EA 口径不一致，归 ext-actions 的后续（#160）处理；两个方向都有测试覆盖并做对照证伪。
+  - 正面：领域判定、写工具、guard、ADM、出图、CLI 统一只看领域区，现有调用点不用改，新增查询默认安全；`catalog.ttl` 里夹带的 TBox 不再影响领域判定，残余只剩 EA 规则在 `gate` 与执行器两侧是两份实现、没有差分测试（ADR-026 补记，#160 已收紧其余结构残余）；两个方向都有测试覆盖并做对照证伪。
   - 代价：新增 1 个清单 IRI 和 1 条 L1 规则；`model_query` 失去列动作的能力，推翻 ADR-026 理由段的一项动机（工作台等消费方有没有用 `model_query` 读动作，由实现 PR 核实：在工作台仓库与本仓库 `git grep -n "ActionType\|aisep:Action"`，有命中就改走 `model_list_actions`，结果写进实现 PR 描述）；读工具区的三处要显式处理。
   - 文档同步（按 ADR-019 第 5 款，实现合入 `main` 前保持原口径，由实现 PR 与代码一起改，列入 issue #169 的实现范围）：`docs/mcp-interface.md` §5.4 的 `PARSE_FAILED` 条（补 `aisep:toolingLoads` 的文件）、§5.6「图」（`model_query` 只读领域区，`FROM` 不生效、`FROM NAMED` 只在领域区内收窄）、§5.9 检查项 9（含工具区文件）、§5.13「动作是什么」（目录在工具区，列动作走 `model_list_actions`）、§5.14 第 5 步（guard 只看领域区）；`docs/metamodel-spec.md` §5（清单属性 `aisep:toolingLoads`）、§6.9（L1 新规则）、§8.3（`model.query` 行）、§10.2（`catalog.ttl` 归工具区），以及 §5 模块测试条里 `tests/valid/catalog-loads.ttl`「随清单加载」的一句；`docs/module-contract.md` 清单段注释与动作词汇条；`docs/actions.md`「动作目录」一节的 `model_query` 示例改为 `model_list_actions`；`modules/ext-actions/metamodel.ttl` 头部注释（现写 `catalog.ttl` 在 `aisep:loads`、`model_query can list the actions`）与 `modules/ext-actions/tests/valid/catalog-loads.ttl` 头部注释；`AGENTS.md` 有相关条文时一并改。ADR 原文不改。
   - 撤销：代码可以 revert；`aisep:toolingLoads` 铸出后按硬规则 5 只能退役，不能删。

@@ -15,7 +15,7 @@
     skos:prefLabel   "验证扩展"@zh ;
     skos:altLabel    "Verification extension"@en ;
     aisep:moduleKind aisep:Extension ;
-    owl:versionInfo  "0.3.1" ;
+    owl:versionInfo  "0.4.0" ;
     aisep:loads      "vendor/meta.linked.archi/ttl/core.ttl" ,
                      "vendor/meta.linked.archi/ttl/archimate4_onto.ttl" ,
                      "modules/ext-verification/onto.ttl" ;
