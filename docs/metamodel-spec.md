@@ -79,6 +79,7 @@
 - 每个模块是一个 `arch:Metamodel` 清单，带这些属性：
   - `aisep:moduleKind` ∈ {Language, Extension, Alignment, Framework}。
   - `aisep:loads`：按加载顺序列出依赖的文件。
+  - `aisep:toolingLoads`：本模块的工具区文件（ADR-030），可出现多次。照常解析（解析失败照旧 `PARSE_FAILED`），由本模块的 `aisep:shapesFile` 在 L3 本模块那一轮校验，但不进领域查询库，不参与领域判定（查询、其余 L1 规则、L2/L4、写工具、影响分析、guard 都看不到；只有 L1 `tooling-term-in-model`（§6.9）与 mergecheck 检查项 9 读它，用来拒绝越区写法）；归区由清单声明，不按路径或内容推断。同一文件若既在某模块的 `aisep:loads` 里、又在另一模块的 `aisep:toolingLoads` 里，按工具区处理，不进领域查询库。ext-actions 的 `onto.ttl`、`catalog.ttl` 列在这里。
   - `aisep:shapesFile`。
   - `aisep:alignmentFile`：只包含子类/子属性公理。
   - `aisep:impactFile`：影响分析口径的覆盖，必须在清单里声明才会生效。
@@ -88,7 +89,7 @@
   - `owl:versionInfo`（semver）。
 - 模块文件声明的每个属性都要有 `rdfs:domain`（§4「属性只能用在定义域上」）。关系类的直连谓词（`arch:unqualifiedForm`）的定义域取该关系类定义里写明的源端类型。
 - 对齐公理**只放在 AISEP 自己的图里**，不往第三方词汇文件里写。上游的 SKOS 映射文件原样保留，只当文档用。
-- 每个模块都带 `tests/valid` 和 `tests/invalid`。原型的 8 个模块共 83 个用例，每条规则至少各有一个正例和一个负例。ext-actions 的正例只有一个（`tests/valid/catalog-loads.ttl`：随清单加载的 `catalog.ttl` 必须满足 EA1–EA11），每条 EA 规则各有负例。
+- 每个模块都带 `tests/valid` 和 `tests/invalid`。原型的 8 个模块共 83 个用例，每条规则至少各有一个正例和一个负例。ext-actions 的正例只有一个（`tests/valid/catalog-loads.ttl`：清单 `aisep:toolingLoads` 列的 `catalog.ttl` 在本模块那一轮 L3 必须满足 EA1–EA11），每条 EA 规则各有负例。
 
 ## 6. 第一批模块
 
@@ -205,6 +206,7 @@
 - 前置检查：`sh:SPARQLAskValidator`（`sh:ask`、`sh:message`@zh、`dcterms:identifier`），ASK 为 true 即通过，参数以 `$名` 预绑定；只是提示（`PRECONDITION_FAILED`），不是合法性定义，`gate` 不知道它。
 - 步骤：`aisep:ActionStep`，`aisep:invokes` 五个基本动作之一（`aisep:BasicAddElement`、`aisep:BasicAddRelationship`、`aisep:BasicSetLabels`、`aisep:BasicSetAttributes`、`aisep:BasicRemove`，封闭集合，`skos:notation` 是对应 MCP 写工具名），每个入参一个 `aisep:binding` 空白节点（不写类型，按 `aisep:binding` 的值域是 `aisep:ActionBinding`，它是下面几个属性的定义域）：`aisep:argument` 加取值来源四选一（`aisep:constant`、`aisep:fromParameter`、`aisep:fromStep`、`aisep:modelOf`），列表型入参的一项另带 `aisep:attributePredicate`。
 - 校验：L3 `shapes.ttl` 的 EA1–EA11（结构；EA1 的动作形状封闭，动作上不能写 `rdfs:subClassOf` 等其他三元组；EA10 防止动作词汇被写到模型元素上；EA11 禁止动作个体另带领域类型）；执行器每次读目录再判同样的结构，另判 SHACL Core 说不了的 X2–X10（表良构、入参名、引用、guard 能执行、id 唯一、空白节点不共享、两步作用于同一目标）。
+- 工具区（ADR-030）：`onto.ttl`、`catalog.ttl` 列在清单 `aisep:toolingLoads` 里，不进领域查询库；列动作用 `model_list_actions`，`model.query` 查不到。**L1 `tooling-term-in-model`**：工具区文件里作主语、且领域区没有声明的 IRI（如 `aisep:ActionType`、`aisep:steps`、`aisep:ActionRemoveElement`），出现在模型源图的主语、谓词、`rdf:type` 宾语或 `aisep:approves` 宾语位置 → Violation。其他谓词的宾语位置刻意不在本规则范围内：那里的引用不让模型获得动作语义，谓词本身另由 G7 与其余 L1 规则约束。写工具的可实例化类表只读领域区，`aisep:ActionType` 按「未知类型」拒绝。
 - 不采纳：Foundry 的 Function rule、side effects、action log、「默认只能经动作编辑」。
 
 ## 7. 跨记法追溯
@@ -252,7 +254,7 @@
 | `model.apply_action` | 按动作 id 执行一个动作：各步写工具的计划函数依次规划，合并成一次写入，全有或全无；含删除步骤的动作须先 dryRun 再带 planDigest；前置检查只做提示；不在模型里留执行记录（服务端调用日志按 ADR-031 另记） | 写入前在候选图上跑 L0–L2（只判最终候选图），只拒绝新增的违规 |
 | `model.check` / `model.validate` | L0–L2 / L3 | §10 |
 | `model.gate` | 只读，原子执行 L0–L4，一份合并结论；提交、CI 与关口页只认它（G10） | L0–L4 |
-| `model.query` | 只读 SPARQL，跑在构建后的图上 | — |
+| `model.query` | 只读 SPARQL，跑在构建后的图上（只含领域区，不含 `aisep:toolingLoads` 的工具区文件，ADR-030） | — |
 | `model.impact` | §9 两种模式 | — |
 | `model.findings` | L4；另返回 openViolations：同一份内容上 L0–L2 的全部违规（结构化发现项），供查看写入时被放过的遗留违规。openViolations 不新增层级，不计入 gate 结论 | L4（openViolations 复用 L0–L2） |
 | `governance.record_approval` | 新增一条批准记录（不改状态字段）。顶层必填 branch、headCommit（有无活动都必填）；可选 expectedBaseCommit，只用于核对、不写入（不等于被拒收的 baseCommit）。写入层核对 headCommit 与分支头之间只有批准提交（无合并提交；每个提交恰好带一个值等于记录 evidence 的 `AISEP-Evidence` trailer、恰好新增一个 governance 目录下的 `.ttl` 普通文件、源图只新增一条批准记录（可另带一条它引用的 AI 活动）），提交前持锁复核。branch 不能是主分支；headCommit 已在主分支上（按有效内容提交判定，§6.6）时只接受发布关口、不接受活动信息；发布关口的 headCommit 必须在主分支上。可选活动信息只含代理、sessionRef、起止时间和标签：写入层算出 baseCommit，在同一次提交里写入 `aisep:AgentActivity`（分支、headCommit 取顶层值）并用 `aisep:activity` 关联；evidence 取调用方给出的 headCommit，generatedAtTime、baseCommit 由写入层填，不接受调用方传入 evidence、generatedAtTime、baseCommit。Approved 要求 evidence 处 gate 通过。每条记录新建一个 `governance/<记录本地名>.ttl`，只提交这一个路径，不跳过 pre-commit | L0–L2 + gate |
@@ -320,7 +322,7 @@ spike 里 AI 试验用的 7 元素标准答案，其实是无向的 3 跳邻域�
 ### 10.2 对齐公理和校验范围
 - **L3 跑 am4 shapes 时**，数据图里放入：枢纽和核心模块、`inheritsHubRules=true` 的 Language 模块、**所有 Extension 模块**（例如 `Deployable ⊑ Artifact` 必须常驻，否则 Deployable 会逃过矩阵）的对齐公理。不放入 `inheritsHubRules=false` 的 Language 对齐。
 - 其他每个模块的 shapes，在"源文件 + 构建出的直连三元组 + 本模块依赖"上单独运行。
-- ext-actions 的 shapes 另外还校验本模块 `aisep:loads` 的 `catalog.ttl`（动作目录），所以 `catalog.ttl` 写坏会让 L3 报 EA1–EA11（ADR-026）。
+- 工具区文件（`aisep:toolingLoads`，ADR-030）不进上面任何一轮领域数据图；只有声明它的模块那一轮，数据图是领域区文件 + 本模块工具区文件 + 模型；工具区文件引用的别的模块路径也算本模块依赖（与 `aisep:loads` 一样计入依赖闭包），那些模块的对齐公理随之进这一轮。ext-actions 那一轮因此校验 `catalog.ttl`（动作目录），`catalog.ttl` 写坏会让 L3 报 EA1–EA11（ADR-026）。
 - 查询和影响分析加载全部对齐公理。
 
 ## 11. 版本与 vendoring

@@ -14,7 +14,7 @@
 
 <https://aisep.example/ont/aisep> a owl:Ontology ;
     rdfs:label "AISEP core vocabulary"@en ;
-    owl:versionInfo "0.3.0" .
+    owl:versionInfo "0.4.0" .
 
 ########## Module manifest terms (CONTRACT.md "Module layout") ##########
 
@@ -33,6 +33,8 @@ aisep:moduleKind a owl:ObjectProperty ; rdfs:domain arch:Metamodel ; rdfs:range 
     skos:prefLabel "module kind"@en .
 aisep:loads a owl:DatatypeProperty ; rdfs:domain arch:Metamodel ; rdfs:range xsd:string ;
     skos:definition "Root- or module-relative path of an RDF file this module needs, in load order."@en .
+aisep:toolingLoads a owl:DatatypeProperty ; rdfs:domain arch:Metamodel ; rdfs:range xsd:string ;
+    skos:definition "Root- or module-relative path of a tool-zone RDF file of this module (ADR-030): parsed and checked in this module's L3 run, but kept out of the domain query store and every domain judgement."@en .
 aisep:shapesFile a owl:DatatypeProperty ; rdfs:domain arch:Metamodel ; rdfs:range xsd:string ;
     skos:definition "Path of a SHACL file run in L3 for this module."@en .
 aisep:alignmentFile a owl:DatatypeProperty ; rdfs:domain arch:Metamodel ; rdfs:range xsd:string ;

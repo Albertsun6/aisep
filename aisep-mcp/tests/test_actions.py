@@ -1174,9 +1174,11 @@ def test_B4_step_adding_protected_type_is_refused(mk, ptype):
                                                    b("slug", "constant", '"forgedRecord"')])]))
     assert by_id(a)["test-protected"]["valid"] is True
     before = snap(a)
-    assert code_of(b_, "model_add_element", model=WB, type=ptype, prefLabel="伪造的记录", slug="forgedRecord") == "PROTECTED_RESOURCE"
+    # ADR-030: aisep:ActionType is a tool-zone class, not in the write tools' (domain) class table -> UNKNOWN_TYPE
+    want = "UNKNOWN_TYPE" if ptype == "aisep:ActionType" else "PROTECTED_RESOURCE"
+    assert code_of(b_, "model_add_element", model=WB, type=ptype, prefLabel="伪造的记录", slug="forgedRecord") == want
     for kw in ({}, {"dryRun": True}):
-        assert apply_err(a, "test-protected", {}, **kw)["code"] == "PROTECTED_RESOURCE"
+        assert apply_err(a, "test-protected", {}, **kw)["code"] == want
     assert snap(a) == before
 
 

@@ -5,8 +5,10 @@
 
 # AISEP module manifest — actions extension: action DEFINITIONS (aisep:ActionType, its parameters, ordered steps
 # and hint-level guards), modelled after Palantir Foundry action types. No execution record is modelled (ADR-013).
-# catalog.ttl (the actions the executor aisep/actions.py offers through model_list_actions / model_apply_action)
-# is in aisep:loads, so `gate` checks it against shapes.ttl at L3 and model_query can list the actions.
+# onto.ttl and catalog.ttl (the actions the executor aisep/actions.py offers through model_list_actions /
+# model_apply_action) are tool-zone files in aisep:toolingLoads (ADR-030): `gate` checks them against shapes.ttl in
+# this module's L3 run, but they stay out of the domain query store, so model_query does not see the actions (list
+# them with model_list_actions) and model files may not use their terms (L1 tooling-term-in-model).
 # aisep:ownsNamespace is NOT declared: aisep# is shared with aisep-core and the other ext-* modules.
 # owl:versionInfo is also the catalogVersion that model_list_actions reports.
 
@@ -15,7 +17,7 @@
     skos:prefLabel   "动作扩展"@zh ;
     skos:altLabel    "Actions extension"@en ;
     aisep:moduleKind aisep:Extension ;
-    owl:versionInfo  "0.3.0" ;
-    aisep:loads      "modules/ext-actions/onto.ttl" ,
-                     "modules/ext-actions/catalog.ttl" ;
+    owl:versionInfo  "0.4.0" ;
+    aisep:toolingLoads "modules/ext-actions/onto.ttl" ,
+                       "modules/ext-actions/catalog.ttl" ;
     aisep:shapesFile "modules/ext-actions/shapes.ttl" .
