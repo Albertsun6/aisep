@@ -3,8 +3,8 @@
 @prefix am4:   <https://meta.linked.archi/archimate4/onto#> .
 @prefix :      <https://aisep.example/model/ext-actions-test/> .
 
-# Valid: a minimal model. The manifest loads modules/ext-actions/catalog.ttl into the L3 data graph, so this fixture
-# passes only when the shipped catalogue satisfies EA1-EA10.
+# Valid: a minimal model. The manifest lists modules/ext-actions/catalog.ttl in aisep:toolingLoads, which puts it into
+# this module's L3 data graph (ADR-030), so this fixture passes only when the shipped catalogue satisfies EA1-EA11.
 
 :model a arch:Model ;
     skos:prefLabel "动作扩展测试模型"@zh .

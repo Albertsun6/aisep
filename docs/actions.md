@@ -150,7 +150,7 @@
 
 ### 动作目录：配方一、三的一次调用版
 
-配方一、三另有一份写成元模型定义的版本：扩展模块 `modules/ext-actions/` 的 `catalog.ttl` 里的 `aisep:ActionType` 个体（参照 Palantir Foundry 的 Action type：参数、有序步骤、提示级前置检查；不在模型里建执行记录，服务端调用日志见接口文档 §3.6）。两个固定工具读它：`model_list_actions` 列出目录里的动作和每个动作的参数说明，`model_apply_action` 按动作 id 执行一个动作。动作定义的写法、校验规则（`gate` 的 EA1–EA11 与执行器的 X1–X10）见接口文档 §5.13，执行见 §5.14。要查有哪些动作，也可以用 `model_query`：`SELECT ?a ?id WHERE { ?a a aisep:ActionType ; dcterms:identifier ?id }`。
+配方一、三另有一份写成元模型定义的版本：扩展模块 `modules/ext-actions/` 的 `catalog.ttl` 里的 `aisep:ActionType` 个体（参照 Palantir Foundry 的 Action type：参数、有序步骤、提示级前置检查；不在模型里建执行记录，服务端调用日志见接口文档 §3.6）。两个固定工具读它：`model_list_actions` 列出目录里的动作和每个动作的参数说明，`model_apply_action` 按动作 id 执行一个动作。动作定义的写法、校验规则（`gate` 的 EA1–EA11 与执行器的 X1–X10）见接口文档 §5.13，执行见 §5.14。要查有哪些动作，调 `model_list_actions`（无参数），返回的 `actions` 里每项有 `id`、`iri`、`title` 与参数说明。`catalog.ttl` 属于工具区（模块清单 `aisep:toolingLoads`，ADR-030），不进领域查询库，`model_query` 查不到动作。
 
 动作目录也是**推荐通道**：上面的配方照旧可以逐个调写工具来做，两种做法写出的文件逐字节相同；`gate` 和合并核对不知道、也不关心改动是不是经动作做的。区别只有两点：
 

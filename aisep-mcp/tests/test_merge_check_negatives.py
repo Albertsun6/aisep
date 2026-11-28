@@ -1632,6 +1632,27 @@ def test_105_governance_type_outside_models_rejected(t, site, kind, monkeypatch)
     assert_rejected(check(t, h, "feat/x"), OUTSIDE, iri=M + local)
     assert OUTSIDE not in reasons(check(t, h0, "feat/x"))  # positive twin: the same branch before the record
 
+
+# ADR-030 (#169 regression 4): a tool-zone file (aisep:toolingLoads, here ext-actions' catalog.ttl) is not in the domain
+# store, but check 9 reads the tool zone too and fails closed — for the class itself and for a subclass the tool file
+# declares. Positive twin: the same branch before the record.
+@pytest.mark.parametrize("sub", [False, True], ids=["class-itself", "tool-declared-subclass"])
+def test_169_governance_type_in_tooling_file_rejected(t, sub):
+    from fixtures.topology import record_ttl
+    h0 = feature(t)
+    local = "approval-20261120110000-architecture-typeout"
+    body = record_ttl(local, "GateArchitecture", ["newThing"], NO_COMMIT)
+    head = " a aisep:ApprovalRecord ;\n    arch:inModel"
+    assert head in body
+    t.write(f"{GOV}/{local}.ttl", PREFIXES_() + body.replace(head, " arch:inModel"))
+    cls = SUB_REC if sub else "https://aisep.example/ont/aisep#ApprovalRecord"
+    extra = (f"\n<{SUB_REC}> <http://www.w3.org/2000/01/rdf-schema#subClassOf> "
+             "<https://aisep.example/ont/aisep#ApprovalRecord> .\n" if sub else "\n")
+    t.write("modules/ext-actions/catalog.ttl", extra + f"<{M}{local}> a <{cls}> .\n", "a")
+    h = t.commit_all(f"aisep: {local}", trailers=[f"AISEP-Evidence: {NO_COMMIT}"])
+    assert_rejected(check(t, h, "feat/x"), OUTSIDE, iri=M + local)
+    assert OUTSIDE not in reasons(check(t, h0, "feat/x"))
+
 # A record typed with a subclass of aisep:ApprovalRecord is honoured by the derivation, but the approval-commit criterion
 # (§5.9 step 1 (c)) recognises only the class itself and subclasses declared in the same models/<slug>/ files, so a
 # commit adding a record typed with a module-declared subclass is not an approval commit: merge_check rejects it and

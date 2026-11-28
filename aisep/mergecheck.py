@@ -394,11 +394,27 @@ class _Analysis:
                 for (path, desc), where in sorted(found.items())]
 
     # a record / activity typed in a module or vendor file (#105 review, non-blocking 1): the derivation honours a type
-    # from any graph, but the checks below read only models/, so fail closed, independent of the gate's R1
+    # from any graph, but the checks below read only models/, so fail closed, independent of the gate's R1.
+    # ADR-030: tool-zone files (aisep:toolingLoads) are not in ctx_M.store, so they are read from ctx_M.tool_store too,
+    # with the governance classes closed over subclass axioms of both zones
     def check_type_outside_models(self):
-        rows = self.ctx_M.rows(f"""SELECT DISTINCT ?s ?g WHERE {{ GRAPH ?g {{ ?s a ?c }} {self.ctx_M.onto_graph_filter()}
+        ctx = self.ctx_M
+        rows = ctx.rows(f"""SELECT DISTINCT ?s ?g WHERE {{ GRAPH ?g {{ ?s a ?c }} {ctx.onto_graph_filter()}
                ?c rdfs:subClassOf* ?k VALUES ?k {{ aisep:ApprovalRecord aisep:AgentActivity }} }}""")
-        return [_problem("governance-type-outside-models", f"合并结果 M（{self.M[:7]}）的 {g[len(core.ONTO_G):]} 给 "
+        sub = core.NS["rdfs"] + "subClassOf"
+        classes = {c for (c,) in ctx.rows("""SELECT DISTINCT ?c WHERE { ?c rdfs:subClassOf* ?k
+                   VALUES ?k { aisep:ApprovalRecord aisep:AgentActivity } }""")} | {RECORD, ACTIVITY}
+        tool = list(ctx.tool_store.quads_for_pattern(None, None, None))
+        edges = [(q.subject.value, q.object.value) for q in tool if q.predicate.value == sub]
+        while True:
+            more = {c for c, d in edges if d in classes} - classes
+            if not more:
+                break
+            classes |= more
+        rows = {tuple(r) for r in rows} | {(q.subject.value, q.graph_name.value) for q in tool
+                            if q.predicate.value == core.A and q.object.value in classes}
+        prefix = lambda g: g[len(core.TOOL_G if g.startswith(core.TOOL_G) else core.ONTO_G):]
+        return [_problem("governance-type-outside-models", f"合并结果 M（{self.M[:7]}）的 {prefix(g)} 给 "
                          f"{core.short(s)} 声明了批准记录或活动的类型：批准记录和活动只能写在 models/ 下，合并检查无法核对它，"
                          "按失败处理", iri=s) for s, g in sorted(rows)]
 

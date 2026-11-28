@@ -41,6 +41,7 @@ LEVEL_NAME = {0: "code", 1: "design", 2: "hub"}
 TRACE_CLASSES = {AISEP + "Verification", AISEP + "Implementation"}
 DECISION_STATE = {AISEP + "DecisionApproved": ARCH + "Approved", AISEP + "DecisionRejected": AISEP + "Rejected"}
 SRC_G, BUILT_G, ONTO_G = "urn:aisep:src:", "urn:aisep:built:", "urn:aisep:onto:"
+TOOL_G = "urn:aisep:tool:"  # ADR-030: tool-zone files, in Ctx.tool_store only (never in Ctx.store)
 APPROVAL_SHAPE = "https://aisep.example/ont/aisep-shapes#ApprovalRecordShape"
 AGENTS = {ARCH + "Stakeholder", NS["prov"] + "Agent"}  # what prov:wasAssociatedWith may point to (incl. aisep:AIAgent)
 # what aisep:approvedBy may point to: a person, never an AI (Q4=C, spec §6.2/§6.6; principle 5)
@@ -139,6 +140,7 @@ class Module:
         self.kind = (one(AISEP + "moduleKind") or "").replace(AISEP, "")
         self.version = one(NS["owl"] + "versionInfo")
         self.loads = sorted(self.path(p) for p in props.get(AISEP + "loads", []))
+        self.tooling = sorted(self.path(p) for p in props.get(AISEP + "toolingLoads", []))  # ADR-030 tool zone
         self.shapes = sorted(self.path(p) for p in props.get(AISEP + "shapesFile", []))
         self.align = sorted(self.path(p) for p in props.get(AISEP + "alignmentFile", []))
         self.inherits = (one(AISEP + "inheritsHubRules") or "false") in ("true", "1")
@@ -184,7 +186,7 @@ def dependencies(mods, name):
     want, todo = (set(HUB_MODULES) & set(by)) | {name}, [name]
     while todo:
         n = todo.pop()
-        for f in by[n].loads + by[n].shapes + by[n].align + by[n].impact:
+        for f in by[n].loads + by[n].tooling + by[n].shapes + by[n].align + by[n].impact:
             r = rel(f, by[n].root).split(os.sep)
             if r[0] == "modules" and r[1] in by and r[1] not in want:
                 want.add(r[1]); todo.append(r[1])
@@ -194,11 +196,18 @@ def dependencies(mods, name):
 def onto_files(mods, scope="all"):
     """Ontology files for a module set. scope='all': every load + every alignment (queries, L1, L2, L4).
     scope='hub': loads + alignments of hub-inheriting modules only (L3 am4/core data graph, spec §10.2).
-    scope='none': loads only, no alignment (L3 per-notation runs add just their own alignment)."""
-    all_align = {f for m in mods for f in m.align}
+    scope='none': loads only, no alignment (L3 per-notation runs add just their own alignment).
+    No scope holds a tool-zone file (aisep:toolingLoads, ADR-030), even one some manifest also lists elsewhere."""
+    all_align, tool = {f for m in mods for f in m.align}, set(tool_files(mods))
     files = [f for m in mods for f in m.loads + m.impact if f not in all_align]
     files += [f for m in mods for f in m.align if scope == "all" or (scope == "hub" and m.hub_alignment)]
-    return list(dict.fromkeys(files))
+    return [f for f in dict.fromkeys(files) if f not in tool]
+
+
+def tool_files(mods):
+    """Tool-zone files (aisep:toolingLoads, ADR-030): loaded into Ctx.tool_store, read only by mergecheck check 9, the
+    L1 tooling-term-in-model rule and the declaring module's own L3 run."""
+    return list(dict.fromkeys(f for m in mods for f in m.tooling))
 
 
 def owner(mods, iri):
@@ -239,13 +248,16 @@ class Ctx:
                          file=self.rel(f))
                 qs = [q for q in qs if not isinstance(q.object, ox.Triple) and not isinstance(q.subject, ox.Triple)]
             self.src_quads[f] = qs
-        self.store = ox.Store()
-        for f in onto_files(mods, "all"):
-            try:
-                self.store.load(path=f, format=TTL, to_graph=ox.NamedNode(ONTO_G + self.rel(f)))
-            except SyntaxError as e:  # a module file, not a model file: no partial result, a tool error like the manifest
-                raise AisepError("PARSE_FAILED", f"[Violation] L0 cannot parse module file {self.rel(f)}: {str(e)[:200]}",
-                                 hint="先修好这个文件", details={"file": self.rel(f), "error": str(e)[:200]}) from None
+        # the domain store (every query surface reads this one) and the tool zone (ADR-030), which only mergecheck
+        # check 9 and the L1 tooling-term-in-model rule read; the declaring module's L3 run reads its files directly
+        self.store, self.tool_store = ox.Store(), ox.Store()
+        for st, prefix, files in ((self.store, ONTO_G, onto_files(mods, "all")), (self.tool_store, TOOL_G, tool_files(mods))):
+            for f in files:
+                try:
+                    st.load(path=f, format=TTL, to_graph=ox.NamedNode(prefix + self.rel(f)))
+                except SyntaxError as e:  # a module file, not a model file: no partial result, a tool error like the manifest
+                    raise AisepError("PARSE_FAILED", f"[Violation] L0 cannot parse module file {self.rel(f)}: {str(e)[:200]}",
+                                     hint="先修好这个文件", details={"file": self.rel(f), "error": str(e)[:200]}) from None
         for f, qs in self.src_quads.items():
             g = ox.NamedNode(SRC_G + self.rel(f))
             self.store.extend(ox.Quad(q.subject, q.predicate, q.object, g) for q in qs)
@@ -658,6 +670,7 @@ class Ctx:
                              f"source {self.rel(f)} — approval state is derived by `aisep build` from aisep:ApprovalRecord "
                              f"(aisep:approves/aisep:decision/prov:generatedAtTime); record an approval instead")
         self.l1_model_schema()
+        self.l1_tooling_terms()
         self.l1_closed_predicates(set(direct_of))
         self.l1_property_domains()
         for x, o in getattr(self, "bad_replacements", []):  # G8
@@ -746,6 +759,35 @@ class Ctx:
             if iri.startswith(ns) and len(iri) > len(ns):
                 return f"{k}:{iri[len(ns):]}"
         return f"<{iri}>"
+
+    def l1_tooling_terms(self):
+        """ADR-030 decision 4, rule tooling-term-in-model: an IRI that is a subject in a tool-zone file
+        (aisep:toolingLoads, e.g. aisep:ActionType, aisep:steps, aisep:ActionRemoveElement) and is not declared in the
+        domain zone may not appear in a model source as subject, predicate, rdf:type object or aisep:approves object.
+        The approves object is named because the approves-target check above finds no type for such a term in the
+        domain zone and skips it."""
+        domain = {s for (s,) in self.rows(f"SELECT DISTINCT ?s WHERE {{ GRAPH ?g {{ ?s ?p ?o }} "
+                                          f"{self.onto_graph_filter()} FILTER(isIRI(?s)) }}")}
+        tool = {q.subject.value for q in self.tool_store.quads_for_pattern(None, None, None)
+                if isinstance(q.subject, ox.NamedNode)} - domain
+        if not tool:
+            return
+        seen = set()
+        for f, qs in self.src_quads.items():
+            for q in qs:
+                hits = [(q.subject, "subject"), (q.predicate, "predicate")]
+                if q.predicate.value == A:
+                    hits.append((q.object, "rdf:type object"))
+                elif q.predicate.value == AISEP + "approves":
+                    hits.append((q.object, "aisep:approves object"))
+                for term, where in hits:
+                    if isinstance(term, ox.NamedNode) and term.value in tool and (q.subject, term.value, where) not in seen:
+                        seen.add((q.subject, term.value, where))
+                        self.add("Violation", "L1", f"{self.display(q.subject)}: tooling-term-in-model — tool-zone term "
+                                 f"{self.pname(term.value)} used as {where} in model file {self.rel(f)}; it is declared "
+                                 f"only in a module's aisep:toolingLoads file (ADR-030), not in the domain metamodel, so a "
+                                 f"model may not use it (list actions with model_list_actions)",
+                                 rule="tooling-term-in-model", **self.anchor(q.subject))
 
     def l1_closed_predicates(self, direct):
         """G7 closed-world predicates: every predicate in a model file is declared (rdf:Property/owl:ObjectProperty/
@@ -1055,7 +1097,8 @@ def _l3(ctx):
             # arch:Element for ext-code's EC6) but only the alignments of this module and its dependencies (spec §10.2
             # "本模块依赖"; e.g. aisep-core's prov:SoftwareAgent ⊑ prov:Agent, which ext-governance's EG17 needs)
             align = [f for d in dependencies(ctx.mods, m.name) for f in d.align]
-            runs.append((m.name, list(dict.fromkeys(onto_files(ctx.mods, "none") + align)), m.shapes))
+            # ADR-030: only this module's own tool-zone files join its run; the domain runs never see them
+            runs.append((m.name, list(dict.fromkeys(onto_files(ctx.mods, "none") + align + m.tooling)), m.shapes))
     for name, data_files, shape_files in runs:
         if not shape_files:
             continue

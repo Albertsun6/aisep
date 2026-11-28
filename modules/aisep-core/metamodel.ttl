@@ -8,7 +8,7 @@
 <https://aisep.example/module/aisep-core> a arch:Metamodel ;
     skos:prefLabel "AISEP 核心"@zh , "AISEP core"@en ;
     aisep:moduleKind aisep:Extension ;
-    owl:versionInfo "0.3.0" ;
+    owl:versionInfo "0.4.0" ;
     aisep:loads "modules/aisep-core/onto.ttl" ;
     aisep:alignmentFile "modules/aisep-core/align.ttl" ;   # only prov:SoftwareAgent ⊑ prov:Agent (ADR-010, Q4=C)
     aisep:impactFile "modules/aisep-core/impact.ttl" ;

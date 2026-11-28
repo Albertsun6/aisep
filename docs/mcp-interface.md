@@ -351,7 +351,7 @@
 
 - gate FAIL **不是工具错误**（`isError: false`），是正常结果。
 - aisep-core 的 SHACL-SPARQL 约束（L1 与批准核对用，取自被检查内容自己的 `modules/`）在 §5.6 的同一种无网络子进程里执行（issue #66）：约束尝试建立网络连接 → `QUERY_NOT_READONLY`，无网络子进程建立不了 → `INTERNAL`。两者都是工具错误，gate 不会给出 PASS。
-- `modules/` 下被读到的 `.ttl` 不能解析（模块清单 `aisep:loads` 的文件，或 L3 才读的形状文件）→ `PARSE_FAILED`，`details.file` 是该文件的仓库相对路径。这是工具错误，不给部分结果；模型文件的解析失败仍是 L0 发现项。只有用到该文件的工具才报：形状文件坏了，`model_check`（L0–L2）照常返回，`model_validate`、`model_gate` 报错。
+- `modules/` 下被读到的 `.ttl` 不能解析（模块清单 `aisep:loads` 的文件、`aisep:toolingLoads` 的工具区文件（ADR-030），或 L3 才读的形状文件）→ `PARSE_FAILED`，`details.file` 是该文件的仓库相对路径。这是工具错误，不给部分结果；模型文件的解析失败仍是 L0 发现项。只有用到该文件的工具才报：形状文件坏了，`model_check`（L0–L2）照常返回，`model_validate`、`model_gate` 报错。
 - 判定逻辑就是原型的那几个函数，只把 `report()` 改成返回数据。
 
 **`model_findings` 的 `openViolations`**（Q6 条件二：写前只拒新增违规留下的遗留违规要查得到）
@@ -437,7 +437,7 @@
 ### 5.6 `model_query`
 
 - **输入**：`sparql`（必填）、`limit`（缺省 1000，最大 10000）、`timeoutMs`（缺省 10000，最大 60000）、公共字段。
-- **图**：构建后的图 + 全部本体 + 全部对齐（同原型 `cmd_query`，`use_default_graph_as_union=True`）。原型预声明的前缀都可用。
+- **图**：只读领域区：构建后的图 + 全部本体 + 全部对齐（同原型 `cmd_query`，`use_default_graph_as_union=True`）；模块清单 `aisep:toolingLoads` 列的工具区文件（如 ext-actions 的 `onto.ttl`、`catalog.ttl`）不在库里，查不到（ADR-030），要列动作用 `model_list_actions`（§5.13）。默认图恒为领域区全部命名图的并集，查询里写的 `FROM` 不生效；`FROM NAMED` 只能在领域区的命名图里收窄 `GRAPH ?g` 遍历的范围，取不到工具区。原型预声明的前缀都可用。
 - **只读的落实**：
   - 只调 `Store.query`，从不调 `Store.update`。Update 语句解析失败（F5）→ `QUERY_NOT_READONLY`，message 写"只接受 SELECT/ASK/CONSTRUCT/DESCRIBE"。
   - 不访问网络（F6，issue #60）：pyoxigraph 遇到 `SERVICE` 会真的发 HTTP 请求，所以查询在一个无网络的子进程里执行（`aisep/querybox.py`）。Linux 用 seccomp、macOS 用 sandbox，限制在读入查询之前生效，查询一旦尝试建立网络连接，子进程即被终止，不发出请求 → `QUERY_NOT_READONLY`。这条保证不看查询文本。限制建立不了或确认不了（其他平台、内核不支持）时不执行查询 → `INTERNAL`。超时后子进程被杀掉。
@@ -723,7 +723,7 @@ CI 设为受保护分支的必需检查，PR 每次更新都跑；合并前由�
 6. **改动已批准元素须重批**（U1，普通 PR）：PR 带进来的模型差异里 removed 的元素若在 T 上推导为 Approved → 一律拒绝，不论有无覆盖记录，提示改用 `owl:deprecated` + `dcterms:isReplacedBy` 退役（Q6④、核对轮 1；第四轮 G4-2：原文把 removed 与 modified 并列，与第 10 步矛盾）。退役本身给元素加了三元组，按 modified 处理，同样须同 PR 内一条 Approved 覆盖记录；推导为 Superseded 时，生效记录仍按"各关口合法记录中时间最晚的一条"取（第四轮复查）。modified 的元素，若在 T 上推导的 approvalState = Approved，本 PR 必须有一条新增、且通过第 3 项逐条核对的合法批准记录覆盖它（`approves` 含它），否则拒绝。覆盖记录须为 `decision = Approved`，关口不限（approvalState 不分关口，§6.6）：Rejected 记录不算重批（第四轮 R4-2，用户拍板）。另在 M 上用推导同一函数（`derive_approval_state`）核对：该对象的生效记录（各关口合法记录中 `prov:generatedAtTime` 最晚、非歧义的一条）必须是这类覆盖记录之一，否则拒绝，须在分支头上重新批准、让新记录晚于 M 上已有的记录（第四轮 R4-3：防把新记录回填到旧批准之前，合并后旧批准仍生效）。在 T 上推导为 Approved、但 T 的源图里不存在的 IRI（预先批准），若本 PR 新增（added）它，同样须重批（核对轮 2）。模型、ADR 按上文"对象的比较范围"判定是否被修改（核对轮 3）。不改元模型，只在 CI 拦截。
 7. **被批准内容与合并结果一致**（核对轮 5；所有 PR 共用，并入原批准专用 PR 的第三轮 I 规则）：第 2 项选出的每条记录，其 `approves` 中每个对象（按"对象的比较范围"展开）在 evidence 快照中与在 M 中的源图三元组必须相同，不同 → 拒绝，要求在新的提交上重新批准。后果：普通 PR 把主线合进分支后，合并前的批准因第 3 项失效，须以合并后的提交为 evidence 重批（第四轮 G4-3 更正原句"普通 PR 不能把主线合进分支"）；主线改了同一对象时，须基于新主线重开分支再批，或接受拒绝。
 8. **治理记录不能是空白节点**（2026-11-22 取证疑点一）：PR 头 H 与合并结果 M 的模型源文件里，凡空白节点的 `rdf:type` 是 `aisep:ApprovalRecord`、`aisep:AgentActivity` 或其子类（子类按 M 上的模块与模型文件取闭包，同一文件里作子类的空白节点也算），本身就是这样的空白节点子类，或带这两类定义域的谓词（M 上声明 `rdfs:domain` 为这两类或其子类的谓词，至少含 `aisep:gate`、`aisep:decision`、`aisep:approvedBy`、`aisep:approves`、`aisep:evidence`、`aisep:activity`、`aisep:sessionRef`、`aisep:branch`、`aisep:baseCommit`、`aisep:headCommit`）→ 拒绝（`governance-blank-node`）。这里说的是被恰好一个三元组引用、不成环的空白节点；无人引用、被共享或成环的空白节点使图差异算不出，按第 1 步末尾的失败关闭报 `check-error`，不报本项原因码。理由：图差异把被引用的空白节点并进引用方的签名（§5.8），这样的记录不会被第 2 项选出，第 3、4 项都不执行，第 1 项也保护不到它。本项不依赖 gate：L1 另把空白节点的记录、活动，以及 `arch:inModel` 不指向 `arch:Model` 的记录、活动判为违规并让推导忽略它（元模型规范 §6.6、§6.7），第 5 项因此也会拒绝；两者各自成立。
-9. **治理记录的类型只能写在 `models/` 下**（#105 评审）：合并结果 M 载入的模块或 vendor 文件里（即推导能看到的那些），凡给某个主语声明 `rdf:type` 为 `aisep:ApprovalRecord`、`aisep:AgentActivity` 或其子类 → 拒绝（`governance-type-outside-models`）。理由：推导在全部图的并集上认类型，第 1–4 项只读 `models/` 下的源图，类型写在模块或 vendor 里的记录不会被第 2 项选出，第 1、3、4 项都不执行。第 1–4 项识别记录与活动时，类按 T 与 M 上下文（模块、vendor、模型文件）的 `rdfs:subClassOf*` 闭包取，与推导同口径（#105）。本项不依赖 gate：模型文件不能给元模型术语加三元组的 R1 规则另会让第 5 项拒绝；两者各自成立。
+9. **治理记录的类型只能写在 `models/` 下**（#105 评审）：合并结果 M 载入的模块或 vendor 文件里（即推导能看到的那些，连同模块清单 `aisep:toolingLoads` 列的工具区文件：它们不进领域查询库，本项另读工具区，失败关闭，ADR-030），凡给某个主语声明 `rdf:type` 为 `aisep:ApprovalRecord`、`aisep:AgentActivity` 或其子类 → 拒绝（`governance-type-outside-models`）。理由：推导在全部图的并集上认类型，第 1–4 项只读 `models/` 下的源图，类型写在模块或 vendor 里的记录不会被第 2 项选出，第 1、3、4 项都不执行。第 1–4 项识别记录与活动时，类按 T 与 M 上下文（模块、vendor、模型文件）的 `rdfs:subClassOf*` 闭包取，与推导同口径（#105）。本项不依赖 gate：模型文件不能给元模型术语加三元组的 R1 规则另会让第 5 项拒绝；两者各自成立。
 10. **已有记录的批准人不能改类型或删除**（PR #132 评审 N1，Albert 2026-11-26 同意）：目标分支 T 的模型源文件里被任一 `aisep:approvedBy` 引用的 IRI，若在 M 的模型源文件里不再作主语出现 → 拒绝（`governance-approver-removed`）；仍在、但推导判定它能否当批准人的结论（`rdf:type` 连同这些类沿 `rdfs:subClassOf` 的全部祖先：是 `arch:Stakeholder` 且不是 `aisep:AIAgent`；模型源文件、模块与 vendor 里写的都算）与 T 上不同 → 拒绝（`governance-approver-retyped`），例如改成 `aisep:AIAgent`、去掉 `arch:Stakeholder`、在模块里给它加类型 `aisep:AIAgent`、给它的类加父类 `aisep:AIAgent`。不改变这一结论的类型改动不拒，例如追加一个合法子类型、在模块里给 `arch:Stakeholder` 加无害的父类（#136 评审）。理由：这类改动让引用它的已有记录变为不合法，推导不再认它，已有的 Rejected 可能因此失效、状态变成 Approved；它不改记录本身，第 1 项管不到。改标签等不动类型的改动、新增干系人和新增记录都不受影响。本项不依赖 gate：第 5 项另会因记录不合法而拒绝；两者各自成立。本项属于 ADR-019 第 2 款治理加固冻结的例外，经 Albert 2026-11-26 同意（见 ADR-024 补记）。
 
 **合并前重算**（U3）
@@ -871,7 +871,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 
 出处：Albert 2026-11-25 确认动作机制走「薄封装」方向，2026-11-26 放行阶段 C 时改选：动作定义建进元模型（新模块 `modules/ext-actions/`，参照 Palantir Foundry 的 Action type，只建定义、不建执行记录），目录从 RDF 读。本节与 §5.14 随之加入。字段名、错误码名、词汇细节是实现时的取舍，Albert 没有逐条定过。用法见 `docs/actions.md`「动作目录」一节。
 
-**动作是什么**：现有写工具的具名组合，写成元模型里的 `aisep:ActionType` 个体，放在扩展模块 `modules/ext-actions/` 的 `catalog.ttl`（词汇在 `onto.ttl`，L3 形状 EA1–EA11 在 `shapes.ttl`）。`catalog.ttl` 列在模块清单的 `aisep:loads` 里，所以 `gate` 会用 `shapes.ttl` 校验它，`model_query` 也能查到有哪些动作。动作有 IRI（形如 `aisep:Action<名>`），调用时用短 id（`dcterms:identifier`）。动作个体不是模型元素：不在 `arch:Element` 之下，没有 `arch:inModel`，也没有批准状态。动作是**推荐通道**，不是唯一通道：逐个调写工具、直接编辑 `.ttl` 照旧允许，`gate` 与合并核对不知道改动是否经动作做的。动作不产生审批项，不在模型里留执行记录；`model_apply_action` 的每次调用（含 `dryRun` 与被拒）由服务端调用日志记一行（§3.6，ADR-031），那不是模型对象；`workbench` 画像可用只读工具 `model_call_log` 读取（§5.17）。
+**动作是什么**：现有写工具的具名组合，写成元模型里的 `aisep:ActionType` 个体，放在扩展模块 `modules/ext-actions/` 的 `catalog.ttl`（词汇在 `onto.ttl`，L3 形状 EA1–EA11 在 `shapes.ttl`）。`onto.ttl` 与 `catalog.ttl` 列在模块清单的 `aisep:toolingLoads` 里，属于工具区（ADR-030）：`gate` 在本模块那一轮 L3 用 `shapes.ttl` 校验它们，但它们不进领域查询库，`model_query` 查不到动作，要列动作用本工具；模型文件也不能引用工具区术语（L1 `tooling-term-in-model`，元模型规范 §6.9）。动作有 IRI（形如 `aisep:Action<名>`），调用时用短 id（`dcterms:identifier`）。动作个体不是模型元素：不在 `arch:Element` 之下，没有 `arch:inModel`，也没有批准状态。动作是**推荐通道**，不是唯一通道：逐个调写工具、直接编辑 `.ttl` 照旧允许，`gate` 与合并核对不知道改动是否经动作做的。动作不产生审批项，不在模型里留执行记录；`model_apply_action` 的每次调用（含 `dryRun` 与被拒）由服务端调用日志记一行（§3.6，ADR-031），那不是模型对象；`workbench` 画像可用只读工具 `model_call_log` 读取（§5.17）。
 
 **两个工具的形状是固定的**：目录增删改动作，`tools/list` 都不变（参数 schema 由本工具返回，不进 `inputSchema`）。
 
@@ -929,7 +929,7 @@ Albert 2026-11-25 放行动作机制阶段 A，本工具随之加入：新增为
 2. 按 `params` schema 校验参数，再校验 IRI 参数（`iriParams`）的形状；不合规 → `INVALID_ARGUMENT`，`details.rejectedFields` 形如 `params.<名>`。参数只作为预绑定的项进入 guard 查询，不拼进查询文本。
 3. 进入一次 §5.1 写入（加锁、读工作区、基线）。依次跑各步的计划函数；后一步在前一步结果的内存叠加上规划，与第二次工具调用看到的相同。中间结果只检查能否解析，不能 → `EDIT_UNSAFE`。步骤自己的拒绝原样抛出（`ELEMENT_NOT_FOUND`、`IRI_EXISTS`、`UNKNOWN_TYPE`、`PROTECTED_RESOURCE`、`REFERENCED` 等），`details.step` 标出是哪一步。可选参数没给时，引用它的入参或列表项省略；某步的必填入参因此缺失 → `INVALID_ARGUMENT`。
 4. **判重放**：各步合并后的计划在当前工作区上无变化（每一步都无变化，或各步改动相互抵消、每个文件合并后的文本与工作区逐字节相同）→ 成功，`changed: false`，不重写文件，**不跑 guard**。只有部分文件相互抵消时，这些文件不计入改动。
-5. **跑 guard**：每条 guard 的 ASK 结果为 false 即失败 → `PRECONDITION_FAILED`，零写入，`hint` 是第一条失败 guard 的修法（`sh:message`），`details.failedGuards: [{id, hint}]`。IRI 参数预绑定为 IRI，字符串参数预绑定为普通字面量。guard 与 `aisep:modelOf` 都看动作开始时的工作区，不看前面步骤的产出。查询用到的可选参数没给时这条 guard 跳过。每条 guard 在 §5.6 的同一种无网络子进程里执行，限时 10 秒（同 `model_query` 的缺省 `timeoutMs`）：超时 → `QUERY_TIMEOUT`，零写入，`retryable: false`（guard 写法有问题，例如笛卡尔积，原样重试没有用，要改 `catalog.ttl`），`details: {action, guard}`；尝试联网 → `QUERY_NOT_READONLY`；子进程建立不了 → `INTERNAL`。
+5. **跑 guard**：每条 guard 的 ASK 结果为 false 即失败 → `PRECONDITION_FAILED`，零写入，`hint` 是第一条失败 guard 的修法（`sh:message`），`details.failedGuards: [{id, hint}]`。IRI 参数预绑定为 IRI，字符串参数预绑定为普通字面量。guard 与 `aisep:modelOf` 都看动作开始时的工作区，不看前面步骤的产出。guard 只看领域区（模型、构建图与领域元模型），看不到工具区的动作定义（ADR-030）。查询用到的可选参数没给时这条 guard 跳过。每条 guard 在 §5.6 的同一种无网络子进程里执行，限时 10 秒（同 `model_query` 的缺省 `timeoutMs`）：超时 → `QUERY_TIMEOUT`，零写入，`retryable: false`（guard 写法有问题，例如笛卡尔积，原样重试没有用，要改 `catalog.ttl`），`details: {action, guard}`；尝试联网 → `QUERY_NOT_READONLY`；子进程建立不了 → `INTERNAL`。
 6. 算 `planDigest` = sha256（动作 id、`definitionDigest`、`params`、计划触及的每个文件改前与改后的 sha256）。带了 `planDigest` 而不等 → `PLAN_STALE`（相关模型文件、动作定义或参数在 `dryRun` 之后变了；定义的任何改动，包括只改标题或说明，都会让旧哈希失效）。含删除步骤、不是 `dryRun`、也没带 `planDigest` → `PLAN_REQUIRED`。这两种错误的 `details` 带 `planDigest`、`steps`、`files`，含删除步骤时另带 `cascade` 和 `impact`。它们在候选图判定之前抛出，所以不含 L0–L2 结论。
 7. 把各步合并后的计划交回 §5.1 第 5–10 步：图等价断言、候选图 L0–L2 判定（只拒新增违规）、落盘。**一次动作就是一次写入**：工作区内全有或全无，不 `git add`、不提交。
 
