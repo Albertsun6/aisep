@@ -79,7 +79,7 @@
 - 每个模块是一个 `arch:Metamodel` 清单，带这些属性：
   - `aisep:moduleKind` ∈ {Language, Extension, Alignment, Framework}。
   - `aisep:loads`：按加载顺序列出依赖的文件。
-  - `aisep:toolingLoads`：本模块的工具区文件（ADR-030），可出现多次。照常解析（解析失败照旧 `PARSE_FAILED`），由本模块的 `aisep:shapesFile` 在 L3 本模块那一轮校验，但不进领域查询库，不参与领域判定（查询、L1/L2/L4、写工具、影响分析、guard 都看不到；只有 L1 `tooling-term-in-model`（§6.9）与 mergecheck 检查项 9 读它，用来拒绝越区写法）；归区由清单声明，不按路径或内容推断。ext-actions 的 `onto.ttl`、`catalog.ttl` 列在这里。
+  - `aisep:toolingLoads`：本模块的工具区文件（ADR-030），可出现多次。照常解析（解析失败照旧 `PARSE_FAILED`），由本模块的 `aisep:shapesFile` 在 L3 本模块那一轮校验，但不进领域查询库，不参与领域判定（查询、其余 L1 规则、L2/L4、写工具、影响分析、guard 都看不到；只有 L1 `tooling-term-in-model`（§6.9）与 mergecheck 检查项 9 读它，用来拒绝越区写法）；归区由清单声明，不按路径或内容推断。同一文件若既在某模块的 `aisep:loads` 里、又在另一模块的 `aisep:toolingLoads` 里，按工具区处理，不进领域查询库。ext-actions 的 `onto.ttl`、`catalog.ttl` 列在这里。
   - `aisep:shapesFile`。
   - `aisep:alignmentFile`：只包含子类/子属性公理。
   - `aisep:impactFile`：影响分析口径的覆盖，必须在清单里声明才会生效。
@@ -206,7 +206,7 @@
 - 前置检查：`sh:SPARQLAskValidator`（`sh:ask`、`sh:message`@zh、`dcterms:identifier`），ASK 为 true 即通过，参数以 `$名` 预绑定；只是提示（`PRECONDITION_FAILED`），不是合法性定义，`gate` 不知道它。
 - 步骤：`aisep:ActionStep`，`aisep:invokes` 五个基本动作之一（`aisep:BasicAddElement`、`aisep:BasicAddRelationship`、`aisep:BasicSetLabels`、`aisep:BasicSetAttributes`、`aisep:BasicRemove`，封闭集合，`skos:notation` 是对应 MCP 写工具名），每个入参一个 `aisep:binding` 空白节点（不写类型，按 `aisep:binding` 的值域是 `aisep:ActionBinding`，它是下面几个属性的定义域）：`aisep:argument` 加取值来源四选一（`aisep:constant`、`aisep:fromParameter`、`aisep:fromStep`、`aisep:modelOf`），列表型入参的一项另带 `aisep:attributePredicate`。
 - 校验：L3 `shapes.ttl` 的 EA1–EA11（结构；EA1 的动作形状封闭，动作上不能写 `rdfs:subClassOf` 等其他三元组；EA10 防止动作词汇被写到模型元素上；EA11 禁止动作个体另带领域类型）；执行器每次读目录再判同样的结构，另判 SHACL Core 说不了的 X2–X10（表良构、入参名、引用、guard 能执行、id 唯一、空白节点不共享、两步作用于同一目标）。
-- 工具区（ADR-030）：`onto.ttl`、`catalog.ttl` 列在清单 `aisep:toolingLoads` 里，不进领域查询库；列动作用 `model_list_actions`，`model.query` 查不到。**L1 `tooling-term-in-model`**：工具区文件里作主语、且领域区没有声明的 IRI（如 `aisep:ActionType`、`aisep:steps`、`aisep:ActionRemoveElement`），出现在模型源图的主语、谓词、`rdf:type` 宾语或 `aisep:approves` 宾语位置 → Violation。写工具的可实例化类表只读领域区，`aisep:ActionType` 按「未知类型」拒绝。
+- 工具区（ADR-030）：`onto.ttl`、`catalog.ttl` 列在清单 `aisep:toolingLoads` 里，不进领域查询库；列动作用 `model_list_actions`，`model.query` 查不到。**L1 `tooling-term-in-model`**：工具区文件里作主语、且领域区没有声明的 IRI（如 `aisep:ActionType`、`aisep:steps`、`aisep:ActionRemoveElement`），出现在模型源图的主语、谓词、`rdf:type` 宾语或 `aisep:approves` 宾语位置 → Violation。其他谓词的宾语位置刻意不在本规则范围内：那里的引用不让模型获得动作语义，谓词本身另由 G7 与其余 L1 规则约束。写工具的可实例化类表只读领域区，`aisep:ActionType` 按「未知类型」拒绝。
 - 不采纳：Foundry 的 Function rule、side effects、action log、「默认只能经动作编辑」。
 
 ## 7. 跨记法追溯
