@@ -291,7 +291,7 @@
 | 字段 | 必填 | 说明 |
 |---|---|---|
 | `model` | ✔ | 模型 IRI 或 slug（`procurement`），口径见 §5.0 |
-| `type` | ✔ | 类 IRI 或前缀名；必须是已加载模块的具体类，或模型里的单父类特化（R1、G6）。批准记录、AI 活动、动作定义（`aisep:ApprovalRecord`、`aisep:AgentActivity`、`aisep:ActionType` 及其子类；动作定义只在 `modules/ext-actions/catalog.ttl` 里，ADR-026 补记 2026-11-27）→ `PROTECTED_RESOURCE` |
+| `type` | ✔ | 类 IRI 或前缀名；必须是已加载模块的具体类，或模型里的单父类特化（R1、G6）。批准记录、AI 活动（`aisep:ApprovalRecord`、`aisep:AgentActivity` 及其子类）→ `PROTECTED_RESOURCE`；动作定义 `aisep:ActionType` 只在工具区的 `modules/ext-actions/catalog.ttl` 里（ADR-026 补记 2026-11-27），不在写工具只读领域区的类表里，→ `UNKNOWN_TYPE`（ADR-030） |
 | `prefLabel` | ✔ | 写成 `skos:prefLabel "…"@zh`。prefLabel/altLabel 不含控制字符、换行与 U+2028/2029，≤200 字符；definition 只允许 `\n`（`\r\n`、`\t` 都拒绝），≤4000 字符；违反 → `INVALID_ARGUMENT` |
 | `altLabel` | — | 写成 `skos:altLabel "…"@en` |
 | `slug` | 条件 | `^[A-Za-z][A-Za-z0-9]*$`（允许大写开头，例子里已有 UML 类 `QuotationEntity`）。不给时由 `altLabel` 转 camelCase；两者都没有 → `INVALID_ARGUMENT`（不自动拼音） |

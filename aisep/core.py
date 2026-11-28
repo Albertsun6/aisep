@@ -805,7 +805,7 @@ class Ctx:
                     self.add("Violation", "L1", f"{short(s)}: undeclared predicate {self.pname(p)} in model file {self.rel(f)} — "
                              f"every predicate must be declared in a loaded module/ontology or be one of the authoring-profile "
                              f"predicates (closed world, G7); model links between elements as qualified relationships",
-                             focus=s.value if isinstance(s, ox.NamedNode) else None)
+                             **self.anchor(s))  # a blank node: its nearest named referrer (§5.1 R2-6)
             for q in qs:
                 p = q.predicate.value
                 if p in declared and p not in ELEMENT_LINK_OK and p not in direct and p not in PREDICATE_ALLOW \
