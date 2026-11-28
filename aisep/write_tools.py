@@ -23,7 +23,10 @@ RDF_TYPE = core.A
 LABEL_LIMITS = {PREF: LABEL_MAX, ALT: LABEL_MAX, DEF: DEFINITION_MAX}
 UNSET = object()
 # approval records and AI activities are append-only governance records; action definitions live only in
-# modules/ext-actions/catalog.ttl (a model file typed aisep:ActionType is never an action, ADR-026 补记 2026-11-27)
+# modules/ext-actions/catalog.ttl (a model file typed aisep:ActionType is never an action, ADR-026 补记 2026-11-27).
+# Since ADR-030 aisep:ActionType is a tool-zone class, absent from _classes, so on the add paths _resolve_class refuses it
+# first (UNKNOWN_TYPE) and this set is the second line there; it still decides set_labels/set_attributes/remove on an
+# existing subject, and takes over the add paths again should the class ever move back into the domain zone.
 PROTECTED_TYPES = {core.AISEP + "ApprovalRecord", core.AISEP + "AgentActivity", core.AISEP + "ActionType"}
 
 

@@ -186,6 +186,7 @@ def dependencies(mods, name):
     want, todo = (set(HUB_MODULES) & set(by)) | {name}, [name]
     while todo:
         n = todo.pop()
+        # a tool-zone file naming another module's path pulls that module in too (its alignments join this L3 run)
         for f in by[n].loads + by[n].tooling + by[n].shapes + by[n].align + by[n].impact:
             r = rel(f, by[n].root).split(os.sep)
             if r[0] == "modules" and r[1] in by and r[1] not in want:

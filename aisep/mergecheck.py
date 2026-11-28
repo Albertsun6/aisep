@@ -396,21 +396,26 @@ class _Analysis:
     # a record / activity typed in a module or vendor file (#105 review, non-blocking 1): the derivation honours a type
     # from any graph, but the checks below read only models/, so fail closed, independent of the gate's R1.
     # ADR-030: tool-zone files (aisep:toolingLoads) are not in ctx_M.store, so they are read from ctx_M.tool_store too,
-    # with the governance classes closed over subclass axioms of both zones
+    # with the governance classes closed over the union of both zones' subclass axioms (a chain may cross zones)
     def check_type_outside_models(self):
         ctx = self.ctx_M
-        rows = ctx.rows(f"""SELECT DISTINCT ?s ?g WHERE {{ GRAPH ?g {{ ?s a ?c }} {ctx.onto_graph_filter()}
-               ?c rdfs:subClassOf* ?k VALUES ?k {{ aisep:ApprovalRecord aisep:AgentActivity }} }}""")
         sub = core.NS["rdfs"] + "subClassOf"
-        classes = {c for (c,) in ctx.rows("""SELECT DISTINCT ?c WHERE { ?c rdfs:subClassOf* ?k
-                   VALUES ?k { aisep:ApprovalRecord aisep:AgentActivity } }""")} | {RECORD, ACTIVITY}
         tool = list(ctx.tool_store.quads_for_pattern(None, None, None))
-        edges = [(q.subject.value, q.object.value) for q in tool if q.predicate.value == sub]
+        # an IRI is keyed by its string in both zones; a blank node by (zone, label), so the two stores' labels never meet
+        key = lambda zone, x: x.value if isinstance(x, core.ox.NamedNode) else (zone, x.value)
+        edges = {(key("d", c), key("d", d)) for c, d in ctx.rows("SELECT DISTINCT ?c ?d WHERE { ?c rdfs:subClassOf ?d }",
+                                                                 raw=True)}
+        edges |= {(key("t", q.subject), key("t", q.object)) for q in tool if q.predicate.value == sub}
+        classes = {RECORD, ACTIVITY}
         while True:
             more = {c for c, d in edges if d in classes} - classes
             if not more:
                 break
             classes |= more
+        classes = {c for c in classes if isinstance(c, str)}  # a type is written with a named class
+        values = " ".join(f"<{c}>" for c in sorted(classes))
+        rows = ctx.rows(f"""SELECT DISTINCT ?s ?g WHERE {{ GRAPH ?g {{ ?s a ?c }} {ctx.onto_graph_filter()}
+               VALUES ?c {{ {values} }} }}""")
         rows = {tuple(r) for r in rows} | {(q.subject.value, q.graph_name.value) for q in tool
                             if q.predicate.value == core.A and q.object.value in classes}
         prefix = lambda g: g[len(core.TOOL_G if g.startswith(core.TOOL_G) else core.ONTO_G):]

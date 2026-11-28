@@ -79,7 +79,7 @@
 - 每个模块是一个 `arch:Metamodel` 清单，带这些属性：
   - `aisep:moduleKind` ∈ {Language, Extension, Alignment, Framework}。
   - `aisep:loads`：按加载顺序列出依赖的文件。
-  - `aisep:toolingLoads`：本模块的工具区文件（ADR-030），可出现多次。照常解析（解析失败照旧 `PARSE_FAILED`），由本模块的 `aisep:shapesFile` 在 L3 本模块那一轮校验，但不进领域查询库，不参与领域判定（查询、L1/L2/L4、写工具、影响分析、guard 都看不到）；归区由清单声明，不按路径或内容推断。ext-actions 的 `onto.ttl`、`catalog.ttl` 列在这里。
+  - `aisep:toolingLoads`：本模块的工具区文件（ADR-030），可出现多次。照常解析（解析失败照旧 `PARSE_FAILED`），由本模块的 `aisep:shapesFile` 在 L3 本模块那一轮校验，但不进领域查询库，不参与领域判定（查询、L1/L2/L4、写工具、影响分析、guard 都看不到；只有 L1 `tooling-term-in-model`（§6.9）与 mergecheck 检查项 9 读它，用来拒绝越区写法）；归区由清单声明，不按路径或内容推断。ext-actions 的 `onto.ttl`、`catalog.ttl` 列在这里。
   - `aisep:shapesFile`。
   - `aisep:alignmentFile`：只包含子类/子属性公理。
   - `aisep:impactFile`：影响分析口径的覆盖，必须在清单里声明才会生效。
@@ -322,7 +322,7 @@ spike 里 AI 试验用的 7 元素标准答案，其实是无向的 3 跳邻域�
 ### 10.2 对齐公理和校验范围
 - **L3 跑 am4 shapes 时**，数据图里放入：枢纽和核心模块、`inheritsHubRules=true` 的 Language 模块、**所有 Extension 模块**（例如 `Deployable ⊑ Artifact` 必须常驻，否则 Deployable 会逃过矩阵）的对齐公理。不放入 `inheritsHubRules=false` 的 Language 对齐。
 - 其他每个模块的 shapes，在"源文件 + 构建出的直连三元组 + 本模块依赖"上单独运行。
-- 工具区文件（`aisep:toolingLoads`，ADR-030）不进上面任何一轮领域数据图；只有声明它的模块那一轮，数据图是领域区文件 + 本模块工具区文件 + 模型。ext-actions 那一轮因此校验 `catalog.ttl`（动作目录），`catalog.ttl` 写坏会让 L3 报 EA1–EA11（ADR-026）。
+- 工具区文件（`aisep:toolingLoads`，ADR-030）不进上面任何一轮领域数据图；只有声明它的模块那一轮，数据图是领域区文件 + 本模块工具区文件 + 模型；工具区文件引用的别的模块路径也算本模块依赖（与 `aisep:loads` 一样计入依赖闭包），那些模块的对齐公理随之进这一轮。ext-actions 那一轮因此校验 `catalog.ttl`（动作目录），`catalog.ttl` 写坏会让 L3 报 EA1–EA11（ADR-026）。
 - 查询和影响分析加载全部对齐公理。
 
 ## 11. 版本与 vendoring

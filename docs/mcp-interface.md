@@ -311,7 +311,7 @@
 
 ### 5.3 `model_add_relationship`
 
-**输入**：`model?`（缺省取源端元素的模型）、`type`（限定关系类；为批准记录、AI 活动、动作定义时 `PROTECTED_RESOURCE`）、`source`、`target`、`file?`、`dryRun?`。
+**输入**：`model?`（缺省取源端元素的模型）、`type`（限定关系类；为批准记录、AI 活动时 `PROTECTED_RESOURCE`；`aisep:ActionType` 不在领域区类表里，`UNKNOWN_TYPE`（ADR-030））、`source`、`target`、`file?`、`dryRun?`。
 
 **IRI（§3）**：`{model}rel-{源slug}-{直连谓词本地名}-{目标slug}`。
 - 直连谓词取该类最近的 `arch:unqualifiedForm`（同原型 `Ctx.nearest`）。

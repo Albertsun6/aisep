@@ -73,6 +73,16 @@ def test_1_domain_is_the_same_with_and_without_ext_actions():
     assert l3_domain(full) == l3_domain(bare)
 
 
+def test_1_onto_files_drops_a_tool_file_a_manifest_also_loads():
+    """The tool filter holds even when a manifest lists the same file under aisep:loads too (#198 review)."""
+    mods = full_mods()
+    ea = next(m for m in mods if m.name == "ext-actions")
+    cat = next(f for f in ea.tooling if f.endswith("catalog.ttl"))
+    ea.loads = ea.loads + [cat]
+    for scope in ("all", "hub", "none"):
+        assert cat not in core.onto_files(mods, scope), scope
+
+
 WIDE = """@prefix sh: <http://www.w3.org/ns/shacl#> . @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 <urn:test:WideProbe> a sh:NodeShape ; sh:targetSubjectsOf skos:prefLabel ;
     sh:property [ sh:path skos:prefLabel ; sh:maxCount 0 ; sh:severity sh:Info ; sh:message "wide-probe" ] .
@@ -83,8 +93,10 @@ def test_2_wide_domain_shape_never_focuses_tool_nodes(tmp_path):
     shp = tmp_path / "wide.ttl"
     shp.write_text(WIDE, encoding="utf-8")
     mods = full_mods()
-    for m in mods:  # the hub run and a per-module domain run
-        if m.name in ("aisep-core", "ddd"):
+    runs = {"am4+core"} | {m.name for m in mods if m.shapes and m.name not in core.HUB_MODULES and m.name != "ext-actions"}
+    assert {"ddd", "ext-governance"} <= runs  # not vacuous: several per-module domain runs
+    for m in mods:  # every domain run: the hub run and each per-module run except the one declaring the tool zone
+        if m.shapes and m.name != "ext-actions":
             m.shapes = m.shapes + [str(shp)]
     ctx = core.Ctx(mods, SOURCES)
     core.l3(ctx)
@@ -93,7 +105,7 @@ def test_2_wide_domain_shape_never_focuses_tool_nodes(tmp_path):
         if layer == "L3" and text.endswith("wide-probe"):
             run, f = re.match(r"^\[([^\]]+)\] (\S+)", text).groups()
             focus[run].add(f)
-    assert set(focus) == {"am4+core", "ddd"}, focus
+    assert set(focus) == runs, focus
     tool = {core.short(q.subject.value) for q in ctx.tool_store.quads_for_pattern(None, None, None)
             if isinstance(q.subject, core.ox.NamedNode)}
     assert "aisep:ActionRemoveElement" in tool and "aisep:ActionType" in tool
@@ -113,6 +125,7 @@ HDR = """@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
 :boss a arch:Stakeholder ; arch:inModel :t ; skos:prefLabel "架构师"@zh .
 """
 CASES = {
+    "subject": ('aisep:ActionRemoveElement skos:prefLabel "伪造"@zh .', None, "subject"),
     "typed-action": (':x a aisep:ActionType ; arch:inModel :t ; skos:prefLabel "伪动作"@zh .', "x", "rdf:type object"),
     "blank-action": ('[] a aisep:ActionType ; aisep:steps [ a aisep:ActionStep ; aisep:invokes aisep:BasicRemove ] .',
                      None, "rdf:type object"),

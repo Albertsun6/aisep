@@ -1634,9 +1634,10 @@ def test_105_governance_type_outside_models_rejected(t, site, kind, monkeypatch)
 
 
 # ADR-030 (#169 regression 4): a tool-zone file (aisep:toolingLoads, here ext-actions' catalog.ttl) is not in the domain
-# store, but check 9 reads the tool zone too and fails closed — for the class itself and for a subclass the tool file
-# declares. Positive twin: the same branch before the record.
-@pytest.mark.parametrize("sub", [False, True], ids=["class-itself", "tool-declared-subclass"])
+# store, but check 9 reads the tool zone too and fails closed — for the class itself, for a subclass the tool file
+# declares, and for a chain crossing the zones (tool X ⊑ ApprovalRecord, domain Y ⊑ X, tool `a Y`; #198 review). The
+# message names the tool file by its repository path. Positive twin: the same branch before the record.
+@pytest.mark.parametrize("sub", ["", "tool", "cross"], ids=["class-itself", "tool-declared-subclass", "cross-zone-chain"])
 def test_169_governance_type_in_tooling_file_rejected(t, sub):
     from fixtures.topology import record_ttl
     h0 = feature(t)
@@ -1645,12 +1646,18 @@ def test_169_governance_type_in_tooling_file_rejected(t, sub):
     head = " a aisep:ApprovalRecord ;\n    arch:inModel"
     assert head in body
     t.write(f"{GOV}/{local}.ttl", PREFIXES_() + body.replace(head, " arch:inModel"))
-    cls = SUB_REC if sub else "https://aisep.example/ont/aisep#ApprovalRecord"
-    extra = (f"\n<{SUB_REC}> <http://www.w3.org/2000/01/rdf-schema#subClassOf> "
-             "<https://aisep.example/ont/aisep#ApprovalRecord> .\n" if sub else "\n")
+    rec, sc = "https://aisep.example/ont/aisep#ApprovalRecord", "http://www.w3.org/2000/01/rdf-schema#subClassOf"
+    cls = {"": rec, "tool": SUB_REC, "cross": SUB_REC + "Cross"}[sub]
+    extra = f"\n<{SUB_REC}> <{sc}> <{rec}> .\n" if sub else "\n"
+    if sub == "cross":
+        t.write("modules/aisep-core/onto.ttl", f"\n<{cls}> <{sc}> <{SUB_REC}> .\n", "a")
     t.write("modules/ext-actions/catalog.ttl", extra + f"<{M}{local}> a <{cls}> .\n", "a")
     h = t.commit_all(f"aisep: {local}", trailers=[f"AISEP-Evidence: {NO_COMMIT}"])
-    assert_rejected(check(t, h, "feat/x"), OUTSIDE, iri=M + local)
+    problems = check(t, h, "feat/x")
+    assert_rejected(problems, OUTSIDE, iri=M + local)
+    if not isinstance(problems, _Pending):
+        assert any("modules/ext-actions/catalog.ttl" in _get(p, "message") for p in problems
+                   if _get(p, "reason") == OUTSIDE and _get(p, "iri") == M + local), problems
     assert OUTSIDE not in reasons(check(t, h0, "feat/x"))
 
 # A record typed with a subclass of aisep:ApprovalRecord is honoured by the derivation, but the approval-commit criterion
