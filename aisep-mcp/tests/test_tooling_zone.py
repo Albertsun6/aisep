@@ -65,6 +65,9 @@ def test_1_domain_is_the_same_with_and_without_ext_actions():
     ea = next(m for m in full.mods if m.name == "ext-actions")
     assert {os.path.basename(f) for f in ea.tooling} == {"onto.ttl", "catalog.ttl"}  # not vacuous: the zone exists
     assert any(q.object.value == AI + "ActionType" for q in full.tool_store.quads_for_pattern(None, None, None))
+    # each tool file is its own graph urn:aisep:tool:<repository path> (#169 item 2; #198 review)
+    assert {q.graph_name.value for q in full.tool_store.quads_for_pattern(None, None, None)} == \
+        {core.TOOL_G + full.rel(f) for f in ea.tooling}
     assert not set(ea.tooling) & set(core.onto_files(full.mods, "all") + core.onto_files(full.mods, "hub")
                                      + core.onto_files(full.mods, "none"))
     a, b = domain_view(full), domain_view(bare)
@@ -163,6 +166,23 @@ def test_3_model_using_tool_terms_fails_l1_by_rule(tmp_path, case):
     assert any(f"used as {where}" in i[2] for i in hits), [i[2] for i in hits]
     if who:  # focus is the model subject using the term (a stable instance key for the write tools)
         assert any(i[3] == "https://aisep.example/model/t/" + who for i in hits if f"used as {where}" in i[2]), hits
+
+
+def test_3_tool_term_the_domain_also_declares_is_not_a_tooling_term(tmp_path):
+    """A tool-zone IRI that the domain zone declares too is a domain term: using it in a model is no
+    tooling-term-in-model finding (#198 review). Twin: the same model without the domain declaration is one."""
+    body = CASES["argument-on-element"][0]
+    f = tmp_path / "m.ttl"
+    f.write_text(HDR + body + "\n", encoding="utf-8")
+    for declared in (True, False):
+        ctx = core.Ctx(full_mods(), [str(f)])
+        if declared:
+            ctx.store.add(core.ox.Quad(core.ox.NamedNode(AI + "argument"), core.ox.NamedNode(core.A),
+                                       core.ox.NamedNode(core.NS["owl"] + "DatatypeProperty"),
+                                       core.ox.NamedNode(core.ONTO_G + "modules/aisep-core/onto.ttl")))
+        core.run_check(ctx)
+        hits = [i for i in ctx.instances if i[1] == "L1" and i[4] == TOOL_RULE]
+        assert bool(hits) != declared, (declared, hits)
 
 
 def test_3_write_tools_cannot_instantiate_action_type():

@@ -1635,10 +1635,17 @@ def test_105_governance_type_outside_models_rejected(t, site, kind, monkeypatch)
 
 # ADR-030 (#169 regression 4): a tool-zone file (aisep:toolingLoads, here ext-actions' catalog.ttl) is not in the domain
 # store, but check 9 reads the tool zone too and fails closed — for the class itself, for a subclass the tool file
-# declares, and for a chain crossing the zones (tool X ⊑ ApprovalRecord, domain Y ⊑ X, tool `a Y`; #198 review). The
-# message names the tool file by its repository path. Positive twin: the same branch before the record.
-@pytest.mark.parametrize("sub", ["", "tool", "cross"], ids=["class-itself", "tool-declared-subclass", "cross-zone-chain"])
-def test_169_governance_type_in_tooling_file_rejected(t, sub):
+# declares, and for a chain crossing the zones (tool X ⊑ ApprovalRecord, domain Y ⊑ X, tool `a Y`; #198 review). A
+# blank-node class (`a [ rdfs:subClassOf aisep:ApprovalRecord ]`), which the derivation's a/rdfs:subClassOf* honours,
+# is caught in a domain module file and in a tool file alike (#198 second review). The message names the file by its
+# repository path. Positive twin: the same branch before the record.
+CAT, CORE_ONTO = "modules/ext-actions/catalog.ttl", "modules/aisep-core/onto.ttl"
+
+
+@pytest.mark.parametrize("sub,site", [("", CAT), ("tool", CAT), ("cross", CAT), ("bnode", CORE_ONTO), ("bnode", CAT)],
+                         ids=["class-itself", "tool-declared-subclass", "cross-zone-chain", "bnode-class-domain",
+                              "bnode-class-tool"])
+def test_169_governance_type_in_tooling_file_rejected(t, sub, site):
     from fixtures.topology import record_ttl
     h0 = feature(t)
     local = "approval-20261120110000-architecture-typeout"
@@ -1647,16 +1654,18 @@ def test_169_governance_type_in_tooling_file_rejected(t, sub):
     assert head in body
     t.write(f"{GOV}/{local}.ttl", PREFIXES_() + body.replace(head, " arch:inModel"))
     rec, sc = "https://aisep.example/ont/aisep#ApprovalRecord", "http://www.w3.org/2000/01/rdf-schema#subClassOf"
-    cls = {"": rec, "tool": SUB_REC, "cross": SUB_REC + "Cross"}[sub]
-    extra = f"\n<{SUB_REC}> <{sc}> <{rec}> .\n" if sub else "\n"
+    cls = {"": f"<{rec}>", "tool": f"<{SUB_REC}>", "cross": f"<{SUB_REC}Cross>", "bnode": f"[ <{sc}> <{rec}> ]"}[sub]
+    extra = f"\n<{SUB_REC}> <{sc}> <{rec}> .\n" if sub in ("tool", "cross") else "\n"
     if sub == "cross":
-        t.write("modules/aisep-core/onto.ttl", f"\n<{cls}> <{sc}> <{SUB_REC}> .\n", "a")
-    t.write("modules/ext-actions/catalog.ttl", extra + f"<{M}{local}> a <{cls}> .\n", "a")
+        t.write(CORE_ONTO, f"\n<{SUB_REC}Cross> <{sc}> <{SUB_REC}> .\n", "a")
+    t.write(site, extra + f"<{M}{local}> a {cls} .\n", "a")
     h = t.commit_all(f"aisep: {local}", trailers=[f"AISEP-Evidence: {NO_COMMIT}"])
+    if site == CORE_ONTO:  # the derivation honours the blank class in the domain zone (the tool zone it never sees)
+        assert state(t, h, M + "newThing") == {ARCH_NS + "Approved"}
     problems = check(t, h, "feat/x")
     assert_rejected(problems, OUTSIDE, iri=M + local)
     if not isinstance(problems, _Pending):
-        assert any("modules/ext-actions/catalog.ttl" in _get(p, "message") for p in problems
+        assert any(site in _get(p, "message") for p in problems
                    if _get(p, "reason") == OUTSIDE and _get(p, "iri") == M + local), problems
     assert OUTSIDE not in reasons(check(t, h0, "feat/x"))
 
